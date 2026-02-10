@@ -153,63 +153,51 @@ export default function Pricing() {
           ))}
         </div>
 
-        {/* Plans */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={`relative bg-[#0D0D0D] border-[#1F1F1F] p-8 ${
-                plan.popular ? "ring-2 ring-[#E3C567]" : ""
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-[#E3C567] text-black px-4 py-1 rounded-full text-sm font-semibold">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-[#808080] mb-4">{plan.description}</p>
-                <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-white">{plan.price}</span>
-                  <span className="text-[#808080] ml-1">{plan.period}</span>
-                </div>
+        {/* Single Membership Plan */}
+        <div className="max-w-lg mx-auto">
+          <Card className="relative bg-[#0D0D0D] border-[#1F1F1F] p-8 ring-2 ring-[#E3C567]">
+            <div className="mb-6 text-center">
+              <h3 className="text-2xl font-bold text-white mb-2">Investor Konnect Membership</h3>
+              <p className="text-[#808080] mb-4">Full access to everything you need</p>
+              <div className="flex items-baseline justify-center">
+                <span className="text-5xl font-bold text-white">$50</span>
+                <span className="text-[#808080] ml-1">/month</span>
               </div>
+            </div>
 
-              <Separator className="bg-[#1F1F1F] mb-6" />
+            <Separator className="bg-[#1F1F1F] mb-6" />
 
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <Check className="w-5 h-5 text-[#10B981] mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-[#808080]">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            <ul className="space-y-3 mb-8">
+              {[
+                "Access to all deal rooms",
+                "Unlimited agent matching",
+                "AI-powered contract tools",
+                "Secure document sharing",
+                "Deal analytics & insights",
+                "Priority support",
+              ].map((feature, index) => (
+                <li key={index} className="flex items-start">
+                  <Check className="w-5 h-5 text-[#10B981] mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-[#808080]">{feature}</span>
+                </li>
+              ))}
+            </ul>
 
-              <Button
-                onClick={() => handleSubscribe(plan.id)}
-                disabled={checkoutLoading}
-                className={`w-full ${
-                  plan.popular
-                    ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                    : "bg-[#1F1F1F] hover:bg-[#2F2F2F] text-white"
-                } font-semibold rounded-full h-12`}
-              >
-                {checkoutLoading ? (
-                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Start Free Trial
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </Card>
-          ))}
+            <Button
+              onClick={handleSubscribe}
+              disabled={checkoutLoading}
+              className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-12"
+            >
+              {checkoutLoading ? (
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  Subscribe Now
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </Card>
         </div>
 
         {/* Footer */}
