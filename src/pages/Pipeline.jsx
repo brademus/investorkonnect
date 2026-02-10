@@ -130,7 +130,8 @@ function PipelineContent() {
         is_fully_signed: isSigned, is_orphan: !hasAgent,
         locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
         seller_name: deal.seller_info?.seller_name,
-        selected_agent_ids: deal.selected_agent_ids
+        selected_agent_ids: deal.selected_agent_ids,
+        proposed_terms: room?.proposed_terms || deal.proposed_terms
       };
     }).filter(d => {
       if (!isAgent) return true;
@@ -220,6 +221,7 @@ function PipelineContent() {
                                     <div className="flex flex-col gap-2 mb-3">
                                       <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
+                                    {(() => { const { compLabel } = getPriceAndComp({ deal: { proposed_terms: deal.proposed_terms, purchase_price: deal.budget } }); return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">Comp: {compLabel}</div> : null; })()}
                                       {(() => { const badge = getAgreementStatusLabel({ room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed }, role: isAgent ? 'agent' : 'investor' }); return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null; })()}
                                       {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
                                     </div>
