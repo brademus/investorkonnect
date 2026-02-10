@@ -54,49 +54,51 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           return hasAny ? merged : null;
         };
 
-        // Collect all available term sources in priority order
-        const agentSpecificTerms = (room?.agent_terms && targetAgentId) ? room.agent_terms[targetAgentId] : null;
-        const roomTerms = room?.proposed_terms || null;
-        const dealTerms = deal?.proposed_terms || null;
-        const agreementTerms = agreement?.exhibit_a_terms && (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId)
-          ? agreement.exhibit_a_terms : null;
-
-        // Merge: agent-specific > room > deal > agreement (fills in any null fields from lower-priority sources)
-        terms = mergeTerms(agentSpecificTerms, roomTerms, dealTerms, agreementTerms);
-        console.log('[KeyTermsPanel] Merged terms from all sources:', terms);
+        // CRITICAL: Always fetch the agent's specific agreement (from DealInvite) to get authoritative terms
+        // After counter offer + regeneration, the agreement's exhibit_a_terms has the final merged terms
+        let agentAgreementTerms = null;
+        const dealId = deal?.id || room?.deal_id;
         
-        // If still missing seller commission, try fetching from the latest agreement
-        const hasBuyerTerms = terms && terms.buyer_commission_type;
-        const hasSellerTerms = terms && terms.seller_commission_type;
-        
-        if (!terms || (!hasBuyerTerms && !hasSellerTerms)) {
-          const dealId = deal?.id || room?.deal_id;
-          
-          if (dealId && room?.id) {
-            console.log('[KeyTermsPanel] Fetching agreements for deal:', dealId, 'room:', room.id);
-            
-            const agreements = await base44.entities.LegalAgreement.filter({ 
-              deal_id: dealId,
-              room_id: room.id 
-            });
-            
-            console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status, agent: a.agent_profile_id })));
-            
-            // Find the latest non-voided agreement (prefer draft for newly generated, then sent)
-            // CRITICAL: Filter to agreements for THIS agent only
-            const agentAgreements = agreements.filter(a => !a.agent_profile_id || a.agent_profile_id === targetAgentId);
-            const draftAgreement = agentAgreements.find(a => a.status === 'draft');
-            const sentAgreement = agentAgreements.find(a => a.status === 'sent');
-            const nonVoidedAgreement = agentAgreements.find(a => a.status !== 'voided');
-            const latestAgreement = draftAgreement || sentAgreement || nonVoidedAgreement || agentAgreements[0];
-            
-            if (latestAgreement?.exhibit_a_terms) {
-              // Merge fetched agreement terms with existing terms (fill gaps)
-              terms = mergeTerms(terms, latestAgreement.exhibit_a_terms);
-              console.log('[KeyTermsPanel] Merged with agreement exhibit_a_terms:', latestAgreement.id, terms);
+        if (targetAgentId && dealId) {
+          // Try to find the agent's DealInvite to get their specific agreement
+          const invites = await base44.entities.DealInvite.filter({
+            deal_id: dealId, agent_profile_id: targetAgentId
+          }).catch(() => []);
+          const invite = invites?.[0];
+          if (invite?.legal_agreement_id) {
+            const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
+            if (agArr?.[0]?.exhibit_a_terms && !['superseded', 'voided'].includes(agArr[0].status)) {
+              agentAgreementTerms = agArr[0].exhibit_a_terms;
+              console.log('[KeyTermsPanel] Found agent-specific agreement terms from DealInvite:', invite.legal_agreement_id, agentAgreementTerms);
             }
           }
         }
+        
+        // If no agent-specific agreement, try room-level agreements
+        if (!agentAgreementTerms && dealId && room?.id) {
+          const agreements = await base44.entities.LegalAgreement.filter({ 
+            deal_id: dealId, room_id: room.id 
+          }).catch(() => []);
+          const agentAgreements = agreements.filter(a => !a.agent_profile_id || a.agent_profile_id === targetAgentId);
+          const latest = agentAgreements.find(a => a.status === 'sent') || agentAgreements.find(a => !['superseded', 'voided'].includes(a.status));
+          if (latest?.exhibit_a_terms) {
+            agentAgreementTerms = latest.exhibit_a_terms;
+            console.log('[KeyTermsPanel] Found agreement terms from room agreements:', latest.id);
+          }
+        }
+
+        // Collect all available term sources in priority order
+        // After regeneration, the agreement exhibit_a_terms is the most authoritative source
+        // because it contains the fully merged terms (base + counter offer changes)
+        const agentSpecificTerms = (room?.agent_terms && targetAgentId) ? room.agent_terms[targetAgentId] : null;
+        const roomTerms = room?.proposed_terms || null;
+        const dealTerms = deal?.proposed_terms || null;
+        const passedAgreementTerms = agreement?.exhibit_a_terms && (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId)
+          ? agreement.exhibit_a_terms : null;
+
+        // Merge: agent agreement (most authoritative after regen) > agent-specific counter terms > passed agreement > room > deal
+        terms = mergeTerms(agentAgreementTerms, agentSpecificTerms, passedAgreementTerms, roomTerms, dealTerms);
+        console.log('[KeyTermsPanel] Merged terms from all sources:', terms);
         
 
       } catch (e) {
