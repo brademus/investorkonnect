@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createPageUrl } from "@/components/utils";
-import { Check, Zap, Shield, Building2, ArrowRight, Sparkles, X, CreditCard, ChevronRight } from "lucide-react";
+import { Check, Zap, Shield, ArrowRight, Sparkles, CreditCard, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -12,7 +12,6 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 export default function Pricing() {
   const { user, profile, loading, refresh } = useCurrentProfile();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState("starter");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
 
