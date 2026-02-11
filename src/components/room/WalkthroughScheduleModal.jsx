@@ -96,11 +96,10 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
             <div>
               <label className="text-xs text-[#808080] mb-1 block">Date</label>
               <Input
-                type="text"
+                type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                placeholder="MM/DD/YYYY"
-                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567] [color-scheme:dark]"
               />
             </div>
             <div>
