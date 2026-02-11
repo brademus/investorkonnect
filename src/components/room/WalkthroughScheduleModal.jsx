@@ -11,6 +11,16 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
   const [time, setTime] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const handleDateChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 8);
+    let formatted = '';
+    for (let i = 0; i < raw.length; i++) {
+      if (i === 2 || i === 4) formatted += '/';
+      formatted += raw[i];
+    }
+    setDate(formatted);
+  };
+
   const handleSubmit = async () => {
     if (!date) { toast.error("Please enter a date"); return; }
     setSaving(true);
