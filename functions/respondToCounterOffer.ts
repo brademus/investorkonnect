@@ -89,9 +89,14 @@ Deno.serve(async (req) => {
           agentTermsEntry.requires_regenerate = true;
           updatedAgentTerms[targetAgentId] = agentTermsEntry;
           
+          // Also update the room's proposed_terms with the accepted counter terms
+          // so that downstream consumers (pipeline, enriched rooms) see the latest terms
+          const mergedProposedTerms = { ...(room.proposed_terms || {}), ...(counter.terms_delta || {}) };
+
           await base44.asServiceRole.entities.Room.update(counter.room_id, {
             requires_regenerate: true, // Keep room-level for backward compat / investor UI
             agent_terms: updatedAgentTerms,
+            proposed_terms: mergedProposedTerms,
             agreement_status: 'draft' // Reset to draft since terms changed
           });
           
