@@ -9,7 +9,7 @@ const formatUsd = (val) => {
   }).format(Number(val));
 };
 
-function extractCompFromTerms(terms) {
+function extractCompFromTerms(terms, side = 'buyer') {
   if (!terms) return null;
 
   // New schema: terms.compensation { mode: 'FLAT_FEE'|'PERCENTAGE'|'NET_SPREAD', value: number }
@@ -23,33 +23,42 @@ function extractCompFromTerms(terms) {
   }
 
   // Legacy Deal/Room proposed_terms shape
-  if (terms.buyer_commission_type === 'percentage' && terms.buyer_commission_percentage != null) {
-    return `${terms.buyer_commission_percentage}%`;
+  const commType = terms[`${side}_commission_type`];
+  const commPct = terms[`${side}_commission_percentage`];
+  const flatFee = terms[`${side}_flat_fee`];
+
+  if ((commType === 'percentage' || commType === 'flat_fee') && commPct != null && commType === 'percentage') {
+    return `${commPct}%`;
   }
-  if (terms.buyer_commission_type === 'flat' && terms.buyer_flat_fee != null) {
-    const usd = formatUsd(terms.buyer_flat_fee);
-    return usd || null;
+  if ((commType === 'flat' || commType === 'flat_fee') && flatFee != null) {
+    return formatUsd(flatFee) || null;
   }
+  // Fallback: percentage without explicit type
+  if (commPct != null && !commType) {
+    return `${commPct}%`;
+  }
+
   // Negotiation shape
-  if (terms.buyer_comp_type === 'percentage' && terms.buyer_comp_amount != null) {
-    return `${terms.buyer_comp_amount}%`;
+  const compType = terms[`${side}_comp_type`];
+  const compAmount = terms[`${side}_comp_amount`];
+  if (compType === 'percentage' && compAmount != null) {
+    return `${compAmount}%`;
   }
-  if (terms.buyer_comp_type === 'flat' && terms.buyer_comp_amount != null) {
-    const usd = formatUsd(terms.buyer_comp_amount);
-    return usd || null;
+  if (compType === 'flat' && compAmount != null) {
+    return formatUsd(compAmount) || null;
   }
   return null;
 }
 
-export function getPriceAndComp({ deal, room, negotiation } = {}) {
+export function getPriceAndComp({ deal, room, negotiation, side = 'buyer' } = {}) {
   const price = (deal?.purchase_price ?? deal?.budget ?? room?.budget);
   const priceLabel = price != null ? formatUsd(price) : null;
 
   let comp = null;
-  comp = comp || extractCompFromTerms(deal?.proposed_terms);
-  comp = comp || extractCompFromTerms(room?.proposed_terms);
-  comp = comp || extractCompFromTerms(negotiation?.current_terms);
-  comp = comp || extractCompFromTerms(negotiation?.last_proposed_terms);
+  comp = comp || extractCompFromTerms(deal?.proposed_terms, side);
+  comp = comp || extractCompFromTerms(room?.proposed_terms, side);
+  comp = comp || extractCompFromTerms(negotiation?.current_terms, side);
+  comp = comp || extractCompFromTerms(negotiation?.last_proposed_terms, side);
 
   return { priceLabel, compLabel: comp };
 }
