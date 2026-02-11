@@ -102,7 +102,11 @@ function PipelineContent() {
     const roomMap = new Map();
     (rooms || []).forEach(r => {
       if (!r?.deal_id) return;
-      if (isAgent && r.agentId !== profile?.id && !r.agent_ids?.includes(profile?.id)) return;
+      // For agents: only include rooms where this agent is a member
+      if (isAgent) {
+        const agentInRoom = (r.agent_ids || []).includes(profile?.id) || r.agentId === profile?.id || r.counterparty_role === 'investor';
+        if (!agentInRoom) return;
+      }
       const prev = roomMap.get(r.deal_id);
       const score = (x) => (x.is_fully_signed ? 3 : x.request_status === 'accepted' ? 2 : 1);
       if (!prev || score(r) > score(prev)) roomMap.set(r.deal_id, r);
