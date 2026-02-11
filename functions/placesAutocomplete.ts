@@ -14,42 +14,60 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Places API key not configured' }, { status: 500 });
     }
 
-    // Action: "autocomplete" — return address predictions
+    // Action: "autocomplete" — return address predictions using Places API (New)
     if (action === 'autocomplete') {
       if (!input || input.trim().length < 3) {
         return Response.json({ predictions: [] });
       }
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&components=country:us&key=${apiKey}`;
-      const resp = await fetch(url);
+      const resp = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+        },
+        body: JSON.stringify({
+          input: input,
+          includedPrimaryTypes: ['street_address', 'subpremise', 'premise'],
+          includedRegionCodes: ['us'],
+        }),
+      });
       const data = await resp.json();
-      console.log('[placesAutocomplete] raw response status:', data.status, 'error:', data.error_message);
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        return Response.json({ predictions: [], error: data.error_message || data.status });
+      if (data.error) {
+        console.error('[placesAutocomplete] API error:', data.error.message);
+        return Response.json({ predictions: [], error: data.error.message });
       }
-      const predictions = (data.predictions || []).map(p => ({
-        place_id: p.place_id,
-        description: p.description,
-      }));
+      const predictions = (data.suggestions || [])
+        .filter(s => s.placePrediction)
+        .map(s => ({
+          place_id: s.placePrediction.placeId,
+          description: s.placePrediction.text?.text || s.placePrediction.structuredFormat?.mainText?.text || '',
+        }));
       return Response.json({ predictions });
     }
 
-    // Action: "details" — return parsed address components
+    // Action: "details" — return parsed address components using Places API (New)
     if (action === 'details') {
       if (!place_id) {
         return Response.json({ error: 'place_id required' }, { status: 400 });
       }
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(place_id)}&fields=address_components,formatted_address&key=${apiKey}`;
-      const resp = await fetch(url);
+      const resp = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(place_id)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'addressComponents,formattedAddress,shortFormattedAddress',
+        },
+      });
       const data = await resp.json();
-      const result = data.result;
-      if (!result) {
-        return Response.json({ error: 'Place not found' }, { status: 404 });
+      if (data.error) {
+        console.error('[placesAutocomplete] Details error:', data.error.message);
+        return Response.json({ error: data.error.message }, { status: 404 });
       }
 
-      const components = result.address_components || [];
+      const components = data.addressComponents || [];
       const get = (type, useShort) => {
-        const c = components.find(c => c.types.includes(type));
-        return c ? (useShort ? c.short_name : c.long_name) : '';
+        const c = components.find(c => c.types?.includes(type));
+        return c ? (useShort ? c.shortText : c.longText) : '';
       };
 
       const streetNumber = get('street_number');
@@ -57,8 +75,8 @@ Deno.serve(async (req) => {
       const address = [streetNumber, route].filter(Boolean).join(' ');
 
       return Response.json({
-        formatted_address: result.formatted_address,
-        address: address || result.formatted_address,
+        formatted_address: data.formattedAddress || '',
+        address: address || data.shortFormattedAddress || data.formattedAddress || '',
         city: get('locality') || get('sublocality_level_1') || get('administrative_area_level_3'),
         state: get('administrative_area_level_1', true),
         zip: get('postal_code'),
