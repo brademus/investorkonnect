@@ -103,6 +103,7 @@ function PipelineContent() {
     (rooms || []).forEach(r => {
       if (!r?.deal_id) return;
       // For agents: only include rooms where this agent is a member
+      // The enriched room has counterparty_role='investor' for agents, so also check that
       if (isAgent) {
         const agentInRoom = (r.agent_ids || []).includes(profile?.id) || r.agentId === profile?.id || r.counterparty_role === 'investor';
         if (!agentInRoom) return;
