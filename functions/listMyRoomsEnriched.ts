@@ -14,16 +14,24 @@ Deno.serve(async (req) => {
     const profile = profiles?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    const isInvestor = profile.user_role === 'investor';
-    const isAgent = profile.user_role === 'agent';
+    const isAdmin = profile.role === 'admin' || user.role === 'admin';
+    const isInvestor = profile.user_role === 'investor' || isAdmin;
+    const isAgent = !isAdmin && profile.user_role === 'agent';
 
     // Get rooms
     let rooms = [];
-    if (isInvestor) {
+    if (isAdmin) {
+      rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 100);
+    } else if (isInvestor) {
       rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
     } else if (isAgent) {
-      const allRooms = await base44.asServiceRole.entities.Room.list('-created_date', 200);
-      rooms = allRooms.filter(r => r.agent_ids?.includes(profile.id) || r.agentId === profile.id);
+      // Find rooms via DealInvite instead of scanning all rooms
+      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
+      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      const roomIds = activeInvites.map(i => i.room_id).filter(Boolean);
+      if (roomIds.length > 0) {
+        rooms = await base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } });
+      }
     }
 
     // Filter out expired
