@@ -96,8 +96,16 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         const passedAgreementTerms = agreement?.exhibit_a_terms && (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId)
           ? agreement.exhibit_a_terms : null;
 
-        // Merge: agent agreement (most authoritative after regen) > agent-specific counter terms > passed agreement > room > deal
-        terms = mergeTerms(agentAgreementTerms, agentSpecificTerms, passedAgreementTerms, roomTerms, dealTerms);
+        // If room.requires_regenerate is true, the agreement hasn't been regenerated yet,
+        // so agent-specific counter terms are more current than the stale agreement exhibit_a_terms.
+        const roomNeedsRegen = room?.requires_regenerate || currentRoom?.requires_regenerate;
+        if (roomNeedsRegen) {
+          // Agent counter terms > room terms > agreement (stale) > deal
+          terms = mergeTerms(agentSpecificTerms, roomTerms, agentAgreementTerms, passedAgreementTerms, dealTerms);
+        } else {
+          // After regen, agreement is authoritative: agreement > agent terms > room > deal
+          terms = mergeTerms(agentAgreementTerms, agentSpecificTerms, passedAgreementTerms, roomTerms, dealTerms);
+        }
         console.log('[KeyTermsPanel] Merged terms from all sources:', terms);
         
 
