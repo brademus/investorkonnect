@@ -18,14 +18,14 @@ Deno.serve(async (req) => {
     const isInvestor = profile.user_role === 'investor' || isAdmin;
     const isAgent = !isAdmin && profile.user_role === 'agent';
 
-    // Get rooms
+    // Get rooms - limit scope to avoid timeouts
     let rooms = [];
     if (isAdmin) {
-      rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 50);
+      // Admin: get recent rooms only (small batch)
+      rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 30);
     } else if (isInvestor) {
       rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
     } else if (isAgent) {
-      // Find rooms via DealInvite instead of scanning all rooms
       const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
       const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
       const roomIds = activeInvites.map(i => i.room_id).filter(Boolean);
@@ -34,19 +34,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Filter out expired
     rooms = rooms.filter(r => r.request_status !== 'expired');
 
-    // Batch-load deals + counterparty profiles + agreements
+    // Early return if no rooms
+    if (rooms.length === 0) {
+      return Response.json({ rooms: [], count: 0 });
+    }
+
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
     const counterpartyIds = [...new Set(rooms.map(r => isInvestor ? (r.agent_ids?.[0] || r.agentId) : r.investorId).filter(Boolean))];
 
-    // Split into smaller batches if needed and run in parallel
-    const [allDeals, allProfiles, allAgreements, allCounters] = await Promise.all([
-      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds.slice(0, 50) } }) : [],
-      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds.slice(0, 50) } }) : [],
-      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds.slice(0, 50) } }) : [],
-      rooms.length ? base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id).slice(0, 50) }, status: 'pending' }).catch(() => []) : []
+    // Load deals and profiles in parallel, skip heavy agreement/counter queries
+    const [allDeals, allProfiles] = await Promise.all([
+      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds } }) : [],
+      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [],
+    ]);
+
+    // Load agreements and counters in a second batch
+    const [allAgreements, allCounters] = await Promise.all([
+      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } }) : [],
+      base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id) }, status: 'pending' }).catch(() => [])
     ]);
 
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
