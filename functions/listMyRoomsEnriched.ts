@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // Get rooms
     let rooms = [];
     if (isAdmin) {
-      rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 100);
+      rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 50);
     } else if (isInvestor) {
       rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
     } else if (isAgent) {
