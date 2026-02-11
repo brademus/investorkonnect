@@ -225,10 +225,24 @@ function PipelineContent() {
                                       <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
                                     {(() => {
-                                      // Agents see seller's agent comp; investors see buyer's agent comp
-                                      const side = isAgent ? 'seller' : 'buyer';
-                                      const { compLabel } = getPriceAndComp({ deal: { proposed_terms: deal.proposed_terms, purchase_price: deal.budget }, side });
-                                      return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">{isAgent ? "Seller Comp" : "Comp"}: {compLabel}</div> : null;
+                                      // Show seller comp for agents, buyer comp for investors
+                                      const terms = deal.proposed_terms;
+                                      if (!terms) return null;
+                                      let compLabel = null;
+                                      if (isAgent) {
+                                        // Agent comp = seller side commission
+                                        const { compLabel: sellerComp } = getPriceAndComp({ deal: { proposed_terms: terms, purchase_price: deal.budget }, side: 'seller' });
+                                        compLabel = sellerComp;
+                                        // Fallback: try buyer side if seller is empty
+                                        if (!compLabel) {
+                                          const { compLabel: buyerComp } = getPriceAndComp({ deal: { proposed_terms: terms, purchase_price: deal.budget }, side: 'buyer' });
+                                          compLabel = buyerComp;
+                                        }
+                                      } else {
+                                        const { compLabel: buyerComp } = getPriceAndComp({ deal: { proposed_terms: terms, purchase_price: deal.budget }, side: 'buyer' });
+                                        compLabel = buyerComp;
+                                      }
+                                      return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">{isAgent ? "Agent Comp" : "Comp"}: {compLabel}</div> : null;
                                     })()}
                                       {(() => {
                                         const badge = getAgreementStatusLabel({

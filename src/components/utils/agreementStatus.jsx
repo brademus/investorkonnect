@@ -86,9 +86,10 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
 
   const regenRequired = needsRegeneration(negotiation) || needsRegeneration(room) || needsRegeneration(agreement) || negUpper.includes('REGEN');
 
-  // Show nothing to agent only when there is truly no actionable state yet
+  // Show status to agent whenever there is an agreement in progress
+  const hasAgreement = Boolean(agreementStatus && agreementStatus !== '' && agreementStatus !== 'none');
   const hasNegotiationSignal = Boolean(negotiation && negotiation.status) || Boolean(getNegotiationStatus(room)) || regenRequired;
-  if (userRole === 'agent' && !(isFullySigned || agreementStatus === 'investor_signed' || hasNegotiationSignal)) {
+  if (userRole === 'agent' && !(isFullySigned || investorHasSigned || hasAgreement || hasNegotiationSignal)) {
     return null;
   }
 
