@@ -22,6 +22,10 @@ Deno.serve(async (req) => {
       const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&components=country:us&key=${apiKey}`;
       const resp = await fetch(url);
       const data = await resp.json();
+      console.log('[placesAutocomplete] raw response status:', data.status, 'error:', data.error_message);
+      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+        return Response.json({ predictions: [], error: data.error_message || data.status });
+      }
       const predictions = (data.predictions || []).map(p => ({
         place_id: p.place_id,
         description: p.description,
