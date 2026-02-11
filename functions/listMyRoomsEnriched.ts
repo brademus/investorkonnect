@@ -58,8 +58,13 @@ Deno.serve(async (req) => {
 
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
     const profileMap = new Map(allProfiles.map(p => [p.id, p]));
-    const agreementMap = new Map();
-    allAgreements.forEach(a => { if (!agreementMap.has(a.deal_id)) agreementMap.set(a.deal_id, a); });
+    // Map agreements by room_id first (preferred), then fall back to deal_id
+    const agreementByRoom = new Map();
+    const agreementByDeal = new Map();
+    allAgreements.forEach(a => {
+      if (a.room_id && !agreementByRoom.has(a.room_id)) agreementByRoom.set(a.room_id, a);
+      if (!agreementByDeal.has(a.deal_id)) agreementByDeal.set(a.deal_id, a);
+    });
     const counterMap = new Map();
     allCounters.forEach(c => { if (!counterMap.has(c.room_id)) counterMap.set(c.room_id, c); });
 
@@ -68,7 +73,7 @@ Deno.serve(async (req) => {
       const deal = dealMap.get(room.deal_id);
       const cpId = isInvestor ? (room.agent_ids?.[0] || room.agentId) : room.investorId;
       const cp = profileMap.get(cpId);
-      const ag = agreementMap.get(room.deal_id);
+      const ag = agreementByRoom.get(room.id) || agreementByDeal.get(room.deal_id);
       const counter = counterMap.get(room.id);
       const isSigned = room.agreement_status === 'fully_signed' || room.request_status === 'signed' || ag?.status === 'fully_signed';
 
