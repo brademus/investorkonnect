@@ -269,9 +269,11 @@ export default function Room() {
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
                 )}
-                <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
-                  <Send className="w-4 h-4 mr-2" />Messages
-                </Button>
+                {!(isInvestor && pendingInvites.length > 0 && !isSigned) && (
+                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                    <Send className="w-4 h-4 mr-2" />Messages
+                  </Button>
+                )}
               </>
             )}
           </div>
