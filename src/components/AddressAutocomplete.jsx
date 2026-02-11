@@ -37,7 +37,7 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
       } finally {
         setLoading(false);
       }
-    }, 300)
+    }, 150)
   );
 
   useEffect(() => {
