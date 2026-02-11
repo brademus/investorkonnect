@@ -195,16 +195,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               )}
             </div>
 
-            {/* Buyer Commission */}
-            <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-[#808080] mb-1">Buyer's Agent Commission</p>
-                <p className="text-sm font-semibold text-[#FAFAFA]">{buyerComm}</p>
-              </div>
-              <Badge className="bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30">
-                {displayTerms.buyer_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'}
-              </Badge>
-            </div>
+
 
             {/* Agreement Length */}
             <div className="bg-[#141414] rounded-xl p-4">
