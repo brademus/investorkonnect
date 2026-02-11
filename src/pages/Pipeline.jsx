@@ -246,10 +246,10 @@ function PipelineContent() {
                                     })()}
                                       {(() => {
                                         const badge = getAgreementStatusLabel({
-                                          room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at },
+                                          room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
                                           agreement: deal.agreement || undefined,
                                           negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
-                                          role: isAgent ? 'agent' : 'investor'
+                                          role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
                                         });
                                         return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
                                       })()}
