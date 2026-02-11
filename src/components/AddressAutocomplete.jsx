@@ -47,7 +47,10 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
   };
 
   useEffect(() => {
-    return () => searchRef.current.cancel();
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, []);
 
   const handleInputChange = (e) => {
@@ -57,7 +60,10 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
       skipNextSearch.current = false;
       return;
     }
-    searchRef.current(val);
+    // Show loading immediately for responsiveness
+    if (val.trim().length >= 3) setLoading(true);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => doSearch(val), 150);
   };
 
   const handleSelectPrediction = async (prediction) => {
