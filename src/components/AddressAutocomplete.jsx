@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { MapPin, Loader2 } from "lucide-react";
-import _ from "lodash";
 
 export default function AddressAutocomplete({ value, onChange, onSelect, placeholder, className }) {
   const [predictions, setPredictions] = useState([]);
@@ -12,33 +11,40 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
   const skipNextSearch = useRef(false);
+  const debounceTimer = useRef(null);
+  const abortRef = useRef(null);
 
-  // Debounced search
-  const searchRef = useRef(
-    _.debounce(async (query) => {
-      if (!query || query.trim().length < 3) {
-        setPredictions([]);
-        setShowDropdown(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const res = await base44.functions.invoke('placesAutocomplete', {
-          action: 'autocomplete',
-          input: query,
-        });
-        const preds = res.data?.predictions || [];
-        setPredictions(preds);
-        setShowDropdown(preds.length > 0);
-        setSelectedIndex(-1);
-      } catch (e) {
-        console.error('Autocomplete error:', e);
-        setPredictions([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 150)
-  );
+  const doSearch = async (query) => {
+    if (!query || query.trim().length < 3) {
+      setPredictions([]);
+      setShowDropdown(false);
+      setLoading(false);
+      return;
+    }
+    // Cancel any in-flight request
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke('placesAutocomplete', {
+        action: 'autocomplete',
+        input: query,
+      });
+      if (controller.signal.aborted) return;
+      const preds = res.data?.predictions || [];
+      setPredictions(preds);
+      setShowDropdown(preds.length > 0);
+      setSelectedIndex(-1);
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      console.error('Autocomplete error:', e);
+      setPredictions([]);
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     return () => searchRef.current.cancel();
