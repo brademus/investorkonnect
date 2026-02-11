@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
 
       // Also check direct assignment (legacy)
-      const directDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
+      const directDeals = await base44.asServiceRole.entities.Deal.filter({ agent_id: profile.id });
       const directIds = directDeals.map(d => d.id);
 
       const allIds = [...new Set([...inviteDealIds, ...directIds])];
