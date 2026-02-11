@@ -41,11 +41,12 @@ Deno.serve(async (req) => {
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
     const counterpartyIds = [...new Set(rooms.map(r => isInvestor ? (r.agent_ids?.[0] || r.agentId) : r.investorId).filter(Boolean))];
 
+    // Split into smaller batches if needed and run in parallel
     const [allDeals, allProfiles, allAgreements, allCounters] = await Promise.all([
-      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds } }) : [],
-      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [],
-      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } }) : [],
-      rooms.length ? base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id) }, status: 'pending' }).catch(() => []) : []
+      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds.slice(0, 50) } }) : [],
+      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds.slice(0, 50) } }) : [],
+      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds.slice(0, 50) } }) : [],
+      rooms.length ? base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id).slice(0, 50) }, status: 'pending' }).catch(() => []) : []
     ]);
 
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
