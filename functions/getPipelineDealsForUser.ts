@@ -37,9 +37,8 @@ Deno.serve(async (req) => {
       const allIds = [...new Set([...inviteDealIds, ...directIds])];
 
       if (allIds.length > 0) {
-        // Use service role so agents can read deals they're invited to but don't own
-        const fetched = await Promise.all(allIds.map(id => base44.asServiceRole.entities.Deal.filter({ id }).then(a => a[0]).catch(() => null)));
-        deals = fetched.filter(Boolean);
+        // Batch fetch with service role — agents don't own deals so user-scoped queries return nothing
+        deals = await base44.asServiceRole.entities.Deal.filter({ id: { $in: allIds } });
       }
       // Filter out deals locked to other agents
       deals = deals.filter(d => !d.locked_agent_id || d.locked_agent_id === profile.id);
