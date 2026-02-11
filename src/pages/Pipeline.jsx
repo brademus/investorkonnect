@@ -131,7 +131,10 @@ function PipelineContent() {
         locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
-        proposed_terms: room?.proposed_terms || deal.proposed_terms
+        proposed_terms: room?.proposed_terms || deal.proposed_terms,
+        agreement: room?.agreement || null,
+        investor_signed_at: room?.agreement?.investor_signed_at || null,
+        pending_counter_offer: room?.pending_counter_offer || null
       };
     }).filter(d => {
       if (!isAgent) return true;
