@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Home, FileText, Handshake, DollarSign, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import AddressAutocomplete from "@/components/AddressAutocomplete";
 
 export default function NewDeal() {
   const navigate = useNavigate();
@@ -776,10 +777,17 @@ export default function NewDeal() {
               <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
                 Property Address *
               </label>
-              <Input
+              <AddressAutocomplete
                 value={propertyAddress}
-                onChange={(e) => setPropertyAddress(e.target.value)}
-                placeholder="123 Main Street"
+                onChange={setPropertyAddress}
+                onSelect={(place) => {
+                  setPropertyAddress(place.address);
+                  setCity(place.city);
+                  setState(place.state);
+                  setZip(place.zip);
+                  setCounty(place.county);
+                }}
+                placeholder="Start typing an address..."
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
               />
             </div>
