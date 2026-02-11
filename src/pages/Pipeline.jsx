@@ -224,8 +224,21 @@ function PipelineContent() {
                                     <div className="flex flex-col gap-2 mb-3">
                                       <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
-                                    {(() => { const { compLabel } = getPriceAndComp({ deal: { proposed_terms: deal.proposed_terms, purchase_price: deal.budget } }); return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">Comp: {compLabel}</div> : null; })()}
-                                      {(() => { const badge = getAgreementStatusLabel({ room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed }, role: isAgent ? 'agent' : 'investor' }); return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null; })()}
+                                    {(() => {
+                                      // Agents see seller's agent comp; investors see buyer's agent comp
+                                      const side = isAgent ? 'seller' : 'buyer';
+                                      const { compLabel } = getPriceAndComp({ deal: { proposed_terms: deal.proposed_terms, purchase_price: deal.budget }, side });
+                                      return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">{isAgent ? "Seller Comp" : "Comp"}: {compLabel}</div> : null;
+                                    })()}
+                                      {(() => {
+                                        const badge = getAgreementStatusLabel({
+                                          room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at },
+                                          agreement: deal.agreement || undefined,
+                                          negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
+                                          role: isAgent ? 'agent' : 'investor'
+                                        });
+                                        return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
+                                      })()}
                                       {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
                                     </div>
                                     <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
