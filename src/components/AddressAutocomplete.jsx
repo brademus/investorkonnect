@@ -70,7 +70,9 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
     setShowDropdown(false);
     setPredictions([]);
     skipNextSearch.current = true;
+    // Set description temporarily while details load
     onChange(prediction.description);
+    setLoading(true);
 
     try {
       const res = await base44.functions.invoke('placesAutocomplete', {
@@ -78,17 +80,25 @@ export default function AddressAutocomplete({ value, onChange, onSelect, placeho
         place_id: prediction.place_id,
       });
       const data = res.data;
-      if (data && onSelect) {
-        onSelect({
-          address: data.address || prediction.description,
-          city: data.city || '',
-          state: data.state || '',
-          zip: data.zip || '',
-          county: data.county || '',
-        });
+      if (data) {
+        // Set just the street address (not the full formatted string)
+        const streetOnly = data.address || prediction.description;
+        skipNextSearch.current = true;
+        onChange(streetOnly);
+        if (onSelect) {
+          onSelect({
+            address: streetOnly,
+            city: data.city || '',
+            state: data.state || '',
+            zip: data.zip || '',
+            county: data.county || '',
+          });
+        }
       }
     } catch (e) {
       console.error('Place details error:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
