@@ -99,7 +99,21 @@ Deno.serve(async (req) => {
         budget: deal?.purchase_price || room.budget || 0,
         pipeline_stage: deal?.pipeline_stage,
         closing_date: deal?.key_dates?.closing_date,
-        proposed_terms: room.proposed_terms || deal?.proposed_terms,
+        proposed_terms: (() => {
+          // If viewing as agent, merge agent-specific terms (from accepted counter offers)
+          const baseTerms = room.proposed_terms || deal?.proposed_terms || {};
+          if (isAgent && room.agent_terms && room.agent_terms[profile.id]) {
+            return { ...baseTerms, ...room.agent_terms[profile.id] };
+          }
+          // For investor: if room has only one agent with custom terms, show those
+          if (isInvestor && room.agent_terms) {
+            const agentIds = Object.keys(room.agent_terms);
+            if (agentIds.length === 1) {
+              return { ...baseTerms, ...room.agent_terms[agentIds[0]] };
+            }
+          }
+          return baseTerms;
+        })(),
         // Agreement status for badges
         agreement: ag ? { status: ag.status, investor_signed_at: ag.investor_signed_at, agent_signed_at: ag.agent_signed_at } : null,
         requires_regenerate: room.requires_regenerate || false,
