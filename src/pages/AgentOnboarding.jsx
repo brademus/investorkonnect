@@ -373,7 +373,7 @@ export default function AgentOnboarding() {
           />
         </div>
         <div>
-          <Label htmlFor="license_state" className="text-[#FAFAFA] text-[19px] font-medium">Licensed State *</Label>
+          <Label htmlFor="license_state" className="text-[#FAFAFA] text-[19px] font-medium">Main State You're Licensed In *</Label>
           <select 
             id="license_state" 
             value={formData.license_state} 
