@@ -84,6 +84,13 @@ Deno.serve(async (req) => {
       return Response.json({ agreement });
     }
 
+    // Load deal to determine the state for license number matching
+    let dealState = agreement.governing_state || '';
+    if (!dealState && agreement.deal_id) {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+      if (deals?.[0]) dealState = deals[0].state || '';
+    }
+
     const conn = await getDocuSignConnection(base44);
     const agentClientId = `ag-${agreement.deal_id}-${Date.now()}`;
 
@@ -120,6 +127,9 @@ Deno.serve(async (req) => {
 
     console.log('[addAgentToEnvelope] Existing agent signer:', existingAgentSigner?.email, 'status:', existingAgentSigner?.status);
 
+    const agentLicenseForDeal = pickLicenseForState(agent, dealState);
+    console.log('[addAgentToEnvelope] Picked license for state', dealState, ':', agentLicenseForDeal);
+
     const agentSignerPayload = {
       email: agent.email,
       name: agent.full_name || agent.email,
@@ -131,7 +141,7 @@ Deno.serve(async (req) => {
         dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
         fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
         textTabs: [
-          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: 'true', locked: 'true', tabLabel: 'agentLicense' },
+          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agentLicenseForDeal, required: 'true', locked: 'true', tabLabel: 'agentLicense' },
           { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: 'true', locked: 'true', tabLabel: 'agentBrokerage' }
         ]
       }
