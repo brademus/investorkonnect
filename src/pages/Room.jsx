@@ -36,6 +36,7 @@ export default function Room() {
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [showPendingAgents, setShowPendingAgents] = useState(true); // default to showing agents for investor
   const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
+  const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
@@ -201,10 +202,23 @@ export default function Room() {
     const unsub = base44.entities.Deal.subscribe(e => {
       if (e?.data?.id === deal.id) {
         setDeal(prev => prev ? { ...prev, ...e.data } : e.data);
+        if (e?.data?.walkthrough_scheduled || e?.data?.walkthrough_datetime) setHasWalkthroughAppt(true);
       }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
+
+  // Check DealAppointments for walkthrough (covers cases where deal entity fields are null but appointment exists)
+  useEffect(() => {
+    if (!deal?.id) return;
+    if (deal?.walkthrough_scheduled || deal?.walkthrough_datetime) { setHasWalkthroughAppt(true); return; }
+    (async () => {
+      const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+      if (rows?.[0]?.walkthrough?.status && rows[0].walkthrough.status !== 'NOT_SET' && rows[0].walkthrough.status !== 'CANCELED') {
+        setHasWalkthroughAppt(true);
+      }
+    })();
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime]);
 
   const counterpartName = useMemo(() => {
     if (isAgent) return deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor';
@@ -295,7 +309,7 @@ export default function Room() {
               />
             )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
-              {isInvestor && isSigned && deal?.id && !deal?.walkthrough_scheduled && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
+              {isInvestor && isSigned && deal?.id && !hasWalkthroughAppt && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
                 <button
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
                   onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
