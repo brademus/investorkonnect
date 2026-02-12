@@ -125,22 +125,26 @@ export default function MyAgreement() {
           dealData = JSON.parse(draftData);
           agentIds = dealData.selectedAgentIds || [];
           
-          // Ensure walkthrough data from newDealWalkthrough sessionStorage is merged
-          // This is critical because the walkthrough might get lost in the multi-page flow
+          // ALWAYS merge walkthrough data from the dedicated newDealWalkthrough key
+          // This key is set once in NewDeal.handleContinue and is the authoritative source
+          // The main newDealDraft can get overwritten/corrupted during multi-page navigation
           try {
             const wtJson = sessionStorage.getItem('newDealWalkthrough');
+            console.log('[MyAgreement] Raw newDealWalkthrough from sessionStorage:', wtJson);
+            console.log('[MyAgreement] dealData walkthrough BEFORE merge:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
             if (wtJson) {
               const wt = JSON.parse(wtJson);
-              console.log('[MyAgreement] newDealWalkthrough from sessionStorage:', wt);
-              if (wt.walkthrough_scheduled === true && !dealData.walkthroughScheduled && !dealData.walkthrough_scheduled) {
+              // Always use the dedicated key as authoritative source
+              if (wt.walkthrough_scheduled === true) {
                 dealData.walkthroughScheduled = true;
                 dealData.walkthrough_scheduled = true;
               }
-              if (wt.walkthrough_datetime && !dealData.walkthrough_datetime) {
+              if (wt.walkthrough_datetime) {
                 dealData.walkthrough_datetime = wt.walkthrough_datetime;
               }
+              console.log('[MyAgreement] dealData walkthrough AFTER merge:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime });
             }
-          } catch (_) {}
+          } catch (wtErr) { console.warn('[MyAgreement] Failed to merge walkthrough data:', wtErr); }
           
           console.log('[MyAgreement] Final dealData walkthrough:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
         }
