@@ -4,7 +4,8 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Award, Briefcase, Star, ExternalLink, Clock, TrendingUp, Home } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Award, Briefcase, Star, ExternalLink, Clock, TrendingUp, Home, CreditCard } from "lucide-react";
+import DigitalBusinessCard from "@/components/DigitalBusinessCard";
 
 export default function AgentProfile() {
   const navigate = useNavigate();
