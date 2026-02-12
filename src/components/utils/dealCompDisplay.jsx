@@ -50,13 +50,26 @@ function extractCompFromTerms(terms, side = 'buyer') {
   return null;
 }
 
-export function getPriceAndComp({ deal, room, negotiation, side = 'buyer' } = {}) {
+export function getPriceAndComp({ deal, room, negotiation, side = 'buyer', agentId } = {}) {
   const price = (deal?.purchase_price ?? deal?.budget ?? room?.budget);
   const priceLabel = price != null ? formatUsd(price) : null;
 
   let comp = null;
-  comp = comp || extractCompFromTerms(deal?.proposed_terms, side);
+
+  // Priority 1: Agent-specific terms from room.agent_terms (set by accepted counter offers)
+  if (agentId && room?.agent_terms?.[agentId]) {
+    comp = extractCompFromTerms(room.agent_terms[agentId], side);
+  }
+  // Priority 1b: If only one agent has custom terms, use those
+  if (!comp && room?.agent_terms) {
+    const agentIds = Object.keys(room.agent_terms);
+    if (agentIds.length === 1) {
+      comp = extractCompFromTerms(room.agent_terms[agentIds[0]], side);
+    }
+  }
+
   comp = comp || extractCompFromTerms(room?.proposed_terms, side);
+  comp = comp || extractCompFromTerms(deal?.proposed_terms, side);
   comp = comp || extractCompFromTerms(negotiation?.current_terms, side);
   comp = comp || extractCompFromTerms(negotiation?.last_proposed_terms, side);
 
