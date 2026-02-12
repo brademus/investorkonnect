@@ -243,8 +243,8 @@ function PipelineContent() {
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
                                     {(() => {
                                       // Show seller comp for agents, buyer comp for investors
-                                      // Use room agent_terms (set by accepted counters) for accurate display
-                                      const roomData = deal.room_agent_terms ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
+                                      // Only use agent_terms (counter-offer terms) when deal is fully signed
+                                      const roomData = (deal.is_fully_signed && deal.room_agent_terms) ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
                                       const dealData = { proposed_terms: deal.proposed_terms, purchase_price: deal.budget };
                                       const agentId = isAgent ? profile?.id : (deal.room_agent_ids?.[0] || null);
                                       let compLabel = null;
