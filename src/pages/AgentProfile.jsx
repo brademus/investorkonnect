@@ -336,6 +336,29 @@ export default function AgentProfile() {
             <p className="text-sm text-[#808080]">Reviews coming soon</p>
           </div>
         )}
+
+        {/* Generated Digital Business Card */}
+        <div className="mt-6">
+          <h3 className="text-lg font-bold text-[#FAFAFA] mb-3 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-[#E3C567]" />
+            Digital Business Card
+          </h3>
+          <DigitalBusinessCard agentProfile={agentProfile} />
+        </div>
+
+        {/* Uploaded Business Card */}
+        {agentProfile.businessCardUrl && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">Uploaded Business Card</h3>
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl overflow-hidden">
+              <img
+                src={agentProfile.businessCardUrl}
+                alt={`${agentProfile.full_name}'s business card`}
+                className="w-full object-contain max-h-[400px]"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
