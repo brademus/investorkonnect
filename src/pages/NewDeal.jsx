@@ -1210,8 +1210,9 @@ export default function NewDeal() {
                       <Input
                         type="text"
                         value={walkthroughDate}
-                        onChange={(e) => setWalkthroughDate(e.target.value)}
+                        onChange={(e) => setWalkthroughDate(autoFormatDate(e.target.value))}
                         placeholder="MM/DD/YYYY"
+                        maxLength={10}
                         className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                       />
                     </div>
