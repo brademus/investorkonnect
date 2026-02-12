@@ -152,12 +152,12 @@ function AccountProfileContent() {
         {/* Profile Form */}
         <div className="ik-card p-8 bg-[#0D0D0D] border border-[#1F1F1F]">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Picture & Business Card */}
+            {/* Profile Picture & Business Card - side by side */}
             <div>
               <Label className="text-[#FAFAFA] mb-3 block">Profile Picture & Business Card</Label>
-              <div className="flex flex-wrap items-start gap-6">
+              <div className="flex items-start gap-6">
                 {/* Profile Picture */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center gap-2">
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#1F1F1F] bg-[#141414] flex items-center justify-center">
                       {headshotUrl ? (
@@ -180,45 +180,35 @@ function AccountProfileContent() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error("Image must be under 5MB");
-                            return;
-                          }
+                          if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
                           setUploadingPhoto(true);
                           try {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             setHeadshotUrl(file_url);
                             await base44.entities.Profile.update(profile.id, { headshotUrl: file_url });
                             toast.success("Photo uploaded!");
-                          } catch (err) {
-                            console.error("Upload error:", err);
-                            toast.error("Failed to upload photo");
-                          } finally {
-                            setUploadingPhoto(false);
-                          }
+                          } catch (err) { toast.error("Failed to upload photo"); }
+                          finally { setUploadingPhoto(false); }
                         }}
                       />
                     </label>
                   </div>
-                  <div className="text-sm text-[#808080]">
-                    <p className="font-medium text-[#FAFAFA] text-xs mb-1">Profile Photo</p>
-                    <p className="text-xs">JPG, PNG, or WebP · Max 5MB</p>
-                  </div>
+                  <p className="text-[10px] text-[#808080] text-center">Profile Photo</p>
                 </div>
 
                 {/* Divider */}
-                <div className="hidden sm:block w-px h-24 bg-[#1F1F1F]" />
+                <div className="w-px self-stretch bg-[#1F1F1F]" />
 
                 {/* Business Card */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center gap-2">
                   <div className="relative group">
-                    <div className="w-36 h-24 rounded-xl overflow-hidden border-2 border-[#1F1F1F] bg-[#141414] flex items-center justify-center border-dashed">
+                    <div className="w-40 h-24 rounded-xl overflow-hidden border-2 border-dashed border-[#1F1F1F] bg-[#141414] flex items-center justify-center">
                       {businessCardUrl ? (
                         <img src={businessCardUrl} alt="Business Card" className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex flex-col items-center gap-1 text-[#808080]">
-                          <CreditCard className="w-8 h-8" />
-                          <span className="text-[10px]">Business Card</span>
+                          <CreditCard className="w-7 h-7" />
+                          <span className="text-[10px]">Upload Card</span>
                         </div>
                       )}
                     </div>
@@ -236,22 +226,15 @@ function AccountProfileContent() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error("Image must be under 5MB");
-                            return;
-                          }
+                          if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
                           setUploadingCard(true);
                           try {
                             const { file_url } = await base44.integrations.Core.UploadFile({ file });
                             setBusinessCardUrl(file_url);
                             await base44.entities.Profile.update(profile.id, { businessCardUrl: file_url });
                             toast.success("Business card uploaded!");
-                          } catch (err) {
-                            console.error("Upload error:", err);
-                            toast.error("Failed to upload business card");
-                          } finally {
-                            setUploadingCard(false);
-                          }
+                          } catch (err) { toast.error("Failed to upload business card"); }
+                          finally { setUploadingCard(false); }
                         }}
                       />
                     </label>
@@ -270,11 +253,7 @@ function AccountProfileContent() {
                       </button>
                     )}
                   </div>
-                  <div className="text-sm text-[#808080]">
-                    <p className="font-medium text-[#FAFAFA] text-xs mb-1">Business Card</p>
-                    <p className="text-xs">Upload your digital card graphic</p>
-                    <p className="text-xs">JPG, PNG, or WebP · Max 5MB</p>
-                  </div>
+                  <p className="text-[10px] text-[#808080] text-center">Business Card</p>
                 </div>
               </div>
             </div>
