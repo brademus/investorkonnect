@@ -138,6 +138,8 @@ function PipelineContent() {
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
         proposed_terms: room?.proposed_terms || deal.proposed_terms,
+        room_agent_terms: room?.agent_terms || null,
+        room_agent_ids: room?.agent_ids || [],
         agreement: room?.agreement || null,
         investor_signed_at: room?.agreement?.investor_signed_at || null,
         pending_counter_offer: room?.pending_counter_offer || null
