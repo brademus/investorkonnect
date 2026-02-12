@@ -38,7 +38,8 @@ export default function InvestorOnboarding() {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [formData, setFormData] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     phone: '',
     company: '',
     primary_state: selectedState || '',
@@ -93,9 +94,13 @@ export default function InvestorOnboarding() {
   useEffect(() => {
     document.title = "Complete Your Profile - Investor Konnect";
     if (profile) {
+      const nameParts = (profile.full_name || '').split(' ');
+      const existingFirst = profile.onboarding_first_name || nameParts[0] || '';
+      const existingLast = profile.onboarding_last_name || nameParts.slice(1).join(' ') || '';
       setFormData(prev => ({
         ...prev,
-        full_name: profile.full_name || '',
+        first_name: existingFirst,
+        last_name: existingLast,
         phone: profile.phone || '',
         company: profile.company || '',
         primary_state: selectedState || profile.target_state || profile.markets?.[0] || '',
@@ -150,8 +155,11 @@ export default function InvestorOnboarding() {
       console.log('[InvestorOnboarding] Saving profile:', currentProfile.id);
 
       // Save basic info and mark onboarding as complete
+      const combinedName = `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim();
       await base44.entities.Profile.update(currentProfile.id, {
-        full_name: formData.full_name,
+        full_name: combinedName,
+        onboarding_first_name: formData.first_name.trim(),
+        onboarding_last_name: formData.last_name.trim(),
         phone: formData.phone,
         company: formData.company,
         goals: formData.goals,
@@ -197,15 +205,27 @@ export default function InvestorOnboarding() {
       <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
       
       <div className="space-y-7">
-        <div>
-          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Name *</Label>
-          <Input 
-            id="full_name" 
-            value={formData.full_name} 
-            onChange={(e) => updateField('full_name', e.target.value)} 
-            placeholder="Your full name" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="first_name" className="text-[#FAFAFA] text-[19px] font-medium">First Name *</Label>
+            <Input 
+              id="first_name" 
+              value={formData.first_name} 
+              onChange={(e) => updateField('first_name', e.target.value)} 
+              placeholder="First name" 
+              className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+            />
+          </div>
+          <div>
+            <Label htmlFor="last_name" className="text-[#FAFAFA] text-[19px] font-medium">Last Name *</Label>
+            <Input 
+              id="last_name" 
+              value={formData.last_name} 
+              onChange={(e) => updateField('last_name', e.target.value)} 
+              placeholder="Last name" 
+              className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+            />
+          </div>
         </div>
         <div>
           <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number</Label>
@@ -341,7 +361,7 @@ export default function InvestorOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && !formData.primary_state)}
+              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name)) || (step === 2 && !formData.primary_state)}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
