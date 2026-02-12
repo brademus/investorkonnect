@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Plus, X } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ export default function AgentOnboarding() {
     first_name: '',
     last_name: '',
     phone: '',
-    license_number: '',
+    license_numbers: [''],
     brokerage: '',
     license_state: '',
     main_county: '',
@@ -133,7 +133,13 @@ export default function AgentOnboarding() {
         first_name: existingFirst,
         last_name: existingLast,
         phone: profile.phone || '',
-        license_number: agent.license_number || profile.license_number || '',
+        license_numbers: (() => {
+          const primary = agent.license_number || profile.license_number || '';
+          // Check if there are additional license numbers stored
+          const additional = agent.additional_license_numbers || [];
+          const all = [primary, ...additional].filter(Boolean);
+          return all.length > 0 ? all : [''];
+        })(),
         brokerage: agent.brokerage || profile.broker || '',
         license_state: agent.license_state || profile.license_state || '',
         main_county: agent.main_county || '',
@@ -228,7 +234,7 @@ export default function AgentOnboarding() {
           user_role: 'agent',
           user_type: 'agent',
           broker: formData.brokerage,
-          license_number: formData.license_number,
+          license_number: formData.license_numbers[0] || '',
           license_state: formData.license_state,
           markets: licensedStates,
           target_state: formData.license_state || formData.markets[0] || '',
@@ -237,7 +243,8 @@ export default function AgentOnboarding() {
           onboarding_version: 'agent-v1',
           agent: {
             ...(profileToUpdate.agent || {}),
-            license_number: formData.license_number,
+            license_number: formData.license_numbers[0] || '',
+            additional_license_numbers: formData.license_numbers.slice(1).filter(Boolean),
             license_state: formData.license_state,
             licensed_states: licensedStates,
             main_county: formData.main_county,
@@ -353,14 +360,39 @@ export default function AgentOnboarding() {
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="license_number" className="text-[#FAFAFA] text-[19px] font-medium">License Number *</Label>
-          <Input 
-            id="license_number" 
-            value={formData.license_number} 
-            onChange={(e) => updateField('license_number', e.target.value)} 
-            placeholder="e.g., TX-123456" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">License Number *</Label>
+          <div className="space-y-3 mt-3">
+            {formData.license_numbers.map((num, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Input 
+                  value={num} 
+                  onChange={(e) => {
+                    const updated = [...formData.license_numbers];
+                    updated[idx] = e.target.value;
+                    updateField('license_numbers', updated);
+                  }} 
+                  placeholder="e.g., TX-123456" 
+                  className="h-16 text-[19px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+                />
+                {idx > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={() => updateField('license_numbers', formData.license_numbers.filter((_, i) => i !== idx))}
+                    className="p-2 text-[#808080] hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button 
+            type="button" 
+            onClick={() => updateField('license_numbers', [...formData.license_numbers, ''])}
+            className="flex items-center gap-2 mt-3 text-[#E3C567] hover:text-[#EDD89F] text-[15px] font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Another License Number
+          </button>
         </div>
         <div>
           <Label htmlFor="brokerage" className="text-[#FAFAFA] text-[19px] font-medium">Brokerage Name *</Label>
@@ -556,7 +588,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name)) || (step === 2 && (!formData.license_number || !formData.brokerage || !formData.license_state || !formData.main_county)) || (step === 4 && formData.markets.length === 0)}
+              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name)) || (step === 2 && (!formData.license_numbers[0] || !formData.brokerage || !formData.license_state || !formData.main_county)) || (step === 4 && formData.markets.length === 0)}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
