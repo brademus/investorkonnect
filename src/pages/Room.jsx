@@ -93,7 +93,9 @@ export default function Room() {
           counterparty_name: room.counterparty_name || enrichedRoom?.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
           counterparty_headshot: enrichedRoom?.counterparty_headshot || (isAgent ? dealData?.investor_contact?.headshotUrl : dealData?.agent_contact?.headshotUrl) || null,
           investor_contact: dealData?.investor_contact || null,
-          agent_contact: dealData?.agent_contact || null
+          agent_contact: dealData?.agent_contact || null,
+          agent_terms: room.agent_terms || dealData?.room?.agent_terms || null,
+          agent_ids: room.agent_ids || dealData?.room?.agent_ids || []
         });
         if (dealData) setDeal(dealData);
 
