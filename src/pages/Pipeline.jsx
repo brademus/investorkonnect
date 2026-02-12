@@ -135,8 +135,10 @@ function PipelineContent() {
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
         proposed_terms: (() => {
-          // Merge agent-specific counter terms whenever they exist (including accepted counters on unconnected deals)
+          // Only merge agent-specific counter terms after an agent has signed the agreement
           const base = room?.proposed_terms || deal.proposed_terms || {};
+          const agentHasSigned = room?.agreement_status === 'agent_signed' || room?.agreement_status === 'fully_signed' || isSigned;
+          if (!agentHasSigned) return base;
           if (isAgent && room?.agent_terms?.[profile?.id]) {
             return { ...base, ...room.agent_terms[profile.id] };
           }
@@ -242,8 +244,9 @@ function PipelineContent() {
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
                                     {(() => {
                                                       // Show seller comp for agents, buyer comp for investors
-                                                      // Use agent_terms whenever they exist (including after accepted counters on unconnected deals)
-                                                      const roomData = deal.room_agent_terms ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
+                                                      // Only use agent_terms (counter-offer terms) after an agent has signed
+                                                      const agentSigned = deal.agreement_status === 'agent_signed' || deal.agreement_status === 'fully_signed' || deal.is_fully_signed;
+                                                      const roomData = (agentSigned && deal.room_agent_terms) ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
                                       const dealData = { proposed_terms: deal.proposed_terms, purchase_price: deal.budget };
                                       const agentId = isAgent ? profile?.id : (deal.room_agent_ids?.[0] || null);
                                       let compLabel = null;
