@@ -290,9 +290,12 @@ export default function Room() {
                     <Send className="w-4 h-4 mr-2" />Messages
                   </Button>
                 )}
-                {isInvestor && isSigned && currentRoom?.locked_agent_id && (
+                {isInvestor && isSigned && (currentRoom?.locked_agent_id || currentRoom?.agent_ids?.length > 0) && (
                   <Button
-                    onClick={() => navigate(`${createPageUrl("AgentProfile")}?profileId=${currentRoom.locked_agent_id}`)}
+                    onClick={() => {
+                      const agentId = currentRoom.locked_agent_id || currentRoom.agent_ids?.[0];
+                      if (agentId) navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
+                    }}
                     className="rounded-full font-semibold bg-[#1F1F1F] text-[#FAFAFA]"
                   >
                     <User className="w-4 h-4 mr-2" />Agent Profile
