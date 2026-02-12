@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { User, CheckCircle, ArrowLeft, Camera, Loader2 } from "lucide-react";
+import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -26,7 +26,9 @@ function AccountProfileContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingCard, setUploadingCard] = useState(false);
   const [headshotUrl, setHeadshotUrl] = useState("");
+  const [businessCardUrl, setBusinessCardUrl] = useState("");
   const [formData, setFormData] = useState({
     full_name: "",
     role: "",
@@ -45,6 +47,7 @@ function AccountProfileContent() {
     
     if (!profileLoading && profile) {
       setHeadshotUrl(profile.headshotUrl || "");
+      setBusinessCardUrl(profile.businessCardUrl || "");
       setFormData({
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
@@ -78,6 +81,7 @@ function AccountProfileContent() {
       const updateData = {
         full_name: formData.full_name.trim(),
         headshotUrl: headshotUrl || null,
+        businessCardUrl: businessCardUrl || null,
         company: formData.company.trim(),
         company_address: formData.company_address.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
@@ -148,58 +152,129 @@ function AccountProfileContent() {
         {/* Profile Form */}
         <div className="ik-card p-8 bg-[#0D0D0D] border border-[#1F1F1F]">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Picture */}
+            {/* Profile Picture & Business Card */}
             <div>
-              <Label className="text-[#FAFAFA] mb-3 block">Profile Picture</Label>
-              <div className="flex items-center gap-5">
-                <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#1F1F1F] bg-[#141414] flex items-center justify-center">
-                    {headshotUrl ? (
-                      <img src={headshotUrl} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-10 h-10 text-[#808080]" />
+              <Label className="text-[#FAFAFA] mb-3 block">Profile Picture & Business Card</Label>
+              <div className="flex flex-wrap items-start gap-6">
+                {/* Profile Picture */}
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#1F1F1F] bg-[#141414] flex items-center justify-center">
+                      {headshotUrl ? (
+                        <img src={headshotUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-[#808080]" />
+                      )}
+                    </div>
+                    <label className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      {uploadingPhoto ? (
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-white" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={saving || uploadingPhoto}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error("Image must be under 5MB");
+                            return;
+                          }
+                          setUploadingPhoto(true);
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            setHeadshotUrl(file_url);
+                            await base44.entities.Profile.update(profile.id, { headshotUrl: file_url });
+                            toast.success("Photo uploaded!");
+                          } catch (err) {
+                            console.error("Upload error:", err);
+                            toast.error("Failed to upload photo");
+                          } finally {
+                            setUploadingPhoto(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="text-sm text-[#808080]">
+                    <p className="font-medium text-[#FAFAFA] text-xs mb-1">Profile Photo</p>
+                    <p className="text-xs">JPG, PNG, or WebP · Max 5MB</p>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="hidden sm:block w-px h-24 bg-[#1F1F1F]" />
+
+                {/* Business Card */}
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-36 h-24 rounded-xl overflow-hidden border-2 border-[#1F1F1F] bg-[#141414] flex items-center justify-center border-dashed">
+                      {businessCardUrl ? (
+                        <img src={businessCardUrl} alt="Business Card" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-[#808080]">
+                          <CreditCard className="w-8 h-8" />
+                          <span className="text-[10px]">Business Card</span>
+                        </div>
+                      )}
+                    </div>
+                    <label className="absolute inset-0 rounded-xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      {uploadingCard ? (
+                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-white" />
+                      )}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={saving || uploadingCard}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error("Image must be under 5MB");
+                            return;
+                          }
+                          setUploadingCard(true);
+                          try {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            setBusinessCardUrl(file_url);
+                            await base44.entities.Profile.update(profile.id, { businessCardUrl: file_url });
+                            toast.success("Business card uploaded!");
+                          } catch (err) {
+                            console.error("Upload error:", err);
+                            toast.error("Failed to upload business card");
+                          } finally {
+                            setUploadingCard(false);
+                          }
+                        }}
+                      />
+                    </label>
+                    {businessCardUrl && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          setBusinessCardUrl("");
+                          await base44.entities.Profile.update(profile.id, { businessCardUrl: null });
+                          toast.success("Business card removed");
+                        }}
+                        className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
                     )}
                   </div>
-                  <label
-                    className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  >
-                    {uploadingPhoto ? (
-                      <Loader2 className="w-6 h-6 text-white animate-spin" />
-                    ) : (
-                      <Camera className="w-6 h-6 text-white" />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="hidden"
-                      disabled={saving || uploadingPhoto}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast.error("Image must be under 5MB");
-                          return;
-                        }
-                        setUploadingPhoto(true);
-                        try {
-                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                          setHeadshotUrl(file_url);
-                          // Save immediately to profile so it persists
-                          await base44.entities.Profile.update(profile.id, { headshotUrl: file_url });
-                          toast.success("Photo uploaded!");
-                        } catch (err) {
-                          console.error("Upload error:", err);
-                          toast.error("Failed to upload photo");
-                        } finally {
-                          setUploadingPhoto(false);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-                <div className="text-sm text-[#808080]">
-                  <p>Click to upload a photo</p>
-                  <p className="text-xs mt-1">JPG, PNG, or WebP · Max 5MB</p>
+                  <div className="text-sm text-[#808080]">
+                    <p className="font-medium text-[#FAFAFA] text-xs mb-1">Business Card</p>
+                    <p className="text-xs">Upload your digital card graphic</p>
+                    <p className="text-xs">JPG, PNG, or WebP · Max 5MB</p>
+                  </div>
                 </div>
               </div>
             </div>
