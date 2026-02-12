@@ -134,7 +134,19 @@ function PipelineContent() {
         locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
-        proposed_terms: room?.proposed_terms || deal.proposed_terms,
+        proposed_terms: (() => {
+          // Merge agent-specific counter terms into proposed_terms for display
+          const base = room?.proposed_terms || deal.proposed_terms || {};
+          if (isAgent && room?.agent_terms?.[profile?.id]) {
+            return { ...base, ...room.agent_terms[profile.id] };
+          }
+          // For investor: if only one agent with custom terms, show those
+          if (isInvestor && room?.agent_terms) {
+            const ids = Object.keys(room.agent_terms);
+            if (ids.length === 1) return { ...base, ...room.agent_terms[ids[0]] };
+          }
+          return base;
+        })(),
         room_agent_terms: room?.agent_terms || null,
         room_agent_ids: room?.agent_ids || [],
         agreement: room?.agreement || null,
