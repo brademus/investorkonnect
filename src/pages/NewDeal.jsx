@@ -60,6 +60,16 @@ export default function NewDeal() {
   const [hydrated, setHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const autoFormatDate = (value) => {
+    const raw = value.replace(/\D/g, '').slice(0, 8);
+    let formatted = '';
+    for (let i = 0; i < raw.length; i++) {
+      if (i === 2 || i === 4) formatted += '/';
+      formatted += raw[i];
+    }
+    return formatted;
+  };
+
   // Load draft from sessionStorage when returning from verification or navigating back (NOT for fresh edits from pipeline)
   useEffect(() => {
     const raw = sessionStorage.getItem('newDealDraft');
