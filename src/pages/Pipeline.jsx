@@ -135,9 +135,8 @@ function PipelineContent() {
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
         proposed_terms: (() => {
-          // Only merge agent-specific counter terms when deal is fully signed
+          // Merge agent-specific counter terms whenever they exist (including accepted counters on unconnected deals)
           const base = room?.proposed_terms || deal.proposed_terms || {};
-          if (!isSigned) return base;
           if (isAgent && room?.agent_terms?.[profile?.id]) {
             return { ...base, ...room.agent_terms[profile.id] };
           }
