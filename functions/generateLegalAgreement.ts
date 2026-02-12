@@ -132,6 +132,25 @@ async function generatePdf(text, isDocuSign = false) {
   return await pdfDoc.save();
 }
 
+/**
+ * Pick the license number whose prefix matches the deal state.
+ * E.g. deal.state="TX" → prefer "TX-123456" over "FL-789".
+ * Falls back to the primary license_number if no match found.
+ */
+function pickLicenseForState(agentProfile, dealState) {
+  const primary = agentProfile?.agent?.license_number || agentProfile?.license_number || '';
+  const additional = agentProfile?.agent?.additional_license_numbers || [];
+  const allLicenses = [primary, ...additional].filter(Boolean);
+  if (!dealState || allLicenses.length === 0) return primary || 'TBD';
+  const stateUpper = dealState.toUpperCase();
+  // Match license numbers that start with the state code (e.g. "TX-", "TX ", "TX1")
+  const match = allLicenses.find(lic => {
+    const prefix = lic.toUpperCase().replace(/[^A-Z0-9]/g, ' ').trim().split(/[\s\-]+/)[0];
+    return prefix === stateUpper;
+  });
+  return match || primary || 'TBD';
+}
+
 function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
   const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const venue = deal.county && deal.state ? `${deal.county} County, ${deal.state}` : deal.state || 'N/A';
@@ -161,6 +180,8 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
   const flatFeeAmount = isBuyerFlat ? buyerCompValue : '$0';
   const commissionPercentage = !isBuyerFlat ? buyerCompValue : '0%';
 
+  const agentLicense = fillAgent ? pickLicenseForState(agent, deal.state) : 'TBD';
+
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0', PLATFORM_NAME: 'investor konnect',
     PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl,
@@ -168,7 +189,7 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
     INVESTOR_LEGAL_NAME: investor.full_name || investor.email || 'N/A',
     INVESTOR_ENTITY_TYPE: 'Individual', INVESTOR_EMAIL: investor.email || 'N/A', INVESTOR_PHONE: investor.phone || 'N/A',
     AGENT_LEGAL_NAME: fillAgent ? (agent.full_name || agent.email || 'TBD') : 'TBD',
-    LICENSE_NUMBER: fillAgent ? (agent.agent?.license_number || agent.license_number || 'TBD') : 'TBD',
+    LICENSE_NUMBER: agentLicense,
     BROKERAGE_NAME: fillAgent ? (agent.agent?.brokerage || agent.broker || 'TBD') : 'TBD',
     AGENT_EMAIL: fillAgent ? (agent.email || 'TBD') : 'TBD',
     AGENT_PHONE: fillAgent ? (agent.phone || 'TBD') : 'TBD',
