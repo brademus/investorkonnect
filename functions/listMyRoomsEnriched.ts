@@ -117,6 +117,7 @@ Deno.serve(async (req) => {
         // Agreement status for badges
         agreement: ag ? { status: ag.status, investor_signed_at: ag.investor_signed_at, agent_signed_at: ag.agent_signed_at } : null,
         requires_regenerate: room.requires_regenerate || false,
+        agent_terms: room.agent_terms || null,
         // Files/photos from room
         files: room.files || [], photos: room.photos || []
       };
