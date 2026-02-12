@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
       proposed_terms: deal.proposed_terms || null,
       walkthrough_scheduled: deal.walkthrough_scheduled ?? null,
       walkthrough_datetime: deal.walkthrough_datetime || null,
-      room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
+      room: room ? { id: room.id, proposed_terms: room.proposed_terms || null, agent_terms: room.agent_terms || null, agent_ids: room.agent_ids || [] } : null
     };
 
     if (isAdmin || isInvestor || isSigned) {
