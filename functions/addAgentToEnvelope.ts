@@ -27,6 +27,22 @@ async function getDocuSignConnection(base44) {
   return conn;
 }
 
+/**
+ * Pick the license number whose prefix matches the deal state.
+ */
+function pickLicenseForState(agentProfile, dealState) {
+  const primary = agentProfile?.agent?.license_number || agentProfile?.license_number || '';
+  const additional = agentProfile?.agent?.additional_license_numbers || [];
+  const allLicenses = [primary, ...additional].filter(Boolean);
+  if (!dealState || allLicenses.length === 0) return primary || '';
+  const stateUpper = dealState.toUpperCase();
+  const match = allLicenses.find(lic => {
+    const prefix = lic.toUpperCase().replace(/[^A-Z0-9]/g, ' ').trim().split(/[\s\-]+/)[0];
+    return prefix === stateUpper;
+  });
+  return match || primary || '';
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
