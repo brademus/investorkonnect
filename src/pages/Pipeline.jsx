@@ -135,12 +135,12 @@ function PipelineContent() {
         seller_name: deal.seller_info?.seller_name,
         selected_agent_ids: deal.selected_agent_ids,
         proposed_terms: (() => {
-          // Merge agent-specific counter terms into proposed_terms for display
+          // Only merge agent-specific counter terms when deal is fully signed
           const base = room?.proposed_terms || deal.proposed_terms || {};
+          if (!isSigned) return base;
           if (isAgent && room?.agent_terms?.[profile?.id]) {
             return { ...base, ...room.agent_terms[profile.id] };
           }
-          // For investor: if only one agent with custom terms, show those
           if (isInvestor && room?.agent_terms) {
             const ids = Object.keys(room.agent_terms);
             if (ids.length === 1) return { ...base, ...room.agent_terms[ids[0]] };
