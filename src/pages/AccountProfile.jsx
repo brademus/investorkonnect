@@ -258,18 +258,16 @@ function AccountProfileContent() {
               </div>
             </div>
 
-            {/* Full Name */}
+            {/* Full Name (read-only) */}
             <div>
-              <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
+              <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name</Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
-                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                placeholder="John Doe"
-                required
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                disabled
+                className="bg-[#141414] text-[#808080] border-[#333] opacity-50"
               />
+              <p className="text-xs text-[#808080] mt-1">Name cannot be changed</p>
             </div>
 
             {/* Email (read-only) */}
