@@ -134,8 +134,9 @@ export default function MyAgreement() {
             console.log('[MyAgreement] dealData walkthrough BEFORE merge:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
             if (wtJson) {
               const wt = JSON.parse(wtJson);
-              // Always use the dedicated key as authoritative source
-              if (wt.walkthrough_scheduled === true) {
+              // Always use the dedicated key as authoritative source — use truthy check, not strict ===
+              const wtScheduled = wt.walkthrough_scheduled === true || wt.walkthrough_scheduled === 'true' || wt.walkthrough_scheduled === 1;
+              if (wtScheduled) {
                 dealData.walkthroughScheduled = true;
                 dealData.walkthrough_scheduled = true;
               }
@@ -145,6 +146,42 @@ export default function MyAgreement() {
               console.log('[MyAgreement] dealData walkthrough AFTER merge:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime });
             }
           } catch (wtErr) { console.warn('[MyAgreement] Failed to merge walkthrough data:', wtErr); }
+
+          // Also check main dealDraft for walkthrough — handle all truthy forms (boolean, string, number)
+          const resolveWtScheduled = (v) => v === true || v === 'true' || v === 1 || v === '1';
+          if (!dealData.walkthrough_scheduled && !dealData.walkthroughScheduled) {
+            // Nothing from dedicated key — check main draft for any truthy walkthrough indicator
+            // (handles case where newDealWalkthrough was missing but draft has the data)
+          }
+          if (resolveWtScheduled(dealData.walkthroughScheduled) || resolveWtScheduled(dealData.walkthrough_scheduled)) {
+            dealData.walkthroughScheduled = true;
+            dealData.walkthrough_scheduled = true;
+          }
+
+          // Ensure walkthrough_datetime is computed if we have date/time strings but no ISO
+          if (dealData.walkthrough_scheduled && !dealData.walkthrough_datetime && dealData.walkthroughDate) {
+            try {
+              const parts = dealData.walkthroughDate.split('/');
+              if (parts.length === 3) {
+                const [mm, dd, yyyy] = parts;
+                const timeStr = dealData.walkthroughTime || '12:00 PM';
+                const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                let hours = 12, mins = 0;
+                if (timeMatch) {
+                  hours = parseInt(timeMatch[1]);
+                  mins = parseInt(timeMatch[2]);
+                  const isPM = timeMatch[3].toUpperCase() === 'PM';
+                  if (isPM && hours !== 12) hours += 12;
+                  if (!isPM && hours === 12) hours = 0;
+                }
+                const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
+                if (!isNaN(d.getTime())) {
+                  dealData.walkthrough_datetime = d.toISOString();
+                  console.log('[MyAgreement] Computed walkthrough_datetime from date/time strings:', dealData.walkthrough_datetime);
+                }
+              }
+            } catch (e) { console.warn('[MyAgreement] Failed to compute walkthrough_datetime:', e); }
+          }
           
           console.log('[MyAgreement] Final dealData walkthrough:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
         }
