@@ -597,29 +597,7 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
-          walkthrough_datetime: (() => {
-            if (walkthroughScheduled !== true || !walkthroughDate) return null;
-            try {
-              const parts = walkthroughDate.split('/');
-              if (parts.length === 3) {
-                const [mm, dd, yyyy] = parts;
-                const timeStr = walkthroughTime || '12:00 PM';
-                const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-                let hours = 12, mins = 0;
-                if (timeMatch) {
-                  hours = parseInt(timeMatch[1]);
-                  mins = parseInt(timeMatch[2]);
-                  const isPM = timeMatch[3].toUpperCase() === 'PM';
-                  if (isPM && hours !== 12) hours += 12;
-                  if (!isPM && hours === 12) hours = 0;
-                }
-                const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
-                return isNaN(d.getTime()) ? null : d.toISOString();
-              }
-              const d = new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM'));
-              return isNaN(d.getTime()) ? null : d.toISOString();
-            } catch { return null; }
-          })()
+          walkthrough_datetime: computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime)
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
