@@ -158,7 +158,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
             <Button onClick={send} disabled={!text.trim()} className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"><Send className="w-5 h-5" /></Button>
           </div>
         ) : (
-          <div className="px-5 py-3 bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl text-sm text-[#808080]">Chat unlocks after both parties sign the agreement.</div>
+          <div className="px-5 py-3 bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl text-sm text-[#808080]">Messaging unlocks after both parties sign the agreement.</div>
         )}
       </div>
     </div>
