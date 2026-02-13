@@ -151,6 +151,7 @@ function PipelineContent() {
         room_agent_terms: room?.agent_terms || null,
         room_agent_ids: room?.agent_ids || [],
         agreement: room?.agreement || null,
+        agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
         investor_signed_at: room?.agreement?.investor_signed_at || null,
         pending_counter_offer: room?.pending_counter_offer || null
       };
