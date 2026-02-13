@@ -267,7 +267,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const handleRegenAndSign = async () => {
     setBusy(true);
     try {
-      // Pass the specific agent whose counter was accepted so regeneration targets the right agent
       const targetAgent = selectedAgentProfileId || null;
       const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId, target_agent_id: targetAgent });
       if (res.data?.error) { toast.error(res.data.error); setBusy(false); return; }
@@ -276,10 +275,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }); if (r?.[0]) setRoom(r[0]); }
         await new Promise(r => setTimeout(r, 2000));
         const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
-          agreement_id: res.data.agreement.id, role: 'investor', room_id: roomId,
-          redirect_url: window.location.href.split('&signed')[0] + '&signed=1'
+          agreement_id: res.data.agreement.id, role: 'investor', room_id: roomId
         });
         if (signRes.data?.signing_url) { window.location.assign(signRes.data.signing_url); return; }
+        if (signRes.data?.already_signed) {
+          toast.success('Agreement already signed');
+          setAgreement(signRes.data.agreement || res.data.agreement);
+          if (onInvestorSigned) onInvestorSigned();
+          setBusy(false);
+          return;
+        }
         toast.error(signRes.data?.error || 'Failed to start signing');
       }
     } catch (e) { toast.error(e?.response?.data?.error || 'Failed'); }
