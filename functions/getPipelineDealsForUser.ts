@@ -85,6 +85,10 @@ Deno.serve(async (req) => {
       const ag = agreementMap.get(deal.id);
       const isSigned = ag?.status === 'fully_signed' || ag?.status === 'attorney_review_pending';
 
+      // Use exhibit_a_terms from agreement as authoritative compensation (post-counter, post-regen)
+      const exhibitTerms = ag?.exhibit_a_terms || null;
+      const finalProposedTerms = exhibitTerms ? { ...(deal.proposed_terms || {}), ...exhibitTerms } : deal.proposed_terms;
+
       const base = {
         id: deal.id, title: deal.title, city: deal.city, state: deal.state, county: deal.county, zip: deal.zip,
         purchase_price: deal.purchase_price, pipeline_stage: deal.pipeline_stage, status: deal.status,
@@ -92,7 +96,7 @@ Deno.serve(async (req) => {
         investor_id: deal.investor_id, agent_id: deal.agent_id,
         locked_room_id: deal.locked_room_id, locked_agent_id: deal.locked_agent_id,
         selected_agent_ids: deal.selected_agent_ids, is_fully_signed: isSigned,
-        proposed_terms: deal.proposed_terms
+        proposed_terms: finalProposedTerms
       };
 
       if (isAdmin || isInvestor || isSigned) {
