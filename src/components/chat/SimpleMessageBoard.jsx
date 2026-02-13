@@ -118,7 +118,12 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           const isPhoto = m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/');
           const isFile = m?.metadata?.type === 'file' && !(m?.metadata?.file_type || '').startsWith('image/');
           const isWalkthroughRequest = m?.metadata?.type === 'walkthrough_request';
+          const isWalkthroughResponse = m?.metadata?.type === 'walkthrough_response';
           const isAgent = profile?.user_role === 'agent';
+
+          // Always show walkthrough messages even before chat is unlocked
+          // Hide regular messages when chat is not enabled
+          if (!isChatEnabled && !isWalkthroughRequest && !isWalkthroughResponse) return null;
 
           if (isWalkthroughRequest) {
             return (
