@@ -603,26 +603,7 @@ export default function NewDeal() {
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
         if (walkthroughScheduled === true) {
           try {
-            const wtIso = (() => {
-              if (!walkthroughDate) return null;
-              const parts = walkthroughDate.split('/');
-              if (parts.length === 3) {
-                const [mm, dd, yyyy] = parts;
-                const timeStr = walkthroughTime || '12:00 PM';
-                const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-                let hours = 12, mins = 0;
-                if (timeMatch) {
-                  hours = parseInt(timeMatch[1]);
-                  mins = parseInt(timeMatch[2]);
-                  const isPM = timeMatch[3].toUpperCase() === 'PM';
-                  if (isPM && hours !== 12) hours += 12;
-                  if (!isPM && hours === 12) hours = 0;
-                }
-                const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
-                return isNaN(d.getTime()) ? null : d.toISOString();
-              }
-              return null;
-            })();
+            const wtIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
             if (wtIso) {
               const apptRows = await base44.entities.DealAppointments.filter({ dealId });
               const apptPatch = {
