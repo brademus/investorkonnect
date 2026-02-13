@@ -82,7 +82,10 @@ export default function MyAgreement() {
             agreementLength: terms.agreement_length,
             contractUrl: dbDeal.contract_document?.url,
             specialNotes: dbDeal.special_notes,
-            selectedAgentIds: dbDeal.selected_agent_ids || []
+            selectedAgentIds: dbDeal.selected_agent_ids || [],
+            walkthroughScheduled: dbDeal.walkthrough_scheduled === true,
+            walkthrough_scheduled: dbDeal.walkthrough_scheduled === true,
+            walkthrough_datetime: dbDeal.walkthrough_datetime || null
           };
           agentIds = dealData.selectedAgentIds;
           console.log('[MyAgreement] Loaded deal data:', { buyerCommissionPercentage: dealData.buyerCommissionPercentage, agreementLength: dealData.agreementLength });
