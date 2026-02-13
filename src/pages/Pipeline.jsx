@@ -249,16 +249,17 @@ function PipelineContent() {
                                                       const roomData = (agentSigned && deal.room_agent_terms) ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
                                       const dealData = { proposed_terms: deal.proposed_terms, purchase_price: deal.budget };
                                       const agentId = isAgent ? profile?.id : (deal.room_agent_ids?.[0] || null);
+                                      const agreementData = deal.agreement || null;
                                       let compLabel = null;
                                       if (isAgent) {
-                                        const { compLabel: sellerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'seller', agentId });
+                                        const { compLabel: sellerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'seller', agentId, agreement: agreementData });
                                         compLabel = sellerComp;
                                         if (!compLabel) {
-                                          const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId });
+                                          const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId, agreement: agreementData });
                                           compLabel = buyerComp;
                                         }
                                       } else {
-                                        const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId });
+                                        const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId, agreement: agreementData });
                                         compLabel = buyerComp;
                                       }
                                       return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">{isAgent ? "Agent Comp" : "Comp"}: {compLabel}</div> : null;
