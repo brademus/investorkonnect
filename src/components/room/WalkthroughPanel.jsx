@@ -100,10 +100,19 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   }, [deal?.id]);
 
   const apptStatus = apptData?.status;
-  const hasWalkthrough = (apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED') || isWalkthroughSet(deal) || !!deal?.walkthrough_datetime;
+  const hasWalkthrough = !!(apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED') || isWalkthroughSet(deal) || !!deal?.walkthrough_datetime;
   const rawDatetime = apptData?.datetime || deal?.walkthrough_datetime;
   const dt = rawDatetime ? new Date(rawDatetime) : null;
   const isValidDate = dt && !isNaN(dt.getTime());
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[WalkthroughPanel] Render state:', { 
+      dealId: deal?.id, hasWalkthrough, apptStatus, rawDatetime, isValidDate,
+      dealWtScheduled: deal?.walkthrough_scheduled, dealWtDatetime: deal?.walkthrough_datetime,
+      apptData 
+    });
+  }, [deal?.id, hasWalkthrough, apptStatus, rawDatetime, apptData]);
 
   // Investor: schedule walkthrough (same as WalkthroughScheduleModal)
   const handleSchedule = async () => {
