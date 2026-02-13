@@ -33,23 +33,40 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     return formatted;
   };
 
-  // Fetch DealAppointments
+  // Fetch DealAppointments - check multiple sources for walkthrough data
   useEffect(() => {
     if (!deal?.id) return;
     setLoadingAppt(true);
     (async () => {
       try {
-        const dealHasWalkthrough = isWalkthroughSet(deal) && deal.walkthrough_datetime;
+        // 1. Check DealAppointments first (most authoritative)
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
           setApptData(rows[0].walkthrough);
-        } else if (dealHasWalkthrough) {
+          return;
+        }
+
+        // 2. Check deal props
+        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
           setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
-        } else {
-          const dealRows = await base44.entities.Deal.filter({ id: deal.id });
-          const liveDeal = dealRows?.[0];
-          if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
-            setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+          return;
+        }
+
+        // 3. Re-fetch Deal entity from DB (props may be stale or filtered)
+        const dealRows = await base44.entities.Deal.filter({ id: deal.id });
+        const liveDeal = dealRows?.[0];
+        if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
+          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+          return;
+        }
+
+        // 4. Check chat messages for walkthrough_request messages (belt-and-suspenders fallback)
+        if (roomId) {
+          const msgs = await base44.entities.Message.filter({ room_id: roomId });
+          const wtMsg = msgs?.find(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.walkthrough_datetime);
+          if (wtMsg) {
+            const msgStatus = wtMsg.metadata.status === 'confirmed' ? 'SCHEDULED' : wtMsg.metadata.status === 'denied' ? 'CANCELED' : 'PROPOSED';
+            setApptData({ status: msgStatus, datetime: wtMsg.metadata.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
           }
         }
       } catch (e) {
@@ -58,7 +75,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         }
       } finally { setLoadingAppt(false); }
     })();
-  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime]);
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime, roomId]);
 
   // Real-time subscriptions
   useEffect(() => {
