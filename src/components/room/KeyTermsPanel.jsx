@@ -203,39 +203,39 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               <p className="text-sm font-semibold text-[#FAFAFA]">{agreementLength}</p>
             </div>
 
-            {/* Walk-through Status */}
-            {deal?.walkthrough_scheduled !== null && deal?.walkthrough_scheduled !== undefined && (
-              <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-[#808080] mb-1">Walk-through</p>
-                  {deal.walkthrough_scheduled && deal.walkthrough_datetime ? (() => {
-                    const dt = new Date(deal.walkthrough_datetime);
-                    const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
-                    const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                    return (
-                      <p className="text-sm font-semibold text-[#FAFAFA]">
-                        {dateStr}{isMidnight ? ' — Time TBD' : ` at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
-                      </p>
-                    );
-                  })() : deal.walkthrough_scheduled ? (
-                    <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (date TBD)</p>
-                  ) : (
-                    <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>
-                  )}
-                </div>
-                <Badge className={deal.walkthrough_scheduled ? "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30" : "bg-[#1F1F1F] text-[#808080] border-[#333]"}>
-                  <CalendarCheck className="w-3 h-3 mr-1" />
-                  {deal.walkthrough_scheduled ? 'Yes' : 'No'}
-                </Badge>
-              </div>
-            )}
-
             {/* Last Updated */}
             {displayTerms && (
               <p className="text-xs text-[#808080] text-right pt-2">
                 Updated {new Date(displayTerms.updated_at || deal?.updated_date || room?.requested_at).toLocaleDateString()}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Walk-through Status - always shown when deal has walkthrough data, regardless of terms */}
+        {deal?.walkthrough_scheduled !== null && deal?.walkthrough_scheduled !== undefined && (
+          <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
+            <div>
+              <p className="text-xs text-[#808080] mb-1">Walk-through</p>
+              {deal.walkthrough_scheduled && deal.walkthrough_datetime ? (() => {
+                const dt = new Date(deal.walkthrough_datetime);
+                const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
+                const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                return (
+                  <p className="text-sm font-semibold text-[#FAFAFA]">
+                    {dateStr}{isMidnight ? ' — Time TBD' : ` at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+                  </p>
+                );
+              })() : deal.walkthrough_scheduled ? (
+                <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (date TBD)</p>
+              ) : (
+                <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>
+              )}
+            </div>
+            <Badge className={deal.walkthrough_scheduled ? "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30" : "bg-[#1F1F1F] text-[#808080] border-[#333]"}>
+              <CalendarCheck className="w-3 h-3 mr-1" />
+              {deal.walkthrough_scheduled ? 'Yes' : 'No'}
+            </Badge>
           </div>
         )}
       </CardContent>
