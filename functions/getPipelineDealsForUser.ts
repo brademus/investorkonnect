@@ -105,7 +105,16 @@ Deno.serve(async (req) => {
       return { ...base, property_address: null, seller_info: null, property_details: null, documents: null, special_notes: null };
     });
 
-    return Response.json({ deals: redacted, role: profile.user_role });
+    // Attach agreement exhibit_a_terms for compensation display on pipeline cards
+    const final = redacted.map(d => {
+      const ag = agreementMap.get(d.id);
+      if (ag?.exhibit_a_terms) {
+        d.agreement_exhibit_a_terms = ag.exhibit_a_terms;
+      }
+      return d;
+    });
+
+    return Response.json({ deals: final, role: profile.user_role });
   } catch (error) {
     console.error('[getPipelineDeals] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
