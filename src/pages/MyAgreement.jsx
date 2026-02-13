@@ -164,15 +164,16 @@ export default function MyAgreement() {
               const parts = dealData.walkthroughDate.split('/');
               if (parts.length === 3) {
                 const [mm, dd, yyyy] = parts;
-                const timeStr = dealData.walkthroughTime || '12:00 PM';
-                const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-                let hours = 12, mins = 0;
-                if (timeMatch) {
-                  hours = parseInt(timeMatch[1]);
-                  mins = parseInt(timeMatch[2]);
-                  const isPM = timeMatch[3].toUpperCase() === 'PM';
-                  if (isPM && hours !== 12) hours += 12;
-                  if (!isPM && hours === 12) hours = 0;
+                let hours = 0, mins = 0; // default midnight = "time TBD"
+                if (dealData.walkthroughTime && dealData.walkthroughTime.trim()) {
+                  const timeMatch = dealData.walkthroughTime.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                  if (timeMatch) {
+                    hours = parseInt(timeMatch[1]);
+                    mins = parseInt(timeMatch[2]);
+                    const isPM = timeMatch[3].toUpperCase() === 'PM';
+                    if (isPM && hours !== 12) hours += 12;
+                    if (!isPM && hours === 12) hours = 0;
+                  }
                 }
                 const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
                 if (!isNaN(d.getTime())) {
