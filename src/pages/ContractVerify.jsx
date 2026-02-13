@@ -375,11 +375,12 @@ export default function ContractVerify() {
                       Fix Deal Details
                     </Button>
                     <Button
+                      variant="outline"
                       onClick={() => {
                         setFile(null);
                         setVerificationResult(null);
                       }}
-                      className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border border-[#E3C567]/40 hover:border-[#E3C567] h-11 rounded-lg"
+                      className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border-[#E3C567]/40 hover:border-[#E3C567] h-11 rounded-lg"
                     >
                       Upload New Contract
                     </Button>
