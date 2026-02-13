@@ -204,12 +204,14 @@ Deno.serve(async (req) => {
         for (const agentId of (room.agent_ids || [])) {
           updatedAgentStatus[agentId] = 'sent';
         }
-        await base44.asServiceRole.entities.Room.update(room.id, {
+        // Build room update - include walkthrough if set on deal
+        const roomUpdatePayload = {
           current_legal_agreement_id: agreementData.id,
           agreement_status: 'investor_signed',
           requires_regenerate: false,
           agent_agreement_status: updatedAgentStatus
-        });
+        };
+        await base44.asServiceRole.entities.Room.update(room.id, roomUpdatePayload);
         console.log('[createDealOnInvestorSignature] Updated room:', room.id, 'with new agreement');
 
         // CRITICAL: Link the agreement to the room so Room-page subscriptions can find it
