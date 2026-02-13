@@ -114,9 +114,9 @@ export default function NewDeal() {
     } catch (_) {}
   }, [dealId, fromVerify]);
 
-  // Helper: parse flexible time string into {hours, minutes} in 24h format
+  // Helper: parse flexible time string into {hours, minutes} in 24h format, or null if empty/unparseable
   const parseTimeString = (timeStr) => {
-    if (!timeStr || !timeStr.trim()) return { hours: 12, minutes: 0 };
+    if (!timeStr || !timeStr.trim()) return null;
     const s = timeStr.trim();
     
     // Try "HH:MM AM/PM" or "H:MM AM/PM" or "H:MMAM/PM" (with or without space before AM/PM)
@@ -151,7 +151,7 @@ export default function NewDeal() {
       return { hours: attempt.getHours(), minutes: attempt.getMinutes() };
     }
     
-    return { hours: 12, minutes: 0 };
+    return null;
   };
 
   // Helper: parse flexible date string into {year, month (1-based), day}
