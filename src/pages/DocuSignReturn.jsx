@@ -13,13 +13,20 @@ export default function DocuSignReturn() {
   const [message, setMessage] = useState("Processing your signature...");
 
   useEffect(() => {
+    // Safety net: if we're still on this page after 15s, force redirect
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[DocuSignReturn] Safety timeout - forcing redirect to Pipeline');
+      toast.success('Signature processed!');
+      navigate(createPageUrl("Pipeline"), { replace: true });
+    }, 15000);
+
     const handleReturn = async () => {
       try {
         const event = searchParams.get('event');
         const dealId = searchParams.get('dealId') || searchParams.get('deal_id');
         const roomId = searchParams.get('roomId');
 
-        console.log('[DocuSignReturn]', { event, dealId, roomId });
+        console.log('[DocuSignReturn]', { event, dealId, roomId, allParams: Object.fromEntries(searchParams.entries()) });
 
         // DocuSign returns various event types for signing completion
         if (event === 'signing_complete' || event === 'completed') {
