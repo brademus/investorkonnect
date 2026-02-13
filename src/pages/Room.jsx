@@ -340,6 +340,7 @@ export default function Room() {
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
                   {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
+                  {isSigned && roomSellerComp && <><span className="text-[#333]">|</span><span className="text-[#E3C567] font-semibold">Agent Comp: {roomSellerComp}</span></>}
                 </div>
               </div>
               {isInvestor && isSigned && deal?.id && !['active_listings', 'in_closing', 'completed'].includes(normalizeStage(deal.pipeline_stage)) && (
