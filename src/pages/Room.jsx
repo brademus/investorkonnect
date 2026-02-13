@@ -227,6 +227,14 @@ export default function Room() {
     return 'Agent';
   }, [isSigned, isAgent, deal, currentRoom]);
 
+  // Compute seller agent comp label from agreement exhibit_a_terms (same source as KeyTermsPanel)
+  const roomSellerComp = useMemo(() => {
+    const enrichedRoom = rooms?.find(r => r.id === roomId);
+    const exhibitTerms = enrichedRoom?.agreement?.exhibit_a_terms || null;
+    const proposedTerms = currentRoom?.proposed_terms || enrichedRoom?.proposed_terms || deal?.proposed_terms || null;
+    return getSellerCompLabel(exhibitTerms, proposedTerms);
+  }, [rooms, roomId, currentRoom?.proposed_terms, deal?.proposed_terms]);
+
   const filteredRooms = useMemo(() => {
     return (rooms || []).filter(r => r?.deal_id);
   }, [rooms]);
