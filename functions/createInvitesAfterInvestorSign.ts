@@ -214,20 +214,27 @@ Deno.serve(async (req) => {
         }
         console.log('[createInvites] Created DealAppointments for walkthrough');
 
-        // Send walkthrough message to room so agents see it
-        const dt = new Date(wtDatetime);
-        const formatted = dt.toLocaleString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
-        });
-        const isMidnight = dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0;
-        const timeLabel = isMidnight ? 'Time TBD' : formatted.split(', ').pop();
-        await base44.asServiceRole.entities.Message.create({
-          room_id: room.id,
-          sender_profile_id: investorProfile.id,
-          body: `📅 Walk-through Proposed\n\nProposed Date & Time: ${formatted}${isMidnight ? ' (Time TBD)' : ''}\n\nPlease review and confirm or suggest a different time after signing.`,
-          metadata: { type: 'walkthrough_request', walkthrough_datetime: wtDatetime, status: 'pending' }
-        });
-        console.log('[createInvites] Sent walkthrough message to room:', room.id);
+        // Check if a walkthrough_request message already exists in this room to avoid duplicates
+        const existingMessages = await base44.asServiceRole.entities.Message.filter({ room_id: room.id }, '-created_date', 50);
+        const alreadyHasWtMessage = existingMessages.some(m => m?.metadata?.type === 'walkthrough_request');
+
+        if (!alreadyHasWtMessage) {
+          // Send walkthrough message to room so agents see it
+          const dt = new Date(wtDatetime);
+          const formatted = dt.toLocaleString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+          });
+          const isMidnight = dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0;
+          await base44.asServiceRole.entities.Message.create({
+            room_id: room.id,
+            sender_profile_id: investorProfile.id,
+            body: `📅 Walk-through Proposed\n\nProposed Date & Time: ${formatted}${isMidnight ? ' (Time TBD)' : ''}\n\nPlease review and confirm or suggest a different time after signing.`,
+            metadata: { type: 'walkthrough_request', walkthrough_datetime: wtDatetime, status: 'pending' }
+          });
+          console.log('[createInvites] Sent walkthrough message to room:', room.id);
+        } else {
+          console.log('[createInvites] Walkthrough message already exists in room — skipping duplicate');
+        }
       } catch (wtErr) {
         console.warn('[createInvites] Failed to create walkthrough (non-fatal):', wtErr.message);
       }
