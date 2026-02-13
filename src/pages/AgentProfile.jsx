@@ -85,8 +85,9 @@ export default function AgentProfile() {
       <div className="min-h-screen bg-transparent py-8 px-6">
         <div className="max-w-4xl mx-auto">
           <Button
+            variant="outline"
             onClick={() => navigate(-1)}
-            className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
+            className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -112,8 +113,9 @@ export default function AgentProfile() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <Button
+          variant="outline"
           onClick={() => navigate(-1)}
-          className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
+          className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back

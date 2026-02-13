@@ -220,12 +220,13 @@ export default function SelectAgent() {
                   {/* Action Buttons */}
                   <div className="flex gap-2">
                     <Button
+                      variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`${createPageUrl("AgentProfile")}?profileId=${agent.id}`);
                       }}
                       size="sm"
-                      className="bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
+                      className="bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
                     >
                       View Profile
                     </Button>
