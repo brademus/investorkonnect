@@ -250,7 +250,7 @@ function PipelineContent() {
                                                       const roomData = (agentSigned && deal.room_agent_terms) ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
                                       const dealData = { proposed_terms: deal.proposed_terms, purchase_price: deal.budget };
                                       const agentId = isAgent ? profile?.id : (deal.room_agent_ids?.[0] || null);
-                                      const agreementData = deal.agreement || null;
+                                      const agreementData = deal.agreement_exhibit_a_terms ? { exhibit_a_terms: deal.agreement_exhibit_a_terms } : (deal.agreement || null);
                                       let compLabel = null;
                                       if (isAgent) {
                                         const { compLabel: sellerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'seller', agentId, agreement: agreementData });
