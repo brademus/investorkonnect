@@ -17,6 +17,7 @@ export default function AgentProfile() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dealsCompleted, setDealsCompleted] = useState(null);
+  const [agentDeals, setAgentDeals] = useState([]);
 
   useEffect(() => {
     if (!profileId) return;
@@ -48,14 +49,15 @@ export default function AgentProfile() {
         }
 
         try {
-          const completedDeals = await base44.asServiceRole.entities.Deal.filter({ 
-            locked_agent_id: profileId,
-            pipeline_stage: { $in: ['ready_to_close', 'completed'] }
-          });
+          const completedDeals = await base44.entities.Deal.filter({ 
+            locked_agent_id: profileId
+          }, '-created_date', 50);
+          setAgentDeals(completedDeals || []);
           setDealsCompleted(completedDeals?.length || 0);
         } catch (err) {
           console.log('Could not compute deals completed:', err);
           setDealsCompleted(null);
+          setAgentDeals([]);
         }
 
       } catch (error) {
@@ -122,7 +124,7 @@ export default function AgentProfile() {
 
         {/* Digital Business Card */}
         <div className="mb-6">
-          <DigitalBusinessCard agentProfile={agentProfile} />
+          <DigitalBusinessCard agentProfile={agentProfile} deals={agentDeals} />
         </div>
 
         {/* Uploaded Business Card */}
