@@ -30,7 +30,7 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
         }).map(room => {
           const isActive = room.id === activeRoomId;
           const canSeeAddress = userRole === 'investor' || room.is_fully_signed;
-          const { compLabel } = getPriceAndComp({ room });
+          const compLabel = getSellerCompLabel(room.agreement?.exhibit_a_terms, room.proposed_terms);
           const badge = getAgreementStatusLabel({ room, agreement: room.agreement, role: userRole });
 
           return (
