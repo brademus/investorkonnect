@@ -226,7 +226,7 @@ export default function SelectAgent() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full"
+                      className="border-[#E3C567]/40 text-[#E3C567] hover:bg-[#E3C567]/10 hover:border-[#E3C567] rounded-full"
                     >
                       View Profile
                     </Button>
