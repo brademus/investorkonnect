@@ -42,21 +42,23 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         // 1. Check DealAppointments first (most authoritative)
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
+          console.log('[WalkthroughPanel] Found DealAppointments walkthrough:', rows[0].walkthrough.status);
           setApptData(rows[0].walkthrough);
           return;
         }
 
-        // 2. Check deal props
-        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+        // 2. Re-fetch Deal entity from DB (deal prop may be from getDealDetailsForUser which can lag)
+        const dealRows = await base44.entities.Deal.filter({ id: deal.id });
+        const liveDeal = dealRows?.[0];
+        console.log('[WalkthroughPanel] Live deal walkthrough:', liveDeal?.walkthrough_scheduled, liveDeal?.walkthrough_datetime);
+        if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
+          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
           return;
         }
 
-        // 3. Re-fetch Deal entity from DB (props may be stale or filtered)
-        const dealRows = await base44.entities.Deal.filter({ id: deal.id });
-        const liveDeal = dealRows?.[0];
-        if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+        // 3. Check deal props passed in (from getDealDetailsForUser response)
+        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
+          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
           return;
         }
 
@@ -70,6 +72,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           }
         }
       } catch (e) {
+        console.error('[WalkthroughPanel] Error loading walkthrough:', e);
         if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
           setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
         }
