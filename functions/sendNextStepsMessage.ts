@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 
 const DEFAULT_TEMPLATE = `Next Steps for {{PROPERTY_ADDRESS}}
 
