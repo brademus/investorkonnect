@@ -12,6 +12,7 @@ import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X } from "lu
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
+import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 
 /**
  * ACCOUNT PROFILE EDITOR
@@ -39,7 +40,8 @@ function AccountProfileContent() {
     accreditation: "",
     goals: "",
     brokerage: "",
-    license_number: ""
+    license_number: "",
+    next_steps_template: ""
   });
 
   useEffect(() => {
@@ -58,7 +60,8 @@ function AccountProfileContent() {
         accreditation: profile.accreditation || "",
         goals: profile.goals || "",
         brokerage: profile.agent?.brokerage || profile.broker || "",
-        license_number: profile.agent?.license_number || profile.license_number || ""
+        license_number: profile.agent?.license_number || profile.license_number || "",
+        next_steps_template: profile.next_steps_template || ""
       });
       setLoading(false);
     }
@@ -87,7 +90,8 @@ function AccountProfileContent() {
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
-        goals: formData.goals.trim()
+        goals: formData.goals.trim(),
+        next_steps_template: formData.next_steps_template || null
       };
       
       // Add agent-specific fields if user is an agent
@@ -375,6 +379,17 @@ function AccountProfileContent() {
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
+
+            {/* Next Steps Template - Investors only */}
+            {formData.role === 'investor' && (
+              <div className="pt-4 border-t border-[#1F1F1F]">
+                <NextStepsTemplateEditor
+                  value={formData.next_steps_template}
+                  onChange={(val) => setFormData({...formData, next_steps_template: val})}
+                  disabled={saving}
+                />
+              </div>
+            )}
 
             {/* Agent-specific fields */}
             {formData.role === 'agent' && (
