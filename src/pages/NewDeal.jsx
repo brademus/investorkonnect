@@ -694,6 +694,16 @@ export default function NewDeal() {
 
     console.log('[NewDeal] handleContinue saving walkthrough:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
 
+    // CRITICAL: Save walkthrough to a dedicated key FIRST (belt-and-suspenders)
+    // This key is NEVER overwritten by ContractVerify or SelectAgent — it's the single source of truth
+    const wtPayload = {
+      walkthrough_scheduled: walkthroughScheduled === true,
+      walkthrough_datetime: walkthroughIso || null,
+      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime)
+    };
+    sessionStorage.setItem('newDealWalkthrough', JSON.stringify(wtPayload));
+    console.log('[NewDeal] Saved newDealWalkthrough to sessionStorage:', wtPayload);
+
     // Save to sessionStorage - include dealId if editing
     // CRITICAL: Include BOTH camelCase and snake_case walkthrough keys so downstream consumers always find them
     sessionStorage.setItem('newDealDraft', JSON.stringify({
@@ -726,21 +736,13 @@ export default function NewDeal() {
       yearBuilt,
       numberOfStories,
       hasBasement,
-      walkthroughScheduled,
+      walkthroughScheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
       walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
       walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime),
-      walkthrough_datetime: walkthroughIso
+      walkthrough_datetime: walkthroughIso || null
     }));
-
-    // For new deals, also save walkthrough info to a separate key so MyAgreement can merge it
-    sessionStorage.setItem('newDealWalkthrough', JSON.stringify({
-      walkthrough_scheduled: walkthroughScheduled === true,
-      walkthrough_datetime: walkthroughIso,
-      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime)
-    }));
-    console.log('[NewDeal] Saved newDealWalkthrough to sessionStorage:', { walkthrough_scheduled: walkthroughScheduled === true, walkthrough_datetime: walkthroughIso });
 
     // Navigate with dealId if editing
     if (dealId) {
