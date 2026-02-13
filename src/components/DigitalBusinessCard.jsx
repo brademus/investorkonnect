@@ -11,6 +11,9 @@ export default function DigitalBusinessCard({ agentProfile }) {
   const brokerage = agent.brokerage || agentProfile.broker || agentProfile.company;
   const headshot = agentProfile.headshotUrl;
   const markets = agent.markets || agentProfile.markets || [];
+  const investmentStrategies = agent.investment_strategies || [];
+  const propertySpecialties = agent.specialties || [];
+  const allSpecialties = [...new Set([...investmentStrategies, ...propertySpecialties])];
 
   // Generate initials for fallback
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -84,9 +87,26 @@ export default function DigitalBusinessCard({ agentProfile }) {
           )}
         </div>
 
+        {/* Specialties */}
+        {allSpecialties.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+            <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-3">Specialties</p>
+            <div className="flex flex-wrap gap-2">
+              {allSpecialties.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Markets footer */}
         {markets.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+          <div className="mt-4 pt-4 border-t border-[#1F1F1F]">
             <p className="text-xs text-[#808080]">
               Serving: {markets.join(' · ')}
             </p>
