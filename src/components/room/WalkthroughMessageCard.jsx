@@ -37,7 +37,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, status: action }
       });
 
-      // If confirmed, update the deal's walkthrough fields
+      // If confirmed, update the deal's walkthrough fields AND DealAppointments status
       if (action === 'confirmed' && dt) {
         try {
           const rooms = await base44.entities.Room.filter({ id: roomId });
@@ -47,6 +47,20 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
               walkthrough_scheduled: true,
               walkthrough_datetime: dt
             });
+            // Update DealAppointments status to SCHEDULED
+            try {
+              const apptRows = await base44.entities.DealAppointments.filter({ dealId: room.deal_id });
+              if (apptRows?.[0]) {
+                await base44.entities.DealAppointments.update(apptRows[0].id, {
+                  walkthrough: {
+                    ...apptRows[0].walkthrough,
+                    status: 'SCHEDULED',
+                    updatedByUserId: profile?.id,
+                    updatedAt: new Date().toISOString()
+                  }
+                });
+              }
+            } catch (_) { /* non-critical */ }
           }
         } catch (_) { /* non-critical */ }
       }

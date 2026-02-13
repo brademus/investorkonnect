@@ -134,9 +134,9 @@ export default function WalkthroughPanel({ deal }) {
       ) : (
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs font-medium text-[#10B981]">
-              {apptStatus === 'COMPLETED' ? 'Completed' : apptStatus === 'SCHEDULED' ? 'Scheduled' : 'Proposed'}
+            <CheckCircle2 className={`w-4 h-4 ${apptStatus === 'PROPOSED' ? 'text-[#F59E0B]' : 'text-[#10B981]'}`} />
+            <span className={`text-xs font-medium ${apptStatus === 'PROPOSED' ? 'text-[#F59E0B]' : 'text-[#10B981]'}`}>
+              {apptStatus === 'COMPLETED' ? 'Completed' : apptStatus === 'SCHEDULED' ? 'Confirmed' : 'Proposed — Awaiting Confirmation'}
             </span>
           </div>
 
