@@ -171,16 +171,47 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       };
       // If dealData.dealId exists, this is an edit of an existing deal — use deal_id directly
       const isEditingExistingDeal = !!dealData?.dealId;
-      const res = await base44.functions.invoke('generateLegalAgreement', {
-        draft_id: isEditingExistingDeal ? undefined : (draftId || undefined),
-        deal_id: isEditingExistingDeal ? dealData.dealId : (draftId ? undefined : dealId),
-        room_id: isEditingExistingDeal ? roomId : undefined,
-        signer_mode: 'investor_only', exhibit_a, investor_profile_id: profile?.id,
-        property_address: dealData?.propertyAddress, city: dealData?.city,
-        state: dealData?.state, zip: dealData?.zip, county: dealData?.county
-      });
-      if (res.data?.agreement) { setAgreement(res.data.agreement); toast.success('Agreement ready'); }
-      else toast.error(res.data?.error || 'Generation failed');
+      const effectiveId = isEditingExistingDeal ? dealData.dealId : (draftId || dealId);
+      
+      let gotAgreement = false;
+      try {
+        const res = await base44.functions.invoke('generateLegalAgreement', {
+          draft_id: isEditingExistingDeal ? undefined : (draftId || undefined),
+          deal_id: isEditingExistingDeal ? dealData.dealId : (draftId ? undefined : dealId),
+          room_id: isEditingExistingDeal ? roomId : undefined,
+          signer_mode: 'investor_only', exhibit_a, investor_profile_id: profile?.id,
+          property_address: dealData?.propertyAddress, city: dealData?.city,
+          state: dealData?.state, zip: dealData?.zip, county: dealData?.county
+        });
+        if (res.data?.agreement) { setAgreement(res.data.agreement); toast.success('Agreement ready'); gotAgreement = true; }
+        else if (res.data?.error) toast.error(res.data.error);
+      } catch (invokeErr) {
+        // The function may have succeeded but timed out returning the response (502).
+        // Wait a moment then check if the agreement was created.
+        console.warn('[SimpleAgreementPanel] Generate invoke error (may be timeout), checking for created agreement...', invokeErr?.message);
+      }
+      
+      // If we didn't get the agreement from the response (timeout/502), poll for it
+      if (!gotAgreement && effectiveId) {
+        toast.info('Agreement is being generated, please wait...');
+        // Poll up to 3 times with increasing delay
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await new Promise(r => setTimeout(r, 3000 + attempt * 2000));
+          try {
+            const checkRes = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveId, room_id: roomId });
+            const ag = checkRes?.data?.agreement;
+            if (ag && ag.docusign_envelope_id && ag.status !== 'voided' && ag.status !== 'superseded') {
+              setAgreement(ag);
+              toast.success('Agreement ready');
+              gotAgreement = true;
+              break;
+            }
+          } catch (_) {}
+        }
+        if (!gotAgreement) {
+          toast.error('Agreement generation timed out. Please try again.');
+        }
+      }
     } catch (e) { toast.error(e?.response?.data?.error || 'Generation failed'); }
     finally { setBusy(false); }
   };
