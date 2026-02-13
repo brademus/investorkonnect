@@ -311,12 +311,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     finally { setRespondingCounterId(null); }
   };
 
-  // Handle post-signing redirect — immediately fetch latest agreement to show signed status
+  // Handle post-signing: auto-refresh agreement when landing on agreement tab
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') === '1' && dealId) {
+    const tab = params.get('tab');
+    // Refresh agreement data when arriving at agreement tab (covers both post-signing and normal navigation)
+    if (tab === 'agreement' && dealId && loaded) {
       const refresh = async () => {
-        // Immediately fetch latest agreement state (pollAndFinalize already confirmed it in DocuSignReturn)
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
         const ag = res?.data?.agreement;
         if (ag) {
@@ -324,16 +325,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           if (ag.investor_signed_at && onInvestorSigned) onInvestorSigned();
         }
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
-
-        // Clean up URL param so it doesn't re-trigger
-        const url = new URL(window.location.href);
-        url.searchParams.delete('signed');
-        window.history.replaceState({}, '', url.toString());
       };
       // Small delay to let any final DB writes settle
-      setTimeout(refresh, 500);
+      setTimeout(refresh, 800);
     }
-  }, [dealId, roomId]);
+  }, [dealId, roomId, loaded]);
 
   if (!loaded) return <Card className="bg-[#0D0D0D] border-[#1F1F1F]"><CardContent className="p-6 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#808080]" /></CardContent></Card>;
 
