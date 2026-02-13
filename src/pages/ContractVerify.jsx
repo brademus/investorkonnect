@@ -379,8 +379,7 @@ export default function ContractVerify() {
                         setFile(null);
                         setVerificationResult(null);
                       }}
-                      variant="outline"
-                      className="flex-1 border-[#E3C567]/40 text-[#E3C567] hover:bg-[#E3C567]/10 hover:border-[#E3C567] h-11 rounded-lg"
+                      className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border border-[#E3C567]/40 hover:border-[#E3C567] h-11 rounded-lg"
                     >
                       Upload New Contract
                     </Button>

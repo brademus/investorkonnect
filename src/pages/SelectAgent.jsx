@@ -224,9 +224,8 @@ export default function SelectAgent() {
                         e.stopPropagation();
                         navigate(`${createPageUrl("AgentProfile")}?profileId=${agent.id}`);
                       }}
-                      variant="outline"
                       size="sm"
-                      className="border-[#E3C567]/40 text-[#E3C567] hover:bg-[#E3C567]/10 hover:border-[#E3C567] rounded-full"
+                      className="bg-[#1A1A1A] hover:bg-[#222] text-[#E3C567] border border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
                     >
                       View Profile
                     </Button>
