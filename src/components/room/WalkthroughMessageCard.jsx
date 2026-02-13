@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Renders inline in the message list for walkthrough_request messages.
  * Agents see Confirm/Deny buttons. Investors see the status.
  */
-export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile }) {
+export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned }) {
   const [responding, setResponding] = useState(false);
   const meta = message?.metadata || {};
   const status = meta.status || 'pending'; // pending | confirmed | denied
@@ -83,7 +83,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         <span className="text-[#808080]">Proposed:</span> {formatted}
       </p>
 
-      {status === 'pending' && isRecipient && (
+      {status === 'pending' && isRecipient && isSigned && (
         <div className="flex gap-2 mt-3">
           <Button
             onClick={() => respond('confirmed')}
@@ -106,6 +106,9 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
           </Button>
         </div>
       )}
+      {status === 'pending' && isRecipient && !isSigned && (
+        <div className="mt-2 text-xs text-[#F59E0B]">Sign the agreement to accept or decline</div>
+      )}
 
       {status === 'confirmed' && (
         <div className="mt-2 flex items-center gap-1.5 text-xs text-[#10B981]">
@@ -118,7 +121,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         </div>
       )}
       {status === 'pending' && !isRecipient && (
-        <div className="mt-2 text-xs text-[#F59E0B]">Awaiting agent response</div>
+        <div className="mt-2 text-xs text-[#F59E0B]">{isSigned ? 'Awaiting agent response' : 'Proposed — agents can respond after signing'}</div>
       )}
     </div>
   );
