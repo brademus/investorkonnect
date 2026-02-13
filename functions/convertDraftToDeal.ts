@@ -129,6 +129,15 @@ Deno.serve(async (req) => {
         budget: draft.purchase_price,
         closing_date: draft.closing_date,
         requested_at: new Date().toISOString(),
+        proposed_terms: {
+          seller_commission_type: draft.seller_commission_type,
+          seller_commission_percentage: draft.seller_commission_percentage,
+          seller_flat_fee: draft.seller_flat_fee,
+          buyer_commission_type: draft.buyer_commission_type,
+          buyer_commission_percentage: draft.buyer_commission_percentage,
+          buyer_flat_fee: draft.buyer_flat_fee,
+          agreement_length: draft.agreement_length
+        },
         agent_terms: {
           [agentProfileId]: {
             buyer_commission_type: draft.buyer_commission_type,
