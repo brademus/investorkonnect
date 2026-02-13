@@ -737,7 +737,8 @@ export default function NewDeal() {
     // For new deals, also save walkthrough info to a separate key so MyAgreement can merge it
     sessionStorage.setItem('newDealWalkthrough', JSON.stringify({
       walkthrough_scheduled: walkthroughScheduled === true,
-      walkthrough_datetime: walkthroughIso
+      walkthrough_datetime: walkthroughIso,
+      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime)
     }));
     console.log('[NewDeal] Saved newDealWalkthrough to sessionStorage:', { walkthrough_scheduled: walkthroughScheduled === true, walkthrough_datetime: walkthroughIso });
 
