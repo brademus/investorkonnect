@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
         accepted_at: new Date().toISOString()
       });
       console.log('[createInvites] Created room:', room.id);
+      console.log('[createInvites] Created room:', room.id);
     } else {
       room = existingRooms[0];
       // Add any missing agents
