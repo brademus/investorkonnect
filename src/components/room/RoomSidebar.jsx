@@ -4,7 +4,7 @@ import { Search, User } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { createPageUrl } from "@/components/utils";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
-import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
+import { getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 
 export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick, search, onSearchChange }) {
   return (
