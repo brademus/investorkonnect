@@ -222,6 +222,12 @@ export default function MyAgreement() {
         } else {
           // NEW DEAL: Create DealDraft so automation can find it after investor signs
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+          
+          // Resolve walkthrough fields once — be very explicit
+          const wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true;
+          const wtDatetime = dealData.walkthrough_datetime || null;
+          console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime, rawWalkthroughScheduled: dealData.walkthroughScheduled, rawWalkthrough_scheduled: dealData.walkthrough_scheduled });
+
           const draftCreated = await base44.entities.DealDraft.create({
             investor_profile_id: profile.id,
             property_address: dealData.propertyAddress,
@@ -253,43 +259,10 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: !!(dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true || dealData.walkthrough_scheduled === 'true'),
-            walkthrough_datetime: dealData.walkthrough_datetime || (() => {
-              // Parse from date/time strings if ISO not already set
-              if (!dealData.walkthroughDate) return null;
-              try {
-                const parts = dealData.walkthroughDate.split('/');
-                if (parts.length === 3) {
-                  const [mm, dd, yyyy] = parts;
-                  let hours = 0, mins = 0; // midnight = time TBD
-                  if (dealData.walkthroughTime && dealData.walkthroughTime.trim()) {
-                    const timeMatch = dealData.walkthroughTime.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-                    if (timeMatch) {
-                      hours = parseInt(timeMatch[1]);
-                      mins = parseInt(timeMatch[2]);
-                      const isPM = timeMatch[3].toUpperCase() === 'PM';
-                      if (isPM && hours !== 12) hours += 12;
-                      if (!isPM && hours === 12) hours = 0;
-                    }
-                  }
-                  const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
-                  return isNaN(d.getTime()) ? null : d.toISOString();
-                }
-                return null;
-              } catch { return null; }
-            })()
+            walkthrough_scheduled: wtScheduled,
+            walkthrough_datetime: wtDatetime
           });
-          console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
-          console.log('[MyAgreement] DealDraft walkthrough:', { walkthrough_scheduled: draftCreated.walkthrough_scheduled, walkthrough_datetime: draftCreated.walkthrough_datetime });
-          console.log('[MyAgreement] Source dealData:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughScheduledType: typeof dealData.walkthroughScheduled, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
-          
-          // VERIFY: Read back the DealDraft to confirm data was persisted
-          try {
-            const verifyDrafts = await base44.entities.DealDraft.filter({ id: draftCreated.id });
-            if (verifyDrafts?.[0]) {
-              console.log('[MyAgreement] VERIFY DealDraft read-back:', { walkthrough_scheduled: verifyDrafts[0].walkthrough_scheduled, walkthrough_datetime: verifyDrafts[0].walkthrough_datetime, buyer_commission_percentage: verifyDrafts[0].buyer_commission_percentage, agreement_length: verifyDrafts[0].agreement_length });
-            }
-          } catch (verifyErr) { console.warn('[MyAgreement] Verify read-back failed:', verifyErr); }
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
