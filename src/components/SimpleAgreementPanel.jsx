@@ -248,14 +248,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       }
 
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
-        agreement_id: targetId, role, room_id: roomId,
-        redirect_url: window.location.href.split('&signed')[0] + '&signed=1'
+        agreement_id: targetId, role, room_id: roomId
       });
       if (res.data?.signing_url) window.location.assign(res.data.signing_url);
       else if (res.data?.already_signed) {
-        toast.success('Already signed');
-        const refreshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
-        if (refreshRes.data?.agreement) setAgreement(refreshRes.data.agreement);
+        toast.success('Already signed!');
+        // Refresh agreement state to show signed status in UI
+        const latestAg = res.data?.agreement;
+        if (latestAg) setAgreement(latestAg);
+        else {
+          const refreshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
+          if (refreshRes.data?.agreement) setAgreement(refreshRes.data.agreement);
+        }
+        if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
         if (role === 'investor' && onInvestorSigned) onInvestorSigned();
       }
       else toast.error(res.data?.error || 'Failed to start signing');
