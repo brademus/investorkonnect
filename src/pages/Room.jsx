@@ -10,6 +10,7 @@ import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2, Cal
 import { toast } from "sonner";
 
 import { PIPELINE_STAGES, normalizeStage } from "@/components/pipelineStages";
+import { getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 import RoomSidebar from "@/components/room/RoomSidebar";
 import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
