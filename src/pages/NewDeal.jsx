@@ -730,6 +730,7 @@ export default function NewDeal() {
       walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
+      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime),
       walkthrough_datetime: walkthroughIso
     }));
 
