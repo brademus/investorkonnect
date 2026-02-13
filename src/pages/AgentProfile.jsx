@@ -122,7 +122,7 @@ export default function AgentProfile() {
 
         {/* Digital Business Card */}
         <div className="mb-6">
-          <DigitalBusinessCard agentProfile={agentProfile} />
+          <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} />
         </div>
 
         {/* Uploaded Business Card */}
