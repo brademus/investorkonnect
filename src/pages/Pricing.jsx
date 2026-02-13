@@ -72,12 +72,26 @@ export default function Pricing() {
 
     setCheckoutLoading(true);
     try {
-      const response = await base44.functions.invoke('checkoutLite', { plan: 'membership' });
+      let response;
+      let lastError;
+      // Retry up to 2 times to handle cold-start 502s
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await base44.functions.invoke('checkoutLite', { plan: 'membership' });
+          if (response?.data?.ok && response.data.url) break;
+          lastError = new Error(response?.data?.message || response?.data?.error || "Failed to create checkout session");
+          response = null;
+        } catch (err) {
+          lastError = err;
+          response = null;
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
+        }
+      }
       
       if (response?.data?.ok && response.data.url) {
         window.location.href = response.data.url;
       } else {
-        throw new Error(response?.data?.message || response?.data?.error || "Failed to create checkout session");
+        throw lastError || new Error("Failed to create checkout session");
       }
     } catch (error) {
       console.error('Checkout error:', error);
