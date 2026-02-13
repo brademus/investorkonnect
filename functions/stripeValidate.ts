@@ -6,24 +6,31 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ ok: false, error: 'Not authenticated' }, { status: 401 });
 
-    console.log('stripeValidate for user:', user.email);
-
     // Get user profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     if (!profiles?.length) return Response.json({ ok: false, error: 'Profile not found' }, { status: 404 });
 
     const profile = profiles[0];
 
-    // If no subscription ID, no active subscription - fast exit, no Stripe import needed
+    // Fast exit if no subscription
     if (!profile.stripe_subscription_id) {
       return Response.json({ ok: true, subscription: null });
     }
 
-    // Only import Stripe when we actually need it (lazy import reduces cold start CPU)
-    const { default: Stripe } = await import('npm:stripe@14.25.0');
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), { apiVersion: '2023-10-16' });
+    // Use direct fetch instead of Stripe SDK to avoid CPU time limit on cold start
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    const resp = await fetch(
+      `https://api.stripe.com/v1/subscriptions/${profile.stripe_subscription_id}`,
+      { headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` } }
+    );
 
-    const subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      console.error('Stripe API error:', resp.status, errBody);
+      return Response.json({ ok: false, error: 'Failed to retrieve subscription' }, { status: 502 });
+    }
+
+    const subscription = await resp.json();
 
     // Update local status (fire and forget)
     base44.asServiceRole.entities.Profile.update(profile.id, {
