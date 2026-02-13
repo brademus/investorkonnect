@@ -187,17 +187,23 @@ export default function NewDeal() {
   };
 
   // Helper: compute walkthrough ISO from date+time strings (handles many formats)
+  // If time is not provided/parseable, stores date at midnight (time is "TBD")
   const computeWalkthroughIso = (scheduled, dateStr, timeStr) => {
     if (scheduled !== true || !dateStr) return null;
     try {
       const dateParts = parseDateString(dateStr);
       if (!dateParts) return null;
-      const timeParts = parseTimeString(timeStr);
-      const d = new Date(dateParts.year, dateParts.month - 1, dateParts.day, timeParts.hours, timeParts.minutes);
+      const timeParts = parseTimeString(timeStr); // null if no valid time
+      const h = timeParts ? timeParts.hours : 0;
+      const m = timeParts ? timeParts.minutes : 0;
+      const d = new Date(dateParts.year, dateParts.month - 1, dateParts.day, h, m);
       return isNaN(d.getTime()) ? null : d.toISOString();
     } catch {}
     return null;
   };
+
+  // Helper: check if user entered a valid time
+  const hasValidTime = (timeStr) => parseTimeString(timeStr) !== null;
 
   // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
   useEffect(() => {
