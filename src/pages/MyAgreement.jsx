@@ -249,7 +249,7 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: !!(dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true),
+            walkthrough_scheduled: !!(dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true || dealData.walkthrough_scheduled === 'true'),
             walkthrough_datetime: dealData.walkthrough_datetime || (() => {
               // Parse from date/time strings if ISO not already set
               if (!dealData.walkthroughDate) return null;
