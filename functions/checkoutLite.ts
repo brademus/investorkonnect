@@ -1,17 +1,12 @@
-import Stripe from 'npm:stripe@14.11.0';
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// LITE CHECKOUT - CALLED VIA SDK (not direct URL)
+// LITE CHECKOUT - Uses direct fetch to Stripe API (no heavy SDK import = no cold-start 502)
 Deno.serve(async (req) => {
   try {
     const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
     
     if (!base) {
-      return Response.json({ 
-        ok: false, 
-        reason: 'CONFIG_ERROR',
-        message: 'Server configuration error' 
-      }, { status: 500 });
+      return Response.json({ ok: false, reason: 'CONFIG_ERROR', message: 'Server configuration error' }, { status: 500 });
     }
 
     console.log('=== Checkout Lite (SDK Call) ===');
@@ -21,54 +16,53 @@ Deno.serve(async (req) => {
     try {
       const body = await req.json();
       plan = body.plan;
-      console.log('📦 Received plan from body:', plan);
-    } catch (parseErr) {
-      // Fallback to URL params for backward compatibility
-      const url = new URL(req.url, base);
-      plan = url.searchParams.get('plan');
-      console.log('📦 Received plan from URL:', plan);
-    }
+    } catch (_) {}
     
-    // Single membership plan
     const price = Deno.env.get('STRIPE_PRICE_MEMBERSHIP');
-    
-    console.log('Membership price:', price);
-    
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    
     if (!STRIPE_SECRET_KEY) {
-      return Response.json({ 
-        ok: false, 
-        reason: 'CONFIG_ERROR',
-        message: 'Stripe not configured' 
-      }, { status: 500 });
+      return Response.json({ ok: false, reason: 'CONFIG_ERROR', message: 'Stripe not configured' }, { status: 500 });
     }
     
     if (!price || !price.startsWith('price_')) {
-      return Response.json({ 
-        ok: false, 
-        reason: 'INVALID_PLAN',
-        message: 'Invalid or missing plan' 
-      }, { status: 400 });
+      return Response.json({ ok: false, reason: 'INVALID_PLAN', message: 'Invalid or missing plan' }, { status: 400 });
     }
 
-    // ALWAYS require authentication for Stripe customer creation
+    // Auth check
     const base44 = createClientFromRequest(req);
     const isAuth = await base44.auth.isAuthenticated();
-    
     if (!isAuth) {
-      console.log('❌ User not authenticated');
-      return Response.json({ 
-        ok: false, 
-        reason: 'AUTH_REQUIRED',
-        message: 'Please sign in to continue' 
-      }, { status: 401 });
+      return Response.json({ ok: false, reason: 'AUTH_REQUIRED', message: 'Please sign in to continue' }, { status: 401 });
     }
     
     const user = await base44.auth.me();
     const userId = user.id;
     console.log('✅ User authenticated:', userId);
+
+    // Helper for Stripe API calls via fetch
+    const stripeApi = async (endpoint, params) => {
+      const resp = await fetch(`https://api.stripe.com/v1${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(params).toString(),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data?.error?.message || `Stripe API error ${resp.status}`);
+      return data;
+    };
+
+    const stripeGet = async (endpoint) => {
+      const resp = await fetch(`https://api.stripe.com/v1${endpoint}`, {
+        headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+      });
+      return resp;
+    };
     
-    // OPTIONAL GATE: Check onboarding + NDA + KYC
+    // OPTIONAL GATE: Check onboarding
     const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
     if (enableGating) {
@@ -76,140 +70,70 @@ Deno.serve(async (req) => {
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
         if (profiles.length === 0) {
-          console.log('❌ No profile found');
-          return Response.json({ 
-            ok: false, 
-            reason: 'PROFILE_REQUIRED',
-            message: 'Profile not found. Please complete setup.',
-            redirect: `${base}/role`
-          }, { status: 403 });
+          return Response.json({ ok: false, reason: 'PROFILE_REQUIRED', message: 'Profile not found. Please complete setup.', redirect: `${base}/role` }, { status: 403 });
         }
         
         const profile = profiles[0];
-        console.log('📋 Profile check:', {
-          user_role: profile.user_role,
-          onboarding_completed_at: profile.onboarding_completed_at,
-          nda_accepted: profile.nda_accepted,
-          kyc_status: profile.kyc_status
-        });
         
-        // Check onboarding for both investors and agents
         if (!profile.onboarding_completed_at) {
-          console.log('❌ Onboarding not completed for user_role:', profile.user_role);
-          const redirectPath = profile.user_role === 'agent' 
-            ? `${base}/AgentOnboarding` 
-            : `${base}/InvestorOnboarding`;
-          return Response.json({ 
-            ok: false, 
-            reason: 'ONBOARDING_REQUIRED',
-            message: 'Please complete your profile first',
-            redirect: redirectPath
-          }, { status: 403 });
+          const redirectPath = profile.user_role === 'agent' ? `${base}/AgentOnboarding` : `${base}/InvestorOnboarding`;
+          return Response.json({ ok: false, reason: 'ONBOARDING_REQUIRED', message: 'Please complete your profile first', redirect: redirectPath }, { status: 403 });
         }
         
         console.log('✅ User ready:', profile.user_role);
-        
       } catch (gateError) {
         console.error('❌ Gating check failed:', gateError);
-        return Response.json({ 
-          ok: false, 
-          reason: 'GATE_ERROR',
-          message: 'Failed to verify account status. Please try again.' 
-        }, { status: 500 });
+        return Response.json({ ok: false, reason: 'GATE_ERROR', message: 'Failed to verify account status. Please try again.' }, { status: 500 });
       }
     }
 
-    // All checks passed - create Stripe session
-    // FIXED: Use /BillingSuccess (matches page filename) instead of /billing/success
-    const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel = `${base}/pricing?cancelled=true`;
-    
-    console.log('Success URL:', success);
-    console.log('Cancel URL:', cancel);
-    
-    const stripe = new Stripe(STRIPE_SECRET_KEY);
-    
-    // Create or get Stripe customer - ALWAYS use customer ID, never email
-    let customerId = null;
+    // Get or create Stripe customer
     const profiles = await base44.entities.Profile.filter({ user_id: userId });
-
-    if (profiles.length > 0) {
-      const profile = profiles[0];
-
-      if (profile.stripe_customer_id) {
-        customerId = profile.stripe_customer_id;
-        console.log('✅ Using existing Stripe customer:', customerId);
-      } else {
-        // Create new Stripe customer with just user_id metadata (no email)
-        const customer = await stripe.customers.create({
-          metadata: {
-            user_id: userId,
-            app: 'agentvault'
-          }
-        });
-
-        customerId = customer.id;
-        console.log('✅ Created new Stripe customer:', customerId);
-
-        // Save customer ID to profile
-        await base44.asServiceRole.entities.Profile.update(profile.id, {
-          stripe_customer_id: customerId
-        });
-      }
-    } else {
-      return Response.json({ 
-        ok: false, 
-        reason: 'PROFILE_ERROR',
-        message: 'Profile not found' 
-      }, { status: 404 });
+    if (profiles.length === 0) {
+      return Response.json({ ok: false, reason: 'PROFILE_ERROR', message: 'Profile not found' }, { status: 404 });
     }
+    
+    const profile = profiles[0];
+    let customerId = profile.stripe_customer_id || null;
 
     if (!customerId) {
-      return Response.json({ 
-        ok: false, 
-        reason: 'CUSTOMER_ERROR',
-        message: 'Failed to create Stripe customer' 
-      }, { status: 500 });
+      // Create new Stripe customer via fetch
+      const customer = await stripeApi('/customers', {
+        'metadata[user_id]': userId,
+        'metadata[app]': 'agentvault',
+      });
+      customerId = customer.id;
+      console.log('✅ Created new Stripe customer:', customerId);
+      
+      await base44.asServiceRole.entities.Profile.update(profile.id, { stripe_customer_id: customerId });
+    } else {
+      console.log('✅ Using existing Stripe customer:', customerId);
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer: customerId,
-      line_items: [{
-        price: price,
-        quantity: 1
-      }],
-      success_url: success,
-      cancel_url: cancel,
-      allow_promotion_codes: true,
-      subscription_data: {
-        metadata: {
-          user_id: userId || 'unknown',
-          plan: 'membership'
-        }
-      },
-      metadata: {
-        user_id: userId || 'unknown',
-        plan: 'membership'
-      }
+    // Create checkout session via fetch
+    const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel = `${base}/pricing?cancelled=true`;
+
+    const session = await stripeApi('/checkout/sessions', {
+      'mode': 'subscription',
+      'customer': customerId,
+      'line_items[0][price]': price,
+      'line_items[0][quantity]': '1',
+      'success_url': success,
+      'cancel_url': cancel,
+      'allow_promotion_codes': 'true',
+      'subscription_data[metadata][user_id]': userId || 'unknown',
+      'subscription_data[metadata][plan]': 'membership',
+      'metadata[user_id]': userId || 'unknown',
+      'metadata[plan]': 'membership',
     });
 
     console.log('✅ Stripe session created:', session.id);
-    console.log('✅ Stripe URL:', session.url);
     
-    // Return JSON with Stripe URL for client to redirect
-    return Response.json({
-      ok: true,
-      url: session.url,
-      session_id: session.id
-    }, { status: 200 });
+    return Response.json({ ok: true, url: session.url, session_id: session.id }, { status: 200 });
 
   } catch (error) {
     console.error('❌ Checkout error:', error);
-    return Response.json({ 
-      ok: false, 
-      reason: 'SERVER_ERROR',
-      message: `Server error: ${error.message}` 
-    }, { status: 500 });
+    return Response.json({ ok: false, reason: 'SERVER_ERROR', message: `Server error: ${error.message}` }, { status: 500 });
   }
 });
