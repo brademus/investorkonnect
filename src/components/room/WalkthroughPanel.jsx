@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const [apptData, setApptData] = useState(null);
-  const [loadingAppt, setLoadingAppt] = useState(false);
+  const [loadingAppt, setLoadingAppt] = useState(true);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [saving, setSaving] = useState(false);
@@ -15,13 +15,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
-  const isSigned = room?.is_fully_signed || room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || deal?.is_fully_signed;
-
-  const isWalkthroughSet = (d) => {
-    if (!d) return false;
-    const ws = d.walkthrough_scheduled;
-    return ws === true || ws === 'true' || ws === 1;
-  };
+  const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked';
 
   const autoFormatDate = (value) => {
     const raw = value.replace(/\D/g, '').slice(0, 8);
@@ -33,92 +27,55 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     return formatted;
   };
 
-  // Fetch DealAppointments - check multiple sources for walkthrough data
+  // Load walkthrough data
   useEffect(() => {
-    const dealId = deal?.id;
-    if (!dealId) return;
+    if (!deal?.id) return;
     setLoadingAppt(true);
     (async () => {
       try {
-        // 1. Check DealAppointments first (most authoritative)
-        const rows = await base44.entities.DealAppointments.filter({ dealId });
+        // 1. Check DealAppointments (authoritative source)
+        const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
-          console.log('[WalkthroughPanel] Found DealAppointments walkthrough:', rows[0].walkthrough.status, rows[0].walkthrough.datetime);
           setApptData(rows[0].walkthrough);
           return;
         }
 
-        // 2. Re-fetch Deal entity directly from DB (props may come from getDealDetailsForUser which wraps some fields)
-        const dealRows = await base44.entities.Deal.filter({ id: dealId });
+        // 2. Check Deal entity directly
+        if (deal.walkthrough_scheduled === true && deal.walkthrough_datetime) {
+          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime });
+          return;
+        }
+
+        // 3. Fetch fresh deal from DB in case props are stale
+        const dealRows = await base44.entities.Deal.filter({ id: deal.id });
         const liveDeal = dealRows?.[0];
-        console.log('[WalkthroughPanel] Live deal from DB:', { wt_scheduled: liveDeal?.walkthrough_scheduled, wt_datetime: liveDeal?.walkthrough_datetime });
-        if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
-          return;
+        if (liveDeal?.walkthrough_scheduled === true && liveDeal?.walkthrough_datetime) {
+          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime });
         }
-
-        // 3. Check deal props passed in (from getDealDetailsForUser response)
-        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
-          return;
-        }
-
-        // 4. Check chat messages for walkthrough_request messages
-        if (roomId) {
-          const msgs = await base44.entities.Message.filter({ room_id: roomId });
-          const wtMsg = msgs?.find(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.walkthrough_datetime);
-          if (wtMsg) {
-            const msgStatus = wtMsg.metadata.status === 'confirmed' ? 'SCHEDULED' : wtMsg.metadata.status === 'denied' ? 'CANCELED' : 'PROPOSED';
-            setApptData({ status: msgStatus, datetime: wtMsg.metadata.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
-            return;
-          }
-        }
-        
-        console.log('[WalkthroughPanel] No walkthrough data found for deal:', dealId);
       } catch (e) {
-        console.error('[WalkthroughPanel] Error loading walkthrough:', e);
-        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
-        }
+        console.error('[WalkthroughPanel] Error:', e);
       } finally { setLoadingAppt(false); }
     })();
-  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime, roomId]);
+  }, [deal?.id]);
 
-  // Real-time subscriptions
+  // Real-time: DealAppointments updates
   useEffect(() => {
     if (!deal?.id) return;
     const unsub = base44.entities.DealAppointments.subscribe((event) => {
-      if (event?.data?.dealId === deal.id && event.data.walkthrough) setApptData(event.data.walkthrough);
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [deal?.id]);
-
-  useEffect(() => {
-    if (!deal?.id) return;
-    const unsub = base44.entities.Deal.subscribe((event) => {
-      if (event?.data?.id === deal.id && event.data.walkthrough_scheduled === true && event.data.walkthrough_datetime) {
-        setApptData({ status: 'PROPOSED', datetime: event.data.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+      if (event?.data?.dealId === deal.id && event.data.walkthrough) {
+        setApptData(event.data.walkthrough);
       }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
   const apptStatus = apptData?.status;
-  const hasWalkthrough = !!(apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED') || isWalkthroughSet(deal) || !!deal?.walkthrough_datetime;
-  const rawDatetime = apptData?.datetime || deal?.walkthrough_datetime;
-  const dt = rawDatetime ? new Date(rawDatetime) : null;
+  const hasWalkthrough = apptStatus && apptStatus !== 'NOT_SET';
+  const dt = apptData?.datetime ? new Date(apptData.datetime) : null;
   const isValidDate = dt && !isNaN(dt.getTime());
+  const canAgentRespond = isAgent && isSigned && apptStatus === 'PROPOSED';
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[WalkthroughPanel] Render state:', { 
-      dealId: deal?.id, hasWalkthrough, apptStatus, rawDatetime, isValidDate,
-      dealWtScheduled: deal?.walkthrough_scheduled, dealWtDatetime: deal?.walkthrough_datetime,
-      apptData 
-    });
-  }, [deal?.id, hasWalkthrough, apptStatus, rawDatetime, apptData]);
-
-  // Investor: schedule walkthrough (same as WalkthroughScheduleModal)
+  // Investor: schedule walkthrough
   const handleSchedule = async () => {
     if (!scheduleDate) { toast.error("Please enter a date"); return; }
     if (!deal?.id) return;
@@ -128,7 +85,6 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
       await base44.entities.Deal.update(deal.id, { walkthrough_scheduled: true, walkthrough_datetime: isoDatetime });
 
-      // Upsert DealAppointments
       const apptRows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
       const apptPatch = {
         walkthrough: {
@@ -148,7 +104,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         });
       }
 
-      // Send chat message so agent sees it
+      // Send chat message
       if (roomId) {
         const formatted = new Date(scheduleDate + ' ' + (scheduleTime || '12:00 PM')).toLocaleString('en-US', {
           weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
@@ -160,7 +116,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         });
       }
 
-      setApptData({ status: 'PROPOSED', datetime: isoDatetime, timezone: null, locationType: 'ON_SITE', notes: null });
+      setApptData({ status: 'PROPOSED', datetime: isoDatetime });
       toast.success("Walk-through request sent!");
       setScheduleDate("");
       setScheduleTime("");
@@ -169,14 +125,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     } finally { setSaving(false); }
   };
 
-  // Agent: confirm or deny (only when fully signed)
+  // Agent: confirm or deny
   const handleRespond = async (action) => {
     if (!deal?.id) return;
     setResponding(true);
     try {
       const newStatus = action === 'confirm' ? 'SCHEDULED' : 'CANCELED';
       
-      // Update DealAppointments
       const apptRows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
       if (apptRows?.[0]) {
         await base44.entities.DealAppointments.update(apptRows[0].id, {
@@ -184,12 +139,6 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         });
       }
 
-      // Update Deal entity
-      if (action === 'confirm') {
-        await base44.entities.Deal.update(deal.id, { walkthrough_scheduled: true });
-      }
-
-      // Send chat message
       if (roomId) {
         const emoji = action === 'confirm' ? '✅' : '❌';
         const label = action === 'confirm' ? 'Confirmed' : 'Declined';
@@ -197,13 +146,12 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         await base44.entities.Message.create({
           room_id: roomId, sender_profile_id: profile?.id,
           body: `${emoji} Walk-through ${label}\n\n${action === 'confirm' ? `See you on ${formatted}` : 'Please propose a different time.'}`,
-          metadata: { type: 'walkthrough_response', walkthrough_datetime: rawDatetime, status: action === 'confirm' ? 'confirmed' : 'denied' }
+          metadata: { type: 'walkthrough_response', walkthrough_datetime: apptData?.datetime, status: action === 'confirm' ? 'confirmed' : 'denied' }
         });
 
-        // Also update any pending walkthrough_request messages in chat to reflect the response
+        // Update pending walkthrough_request messages
         const msgs = await base44.entities.Message.filter({ room_id: roomId });
-        const pendingWtMsgs = msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
-        for (const m of pendingWtMsgs) {
+        for (const m of msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending')) {
           await base44.entities.Message.update(m.id, {
             metadata: { ...m.metadata, status: action === 'confirm' ? 'confirmed' : 'denied', responded_by: profile?.id, responded_at: new Date().toISOString() }
           });
@@ -226,22 +174,21 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     );
   }
 
-  const canAgentRespond = isAgent && isSigned && apptStatus === 'PROPOSED';
-
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
       <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Walk-through</h4>
 
-      {/* Show scheduled walkthrough info */}
       {hasWalkthrough && isValidDate ? (
         <div className="space-y-3">
+          {/* Status badge */}
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className={`w-4 h-4 ${apptStatus === 'SCHEDULED' || apptStatus === 'COMPLETED' ? 'text-[#10B981]' : apptStatus === 'CANCELED' ? 'text-red-400' : 'text-[#F59E0B]'}`} />
-            <span className={`text-xs font-medium ${apptStatus === 'SCHEDULED' || apptStatus === 'COMPLETED' ? 'text-[#10B981]' : apptStatus === 'CANCELED' ? 'text-red-400' : 'text-[#F59E0B]'}`}>
-              {apptStatus === 'COMPLETED' ? 'Completed' : apptStatus === 'SCHEDULED' ? 'Confirmed' : apptStatus === 'CANCELED' ? 'Declined' : 'Proposed — Awaiting Confirmation'}
+            <CheckCircle2 className={`w-4 h-4 ${apptStatus === 'SCHEDULED' ? 'text-[#10B981]' : apptStatus === 'CANCELED' ? 'text-red-400' : 'text-[#F59E0B]'}`} />
+            <span className={`text-xs font-medium ${apptStatus === 'SCHEDULED' ? 'text-[#10B981]' : apptStatus === 'CANCELED' ? 'text-red-400' : 'text-[#F59E0B]'}`}>
+              {apptStatus === 'SCHEDULED' ? 'Confirmed' : apptStatus === 'CANCELED' ? 'Declined' : apptStatus === 'COMPLETED' ? 'Completed' : 'Proposed — Awaiting Confirmation'}
             </span>
           </div>
 
+          {/* Date */}
           <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
             <div className="w-10 h-10 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0">
               <Calendar className="w-5 h-5 text-[#E3C567]" />
@@ -254,6 +201,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
             </div>
           </div>
 
+          {/* Time */}
           <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
             <div className="w-10 h-10 rounded-full bg-[#60A5FA]/15 flex items-center justify-center flex-shrink-0">
               <Clock className="w-5 h-5 text-[#60A5FA]" />
@@ -266,7 +214,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
             </div>
           </div>
 
-          {/* Agent: confirm/deny buttons (only after fully signed and status is PROPOSED) */}
+          {/* Agent: confirm/deny (only after signing) */}
           {canAgentRespond && (
             <div className="flex gap-2 pt-2">
               <Button onClick={() => handleRespond('confirm')} disabled={responding} size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs flex-1">
@@ -279,12 +227,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
               </Button>
             </div>
           )}
-          {/* Agent sees proposed but hasn't signed yet */}
+
+          {/* Agent: hasn't signed yet */}
           {isAgent && !isSigned && apptStatus === 'PROPOSED' && (
             <p className="text-xs text-[#F59E0B] pt-2">Sign the agreement to accept or decline this walk-through.</p>
           )}
 
-          {/* Investor: reschedule option if declined */}
+          {/* Investor: reschedule if declined */}
           {isInvestor && apptStatus === 'CANCELED' && (
             <div className="pt-3 border-t border-[#1F1F1F] mt-3">
               <p className="text-xs text-[#808080] mb-3">The agent declined. Propose a new date & time:</p>
@@ -311,7 +260,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           <p className="text-sm text-[#F59E0B]">Walk-through scheduled — date pending</p>
         </div>
       ) : (
-        /* No walkthrough yet — show scheduling form for investor */
+        /* No walkthrough — investor can schedule one */
         <div>
           {isInvestor ? (
             <div className="space-y-4">
