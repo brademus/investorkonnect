@@ -66,12 +66,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Load agreements for signing status
+    // Load agreements for signing status + exhibit_a_terms (authoritative compensation)
     const dealIds = [...map.keys()];
     const agreementMap = new Map();
     if (dealIds.length > 0) {
       const allAg = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } });
-      allAg.forEach(a => { if (!agreementMap.has(a.deal_id)) agreementMap.set(a.deal_id, a); });
+      // Pick the best (most advanced, non-voided) agreement per deal
+      const statusRank = s => ({ fully_signed: 5, attorney_review_pending: 4, agent_signed: 3, investor_signed: 2, sent: 1 }[s] || 0);
+      allAg.forEach(a => {
+        if (['voided', 'superseded'].includes(a.status)) return;
+        const prev = agreementMap.get(a.deal_id);
+        if (!prev || statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
+      });
     }
 
     // Redact based on role
