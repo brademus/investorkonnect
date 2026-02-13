@@ -68,6 +68,20 @@ Deno.serve(async (req) => {
     const counterMap = new Map();
     allCounters.forEach(c => { if (!counterMap.has(c.room_id)) counterMap.set(c.room_id, c); });
 
+    // Build a map of the best (most current, non-voided/superseded) agreement per room
+    // so we can use exhibit_a_terms as the authoritative compensation source
+    const bestAgreementByRoom = new Map();
+    for (const a of allAgreements) {
+      if (['voided', 'superseded'].includes(a.status)) continue;
+      const key = a.room_id || a.deal_id;
+      const prev = bestAgreementByRoom.get(key);
+      // Prefer fully_signed > agent_signed > investor_signed > sent > draft
+      const statusRank = s => ({ fully_signed: 5, attorney_review_pending: 4, agent_signed: 3, investor_signed: 2, sent: 1 }[s] || 0);
+      if (!prev || statusRank(a.status) > statusRank(prev.status) || (statusRank(a.status) === statusRank(prev.status) && new Date(a.updated_date || 0) > new Date(prev.updated_date || 0))) {
+        bestAgreementByRoom.set(key, a);
+      }
+    }
+
     // Enrich rooms
     const enriched = rooms.map(room => {
       const deal = dealMap.get(room.deal_id);
@@ -79,6 +93,10 @@ Deno.serve(async (req) => {
 
       // For agents: filter out deals locked to another agent
       if (isAgent && deal?.locked_agent_id && deal.locked_agent_id !== profile.id) return null;
+
+      // Get the best agreement for this room to extract exhibit_a_terms (authoritative after regen)
+      const bestAg = bestAgreementByRoom.get(room.id) || bestAgreementByRoom.get(room.deal_id);
+      const exhibitTerms = bestAg?.exhibit_a_terms || null;
 
       return {
         id: room.id, deal_id: room.deal_id,
@@ -100,8 +118,15 @@ Deno.serve(async (req) => {
         pipeline_stage: deal?.pipeline_stage,
         closing_date: deal?.key_dates?.closing_date,
         proposed_terms: (() => {
-          // If viewing as agent, merge agent-specific terms (from accepted counter offers)
+          // Priority: exhibit_a_terms from agreement (post-regen authoritative) > agent_terms > room terms > deal terms
           const baseTerms = room.proposed_terms || deal?.proposed_terms || {};
+          
+          // If agreement has exhibit_a_terms and isn't pending regeneration, those are authoritative
+          if (exhibitTerms && !room.requires_regenerate) {
+            return { ...baseTerms, ...exhibitTerms };
+          }
+          
+          // If viewing as agent, merge agent-specific terms (from accepted counter offers)
           if (isAgent && room.agent_terms && room.agent_terms[profile.id]) {
             return { ...baseTerms, ...room.agent_terms[profile.id] };
           }
