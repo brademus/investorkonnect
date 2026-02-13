@@ -380,7 +380,7 @@ export default function ContractVerify() {
                         setVerificationResult(null);
                       }}
                       variant="outline"
-                      className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] h-11 rounded-lg"
+                      className="flex-1 border-[#E3C567]/40 text-[#E3C567] hover:bg-[#E3C567]/10 hover:border-[#E3C567] h-11 rounded-lg"
                     >
                       Upload New Contract
                     </Button>
