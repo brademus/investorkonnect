@@ -27,6 +27,16 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     return formatted;
   };
 
+  // Helper: check if walkthrough is scheduled on a deal-like object (handles both camelCase and snake_case)
+  const isWalkthroughScheduled = (d) => {
+    if (!d) return false;
+    return d.walkthrough_scheduled === true || d.walkthroughScheduled === true;
+  };
+  const getWalkthroughDatetime = (d) => {
+    if (!d) return null;
+    return d.walkthrough_datetime || d.walkthroughDatetime || null;
+  };
+
   // Load walkthrough data
   useEffect(() => {
     if (!deal?.id) return;
@@ -36,27 +46,40 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         // 1. Check DealAppointments (authoritative source)
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
+          console.log('[WalkthroughPanel] Found via DealAppointments:', rows[0].walkthrough.status, rows[0].walkthrough.datetime);
           setApptData(rows[0].walkthrough);
           return;
         }
 
-        // 2. Check Deal entity directly
-        if (deal.walkthrough_scheduled === true && deal.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: deal.walkthrough_datetime });
+        // 2. Check Deal prop directly (handles both snake_case and camelCase)
+        if (isWalkthroughScheduled(deal) && getWalkthroughDatetime(deal)) {
+          console.log('[WalkthroughPanel] Found via deal prop:', getWalkthroughDatetime(deal));
+          setApptData({ status: 'PROPOSED', datetime: getWalkthroughDatetime(deal) });
+          return;
+        }
+        // Also handle scheduled=true but no datetime (date TBD)
+        if (isWalkthroughScheduled(deal) && !getWalkthroughDatetime(deal)) {
+          console.log('[WalkthroughPanel] Found via deal prop (date TBD)');
+          setApptData({ status: 'PROPOSED', datetime: null });
           return;
         }
 
         // 3. Fetch fresh deal from DB in case props are stale
         const dealRows = await base44.entities.Deal.filter({ id: deal.id });
         const liveDeal = dealRows?.[0];
-        if (liveDeal?.walkthrough_scheduled === true && liveDeal?.walkthrough_datetime) {
-          setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime });
+        if (isWalkthroughScheduled(liveDeal)) {
+          const dt = getWalkthroughDatetime(liveDeal);
+          console.log('[WalkthroughPanel] Found via fresh DB fetch:', dt);
+          setApptData({ status: 'PROPOSED', datetime: dt });
+          return;
         }
+
+        console.log('[WalkthroughPanel] No walkthrough found for deal:', deal.id);
       } catch (e) {
         console.error('[WalkthroughPanel] Error:', e);
       } finally { setLoadingAppt(false); }
     })();
-  }, [deal?.id]);
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthroughScheduled, deal?.walkthrough_datetime]);
 
   // Real-time: DealAppointments updates
   useEffect(() => {
