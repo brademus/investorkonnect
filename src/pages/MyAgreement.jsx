@@ -561,12 +561,12 @@ export default function MyAgreement() {
                      const scheduled = deal.walkthroughScheduled === true || deal.walkthrough_scheduled === true;
                      if (!scheduled) return 'Not scheduled';
                      const dtIso = deal.walkthrough_datetime;
-                     if (!dtIso) return 'Scheduled (date TBD)';
+                     if (!dtIso) return 'Proposed (date TBD)';
                      const dt = new Date(dtIso);
-                     if (isNaN(dt.getTime())) return 'Scheduled (date TBD)';
+                     if (isNaN(dt.getTime())) return 'Proposed (date TBD)';
                      const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
                      const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                     return isMidnight ? `${dateStr} — Time TBD` : `${dateStr} at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+                     return isMidnight ? `Proposed: ${dateStr} — Time TBD` : `Proposed: ${dateStr} at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
                    })()}
                  </p>
                </div>
