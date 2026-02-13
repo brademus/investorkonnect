@@ -244,26 +244,10 @@ function PipelineContent() {
                                       <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
                                       {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
                                     {(() => {
-                                                      // Show seller comp for agents, buyer comp for investors
-                                                      // Only use agent_terms (counter-offer terms) after an agent has signed
-                                                      const agentSigned = deal.agreement_status === 'agent_signed' || deal.agreement_status === 'fully_signed' || deal.is_fully_signed;
-                                                      const roomData = (agentSigned && deal.room_agent_terms) ? { agent_terms: deal.room_agent_terms, proposed_terms: deal.proposed_terms } : null;
-                                      const dealData = { proposed_terms: deal.proposed_terms, purchase_price: deal.budget };
-                                      const agentId = isAgent ? profile?.id : (deal.room_agent_ids?.[0] || null);
-                                      const agreementData = deal.agreement_exhibit_a_terms ? { exhibit_a_terms: deal.agreement_exhibit_a_terms } : (deal.agreement || null);
-                                      let compLabel = null;
-                                      if (isAgent) {
-                                        const { compLabel: sellerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'seller', agentId, agreement: agreementData });
-                                        compLabel = sellerComp;
-                                        if (!compLabel) {
-                                          const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId, agreement: agreementData });
-                                          compLabel = buyerComp;
-                                        }
-                                      } else {
-                                        const { compLabel: buyerComp } = getPriceAndComp({ deal: dealData, room: roomData, side: 'buyer', agentId, agreement: agreementData });
-                                        compLabel = buyerComp;
-                                      }
-                                      return compLabel ? <div className="text-xs text-[#E3C567] font-semibold">{isAgent ? "Agent Comp" : "Comp"}: {compLabel}</div> : null;
+                                      // Show seller agent comp - same source as KeyTermsPanel
+                                      const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
+                                      const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
+                                      return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
                                     })()}
                                       {(() => {
                                         const badge = getAgreementStatusLabel({
