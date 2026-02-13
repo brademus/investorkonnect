@@ -114,24 +114,87 @@ export default function NewDeal() {
     } catch (_) {}
   }, [dealId, fromVerify]);
 
-  // Helper: compute walkthrough ISO from date+time strings
+  // Helper: parse flexible time string into {hours, minutes} in 24h format
+  const parseTimeString = (timeStr) => {
+    if (!timeStr || !timeStr.trim()) return { hours: 12, minutes: 0 };
+    const s = timeStr.trim();
+    
+    // Try "HH:MM AM/PM" or "H:MM AM/PM" or "H:MMAM/PM" (with or without space before AM/PM)
+    const ampmMatch = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm|a\.m\.|p\.m\.)$/i);
+    if (ampmMatch) {
+      let h = parseInt(ampmMatch[1]), m = parseInt(ampmMatch[2]);
+      const isPM = /pm|p\.m\./i.test(ampmMatch[3]);
+      if (isPM && h !== 12) h += 12;
+      if (!isPM && h === 12) h = 0;
+      return { hours: h, minutes: m };
+    }
+    
+    // Try "HH:MM" (24-hour)
+    const milMatch = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (milMatch) {
+      return { hours: parseInt(milMatch[1]), minutes: parseInt(milMatch[2]) };
+    }
+    
+    // Try "Ham/pm" or "H am/pm" (no minutes)
+    const shortMatch = s.match(/^(\d{1,2})\s*(AM|PM|am|pm|a\.m\.|p\.m\.)$/i);
+    if (shortMatch) {
+      let h = parseInt(shortMatch[1]);
+      const isPM = /pm|p\.m\./i.test(shortMatch[2]);
+      if (isPM && h !== 12) h += 12;
+      if (!isPM && h === 12) h = 0;
+      return { hours: h, minutes: 0 };
+    }
+    
+    // Last resort: try native Date parse
+    const attempt = new Date(`2000-01-01 ${s}`);
+    if (!isNaN(attempt.getTime())) {
+      return { hours: attempt.getHours(), minutes: attempt.getMinutes() };
+    }
+    
+    return { hours: 12, minutes: 0 };
+  };
+
+  // Helper: parse flexible date string into {year, month (1-based), day}
+  const parseDateString = (dateStr) => {
+    if (!dateStr || !dateStr.trim()) return null;
+    const s = dateStr.trim();
+    
+    // Try MM/DD/YYYY or M/D/YYYY
+    const slashMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slashMatch) {
+      return { month: parseInt(slashMatch[1]), day: parseInt(slashMatch[2]), year: parseInt(slashMatch[3]) };
+    }
+    
+    // Try MM-DD-YYYY
+    const dashMatch = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (dashMatch) {
+      return { month: parseInt(dashMatch[1]), day: parseInt(dashMatch[2]), year: parseInt(dashMatch[3]) };
+    }
+    
+    // Try YYYY-MM-DD (ISO-like)
+    const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (isoMatch) {
+      return { month: parseInt(isoMatch[2]), day: parseInt(isoMatch[3]), year: parseInt(isoMatch[1]) };
+    }
+    
+    // Last resort: native Date parse
+    const attempt = new Date(s);
+    if (!isNaN(attempt.getTime())) {
+      return { month: attempt.getMonth() + 1, day: attempt.getDate(), year: attempt.getFullYear() };
+    }
+    
+    return null;
+  };
+
+  // Helper: compute walkthrough ISO from date+time strings (handles many formats)
   const computeWalkthroughIso = (scheduled, dateStr, timeStr) => {
     if (scheduled !== true || !dateStr) return null;
     try {
-      const parts = dateStr.split('/');
-      if (parts.length === 3) {
-        const [mm, dd, yyyy] = parts;
-        const ts = timeStr || '12:00 PM';
-        const tm = ts.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-        let h = 12, m = 0;
-        if (tm) {
-          h = parseInt(tm[1]); m = parseInt(tm[2]);
-          if (tm[3].toUpperCase() === 'PM' && h !== 12) h += 12;
-          if (tm[3].toUpperCase() === 'AM' && h === 12) h = 0;
-        }
-        const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), h, m);
-        return isNaN(d.getTime()) ? null : d.toISOString();
-      }
+      const dateParts = parseDateString(dateStr);
+      if (!dateParts) return null;
+      const timeParts = parseTimeString(timeStr);
+      const d = new Date(dateParts.year, dateParts.month - 1, dateParts.day, timeParts.hours, timeParts.minutes);
+      return isNaN(d.getTime()) ? null : d.toISOString();
     } catch {}
     return null;
   };
