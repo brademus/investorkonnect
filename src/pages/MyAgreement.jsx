@@ -180,8 +180,36 @@ export default function MyAgreement() {
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
           // Resolve walkthrough fields once — be very explicit
-          const wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true;
-          const wtDatetime = dealData.walkthrough_datetime || null;
+          // Check ALL possible keys in deal data (camelCase + snake_case + dedicated key)
+          let wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true;
+          let wtDatetime = dealData.walkthrough_datetime || dealData.walkthroughDatetime || null;
+          
+          // FALLBACK: re-read the dedicated newDealWalkthrough key as belt-and-suspenders
+          if (!wtScheduled) {
+            try {
+              const wtJson = sessionStorage.getItem('newDealWalkthrough');
+              if (wtJson) {
+                const wt = JSON.parse(wtJson);
+                if (wt.walkthrough_scheduled === true) {
+                  wtScheduled = true;
+                  wtDatetime = wtDatetime || wt.walkthrough_datetime || null;
+                }
+              }
+            } catch (_) {}
+          }
+          // FALLBACK 2: re-read the main draft key — walkthrough fields might be there with different casing
+          if (!wtScheduled) {
+            try {
+              const rawDraft = sessionStorage.getItem('newDealDraft');
+              if (rawDraft) {
+                const dd = JSON.parse(rawDraft);
+                if (dd.walkthroughScheduled === true || dd.walkthrough_scheduled === true) {
+                  wtScheduled = true;
+                  wtDatetime = wtDatetime || dd.walkthrough_datetime || dd.walkthroughDatetime || null;
+                }
+              }
+            } catch (_) {}
+          }
           console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime, rawWalkthroughScheduled: dealData.walkthroughScheduled, rawWalkthrough_scheduled: dealData.walkthrough_scheduled });
 
           const draftCreated = await base44.entities.DealDraft.create({
