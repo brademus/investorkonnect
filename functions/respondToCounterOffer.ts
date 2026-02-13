@@ -1,50 +1,9 @@
-const BASE_URL = "https://app.base44.com/api";
-const APP_ID = Deno.env.get("BASE44_APP_ID");
-
-async function serviceHeaders(req) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "") || "";
-  return {
-    "Content-Type": "application/json",
-    "x-app-id": APP_ID,
-    "authorization": `Bearer ${token}`,
-  };
-}
-
-async function getMe(req) {
-  const h = await serviceHeaders(req);
-  const r = await fetch(`${BASE_URL}/me`, { headers: h });
-  if (!r.ok) return null;
-  return r.json();
-}
-
-async function filterEntity(req, entity, query) {
-  const h = await serviceHeaders(req);
-  const r = await fetch(`${BASE_URL}/entities/${entity}/query`, {
-    method: "POST",
-    headers: h,
-    body: JSON.stringify(query),
-  });
-  if (!r.ok) return [];
-  return r.json();
-}
-
-async function updateEntity(req, entity, id, data) {
-  const h = await serviceHeaders(req);
-  const r = await fetch(`${BASE_URL}/entities/${entity}/${id}`, {
-    method: "PUT",
-    headers: h,
-    body: JSON.stringify(data),
-  });
-  if (!r.ok) {
-    const txt = await r.text();
-    throw new Error(`Update ${entity}/${id} failed: ${txt}`);
-  }
-  return r.json();
-}
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
-    const user = await getMe(req);
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
@@ -58,7 +17,7 @@ Deno.serve(async (req) => {
     }
 
     // Get counter offer
-    const counters = await filterEntity(req, "CounterOffer", { id: counter_offer_id });
+    const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
     if (!counters?.length) {
       return Response.json({ error: "Counter offer not found" }, { status: 404 });
     }
@@ -66,7 +25,7 @@ Deno.serve(async (req) => {
     const newStatus = action === "accept" ? "accepted" : "declined";
 
     // Update counter offer status
-    await updateEntity(req, "CounterOffer", counter_offer_id, {
+    await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
       status: newStatus,
       responded_at: new Date().toISOString(),
       responded_by_role: counter.to_role,
@@ -75,7 +34,7 @@ Deno.serve(async (req) => {
     // When counter is accepted, update agent-specific terms on the Room
     if (action === "accept" && counter.room_id) {
       try {
-        const rooms = await filterEntity(req, "Room", { id: counter.room_id });
+        const rooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
         const room = rooms?.[0];
 
         if (room) {
@@ -88,7 +47,7 @@ Deno.serve(async (req) => {
           }
 
           if (!targetAgentId && counter.deal_id) {
-            const invites = await filterEntity(req, "DealInvite", {
+            const invites = await base44.asServiceRole.entities.DealInvite.filter({
               deal_id: counter.deal_id,
               room_id: counter.room_id,
             });
@@ -117,7 +76,7 @@ Deno.serve(async (req) => {
             ...(counter.terms_delta || {}),
           };
 
-          await updateEntity(req, "Room", counter.room_id, {
+          await base44.asServiceRole.entities.Room.update(counter.room_id, {
             requires_regenerate: true,
             agent_terms: updatedAgentTerms,
             proposed_terms: mergedProposedTerms,
