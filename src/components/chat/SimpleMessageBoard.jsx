@@ -30,7 +30,18 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     const load = async () => {
       const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
       if (!cancelled) {
-        setMessages((rows || []).map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })));
+        // Deduplicate walkthrough_request messages with the same datetime
+        const deduped = [];
+        const seenWtKeys = new Set();
+        for (const r of (rows || [])) {
+          if (r?.metadata?.type === 'walkthrough_request' && r?.metadata?.walkthrough_datetime) {
+            const key = `wt_${r.metadata.walkthrough_datetime}`;
+            if (seenWtKeys.has(key)) continue;
+            seenWtKeys.add(key);
+          }
+          deduped.push(r);
+        }
+        setMessages(deduped.map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })));
         setTimeout(scroll, 0);
       }
     };
