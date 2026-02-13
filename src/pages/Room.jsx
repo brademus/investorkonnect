@@ -419,7 +419,7 @@ export default function Room() {
                 </div>
               )}
 
-              <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
+              <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} isSigned={isSigned} />
             <WalkthroughScheduleModal
               open={walkthroughModalOpen}
               onOpenChange={setWalkthroughModalOpen}
