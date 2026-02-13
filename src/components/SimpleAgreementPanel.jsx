@@ -287,7 +287,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   };
 
   // Counter offer response
+  const [respondingCounterId, setRespondingCounterId] = useState(null);
   const handleCounterResponse = async (counterId, action) => {
+    setRespondingCounterId(counterId);
     try {
       const res = await base44.functions.invoke('respondToCounterOffer', { counter_offer_id: counterId, action });
       if (res.data?.success) {
@@ -296,6 +298,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         if (action === 'accept') setRoom(prev => ({ ...prev, requires_regenerate: true }));
       } else toast.error(res.data?.error || 'Failed');
     } catch (e) { toast.error('Failed to respond'); }
+    finally { setRespondingCounterId(null); }
   };
 
   // Handle post-signing redirect — immediately fetch latest agreement to show signed status
