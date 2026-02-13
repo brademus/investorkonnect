@@ -1184,9 +1184,10 @@ export default function NewDeal() {
               <p className="text-xs text-[#808080] mt-2">How long will this agreement remain active?</p>
             </div>
 
-            {/* Walk-through Scheduled */}
+            {/* Walk-through Scheduling */}
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Has a walk-through already been scheduled?</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Would you like to schedule a walk-through?</label>
+              <p className="text-xs text-[#808080] mb-3">This will send a proposed walk-through to all selected agents. They can accept or decline after signing.</p>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -1208,14 +1209,14 @@ export default function NewDeal() {
                       : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#F59E0B]/50"
                   }`}
                 >
-                  No
+                  Not Now
                 </button>
               </div>
               {walkthroughScheduled === true && (
                 <div className="mt-4">
                   <div className="grid grid-cols-2 gap-4 max-w-sm">
                     <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Date</label>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Date</label>
                       <Input
                         type="text"
                         value={walkthroughDate}
@@ -1226,7 +1227,7 @@ export default function NewDeal() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Time</label>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Time</label>
                       <Input
                         type="text"
                         value={walkthroughTime}
