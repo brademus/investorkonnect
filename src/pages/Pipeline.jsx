@@ -16,7 +16,7 @@ import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
-import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
+import { getPriceAndComp, getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 
 function PipelineContent() {
   const navigate = useNavigate();
