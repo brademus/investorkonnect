@@ -263,6 +263,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
               </Button>
             </div>
           )}
+          {/* Agent sees proposed but hasn't signed yet */}
+          {isAgent && !isSigned && apptStatus === 'PROPOSED' && (
+            <p className="text-xs text-[#F59E0B] pt-2">Sign the agreement to accept or decline this walk-through.</p>
+          )}
 
           {/* Investor: reschedule option if declined */}
           {isInvestor && apptStatus === 'CANCELED' && (
