@@ -242,6 +242,7 @@ export default function NewDeal() {
       walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
+      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime),
       walkthrough_datetime: wtIso
     };
     // For brand new deals (no dealId), only persist if the user actually typed something meaningful
