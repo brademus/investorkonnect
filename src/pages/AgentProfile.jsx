@@ -49,8 +49,7 @@ export default function AgentProfile() {
 
         try {
           const completedDeals = await base44.entities.Deal.filter({ 
-            locked_agent_id: profileId,
-            pipeline_stage: { $in: ['ready_to_close', 'completed'] }
+            locked_agent_id: profileId
           });
           setDealsCompleted(completedDeals?.length || 0);
         } catch (err) {
