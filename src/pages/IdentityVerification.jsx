@@ -70,8 +70,23 @@ export default function IdentityVerification() {
     setStatus('verifying');
 
     try {
-      // 1) Ask backend to create a Stripe Identity Verification Session
-      const { data: sessionData } = await base44.functions.invoke('createStripeIdentitySession');
+      // 1) Ask backend to create a Stripe Identity Verification Session (with retry on 502)
+      let sessionData = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const resp = await base44.functions.invoke('createStripeIdentitySession');
+          sessionData = resp.data;
+          if (sessionData?.client_secret) break;
+        } catch (invokeErr) {
+          console.warn(`[IdentityVerification] Attempt ${attempt + 1} failed:`, invokeErr?.message);
+          if (attempt < 2) {
+            await new Promise(r => setTimeout(r, 1500));
+          } else {
+            throw new Error('Verification service is temporarily unavailable. Please try again.');
+          }
+        }
+      }
+
       const clientSecret = sessionData?.client_secret;
       const publishableKey = sessionData?.publishable_key;
       const sessionId = sessionData?.session_id;
