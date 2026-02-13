@@ -13,167 +13,132 @@ export default function DocuSignReturn() {
   const [message, setMessage] = useState("Processing your signature...");
 
   useEffect(() => {
-    // Safety net: if we're still on this page after 15s, force redirect
+    let redirected = false;
+    const doRedirect = (url, msg) => {
+      if (redirected) return;
+      redirected = true;
+      clearTimeout(safetyTimeout);
+      toast.success(msg || 'Signature processed!');
+      navigate(url, { replace: true });
+    };
+
+    // Safety net: if we're still on this page after 12s, force redirect
     const safetyTimeout = setTimeout(() => {
       console.warn('[DocuSignReturn] Safety timeout - forcing redirect to Pipeline');
-      toast.success('Signature processed!');
-      navigate(createPageUrl("Pipeline"), { replace: true });
-    }, 15000);
+      doRedirect(createPageUrl("Pipeline"), 'Signature processed!');
+    }, 12000);
 
     const handleReturn = async () => {
-      try {
-        const event = searchParams.get('event');
-        const dealId = searchParams.get('dealId') || searchParams.get('deal_id');
-        const roomId = searchParams.get('roomId');
+      const event = searchParams.get('event');
+      const dealId = searchParams.get('dealId') || searchParams.get('deal_id');
+      const roomId = searchParams.get('roomId');
+      const signingRole = searchParams.get('role') || 'investor';
+      const token = searchParams.get('token');
 
-        console.log('[DocuSignReturn]', { event, dealId, roomId, allParams: Object.fromEntries(searchParams.entries()) });
+      console.log('[DocuSignReturn]', { event, dealId, roomId, signingRole, allParams: Object.fromEntries(searchParams.entries()) });
 
-        // DocuSign returns various event types for signing completion
-        if (event === 'signing_complete' || event === 'completed') {
-          setMessage("Signature completed! Processing...");
-          setStatus("success");
-
-          // Find the agreement to get agreement_id
-          const signingRole = searchParams.get('role') || 'investor';
-          const token = searchParams.get('token');
-          
-          // Get agreement_id from SigningToken or from LegalAgreement lookup
-          let agreementId = null;
-          if (token) {
-            try {
-              const tokens = await base44.entities.SigningToken.filter({ token });
-              if (tokens?.[0]) agreementId = tokens[0].agreement_id;
-            } catch (_) {}
-          }
-          if (!agreementId && dealId) {
-            try {
-              const agreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId }, '-created_date', 1);
-              if (agreements?.[0]) agreementId = agreements[0].id;
-            } catch (_) {}
-          }
-
-          // ALWAYS call pollAndFinalizeSignature to confirm the signature immediately
-          // This ensures the agreement record is updated before we redirect,
-          // so the UI shows the correct signed status right away.
-          if (agreementId) {
-            try {
-              console.log('[DocuSignReturn] Calling pollAndFinalizeSignature for agreement:', agreementId, 'role:', signingRole);
-              setMessage("Confirming signature...");
-              
-              const result = await base44.functions.invoke('pollAndFinalizeSignature', {
-                agreement_id: agreementId,
-                role: signingRole
-              });
-              
-              console.log('[DocuSignReturn] pollAndFinalize result:', result.data);
-
-              // For investor signing without a room: handle deal creation flow
-              if (signingRole === 'investor' && !roomId) {
-                const roomId_result = result.data?.room_id;
-                const dealId_result = result.data?.deal_id;
-
-                if (roomId_result) {
-                  toast.success('Deal created and sent to agents!');
-                  sessionStorage.removeItem('selectedAgentIds');
-                  sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                  sessionStorage.removeItem('newDealDraft');
-                  navigate(`${createPageUrl("Room")}?roomId=${roomId_result}`, { replace: true });
-                  return;
-                } else if (dealId_result) {
-                  toast.success('Deal created! Redirecting...');
-                  sessionStorage.removeItem('newDealDraft');
-                  sessionStorage.removeItem('selectedAgentIds');
-                  navigate(createPageUrl("Pipeline"), { replace: true });
-                  return;
-                } else {
-                  toast.success('Agreement signed! Processing...');
-                  sessionStorage.removeItem('newDealDraft');
-                  sessionStorage.removeItem('selectedAgentIds');
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  navigate(createPageUrl("Pipeline"), { replace: true });
-                  return;
-                }
-              }
-
-              // For agent signing: signature is now confirmed in the DB
-              if (signingRole === 'agent' && roomId) {
-                toast.success('Agreement signed successfully!');
-                navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
-                return;
-              }
-            } catch (pollError) {
-              console.error('[DocuSignReturn] pollAndFinalize failed:', pollError);
-              // Continue to fallback redirect below
-            }
-          }
-
-          // Fallback: void old agreements if applicable
-          if (roomId && dealId) {
-            try {
-              const latest = await base44.entities.LegalAgreement.filter({ 
-                deal_id: dealId,
-                room_id: roomId,
-                status: 'fully_signed'
-              }, '-created_date', 1);
-              
-              if (latest?.length > 0) {
-                await base44.functions.invoke('voidOldAgreementForRoom', {
-                  room_id: roomId,
-                  new_agreement_id: latest[0].id
-                }).catch(() => {});
-              }
-            } catch (e) {
-              console.log('[DocuSignReturn] Void skipped');
-            }
-          }
-          
-          // Fallback redirect to room or pipeline
-          toast.success('Agreement signed!');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
-          } else if (dealId) {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          } else {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          }
-        } else if (event === 'decline' || event === 'cancel') {
-          setMessage("Signature cancelled");
-          setStatus("cancelled");
-          toast.info("Signing cancelled");
-
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
-          } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
-          } else {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          }
+      // Handle cancel/decline quickly
+      if (event === 'decline' || event === 'cancel') {
+        setMessage("Signature cancelled");
+        setStatus("cancelled");
+        toast.info("Signing cancelled");
+        await new Promise(r => setTimeout(r, 1000));
+        if (roomId) {
+          doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`);
         } else {
-          setMessage("Redirecting...");
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
-          } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
-          } else {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          }
+          doRedirect(dealId ? `${createPageUrl("MyAgreement")}?dealId=${dealId}` : createPageUrl("Pipeline"));
         }
-      } catch (error) {
-        console.error('[DocuSignReturn] Error:', error);
-        setStatus("error");
-        setMessage("Something went wrong");
-        toast.error("Failed to process signature");
-        
-        setTimeout(() => {
-          navigate(createPageUrl("Pipeline"));
-        }, 2000);
+        return;
+      }
+
+      // For non-signing_complete events, redirect immediately
+      if (event !== 'signing_complete' && event !== 'completed') {
+        setMessage("Redirecting...");
+        await new Promise(r => setTimeout(r, 500));
+        if (roomId) {
+          doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`);
+        } else {
+          doRedirect(dealId ? `${createPageUrl("MyAgreement")}?dealId=${dealId}` : createPageUrl("Pipeline"));
+        }
+        return;
+      }
+
+      // === Signing complete flow ===
+      setMessage("Signature completed! Processing...");
+      setStatus("success");
+
+      // Clean up session storage immediately
+      sessionStorage.removeItem('selectedAgentIds');
+      sessionStorage.removeItem('newDealDraft');
+      if (dealId) sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+
+      // Find agreement_id
+      let agreementId = null;
+      if (token) {
+        const tokens = await base44.entities.SigningToken.filter({ token }).catch(() => []);
+        if (tokens?.[0]) agreementId = tokens[0].agreement_id;
+      }
+      if (!agreementId && dealId) {
+        const agreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId }, '-created_date', 1).catch(() => []);
+        if (agreements?.[0]) agreementId = agreements[0].id;
+      }
+
+      // Call pollAndFinalizeSignature with a timeout so we don't wait forever
+      if (agreementId) {
+        try {
+          console.log('[DocuSignReturn] Calling pollAndFinalizeSignature:', agreementId, signingRole);
+          setMessage("Confirming signature...");
+
+          const pollPromise = base44.functions.invoke('pollAndFinalizeSignature', {
+            agreement_id: agreementId,
+            role: signingRole
+          });
+
+          // Race the poll against a 8s timeout
+          const result = await Promise.race([
+            pollPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('poll_timeout')), 8000))
+          ]);
+
+          console.log('[DocuSignReturn] pollAndFinalize result:', result.data);
+
+          // Investor flow: redirect to room or pipeline
+          if (signingRole === 'investor' && !roomId) {
+            const roomIdResult = result.data?.room_id;
+            const dealIdResult = result.data?.deal_id;
+            if (roomIdResult) {
+              doRedirect(`${createPageUrl("Room")}?roomId=${roomIdResult}`, 'Deal created and sent to agents!');
+            } else {
+              doRedirect(createPageUrl("Pipeline"), dealIdResult ? 'Deal created!' : 'Agreement signed!');
+            }
+            return;
+          }
+
+          // Agent flow
+          if (signingRole === 'agent' && roomId) {
+            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, 'Agreement signed successfully!');
+            return;
+          }
+        } catch (pollError) {
+          console.warn('[DocuSignReturn] pollAndFinalize failed or timed out:', pollError?.message);
+          // Fall through to fallback redirect
+        }
+      }
+
+      // Fallback redirect
+      if (roomId) {
+        doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, 'Agreement signed!');
+      } else {
+        doRedirect(createPageUrl("Pipeline"), 'Agreement signed!');
       }
     };
 
-    handleReturn();
+    handleReturn().catch(error => {
+      console.error('[DocuSignReturn] Unhandled error:', error);
+      doRedirect(createPageUrl("Pipeline"), 'Redirecting...');
+    });
+
+    return () => clearTimeout(safetyTimeout);
   }, [searchParams, navigate]);
 
   return (
