@@ -139,8 +139,8 @@ Deno.serve(async (req) => {
           }
           return baseTerms;
         })(),
-        // Agreement status for badges
-        agreement: ag ? { status: ag.status, investor_signed_at: ag.investor_signed_at, agent_signed_at: ag.agent_signed_at } : null,
+        // Agreement status for badges + exhibit_a_terms for compensation display
+        agreement: ag ? { status: ag.status, investor_signed_at: ag.investor_signed_at, agent_signed_at: ag.agent_signed_at, exhibit_a_terms: (bestAg || ag)?.exhibit_a_terms || null } : null,
         requires_regenerate: room.requires_regenerate || false,
         agent_terms: room.agent_terms || null,
         // Files/photos from room
