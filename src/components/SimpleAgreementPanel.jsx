@@ -469,7 +469,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
                     <Button size="sm" onClick={() => handleCounterResponse(counter.id, 'accept')} disabled={respondingCounterId === counter.id} className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs">
                       {respondingCounterId === counter.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}Accept
                     </Button>
-                    <Button size="sm" onClick={() => handleCounterResponse(counter.id, 'decline')} disabled={respondingCounterId === counter.id} variant="outline" className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs">Decline</Button>
+                    <Button size="sm" onClick={() => handleCounterResponse(counter.id, 'decline')} disabled={respondingCounterId === counter.id} variant="outline" className="flex-1 border-[#1F1F1F] bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] text-xs">Decline</Button>
                   </div>
                 )}
                 {counter.from_role === (isInvestor ? 'investor' : 'agent') && (
