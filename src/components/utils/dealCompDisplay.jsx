@@ -27,7 +27,7 @@ function extractCompFromTerms(terms, side = 'buyer') {
   const commPct = terms[`${side}_commission_percentage`];
   const flatFee = terms[`${side}_flat_fee`];
 
-  if ((commType === 'percentage' || commType === 'flat_fee') && commPct != null && commType === 'percentage') {
+  if (commType === 'percentage' && commPct != null) {
     return `${commPct}%`;
   }
   if ((commType === 'flat' || commType === 'flat_fee') && flatFee != null) {
@@ -56,7 +56,7 @@ export function getPriceAndComp({ deal, room, negotiation, side = 'buyer', agent
 
   let comp = null;
 
-  // Priority 0: Agreement exhibit_a_terms (authoritative after counter offer + regeneration)
+  // Priority 0: Agreement exhibit_a_terms (authoritative after signing/counter offer + regeneration)
   if (agreement?.exhibit_a_terms) {
     comp = extractCompFromTerms(agreement.exhibit_a_terms, side);
   }
@@ -81,4 +81,14 @@ export function getPriceAndComp({ deal, room, negotiation, side = 'buyer', agent
   return { priceLabel, compLabel: comp };
 }
 
-export default { getPriceAndComp };
+/**
+ * Get the seller agent commission label from exhibit_a_terms or proposed_terms.
+ * This mirrors what KeyTermsPanel shows under "Seller's Agent Commission".
+ */
+export function getSellerCompLabel(exhibitTerms, proposedTerms) {
+  const terms = exhibitTerms || proposedTerms;
+  if (!terms) return null;
+  return extractCompFromTerms(terms, 'seller');
+}
+
+export default { getPriceAndComp, getSellerCompLabel };
