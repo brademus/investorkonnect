@@ -1,5 +1,9 @@
 /**
- * Default next-steps message template and placeholder replacement logic.
+ * Default next-steps message template — smart conditional version.
+ * The walkthrough section is handled automatically at render time:
+ *   - If a walkthrough date+time are set → shows scheduled block
+ *   - Otherwise → asks agent for availability
+ * The template editor only controls the static portions.
  */
 
 export const DEFAULT_NEXT_STEPS_TEMPLATE = `Next Steps for {{PROPERTY_ADDRESS}}
@@ -12,11 +16,7 @@ Below is a clear outline of the next steps so we're aligned from the start.
 
 Step 1: Initial Walkthrough
 
-We are planning to schedule the walkthrough for:
-
-{{WALKTHROUGH_DATE}} at {{WALKTHROUGH_TIME}}
-
-Please let me know if that works for you, or feel free to suggest another time.
+{{WALKTHROUGH_SECTION}}
 
 During the walkthrough, please:
 
@@ -54,8 +54,7 @@ export const TEMPLATE_PLACEHOLDERS = [
   { key: '{{PROPERTY_ADDRESS}}', label: 'Property address' },
   { key: '{{AGENT_FIRST_NAME}}', label: "Agent's first name" },
   { key: '{{PARTNER_NAME}}', label: 'Your company name or "me"' },
-  { key: '{{WALKTHROUGH_DATE}}', label: 'Walkthrough date or "To Be Scheduled"' },
-  { key: '{{WALKTHROUGH_TIME}}', label: 'Walkthrough time or "To Be Scheduled"' },
+  { key: '{{WALKTHROUGH_SECTION}}', label: 'Auto: shows scheduled date/time or asks for availability' },
   { key: '{{INVESTOR_FULL_NAME}}', label: 'Your full name' },
   { key: '{{INVESTOR_PHONE_NUMBER}}', label: 'Your phone number' },
   { key: '{{INVESTOR_EMAIL}}', label: 'Your email address' },
