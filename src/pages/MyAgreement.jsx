@@ -551,6 +551,22 @@ export default function MyAgreement() {
                    })()}
                  </p>
                </div>
+               <div>
+                 <p className="text-[#808080]">Walk-through</p>
+                 <p className="text-[#FAFAFA] font-semibold">
+                   {(() => {
+                     const scheduled = deal.walkthroughScheduled === true || deal.walkthrough_scheduled === true;
+                     if (!scheduled) return 'Not scheduled';
+                     const dtIso = deal.walkthrough_datetime;
+                     if (!dtIso) return 'Scheduled (date TBD)';
+                     const dt = new Date(dtIso);
+                     if (isNaN(dt.getTime())) return 'Scheduled (date TBD)';
+                     const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
+                     const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                     return isMidnight ? `${dateStr} — Time TBD` : `${dateStr} at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+                   })()}
+                 </p>
+               </div>
              </div>
            </div>
          )}
