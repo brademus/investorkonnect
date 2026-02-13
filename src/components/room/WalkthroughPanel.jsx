@@ -35,22 +35,23 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
   // Fetch DealAppointments - check multiple sources for walkthrough data
   useEffect(() => {
-    if (!deal?.id) return;
+    const dealId = deal?.id;
+    if (!dealId) return;
     setLoadingAppt(true);
     (async () => {
       try {
         // 1. Check DealAppointments first (most authoritative)
-        const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+        const rows = await base44.entities.DealAppointments.filter({ dealId });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
-          console.log('[WalkthroughPanel] Found DealAppointments walkthrough:', rows[0].walkthrough.status);
+          console.log('[WalkthroughPanel] Found DealAppointments walkthrough:', rows[0].walkthrough.status, rows[0].walkthrough.datetime);
           setApptData(rows[0].walkthrough);
           return;
         }
 
-        // 2. Re-fetch Deal entity from DB (deal prop may be from getDealDetailsForUser which can lag)
-        const dealRows = await base44.entities.Deal.filter({ id: deal.id });
+        // 2. Re-fetch Deal entity directly from DB (props may come from getDealDetailsForUser which wraps some fields)
+        const dealRows = await base44.entities.Deal.filter({ id: dealId });
         const liveDeal = dealRows?.[0];
-        console.log('[WalkthroughPanel] Live deal walkthrough:', liveDeal?.walkthrough_scheduled, liveDeal?.walkthrough_datetime);
+        console.log('[WalkthroughPanel] Live deal from DB:', { wt_scheduled: liveDeal?.walkthrough_scheduled, wt_datetime: liveDeal?.walkthrough_datetime });
         if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
           setApptData({ status: 'PROPOSED', datetime: liveDeal.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
           return;
@@ -62,15 +63,18 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           return;
         }
 
-        // 4. Check chat messages for walkthrough_request messages (belt-and-suspenders fallback)
+        // 4. Check chat messages for walkthrough_request messages
         if (roomId) {
           const msgs = await base44.entities.Message.filter({ room_id: roomId });
           const wtMsg = msgs?.find(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.walkthrough_datetime);
           if (wtMsg) {
             const msgStatus = wtMsg.metadata.status === 'confirmed' ? 'SCHEDULED' : wtMsg.metadata.status === 'denied' ? 'CANCELED' : 'PROPOSED';
             setApptData({ status: msgStatus, datetime: wtMsg.metadata.walkthrough_datetime, timezone: null, locationType: 'ON_SITE', notes: null });
+            return;
           }
         }
+        
+        console.log('[WalkthroughPanel] No walkthrough data found for deal:', dealId);
       } catch (e) {
         console.error('[WalkthroughPanel] Error loading walkthrough:', e);
         if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
