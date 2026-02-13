@@ -57,7 +57,7 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
                   </p>
                 )}
                 {room.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>}
-                {compLabel && <div className="text-xs text-[#E3C567]">Comp: {compLabel}</div>}
+                {compLabel && <div className="text-xs text-[#E3C567]">Agent Comp: {compLabel}</div>}
               </div>
             </button>
           );
