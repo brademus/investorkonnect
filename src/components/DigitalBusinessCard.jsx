@@ -114,7 +114,7 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
                   <Briefcase className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
                   <div>
                     <p className="text-lg font-bold text-[#E3C567]">{agent.investment_deals_last_12m}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investment Deals Outside IK (12mo)</p>
+                    <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investment Deals Outside IK</p>
                   </div>
                 </div>
               )}
