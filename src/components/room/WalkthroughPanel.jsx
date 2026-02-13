@@ -159,7 +159,7 @@ export default function WalkthroughPanel({ deal }) {
             <div>
               <p className="text-xs text-[#808080]">Time</p>
               <p className="text-sm font-medium text-[#FAFAFA]">
-                {dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                {dt.getHours() === 0 && dt.getMinutes() === 0 ? 'TBD' : dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>
