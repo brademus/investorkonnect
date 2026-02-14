@@ -32,8 +32,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     room?.request_status === "locked" ||
     room?.is_fully_signed === true;
 
-  const wtDate = deal?.walkthrough_date || null;
-  const wtTime = deal?.walkthrough_time || null;
+  const wtDate = deal?.walkthrough_date && deal.walkthrough_date.length >= 8 ? deal.walkthrough_date : null;
+  const wtTime = deal?.walkthrough_time && deal.walkthrough_time.length >= 3 ? deal.walkthrough_time : null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
 
   // Load DealAppointments to get real status — skip if cache already has authoritative status
