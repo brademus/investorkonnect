@@ -209,6 +209,57 @@ Deno.serve(async (req) => {
       success = true;
     }
 
+    // CRITICAL: After recipient swap, explicitly update tabs to ensure they are pre-filled and locked.
+    // DocuSign PUT on recipients does NOT reliably replace tabs — the original placeholder tabs
+    // (with locked=false, readOnly=false, empty values) can persist. We must explicitly PUT the tabs.
+    if (success) {
+      const tabsUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}/recipients/${agentRecipientId}/tabs`;
+      
+      // First, delete existing text tabs to clear stale placeholder tabs
+      const getTabsResp = await fetch(tabsUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
+      if (getTabsResp.ok) {
+        const currentTabs = await getTabsResp.json();
+        const existingTextTabs = currentTabs.textTabs || [];
+        const existingFullNameTabs = currentTabs.fullNameTabs || [];
+        console.log('[addAgentToEnvelope] Current text tabs:', existingTextTabs.length, 'fullName tabs:', existingFullNameTabs.length);
+        
+        // Delete all existing text tabs and fullName tabs, then re-create with correct values
+        if (existingTextTabs.length > 0 || existingFullNameTabs.length > 0) {
+          const deleteTabsPayload = {};
+          if (existingTextTabs.length > 0) deleteTabsPayload.textTabs = existingTextTabs;
+          if (existingFullNameTabs.length > 0) deleteTabsPayload.fullNameTabs = existingFullNameTabs;
+          
+          const delTabsResp = await fetch(tabsUrl, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(deleteTabsPayload)
+          });
+          console.log('[addAgentToEnvelope] Delete old tabs result:', delTabsResp.status);
+        }
+      }
+      
+      // Now POST fresh tabs with correct pre-filled, locked values
+      const freshTabs = {
+        fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: 'true', required: 'true', tabLabel: 'agentFullName' }],
+        textTabs: [
+          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agentLicenseForDeal, required: 'true', locked: 'true', readOnly: 'true', tabLabel: 'agentLicense', font: 'helvetica', fontSize: 'size10' },
+          { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: 'true', locked: 'true', readOnly: 'true', tabLabel: 'agentBrokerage', font: 'helvetica', fontSize: 'size10' }
+        ]
+      };
+      
+      const postTabsResp = await fetch(tabsUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(freshTabs)
+      });
+      if (postTabsResp.ok) {
+        console.log('[addAgentToEnvelope] Fresh tabs posted successfully with locked values');
+      } else {
+        const tabsErr = await postTabsResp.text();
+        console.warn('[addAgentToEnvelope] Failed to post fresh tabs (non-fatal):', tabsErr);
+      }
+    }
+
     // Update agreement — same envelope ID, just updated agent details
     const updates = {
       agent_recipient_id: agentRecipientId,
