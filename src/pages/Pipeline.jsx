@@ -201,18 +201,21 @@ function PipelineContent() {
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
     const newStage = normalizeStage(result.destination.droppableId);
-    // Block dragging out of new_deals — deal can only move once an agent signs
     const draggedDeal = deals.find(d => d.id === result.draggableId);
-    if (draggedDeal && normalizeStage(draggedDeal.pipeline_stage) === 'new_deals' && !draggedDeal.is_fully_signed) return;
+    if (!draggedDeal) return;
+    // Block dragging out of new_deals — deal can only move once an agent signs
+    if (normalizeStage(draggedDeal.pipeline_stage) === 'new_deals' && !draggedDeal.is_fully_signed) return;
+    // Skip if dropped in same stage
+    if (normalizeStage(draggedDeal.pipeline_stage) === newStage) return;
+    
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
 
-    // Prompt rating when deal moves to completed or canceled (investor only)
-    if ((newStage === 'completed' || newStage === 'canceled') && isInvestor) {
-      const deal = deals.find(d => d.id === result.draggableId);
-      const agentId = deal?.locked_agent_id || deal?.room_agent_ids?.[0];
+    // Redirect to rate agent when deal moves to completed or canceled
+    if (newStage === 'completed' || newStage === 'canceled') {
+      const agentId = draggedDeal.locked_agent_id || draggedDeal.room_agent_ids?.[0];
       if (agentId) {
-        navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+        navigate(`${createPageUrl("RateAgent")}?dealId=${draggedDeal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
       }
     }
   };
