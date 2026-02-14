@@ -133,7 +133,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       toast.success(`Walk-through ${action === "confirm" ? "confirmed" : "declined"}`);
     } catch (e) {
       setApptStatus("PROPOSED");
-      _wtCache[dealId] = { status: "PROPOSED", userAction: false };
+      delete _wtCache[dealId];
       toast.error("Failed to respond");
     } finally {
       setResponding(false);
