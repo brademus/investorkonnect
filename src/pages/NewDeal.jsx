@@ -12,30 +12,6 @@ import { base44 } from "@/api/base44Client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WalkthroughTimeInput from "@/components/WalkthroughTimeInput";
 
-// Simple helper: build ISO string from date + time strings
-function buildWalkthroughIso(dateStr, timeStr) {
-  if (!dateStr || dateStr.length < 10) return null;
-  // Parse MM/DD/YYYY
-  const parts = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!parts) return null;
-  const month = parseInt(parts[1]) - 1;
-  const day = parseInt(parts[2]);
-  const year = parseInt(parts[3]);
-  // Parse time HH:MMAM/PM
-  let hours = 0, minutes = 0;
-  if (timeStr) {
-    const tm = timeStr.match(/^(\d{1,2}):(\d{2})(AM|PM)$/i);
-    if (tm) {
-      hours = parseInt(tm[1]);
-      const isPM = tm[3].toUpperCase() === 'PM';
-      if (isPM && hours !== 12) hours += 12;
-      if (!isPM && hours === 12) hours = 0;
-      minutes = parseInt(tm[2]);
-    }
-  }
-  const d = new Date(year, month, day, hours, minutes);
-  return isNaN(d.getTime()) ? null : d.toISOString();
-}
 
 export default function NewDeal() {
   const navigate = useNavigate();
@@ -359,17 +335,8 @@ export default function NewDeal() {
 
             // Hydrate walkthrough fields from deal
             setWalkthroughScheduled(deal.walkthrough_scheduled === true);
-            if (deal.walkthrough_datetime) {
-              const dt = new Date(deal.walkthrough_datetime);
-              if (!isNaN(dt.getTime())) {
-                setWalkthroughDate(String(dt.getMonth()+1).padStart(2,'0') + '/' + String(dt.getDate()).padStart(2,'0') + '/' + dt.getFullYear());
-                const hrs = dt.getHours();
-                const mins = String(dt.getMinutes()).padStart(2,'0');
-                const ampm = hrs >= 12 ? 'PM' : 'AM';
-                const h12 = hrs % 12 || 12;
-                setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ampm);
-              }
-            }
+            if (deal.walkthrough_date) setWalkthroughDate(deal.walkthrough_date);
+            if (deal.walkthrough_time) setWalkthroughTime(deal.walkthrough_time);
 
             // Fallback: if property details are still empty, try server-normalized details
             const detailsEmpty = !propertyType && !beds && !baths && !sqft && !yearBuilt && !numberOfStories && !hasBasement;
@@ -519,36 +486,34 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true,
-          walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
+          walkthrough_date: walkthroughScheduled === true ? walkthroughDate : null,
+          walkthrough_time: walkthroughScheduled === true ? walkthroughTime : null,
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
-        if (walkthroughScheduled === true) {
+        if (walkthroughScheduled === true && (walkthroughDate || walkthroughTime)) {
           try {
-            const wtIso = buildWalkthroughIso(walkthroughDate, walkthroughTime);
-            if (wtIso) {
-              const apptRows = await base44.entities.DealAppointments.filter({ dealId });
-              const apptPatch = {
-                walkthrough: {
-                  status: 'PROPOSED',
-                  datetime: wtIso,
-                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                  locationType: 'ON_SITE',
-                  notes: null,
-                  updatedByUserId: profile?.id || null,
-                  updatedAt: new Date().toISOString()
-                }
-              };
-              if (apptRows?.[0]) {
-                await base44.entities.DealAppointments.update(apptRows[0].id, apptPatch);
-              } else {
-                await base44.entities.DealAppointments.create({
-                  dealId,
-                  ...apptPatch,
-                  inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
-                  rescheduleRequests: []
-                });
+            const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+            const apptPatch = {
+              walkthrough: {
+                status: 'PROPOSED',
+                datetime: null,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                locationType: 'ON_SITE',
+                notes: null,
+                updatedByUserId: profile?.id || null,
+                updatedAt: new Date().toISOString()
               }
+            };
+            if (apptRows?.[0]) {
+              await base44.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+            } else {
+              await base44.entities.DealAppointments.create({
+                dealId,
+                ...apptPatch,
+                inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+                rescheduleRequests: []
+              });
             }
           } catch (apptErr) {
             console.warn('[NewDeal] Failed to sync DealAppointments:', apptErr);
