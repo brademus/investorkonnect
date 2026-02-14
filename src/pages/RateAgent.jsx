@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { invalidateRatingCache } from "@/components/useAgentRating";
 
 export default function RateAgent() {
   const navigate = useNavigate();
