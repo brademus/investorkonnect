@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     // Enrich rooms
     const enriched = rooms.map(room => {
       const deal = dealMap.get(room.deal_id);
-      const cpId = isInvestor ? (room.agent_ids?.[0] || room.agentId) : room.investorId;
+      const cpId = isInvestor ? (deal?.locked_agent_id || room.locked_agent_id || room.agent_ids?.[0] || room.agentId) : room.investorId;
       const cp = profileMap.get(cpId);
       const ag = agreementByRoom.get(room.id) || agreementByDeal.get(room.deal_id);
       const counter = counterMap.get(room.id);
