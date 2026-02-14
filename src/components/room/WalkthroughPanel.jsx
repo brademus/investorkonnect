@@ -120,7 +120,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     const optimistic = action === "confirm" ? "SCHEDULED" : "CANCELED";
     setApptStatus(optimistic);
     // Mark cache as user-initiated so refetch won't overwrite
-    _wtCache[dealId] = { status: optimistic, userAction: true };
+    _wtCache[dealId] = { status: optimistic, userActionAt: Date.now() };
     try {
       await respondToWalkthrough({
         action,
