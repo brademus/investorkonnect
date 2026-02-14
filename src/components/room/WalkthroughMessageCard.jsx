@@ -56,13 +56,15 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         metadata: { ...meta, status: action, responded_by: profile?.id, responded_at: new Date().toISOString() }
       });
 
-      // Send a reply message
+      // Send a reply message using the same display format
+      const displayParts = [wtDate, wtTime].filter(Boolean);
+      const displayText = displayParts.length > 0 ? displayParts.join(' at ') : formatted;
       const emoji = action === 'confirmed' ? '✅' : '❌';
       const label = action === 'confirmed' ? 'Confirmed' : 'Declined';
       await base44.entities.Message.create({
         room_id: roomId,
         sender_profile_id: profile?.id,
-        body: `${emoji} Walk-through ${label}\n\n${action === 'confirmed' ? `See you on ${formatted}` : 'Please propose a different time.'}`,
+        body: `${emoji} Walk-through ${label}\n\n${action === 'confirmed' ? `See you on ${displayText}` : 'Please propose a different time.'}`,
         metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, walkthrough_date: wtDate, walkthrough_time: wtTime, status: action }
       });
 

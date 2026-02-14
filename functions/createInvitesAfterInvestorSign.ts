@@ -220,12 +220,21 @@ Deno.serve(async (req) => {
         const alreadyHasWtMessage = existingMessages.some(m => m?.metadata?.type === 'walkthrough_request');
 
         if (!alreadyHasWtMessage) {
+          // Build a display string and ISO datetime for the message
+          const displayParts = [wtDate, wtTime].filter(Boolean);
+          const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
+          let isoDatetime = null;
+          try {
+            const d = new Date((wtDate || '') + ' ' + (wtTime || '12:00 PM'));
+            if (!isNaN(d.getTime())) isoDatetime = d.toISOString();
+          } catch (_) {}
+
           // Send walkthrough message to room so agents see it
           await base44.asServiceRole.entities.Message.create({
             room_id: room.id,
             sender_profile_id: investorProfile.id,
-            body: `📅 Walk-through Proposed\n\nProposed Date: ${wtDate || 'TBD'}\nProposed Time: ${wtTime || 'TBD'}\n\nPlease review and confirm or suggest a different time after signing.`,
-            metadata: { type: 'walkthrough_request', walkthrough_date: wtDate, walkthrough_time: wtTime, status: 'pending' }
+            body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time after signing.`,
+            metadata: { type: 'walkthrough_request', walkthrough_datetime: isoDatetime, walkthrough_date: wtDate, walkthrough_time: wtTime, status: 'pending' }
           });
           console.log('[createInvites] Sent walkthrough message to room:', room.id);
         } else {

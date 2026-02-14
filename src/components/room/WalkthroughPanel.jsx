@@ -26,25 +26,24 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time || null;
   const hasDateOrTime = wtDate || wtTime;
 
-  // Set status immediately from deal data so the panel renders instantly
+  // Set status immediately from deal data so the panel renders instantly (no async wait)
   useEffect(() => {
     if (wtScheduled && hasDateOrTime && !apptStatus) {
       setApptStatus("PROPOSED");
     }
   }, [wtScheduled, hasDateOrTime]);
 
-  // Load DealAppointments to get the *status* (confirmed/declined by agent) — overrides PROPOSED if found
+  // Load DealAppointments in background to get confirmed/declined status
   useEffect(() => {
     if (!deal?.id) return;
     let cancelled = false;
 
-    (async () => {
-      const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
       const appt = rows?.[0]?.walkthrough;
       if (!cancelled && appt?.status && appt.status !== "NOT_SET") {
         setApptStatus(appt.status);
       }
-    })();
+    }).catch(() => {});
 
     return () => { cancelled = true; };
   }, [deal?.id]);
@@ -99,6 +98,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
       if (roomId) {
         const msgStatus = action === "confirm" ? "confirmed" : "denied";
+        const displayParts = [wtDate, wtTime].filter(Boolean);
+        const displayText = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
 
         // Update all pending walkthrough_request messages so the message card shows confirmed/denied
         const msgs = await base44.entities.Message.filter({ room_id: roomId });
@@ -111,7 +112,6 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
         // Send a reply message
         const emoji = action === "confirm" ? "✅" : "❌";
         const label = action === "confirm" ? "Confirmed" : "Declined";
-        const displayText = `${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
         await base44.entities.Message.create({
           room_id: roomId,
           sender_profile_id: profile?.id,
