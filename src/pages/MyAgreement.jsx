@@ -163,10 +163,8 @@ export default function MyAgreement() {
           // NEW DEAL: Create DealDraft so automation can find it after investor signs
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
-          // Walkthrough comes from the same sessionStorage object as everything else
-          const wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true;
+          const wtScheduled = dealData.walkthroughScheduled === true;
           const wtDatetime = dealData.walkthrough_datetime || null;
-          console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime });
 
           const draftPayload = {
             investor_profile_id: profile.id,
