@@ -471,10 +471,8 @@ export default function MyAgreement() {
                  <p className="text-[#808080]">Walk-through</p>
                  <p className="text-[#FAFAFA] font-semibold">
                    {(() => {
-                      const scheduled = deal.walkthroughScheduled === true || deal.walkthrough_scheduled === true;
-                      const dtIso = deal.walkthrough_datetime || null;
-
-                      if (!scheduled) return 'Not scheduled';
+                      if (deal.walkthroughScheduled !== true) return 'Not scheduled';
+                      const dtIso = deal.walkthrough_datetime;
                       if (!dtIso) return 'Proposed (date TBD)';
                       const dt = new Date(dtIso);
                       if (isNaN(dt.getTime())) return 'Proposed (date TBD)';
