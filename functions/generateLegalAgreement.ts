@@ -383,8 +383,8 @@ Deno.serve(async (req) => {
       dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
       fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agentSignerName, locked: true, required: true, tabLabel: 'agentFullName' }],
       textTabs: [
-        { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: hasRealAgent ? agentLicenseForDeal : '', required: 'true', locked: hasRealAgent ? 'true' : 'false', tabLabel: 'agentLicense' },
-        { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: hasRealAgent ? (agent.agent?.brokerage || agent.broker || '') : '', required: 'true', locked: hasRealAgent ? 'true' : 'false', tabLabel: 'agentBrokerage' }
+        { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: hasRealAgent ? agentLicenseForDeal : '', required: 'true', locked: hasRealAgent ? 'true' : 'false', readOnly: hasRealAgent ? 'true' : 'false', tabLabel: 'agentLicense', font: 'helvetica', fontSize: 'size10' },
+        { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: hasRealAgent ? (agent.agent?.brokerage || agent.broker || '') : '', required: 'true', locked: hasRealAgent ? 'true' : 'false', readOnly: hasRealAgent ? 'true' : 'false', tabLabel: 'agentBrokerage', font: 'helvetica', fontSize: 'size10' }
       ]
     };
 

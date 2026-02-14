@@ -141,8 +141,8 @@ Deno.serve(async (req) => {
         dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
         fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
         textTabs: [
-          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agentLicenseForDeal, required: 'true', locked: 'true', tabLabel: 'agentLicense' },
-          { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: 'true', locked: 'true', tabLabel: 'agentBrokerage' }
+          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agentLicenseForDeal, required: 'true', locked: 'true', readOnly: 'true', tabLabel: 'agentLicense', font: 'helvetica', fontSize: 'size10' },
+          { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: 'true', locked: 'true', readOnly: 'true', tabLabel: 'agentBrokerage', font: 'helvetica', fontSize: 'size10' }
         ]
       }
     };
