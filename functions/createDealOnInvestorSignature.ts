@@ -300,8 +300,8 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
     const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
-    const draftWalkthroughDate = draftWalkthroughScheduled ? (draft.walkthrough_date || null) : null;
-    const draftWalkthroughTime = draftWalkthroughScheduled ? (draft.walkthrough_time || null) : null;
+    const draftWalkthroughDate = (draftWalkthroughScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
+    const draftWalkthroughTime = (draftWalkthroughScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
     console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime);
 
     // Validate that we have agents
