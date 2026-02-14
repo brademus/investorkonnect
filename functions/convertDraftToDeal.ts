@@ -87,8 +87,8 @@ Deno.serve(async (req) => {
       status: 'active',
       pipeline_stage: 'new_deals',
       walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
-      walkthrough_date: draft.walkthrough_date || null,
-      walkthrough_time: draft.walkthrough_time || null
+      walkthrough_date: draft.walkthrough_scheduled === true ? (draft.walkthrough_date || null) : null,
+      walkthrough_time: draft.walkthrough_scheduled === true ? (draft.walkthrough_time || null) : null
     });
 
     console.log('[convertDraftToDeal] Created deal:', deal.id);
