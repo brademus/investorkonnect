@@ -38,18 +38,14 @@ export default function PropertyDetailsCard({ deal }) {
     else if (['no', 'false', 'n'].includes(s)) hasBasement = false;
   }
 
-  // Walkthrough — read directly from deal, same as every other field
-  const wtDatetime = deal?.walkthrough_datetime || null;
-  const wtDt = wtDatetime ? new Date(wtDatetime) : null;
-  const wtValid = wtDt && !isNaN(wtDt.getTime());
-  const hasWalkthrough = deal?.walkthrough_scheduled === true || wtValid;
+  // Walkthrough — use raw date/time strings from deal (single source of truth)
+  const wtDate = deal?.walkthrough_date || null;
+  const wtTime = deal?.walkthrough_time || null;
+  const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
   let walkthroughLabel = null;
-  if (hasWalkthrough && wtValid) {
-    const isMidnight = wtDt.getHours() === 0 && wtDt.getMinutes() === 0;
-    const dateStr = wtDt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    walkthroughLabel = isMidnight ? `${dateStr} — Time TBD` : `${dateStr} at ${wtDt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-  } else if (hasWalkthrough) {
-    walkthroughLabel = 'Scheduled (date TBD)';
+  if (hasWalkthrough) {
+    const parts = [wtDate, wtTime].filter(Boolean);
+    walkthroughLabel = parts.length > 0 ? parts.join(' at ') : 'Scheduled (date TBD)';
   }
 
   const rows = [
