@@ -26,17 +26,22 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const hasDateOrTime = wtDate || wtTime;
 
   // Load DealAppointments to get the *status* (confirmed/declined by agent)
+  // Set initial status synchronously from deal data to avoid loading delay
   useEffect(() => {
     if (!deal?.id) return;
-    let cancelled = false;
+    
+    // Set initial status immediately from deal data
+    if (wtScheduled && hasDateOrTime) {
+      setApptStatus("PROPOSED");
+    }
 
+    // Then fetch DealAppointments for confirmed/declined status
+    let cancelled = false;
     (async () => {
       const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
       const appt = rows?.[0]?.walkthrough;
       if (!cancelled && appt?.status && appt.status !== "NOT_SET") {
         setApptStatus(appt.status);
-      } else if (!cancelled && wtScheduled && hasDateOrTime) {
-        setApptStatus("PROPOSED");
       }
     })();
 
