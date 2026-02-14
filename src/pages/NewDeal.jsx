@@ -194,27 +194,6 @@ export default function NewDeal() {
   // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
   useEffect(() => {
     const wtIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
-    
-    // CRITICAL: When auto-saving, merge with existing draft to avoid clobbering
-    // walkthrough data that was set but not yet reflected in React state (e.g. during hydration)
-    let existingWt = {};
-    try {
-      const existing = sessionStorage.getItem('newDealDraft');
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        // Preserve existing walkthrough keys if current state hasn't been set yet
-        if (walkthroughScheduled === null && (parsed.walkthroughScheduled === true || parsed.walkthrough_scheduled === true)) {
-          existingWt = {
-            walkthroughScheduled: parsed.walkthroughScheduled,
-            walkthrough_scheduled: parsed.walkthrough_scheduled,
-            walkthroughDate: parsed.walkthroughDate,
-            walkthroughTime: parsed.walkthroughTime,
-            walkthrough_datetime: parsed.walkthrough_datetime,
-            walkthrough_time_tbd: parsed.walkthrough_time_tbd
-          };
-        }
-      }
-    } catch (_) {}
 
     const draft = {
       dealId: dealId || null,
@@ -246,12 +225,11 @@ export default function NewDeal() {
       yearBuilt,
       numberOfStories,
       hasBasement,
-      walkthroughScheduled: walkthroughScheduled !== null ? walkthroughScheduled : existingWt.walkthroughScheduled ?? null,
-      walkthrough_scheduled: walkthroughScheduled !== null ? (walkthroughScheduled === true) : (existingWt.walkthrough_scheduled ?? false),
-      walkthroughDate: walkthroughDate || existingWt.walkthroughDate || "",
-      walkthroughTime: walkthroughTime || existingWt.walkthroughTime || "",
-      walkthrough_time_tbd: walkthroughScheduled === true ? !hasValidTime(walkthroughTime) : (existingWt.walkthrough_time_tbd ?? false),
-      walkthrough_datetime: wtIso || existingWt.walkthrough_datetime || null
+      walkthroughScheduled,
+      walkthrough_scheduled: walkthroughScheduled === true,
+      walkthroughDate,
+      walkthroughTime,
+      walkthrough_datetime: wtIso || null
     };
     // For brand new deals (no dealId), only persist if the user actually typed something meaningful
     const isEditing = !!dealId;
