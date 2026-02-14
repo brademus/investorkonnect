@@ -1253,11 +1253,9 @@ export default function NewDeal() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Time</label>
-                      <Input
-                        type="text"
+                      <WalkthroughTimeInput
                         value={walkthroughTime}
-                        onChange={(e) => setWalkthroughTime(e.target.value)}
-                        placeholder="00:00 AM/PM"
+                        onChange={setWalkthroughTime}
                         className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                       />
                     </div>
