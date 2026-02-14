@@ -127,10 +127,17 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                     if (deal?.id) {
                       await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
                       toast.success(`Moved to ${stage.label}`);
+                      // Prompt rating when agent moves deal to completed or canceled
+                      if (stage.id === 'completed' || stage.id === 'canceled') {
+                        const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+                        if (agentId) {
+                          navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                        }
+                      }
                     }
-                  } : isInvestor && stage.id === 'completed' ? async () => {
+                  } : isInvestor && (stage.id === 'completed' || stage.id === 'canceled') ? async () => {
                     if (deal?.id) {
-                      await base44.entities.Deal.update(deal.id, { pipeline_stage: 'completed' });
+                      await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
                       const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
                       if (agentId) {
                         navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);

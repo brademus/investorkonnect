@@ -182,8 +182,8 @@ function PipelineContent() {
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
 
-    // Prompt rating when deal moves to completed (investor only)
-    if ((newStage === 'completed') && isInvestor) {
+    // Prompt rating when deal moves to completed or canceled (investor only)
+    if ((newStage === 'completed' || newStage === 'canceled') && isInvestor) {
       const deal = deals.find(d => d.id === result.draggableId);
       const agentId = deal?.locked_agent_id || deal?.room_agent_ids?.[0];
       if (agentId) {
