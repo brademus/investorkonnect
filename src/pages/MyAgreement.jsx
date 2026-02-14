@@ -197,8 +197,8 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: wtScheduled === true ? true : false,
-            walkthrough_datetime: wtDatetime || null
+            walkthrough_scheduled: wtScheduled,
+            walkthrough_datetime: wtDatetime
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
           console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime);
