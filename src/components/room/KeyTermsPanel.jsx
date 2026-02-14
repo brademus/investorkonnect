@@ -217,20 +217,20 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
             <div>
               <p className="text-xs text-[#808080] mb-1">Walk-through</p>
-              {(() => {
-                const wtDate = deal.walkthrough_date || deal.walkthroughDate;
-                const wtTime = deal.walkthrough_time || deal.walkthroughTime;
-                if (deal.walkthrough_scheduled && (wtDate || wtTime)) {
-                  return (
-                    <p className="text-sm font-semibold text-[#FAFAFA]">
-                      {wtDate || 'TBD'} at {wtTime || 'TBD'}
-                    </p>
-                  );
-                } else if (deal.walkthrough_scheduled) {
-                  return <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (date TBD)</p>;
-                }
-                return <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>;
-              })()}
+              {deal.walkthrough_scheduled && deal.walkthrough_datetime ? (() => {
+                const dt = new Date(deal.walkthrough_datetime);
+                const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
+                const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                return (
+                  <p className="text-sm font-semibold text-[#FAFAFA]">
+                    {dateStr}{isMidnight ? ' — Time TBD' : ` at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`}
+                  </p>
+                );
+              })() : deal.walkthrough_scheduled ? (
+                <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (date TBD)</p>
+              ) : (
+                <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>
+              )}
             </div>
             <Badge className={deal.walkthrough_scheduled ? "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30" : "bg-[#1F1F1F] text-[#808080] border-[#333]"}>
               <CalendarCheck className="w-3 h-3 mr-1" />
