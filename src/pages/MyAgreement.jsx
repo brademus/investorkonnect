@@ -127,21 +127,6 @@ export default function MyAgreement() {
           }
           dealData = JSON.parse(draftData);
           agentIds = dealData.selectedAgentIds || [];
-          
-          // Merge walkthrough data from dedicated sessionStorage key (set by NewDeal)
-          try {
-            const wtJson = sessionStorage.getItem('newDealWalkthrough');
-            if (wtJson) {
-              const wt = JSON.parse(wtJson);
-              if (wt.walkthrough_scheduled === true) {
-                dealData.walkthroughScheduled = true;
-                dealData.walkthrough_scheduled = true;
-              }
-              if (wt.walkthrough_datetime) {
-                dealData.walkthrough_datetime = wt.walkthrough_datetime;
-              }
-            }
-          } catch (wtErr) { console.warn('[MyAgreement] Failed to merge walkthrough data:', wtErr); }
 
           console.log('[MyAgreement] Walkthrough from sessionStorage:', { scheduled: dealData.walkthrough_scheduled, datetime: dealData.walkthrough_datetime });
         }
