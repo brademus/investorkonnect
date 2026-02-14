@@ -62,11 +62,9 @@ Deno.serve(async (req) => {
     });
     const counterpartyIds = [...allAgentIds];
 
-    // Load deals and profiles in parallel, skip heavy agreement/counter queries
-    const [allDeals, allProfiles] = await Promise.all([
-      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds } }) : [],
-      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [],
-    ]);
+    // Load profiles (deals already pre-fetched above)
+    const allDeals = prefetchDeals;
+    const allProfiles = counterpartyIds.length ? await base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [];
 
     // Load agreements and counters in a second batch
     const [allAgreements, allCounters] = await Promise.all([
