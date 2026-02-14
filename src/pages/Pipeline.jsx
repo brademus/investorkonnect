@@ -176,6 +176,9 @@ function PipelineContent() {
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
     const newStage = normalizeStage(result.destination.droppableId);
+    // Block dragging out of new_deals — deal can only move once an agent signs
+    const draggedDeal = deals.find(d => d.id === result.draggableId);
+    if (draggedDeal && normalizeStage(draggedDeal.pipeline_stage) === 'new_deals' && !draggedDeal.is_fully_signed) return;
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
 
