@@ -10,6 +10,7 @@ import { ArrowLeft, Home, FileText, Handshake, DollarSign, ArrowRight } from "lu
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
+import WalkthroughTimeInput from "@/components/WalkthroughTimeInput";
 
 export default function NewDeal() {
   const navigate = useNavigate();
