@@ -72,7 +72,9 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     if (!deal?.id) return;
     const unsub = base44.entities.DealAppointments.subscribe(e => {
       if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
-        setApptStatus(e.data.walkthrough.status);
+        const s = e.data.walkthrough.status;
+        setApptStatus(s);
+        _wtCache[deal.id] = { status: s, userAction: s !== "PROPOSED" && s !== "NOT_SET" };
       }
     });
     return () => { try { unsub(); } catch (_) {} };
@@ -84,13 +86,18 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     const unsub = base44.entities.Message.subscribe(e => {
       const d = e?.data;
       if (!d || d.room_id !== roomId) return;
+      // Catch both walkthrough_request (status updated) and walkthrough_response messages
       if (d.metadata?.type === "walkthrough_request") {
-        if (d.metadata.status === "confirmed") setApptStatus("SCHEDULED");
-        else if (d.metadata.status === "denied") setApptStatus("CANCELED");
+        if (d.metadata.status === "confirmed") { setApptStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userAction: true }; }
+        else if (d.metadata.status === "denied") { setApptStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userAction: true }; }
+      }
+      if (d.metadata?.type === "walkthrough_response") {
+        if (d.metadata.status === "confirmed") { setApptStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userAction: true }; }
+        else if (d.metadata.status === "denied") { setApptStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userAction: true }; }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
-  }, [roomId]);
+  }, [roomId, dealId]);
 
   const status = apptStatus || (hasWalkthrough ? "PROPOSED" : null);
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
