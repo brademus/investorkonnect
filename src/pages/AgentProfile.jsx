@@ -19,17 +19,16 @@ export default function AgentProfile() {
   const [loading, setLoading] = useState(true);
   const [dealsCompleted, setDealsCompleted] = useState(null);
 
-  // Fetch reviews as a separate function so we can call it on mount + real-time
+  // Fetch reviews via service-role backend to bypass per-user security rules
   const fetchReviews = async () => {
     if (!profileId) return;
     try {
-      const agentReviews = await base44.entities.Review.filter({ 
-        reviewee_profile_id: profileId 
-      }, '-created_date', 10);
-      console.log('[AgentProfile] Fetched reviews for', profileId, ':', agentReviews?.length, agentReviews);
-      setReviews(agentReviews || []);
+      const res = await base44.functions.invoke('getAgentReviews', { profileId });
+      const agentReviews = res?.data?.reviews || [];
+      console.log('[AgentProfile] Fetched reviews for', profileId, ':', agentReviews.length);
+      setReviews(agentReviews);
     } catch (err) {
-      console.error('[AgentProfile] Reviews fetch FAILED:', err?.message || err, err?.response?.status);
+      console.error('[AgentProfile] Reviews fetch FAILED:', err?.message || err);
     }
   };
 
