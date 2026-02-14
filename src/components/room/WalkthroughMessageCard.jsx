@@ -17,6 +17,13 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const wtDate = meta.walkthrough_date;
   const wtTime = meta.walkthrough_time;
 
+  // Sync status from parent message metadata updates (real-time subscription)
+  React.useEffect(() => {
+    if (meta.status && meta.status !== 'pending') {
+      setLocalStatus(meta.status);
+    }
+  }, [meta.status]);
+
   // Build display: prefer raw date/time strings, fall back to ISO datetime, then body extraction
   const formatted = (() => {
     if (wtDate || wtTime) {
