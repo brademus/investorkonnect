@@ -629,8 +629,8 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthroughDate: walkthroughScheduled === true && walkthroughDate ? walkthroughDate : "",
-      walkthroughTime: walkthroughScheduled === true && walkthroughTime ? walkthroughTime : ""
+      walkthroughDate: (walkthroughScheduled === true && walkthroughDate && walkthroughDate.length >= 8) ? walkthroughDate : "",
+      walkthroughTime: (walkthroughScheduled === true && walkthroughTime && walkthroughTime.length >= 3) ? walkthroughTime : ""
     }));
 
     // Navigate with dealId if editing
