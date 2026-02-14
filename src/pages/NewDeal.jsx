@@ -109,9 +109,14 @@ export default function NewDeal() {
       setYearBuilt(d.yearBuilt || "");
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
-      if (d.walkthroughScheduled !== undefined && d.walkthroughScheduled !== null) setWalkthroughScheduled(d.walkthroughScheduled);
+      if (d.walkthroughScheduled === true || d.walkthrough_scheduled === true) {
+        setWalkthroughScheduled(true);
+      } else if (d.walkthroughScheduled === false || d.walkthrough_scheduled === false) {
+        setWalkthroughScheduled(false);
+      }
       if (d.walkthroughDate) setWalkthroughDate(d.walkthroughDate);
       if (d.walkthroughTime) setWalkthroughTime(d.walkthroughTime);
+      setWalkthroughHydrated(true);
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
