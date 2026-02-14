@@ -640,10 +640,9 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
-      walkthrough_datetime: walkthroughIso || null
+      walkthrough_datetime: walkthroughIso
     }));
 
     // Navigate with dealId if editing
