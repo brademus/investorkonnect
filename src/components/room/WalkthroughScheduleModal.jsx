@@ -117,11 +117,9 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
             </div>
             <div>
               <label className="text-xs text-[#808080] mb-1 block">Time</label>
-              <Input
-                type="text"
+              <WalkthroughTimeInput
                 value={time}
-                onChange={e => setTime(e.target.value)}
-                placeholder="00:00 AM/PM"
+                onChange={setTime}
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
               />
             </div>
