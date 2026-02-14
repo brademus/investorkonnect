@@ -178,6 +178,15 @@ function PipelineContent() {
     const newStage = normalizeStage(result.destination.droppableId);
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
+
+    // Prompt rating when deal moves to completed (investor only)
+    if ((newStage === 'completed') && isInvestor) {
+      const deal = deals.find(d => d.id === result.draggableId);
+      const agentId = deal?.locked_agent_id || deal?.room_agent_ids?.[0];
+      if (agentId) {
+        navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+      }
+    }
   };
 
   const pipelineStages = useMemo(() => PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(s => ({
