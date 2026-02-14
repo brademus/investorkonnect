@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
       contract_date,
       selected_agent_ids,
       walkthrough_scheduled,
-      walkthrough_datetime
+      walkthrough_date,
+      walkthrough_time
     } = body;
 
     // Validation
@@ -97,7 +98,8 @@ Deno.serve(async (req) => {
       contract_date,
       selected_agent_ids,
       walkthrough_scheduled: walkthrough_scheduled === true ? true : false,
-      walkthrough_datetime: walkthrough_datetime || null
+      walkthrough_date: walkthrough_date || null,
+      walkthrough_time: walkthrough_time || null
     });
 
     console.log('[createDealDraft] Created draft:', draft.id);
