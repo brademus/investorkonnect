@@ -11,7 +11,7 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
  * DealAppointments.walkthrough.status for confirmed/declined.
  */
 // Module-level cache so status persists across tab switches (component remounts)
-// _wtCache stores { status, userAction } — userAction=true means user explicitly confirmed/declined
+// _wtCache stores { status, userActionAt } — userActionAt is a timestamp when user explicitly confirmed/declined
 const _wtCache = {};
 
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
