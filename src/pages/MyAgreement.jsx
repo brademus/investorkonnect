@@ -179,25 +179,37 @@ export default function MyAgreement() {
           // NEW DEAL: Create DealDraft so automation can find it after investor signs
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
-          // Resolve walkthrough fields once — be very explicit
-          // Check ALL possible keys in deal data (camelCase + snake_case + dedicated key)
-          let wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true;
-          let wtDatetime = dealData.walkthrough_datetime || dealData.walkthroughDatetime || null;
-          
-          // FALLBACK: re-read the dedicated newDealWalkthrough key as belt-and-suspenders
-          if (!wtScheduled) {
-            try {
-              const wtJson = sessionStorage.getItem('newDealWalkthrough');
-              if (wtJson) {
-                const wt = JSON.parse(wtJson);
-                if (wt.walkthrough_scheduled === true) {
-                  wtScheduled = true;
-                  wtDatetime = wtDatetime || wt.walkthrough_datetime || null;
-                }
+          // Resolve walkthrough fields — ALWAYS read from all 3 sources and take the first truthy one
+          // Source 1: dealData (already parsed from sessionStorage 'newDealDraft')
+          // Source 2: dedicated 'newDealWalkthrough' key (set by NewDeal on submit — most reliable)
+          // Source 3: re-read 'newDealDraft' key fresh (in case dealData was loaded before walkthrough was saved)
+          let wtScheduled = false;
+          let wtDatetime = null;
+
+          // Source 2 FIRST (most reliable — set explicitly by NewDeal handleContinue)
+          try {
+            const wtJson = sessionStorage.getItem('newDealWalkthrough');
+            if (wtJson) {
+              const wt = JSON.parse(wtJson);
+              if (wt.walkthrough_scheduled === true) {
+                wtScheduled = true;
+                wtDatetime = wt.walkthrough_datetime || null;
               }
-            } catch (_) {}
+            }
+          } catch (_) {}
+
+          // Source 1: dealData object
+          if (!wtScheduled) {
+            if (dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true) {
+              wtScheduled = true;
+              wtDatetime = wtDatetime || dealData.walkthrough_datetime || null;
+            }
+          } else {
+            // Even if scheduled was found, prefer a non-null datetime from dealData
+            wtDatetime = wtDatetime || dealData.walkthrough_datetime || null;
           }
-          // FALLBACK 2: re-read the main draft key — walkthrough fields might be there with different casing
+
+          // Source 3: fresh re-read of newDealDraft
           if (!wtScheduled) {
             try {
               const rawDraft = sessionStorage.getItem('newDealDraft');
@@ -205,12 +217,12 @@ export default function MyAgreement() {
                 const dd = JSON.parse(rawDraft);
                 if (dd.walkthroughScheduled === true || dd.walkthrough_scheduled === true) {
                   wtScheduled = true;
-                  wtDatetime = wtDatetime || dd.walkthrough_datetime || dd.walkthroughDatetime || null;
+                  wtDatetime = wtDatetime || dd.walkthrough_datetime || null;
                 }
               }
             } catch (_) {}
           }
-          console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime, rawWalkthroughScheduled: dealData.walkthroughScheduled, rawWalkthrough_scheduled: dealData.walkthrough_scheduled });
+          console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime, src1_scheduled: dealData.walkthroughScheduled, src1_snake: dealData.walkthrough_scheduled, src1_dt: dealData.walkthrough_datetime });
 
           const draftCreated = await base44.entities.DealDraft.create({
             investor_profile_id: profile.id,
