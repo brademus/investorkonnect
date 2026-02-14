@@ -20,10 +20,11 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     room?.request_status === "locked";
 
   // The walkthrough data comes from the deal — same as purchase_price, city, etc.
-  const wtScheduled = deal?.walkthrough_scheduled === true;
+  // Accept walkthrough if EITHER flag is true OR a datetime exists (belt + suspenders)
   const wtDatetime = deal?.walkthrough_datetime || null;
   const dt = wtDatetime ? new Date(wtDatetime) : null;
   const isValidDate = dt && !isNaN(dt.getTime());
+  const wtScheduled = deal?.walkthrough_scheduled === true || isValidDate;
 
   // Load DealAppointments to get the *status* (confirmed/declined by agent)
   useEffect(() => {
