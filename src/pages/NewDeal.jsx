@@ -134,8 +134,8 @@ export default function NewDeal() {
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthroughDate,
-      walkthroughTime
+      walkthroughDate: walkthroughScheduled === true ? walkthroughDate : "",
+      walkthroughTime: walkthroughScheduled === true ? walkthroughTime : ""
     };
     const isEditing = !!dealId;
     const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
