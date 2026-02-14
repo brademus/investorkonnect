@@ -5,6 +5,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle2, Users } from "lucide-react";
 import { toast } from "sonner";
+import AgentRatingStars from "@/components/AgentRatingStars";
+import { fetchAgentRatings } from "@/components/useAgentRating";
 
 export default function SelectAgent() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function SelectAgent() {
   const [loading, setLoading] = useState(true);
   const [proceeding, setProceeding] = useState(false);
   const [dealData, setDealData] = useState(null);
+  const [ratings, setRatings] = useState(new Map());
 
   // Get state from deal data
   useEffect(() => {
@@ -70,6 +73,11 @@ export default function SelectAgent() {
 
         console.log('[SelectAgent] Filtered agents for', dealData.city, dealData.state, ':', sortedAgents.length);
         setAgents(sortedAgents);
+        // Fetch ratings for all agents
+        const agentIds = sortedAgents.map(a => a.id);
+        if (agentIds.length > 0) {
+          fetchAgentRatings(agentIds).then(setRatings);
+        }
         if (sortedAgents.length === 0) {
           toast.info("No agents available in this market yet");
         }
@@ -186,6 +194,14 @@ export default function SelectAgent() {
                         {agent.full_name || "Unnamed Agent"}
                       </h3>
                       <p className="text-sm text-[#808080] mb-3">{agent.email}</p>
+                      {/* Rating */}
+                      <div className="mb-3">
+                        <AgentRatingStars
+                          rating={ratings.get(agent.id)?.rating}
+                          reviewCount={ratings.get(agent.id)?.reviewCount || 0}
+                          size="sm"
+                        />
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {agent.agent?.agent_friendly && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#34D399]/20 text-[#34D399] text-xs font-medium">
