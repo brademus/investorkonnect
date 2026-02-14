@@ -10,7 +10,10 @@ import { toast } from "sonner";
  * Falls back to DealAppointments only for status updates (confirmed/declined).
  */
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
-  const [apptStatus, setApptStatus] = useState(null); // PROPOSED, SCHEDULED, CANCELED, COMPLETED
+  // Initialize status immediately from deal data instead of waiting for DealAppointments fetch
+  const wtScheduledInit = deal?.walkthrough_scheduled === true;
+  const hasDateOrTimeInit = deal?.walkthrough_date || deal?.walkthrough_time;
+  const [apptStatus, setApptStatus] = useState(wtScheduledInit && hasDateOrTimeInit ? "PROPOSED" : null);
   const [responding, setResponding] = useState(false);
 
   const isInvestor = profile?.user_role === "investor";
