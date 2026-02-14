@@ -519,8 +519,8 @@ export default function NewDeal() {
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
-          walkthrough_scheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
-          walkthrough_datetime: computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime)
+          walkthrough_scheduled: walkthroughScheduled === true,
+          walkthrough_datetime: walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
