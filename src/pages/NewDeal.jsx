@@ -498,8 +498,8 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true,
-          walkthrough_date: walkthroughScheduled === true ? walkthroughDate : null,
-          walkthrough_time: walkthroughScheduled === true ? walkthroughTime : null,
+          walkthrough_date: walkthroughScheduled === true && walkthroughDate ? walkthroughDate : null,
+          walkthrough_time: walkthroughScheduled === true && walkthroughTime ? walkthroughTime : null,
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
