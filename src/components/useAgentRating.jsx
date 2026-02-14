@@ -50,10 +50,11 @@ export function useAgentRating(agentProfileId) {
     let cancelled = false;
     setLoading(true);
 
-    base44.entities.Review.filter({ reviewee_profile_id: agentProfileId })
-      .then((reviews) => {
+    base44.functions.invoke('getAgentReviews', { profileId: agentProfileId })
+      .then((res) => {
         if (cancelled) return;
-        const validReviews = (reviews || []).filter(r => r.rating);
+        const reviews = res?.data?.reviews || [];
+        const validReviews = reviews.filter(r => r.rating);
         const count = validReviews.length;
         const avg = count > 0
           ? validReviews.reduce((sum, r) => sum + r.rating, 0) / count
@@ -95,8 +96,9 @@ export async function fetchAgentRatings(agentProfileIds) {
     // Fetch all reviews for these agents in parallel
     const fetches = toFetch.map(async (id) => {
       try {
-        const reviews = await base44.entities.Review.filter({ reviewee_profile_id: id });
-        const validReviews = (reviews || []).filter(r => r.rating);
+        const res = await base44.functions.invoke('getAgentReviews', { profileId: id });
+        const reviews = res?.data?.reviews || [];
+        const validReviews = reviews.filter(r => r.rating);
         const count = validReviews.length;
         const avg = count > 0
           ? validReviews.reduce((sum, r) => sum + r.rating, 0) / count
