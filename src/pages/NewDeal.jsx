@@ -12,6 +12,31 @@ import { base44 } from "@/api/base44Client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WalkthroughTimeInput from "@/components/WalkthroughTimeInput";
 
+// Simple helper: build ISO string from date + time strings
+function buildWalkthroughIso(dateStr, timeStr) {
+  if (!dateStr || dateStr.length < 10) return null;
+  // Parse MM/DD/YYYY
+  const parts = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!parts) return null;
+  const month = parseInt(parts[1]) - 1;
+  const day = parseInt(parts[2]);
+  const year = parseInt(parts[3]);
+  // Parse time HH:MMAM/PM
+  let hours = 0, minutes = 0;
+  if (timeStr) {
+    const tm = timeStr.match(/^(\d{1,2}):(\d{2})(AM|PM)$/i);
+    if (tm) {
+      hours = parseInt(tm[1]);
+      const isPM = tm[3].toUpperCase() === 'PM';
+      if (isPM && hours !== 12) hours += 12;
+      if (!isPM && hours === 12) hours = 0;
+      minutes = parseInt(tm[2]);
+    }
+  }
+  const d = new Date(year, month, day, hours, minutes);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export default function NewDeal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -55,11 +80,10 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
-  const [walkthroughScheduled, setWalkthroughScheduled] = useState(null); // null = not answered, true/false
+  const [walkthroughScheduled, setWalkthroughScheduled] = useState(false);
   const [walkthroughDate, setWalkthroughDate] = useState("");
   const [walkthroughTime, setWalkthroughTime] = useState("");
   const [hydrated, setHydrated] = useState(false);
-  const [walkthroughHydrated, setWalkthroughHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const autoFormatDate = (value) => {
