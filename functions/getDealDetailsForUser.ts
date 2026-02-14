@@ -91,7 +91,8 @@ Deno.serve(async (req) => {
       investor_contact: investorContact, agent_contact: agentContact,
       proposed_terms: deal.proposed_terms || null,
       walkthrough_scheduled: deal.walkthrough_scheduled ?? null,
-      walkthrough_datetime: deal.walkthrough_datetime || null,
+      walkthrough_date: deal.walkthrough_date || null,
+      walkthrough_time: deal.walkthrough_time || null,
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null, agent_terms: room.agent_terms || null, agent_ids: room.agent_ids || [] } : null
     };
 
