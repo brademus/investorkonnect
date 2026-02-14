@@ -300,11 +300,16 @@ Deno.serve(async (req) => {
     const draft = drafts[0];
     const selectedAgents = draft.selected_agent_ids || [];
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
+    // Normalize walkthrough_scheduled: the entity system may return truthy values in unexpected forms
+    const rawWtSched = draft.walkthrough_scheduled;
+    const draftWalkthroughScheduled = !!(rawWtSched === true || rawWtSched === 'true' || rawWtSched === 1 || rawWtSched === '1');
+    const draftWalkthroughDatetime = draft.walkthrough_datetime || null;
     console.log('[createDealOnInvestorSignature] DealDraft walkthrough fields:', {
-      walkthrough_scheduled: draft.walkthrough_scheduled,
-      walkthrough_scheduled_type: typeof draft.walkthrough_scheduled,
-      walkthrough_datetime: draft.walkthrough_datetime,
-      walkthrough_datetime_type: typeof draft.walkthrough_datetime
+      raw: rawWtSched,
+      raw_type: typeof rawWtSched,
+      resolved: draftWalkthroughScheduled,
+      datetime: draftWalkthroughDatetime,
+      datetime_type: typeof draftWalkthroughDatetime
     });
 
     // Validate that we have agents
