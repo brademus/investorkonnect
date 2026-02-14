@@ -84,7 +84,6 @@ export default function MyAgreement() {
             specialNotes: dbDeal.special_notes,
             selectedAgentIds: dbDeal.selected_agent_ids || [],
             walkthroughScheduled: dbDeal.walkthrough_scheduled === true,
-            walkthrough_scheduled: dbDeal.walkthrough_scheduled === true,
             walkthrough_datetime: dbDeal.walkthrough_datetime || null
           };
           agentIds = dealData.selectedAgentIds;
