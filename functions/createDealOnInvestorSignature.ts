@@ -372,8 +372,7 @@ Deno.serve(async (req) => {
           }
         }
         // Sync DealAppointments for the duplicate deal
-        const dupeWtScheduled = draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1;
-        if (dupeWtScheduled && draft.walkthrough_datetime) {
+        if (draftWalkthroughScheduled && draftWalkthroughDatetime) {
           try {
             const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
             const apptPatch = {
