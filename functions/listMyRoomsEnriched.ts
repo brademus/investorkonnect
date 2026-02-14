@@ -42,7 +42,25 @@ Deno.serve(async (req) => {
     }
 
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
-    const counterpartyIds = [...new Set(rooms.map(r => isInvestor ? (r.agent_ids?.[0] || r.agentId) : r.investorId).filter(Boolean))];
+    // Collect all potential agent IDs so we can resolve names for any of them
+    const allAgentIds = new Set();
+    const allDealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
+    // Pre-fetch deals to get locked_agent_id
+    const prefetchDeals = allDealIds.length ? await base44.asServiceRole.entities.Deal.filter({ id: { $in: allDealIds } }) : [];
+    const prefetchDealMap = new Map(prefetchDeals.map(d => [d.id, d]));
+    
+    rooms.forEach(r => {
+      if (isInvestor) {
+        const deal = prefetchDealMap.get(r.deal_id);
+        const agentId = deal?.locked_agent_id || r.locked_agent_id || r.agent_ids?.[0] || r.agentId;
+        if (agentId) allAgentIds.add(agentId);
+        // Also add all agent_ids from room in case we need them
+        (r.agent_ids || []).forEach(id => allAgentIds.add(id));
+      } else {
+        if (r.investorId) allAgentIds.add(r.investorId);
+      }
+    });
+    const counterpartyIds = [...allAgentIds];
 
     // Load deals and profiles in parallel, skip heavy agreement/counter queries
     const [allDeals, allProfiles] = await Promise.all([
