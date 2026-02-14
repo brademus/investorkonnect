@@ -14,12 +14,25 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
 // _wtCache stores { status, userActionAt } — userActionAt is a timestamp when user explicitly confirmed/declined
 const _wtCache = {};
 
+// Terminal/resolved statuses that must never revert to PROPOSED
+const RESOLVED_STATUSES = new Set(["SCHEDULED", "CANCELED", "COMPLETED"]);
+
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const dealId = deal?.id;
   const cached = dealId ? _wtCache[dealId] : null;
   const [apptStatus, setApptStatus] = useState(cached?.status || null);
   const [apptLoaded, setApptLoaded] = useState(!!cached);
   const [responding, setResponding] = useState(false);
+
+  // Safe setter: never allow a resolved status to revert to PROPOSED/NOT_SET
+  const safeSetStatus = (newStatus) => {
+    setApptStatus(prev => {
+      if (RESOLVED_STATUSES.has(prev) && !RESOLVED_STATUSES.has(newStatus)) {
+        return prev; // block regression
+      }
+      return newStatus;
+    });
+  };
 
   // Persist to cache whenever apptStatus changes
   useEffect(() => {
