@@ -38,17 +38,23 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const displayText = formatWalkthrough(wtDate, wtTime);
 
   // If metadata is missing date/time, pull from deal entity
+  // Also sync appointment status from DealAppointments (authoritative source)
   useEffect(() => {
-    if (meta.walkthrough_date || meta.walkthrough_time) return; // already have it
     if (!resolvedDealId) return;
     base44.entities.Deal.filter({ id: resolvedDealId }).then(deals => {
       const d = deals?.[0];
       if (d) {
-        if (d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
-        if (d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
+        if (!meta.walkthrough_date && d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
+        if (!meta.walkthrough_time && d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
       }
     }).catch(() => {});
-  }, [resolvedDealId, meta.walkthrough_date, meta.walkthrough_time]);
+    // Also check DealAppointments for authoritative status
+    base44.entities.DealAppointments.filter({ dealId: resolvedDealId }).then(rows => {
+      const apptStatus = rows?.[0]?.walkthrough?.status;
+      if (apptStatus === 'SCHEDULED' && status !== 'confirmed') setLocalStatus('confirmed');
+      else if (apptStatus === 'CANCELED' && status !== 'denied') setLocalStatus('denied');
+    }).catch(() => {});
+  }, [resolvedDealId]);
 
   const respond = async (action) => {
     setResponding(true);
