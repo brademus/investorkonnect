@@ -5,6 +5,18 @@ import { base44 } from "@/api/base44Client";
 const _ratingCache = {};
 
 /**
+ * Invalidate the rating cache for a specific agent (or all agents).
+ * Call this after creating/updating a review so the next render fetches fresh data.
+ */
+export function invalidateRatingCache(agentProfileId) {
+  if (agentProfileId) {
+    delete _ratingCache[agentProfileId];
+  } else {
+    Object.keys(_ratingCache).forEach(k => delete _ratingCache[k]);
+  }
+}
+
+/**
  * Hook to fetch an agent's average rating and review count.
  * Returns { rating, reviewCount, loading }
  */
@@ -12,6 +24,20 @@ export function useAgentRating(agentProfileId) {
   const cached = agentProfileId ? _ratingCache[agentProfileId] : null;
   const [data, setData] = useState(cached || { rating: null, reviewCount: 0 });
   const [loading, setLoading] = useState(!cached);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Subscribe to Review entity changes — invalidate cache & refetch when reviews change
+  useEffect(() => {
+    if (!agentProfileId) return;
+    const unsub = base44.entities.Review.subscribe((event) => {
+      const d = event?.data;
+      if (d?.reviewee_profile_id === agentProfileId) {
+        delete _ratingCache[agentProfileId];
+        setRefreshKey(k => k + 1);
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [agentProfileId]);
 
   useEffect(() => {
     if (!agentProfileId) return;
@@ -44,7 +70,7 @@ export function useAgentRating(agentProfileId) {
       });
 
     return () => { cancelled = true; };
-  }, [agentProfileId]);
+  }, [agentProfileId, refreshKey]);
 
   return { ...data, loading };
 }
