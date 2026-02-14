@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
             const apptPatch = {
               walkthrough: {
                 status: 'PROPOSED',
-                datetime: draft.walkthrough_datetime,
+                datetime: draftWalkthroughDatetime,
                 timezone: null,
                 locationType: 'ON_SITE',
                 notes: null,
