@@ -61,22 +61,27 @@ export default function RateAgent() {
     }
     setSubmitting(true);
     try {
+      const body = reviewBody.trim() || `${rating}-star rating`;
       const data = {
         reviewee_profile_id: agentProfileId,
         reviewer_profile_id: profile.id,
         reviewer_name: profile.full_name || profile.email,
         rating,
-        body: reviewBody.trim(),
+        body,
         verified: true,
         market: deal?.state || "",
         deal_type: deal?.property_type || "",
       };
+
+      console.log("[RateAgent] Submitting review:", data);
 
       if (existingReview) {
         await base44.entities.Review.update(existingReview.id, data);
       } else {
         await base44.entities.Review.create(data);
       }
+
+      console.log("[RateAgent] Review saved successfully");
 
       // Bust the rating cache so AgentProfile page shows fresh data immediately
       invalidateRatingCache(agentProfileId);
