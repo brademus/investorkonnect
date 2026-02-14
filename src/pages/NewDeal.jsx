@@ -142,49 +142,22 @@ export default function NewDeal() {
 
 
 
-  // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
+  // Auto-save draft on every change so nothing is lost
   useEffect(() => {
-    const wtIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
-
     const draft = {
       dealId: dealId || null,
-      propertyAddress,
-      city,
-      state,
-      zip,
-      county,
-      purchasePrice,
-      closingDate,
-      contractDate,
-      specialNotes,
-      sellerName,
-      earnestMoney,
-      numberOfSigners,
-      secondSignerName,
-      sellerCommissionType,
-      sellerCommissionPercentage,
-      sellerFlatFee,
-      buyerCommissionType,
-      buyerCommissionPercentage,
-      buyerFlatFee,
-      agreementLength,
-      beds,
-      baths,
-      sqft,
-      propertyType,
-      notes,
-      yearBuilt,
-      numberOfStories,
-      hasBasement,
-      walkthroughScheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
-      walkthrough_scheduled: walkthroughScheduled === true,
+      propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
+      sellerName, earnestMoney, numberOfSigners, secondSignerName,
+      sellerCommissionType, sellerCommissionPercentage, sellerFlatFee,
+      buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
+      beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
+      walkthroughScheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
-      walkthrough_datetime: wtIso || null
+      walkthrough_datetime: walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
     };
-    // Only persist once hydration is complete (prevents overwriting walkthrough with null on first render)
     const isEditing = !!dealId;
-    const hasUserInput = [propertyAddress, city, state, zip, county, purchasePrice, closingDate, sellerName, earnestMoney, sellerCommissionPercentage, sellerFlatFee, buyerCommissionPercentage, buyerFlatFee, agreementLength].some(v => (v ?? '').toString().trim().length > 0);
+    const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
     if (isEditing ? hydrated : hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
