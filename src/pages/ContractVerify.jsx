@@ -67,15 +67,6 @@ export default function ContractVerify() {
         contractUrl: file_url
       };
       sessionStorage.setItem("newDealDraft", JSON.stringify(updatedDraft));
-      
-      // Also re-save the dedicated walkthrough key to ensure it's never lost
-      if (dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true) {
-        sessionStorage.setItem("newDealWalkthrough", JSON.stringify({
-          walkthrough_scheduled: true,
-          walkthrough_datetime: dealData.walkthrough_datetime || null
-        }));
-      }
-      
       setDealData(updatedDraft);
 
       setUploading(false);

@@ -115,14 +115,6 @@ export default function SelectAgent() {
       sessionStorage.setItem("newDealDraft", JSON.stringify(updatedDealData));
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
       
-      // Re-save dedicated walkthrough key to ensure it's never lost through multi-page navigation
-      if (dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true) {
-        sessionStorage.setItem("newDealWalkthrough", JSON.stringify({
-          walkthrough_scheduled: true,
-          walkthrough_datetime: dealData.walkthrough_datetime || null
-        }));
-      }
-      
       console.log('[SelectAgent] Saved agent selection to sessionStorage:', selectedAgentIds);
       
       // Navigate to MyAgreement page to generate and sign (deal will be created on signature)
