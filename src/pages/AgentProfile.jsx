@@ -26,9 +26,10 @@ export default function AgentProfile() {
       const agentReviews = await base44.entities.Review.filter({ 
         reviewee_profile_id: profileId 
       }, '-created_date', 10);
+      console.log('[AgentProfile] Fetched reviews for', profileId, ':', agentReviews?.length, agentReviews);
       setReviews(agentReviews || []);
     } catch (err) {
-      console.log('Reviews not available:', err);
+      console.error('[AgentProfile] Reviews fetch FAILED:', err?.message || err, err?.response?.status);
     }
   };
 
