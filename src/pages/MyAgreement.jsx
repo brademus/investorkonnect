@@ -474,13 +474,10 @@ export default function MyAgreement() {
                  <p className="text-[#FAFAFA] font-semibold">
                    {(() => {
                       if (deal.walkthroughScheduled !== true) return 'Not scheduled';
-                      const dtIso = deal.walkthrough_datetime;
-                      if (!dtIso) return 'Proposed (date TBD)';
-                      const dt = new Date(dtIso);
-                      if (isNaN(dt.getTime())) return 'Proposed (date TBD)';
-                      const isMidnight = dt.getHours() === 0 && dt.getMinutes() === 0;
-                      const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-                      return isMidnight ? `Proposed: ${dateStr} — Time TBD` : `Proposed: ${dateStr} at ${dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+                      const wtDate = deal.walkthrough_date || deal.walkthroughDate;
+                      const wtTime = deal.walkthrough_time || deal.walkthroughTime;
+                      if (!wtDate && !wtTime) return 'Proposed (date TBD)';
+                      return `Proposed: ${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
                     })()}
                  </p>
                </div>
