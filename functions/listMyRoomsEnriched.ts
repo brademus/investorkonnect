@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       return {
         id: room.id, deal_id: room.deal_id,
         agent_ids: room.agent_ids || [],
-        agentId: room.agent_ids?.[0] || null,
+        agentId: deal?.locked_agent_id || room.locked_agent_id || room.agent_ids?.[0] || null,
         investorId: room.investorId,
         request_status: room.request_status, agreement_status: room.agreement_status,
         created_date: room.created_date, updated_date: room.updated_date,
