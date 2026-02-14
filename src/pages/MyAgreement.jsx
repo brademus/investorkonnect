@@ -201,7 +201,7 @@ export default function MyAgreement() {
             walkthrough_datetime: wtDatetime
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
-          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime);
+          console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
