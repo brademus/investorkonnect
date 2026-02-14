@@ -359,18 +359,17 @@ export default function NewDeal() {
             }
 
             // Hydrate walkthrough fields from deal
-            if (deal.walkthrough_scheduled !== undefined && deal.walkthrough_scheduled !== null) {
-              setWalkthroughScheduled(deal.walkthrough_scheduled);
-            }
+            setWalkthroughScheduled(deal.walkthrough_scheduled === true);
             if (deal.walkthrough_datetime) {
               const dt = new Date(deal.walkthrough_datetime);
-              setWalkthroughDate(String(dt.getMonth()+1).padStart(2,'0') + '/' + String(dt.getDate()).padStart(2,'0') + '/' + dt.getFullYear());
-              const hrs = dt.getHours();
-              const mins = String(dt.getMinutes()).padStart(2,'0');
-              const ampm = hrs >= 12 ? 'PM' : 'AM';
-              const h12 = hrs % 12 || 12;
-              // Strict format: no space before AM/PM (e.g. "02:30PM")
-              setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ampm);
+              if (!isNaN(dt.getTime())) {
+                setWalkthroughDate(String(dt.getMonth()+1).padStart(2,'0') + '/' + String(dt.getDate()).padStart(2,'0') + '/' + dt.getFullYear());
+                const hrs = dt.getHours();
+                const mins = String(dt.getMinutes()).padStart(2,'0');
+                const ampm = hrs >= 12 ? 'PM' : 'AM';
+                const h12 = hrs % 12 || 12;
+                setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ampm);
+              }
             }
 
             // Fallback: if property details are still empty, try server-normalized details
