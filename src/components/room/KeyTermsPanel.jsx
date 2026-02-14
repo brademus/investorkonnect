@@ -212,24 +212,18 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           </div>
         )}
 
-        {/* Walk-through Status - always shown when deal has walkthrough data, regardless of terms */}
-        {deal?.walkthrough_scheduled !== null && deal?.walkthrough_scheduled !== undefined && (
+        {/* Walk-through Status - only show when walkthrough is actually scheduled with a date */}
+        {deal?.walkthrough_scheduled === true && (deal?.walkthrough_date || deal?.walkthrough_time) && (
           <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
             <div>
               <p className="text-xs text-[#808080] mb-1">Walk-through</p>
-              {deal.walkthrough_scheduled && (deal.walkthrough_date || deal.walkthrough_time) ? (
-                <p className="text-sm font-semibold text-[#FAFAFA]">
-                  {deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}
-                </p>
-              ) : deal.walkthrough_scheduled ? (
-                <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (date TBD)</p>
-              ) : (
-                <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>
-              )}
+              <p className="text-sm font-semibold text-[#FAFAFA]">
+                {deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}
+              </p>
             </div>
-            <Badge className={deal.walkthrough_scheduled ? "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30" : "bg-[#1F1F1F] text-[#808080] border-[#333]"}>
+            <Badge className="bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30">
               <CalendarCheck className="w-3 h-3 mr-1" />
-              {deal.walkthrough_scheduled ? 'Set' : 'No'}
+              Set
             </Badge>
           </div>
         )}
