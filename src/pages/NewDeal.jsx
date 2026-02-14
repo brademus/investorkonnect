@@ -694,6 +694,7 @@ export default function NewDeal() {
     console.log('[NewDeal] handleContinue saving walkthrough:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
 
     // Save to sessionStorage - include dealId if editing
+    // This is the single source of truth — all downstream pages read from 'newDealDraft'
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -724,11 +725,10 @@ export default function NewDeal() {
       yearBuilt,
       numberOfStories,
       hasBasement,
-      walkthroughScheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
+      walkthroughScheduled: walkthroughScheduled === true,
       walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
-      walkthrough_time_tbd: walkthroughScheduled === true && !hasValidTime(walkthroughTime),
       walkthrough_datetime: walkthroughIso || null
     }));
 
