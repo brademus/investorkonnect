@@ -472,35 +472,8 @@ export default function MyAgreement() {
                  <p className="text-[#808080]">Walk-through</p>
                  <p className="text-[#FAFAFA] font-semibold">
                    {(() => {
-                      // Check all possible keys for walkthrough scheduled
-                      let scheduled = deal.walkthroughScheduled === true || deal.walkthrough_scheduled === true;
-                      let dtIso = deal.walkthrough_datetime || deal.walkthroughDatetime || null;
-
-                      // Also check sessionStorage as a fallback for new deals
-                      if (!scheduled) {
-                        try {
-                          const wtJson = sessionStorage.getItem('newDealWalkthrough');
-                          if (wtJson) {
-                            const wt = JSON.parse(wtJson);
-                            if (wt.walkthrough_scheduled === true) {
-                              scheduled = true;
-                              dtIso = dtIso || wt.walkthrough_datetime || null;
-                            }
-                          }
-                        } catch (_) {}
-                      }
-                      if (!scheduled) {
-                        try {
-                          const draftJson = sessionStorage.getItem('newDealDraft');
-                          if (draftJson) {
-                            const dd = JSON.parse(draftJson);
-                            if (dd.walkthroughScheduled === true || dd.walkthrough_scheduled === true) {
-                              scheduled = true;
-                              dtIso = dtIso || dd.walkthrough_datetime || null;
-                            }
-                          }
-                        } catch (_) {}
-                      }
+                      const scheduled = deal.walkthroughScheduled === true || deal.walkthrough_scheduled === true;
+                      const dtIso = deal.walkthrough_datetime || null;
 
                       if (!scheduled) return 'Not scheduled';
                       if (!dtIso) return 'Proposed (date TBD)';
