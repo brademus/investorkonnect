@@ -116,11 +116,12 @@ export default function NewDeal() {
   }, [dealId, fromVerify]);
 
   // Helper: parse flexible time string into {hours, minutes} in 24h format, or null if empty/unparseable
+  // Primary format from WalkthroughTimeInput: "HH:MMAM" or "HH:MMPM" (no space)
   const parseTimeString = (timeStr) => {
     if (!timeStr || !timeStr.trim()) return null;
     const s = timeStr.trim();
     
-    // Try "HH:MM AM/PM" or "H:MM AM/PM" or "H:MMAM/PM" (with or without space before AM/PM)
+    // Primary: "HH:MMAM/PM" or "HH:MM AM/PM" (with or without space)
     const ampmMatch = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm|a\.m\.|p\.m\.)$/i);
     if (ampmMatch) {
       let h = parseInt(ampmMatch[1]), m = parseInt(ampmMatch[2]);
@@ -134,22 +135,6 @@ export default function NewDeal() {
     const milMatch = s.match(/^(\d{1,2}):(\d{2})$/);
     if (milMatch) {
       return { hours: parseInt(milMatch[1]), minutes: parseInt(milMatch[2]) };
-    }
-    
-    // Try "Ham/pm" or "H am/pm" (no minutes)
-    const shortMatch = s.match(/^(\d{1,2})\s*(AM|PM|am|pm|a\.m\.|p\.m\.)$/i);
-    if (shortMatch) {
-      let h = parseInt(shortMatch[1]);
-      const isPM = /pm|p\.m\./i.test(shortMatch[2]);
-      if (isPM && h !== 12) h += 12;
-      if (!isPM && h === 12) h = 0;
-      return { hours: h, minutes: 0 };
-    }
-    
-    // Last resort: try native Date parse
-    const attempt = new Date(`2000-01-01 ${s}`);
-    if (!isNaN(attempt.getTime())) {
-      return { hours: attempt.getHours(), minutes: attempt.getMinutes() };
     }
     
     return null;
