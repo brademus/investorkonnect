@@ -90,7 +90,8 @@ export default function RateAgent() {
       toast.success("Thank you for your review!");
       setTimeout(() => navigate(createPageUrl(returnTo)), 1500);
     } catch (e) {
-      toast.error("Failed to submit review");
+      console.error("[RateAgent] Submit error:", e);
+      toast.error("Failed to submit review: " + (e?.message || "Unknown error"));
     } finally {
       setSubmitting(false);
     }
