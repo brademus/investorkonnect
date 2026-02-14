@@ -242,7 +242,7 @@ function PipelineContent() {
                         {(provided, snapshot) => (
                           <div ref={provided.innerRef} {...provided.droppableProps} className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 ${snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''}`}>
                             {stageDeals.length === 0 ? <div className="h-full flex items-center justify-center text-[#333] text-sm">{snapshot.isDraggingOver ? 'Drop here' : 'No deals'}</div> : stageDeals.map((deal, index) => (
-                              <Draggable key={deal.id} draggableId={deal.id} index={index}>
+                              <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
                                 {(provided, snapshot) => (
                                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567]' : ''}`}>
                                     <div className="flex justify-between items-start mb-2">
