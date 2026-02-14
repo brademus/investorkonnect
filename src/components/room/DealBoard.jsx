@@ -123,28 +123,20 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const norm = normalizeStage(deal?.pipeline_stage);
                 const isActive = norm === stage.id;
                 const isPast = stage.order < stageOrder(norm);
+                const handleStageClick = async () => {
+                  if (!deal?.id) return;
+                  await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
+                  toast.success(`Moved to ${stage.label}`);
+                  // Redirect to rate agent when moved to completed or canceled
+                  if (stage.id === 'completed' || stage.id === 'canceled') {
+                    const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+                    if (agentId) {
+                      navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                    }
+                  }
+                };
                 return (
-                  <button key={stage.id} onClick={isAgent ? async () => {
-                    if (deal?.id) {
-                      await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
-                      toast.success(`Moved to ${stage.label}`);
-                      // Prompt rating when agent moves deal to completed or canceled
-                      if (stage.id === 'completed' || stage.id === 'canceled') {
-                        const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-                        if (agentId) {
-                          navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-                        }
-                      }
-                    }
-                  } : isInvestor && (stage.id === 'completed' || stage.id === 'canceled') ? async () => {
-                    if (deal?.id) {
-                      await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
-                      const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-                      if (agentId) {
-                        navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-                      }
-                    }
-                  } : undefined} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors">
+                  <button key={stage.id} onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-black' : isPast ? 'bg-[#34D399]' : 'bg-[#1F1F1F]'}`}>
                       <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
                     </div>
