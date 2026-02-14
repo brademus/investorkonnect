@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Star, CheckCircle, Clock, Shield, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
+import AgentRatingStars from '@/components/AgentRatingStars';
+import { fetchAgentRatings } from '@/components/useAgentRating';
 
 export default function PendingAgentsList({ invites, onSelectAgent, selectedInviteId }) {
   const navigate = useNavigate();
+  const [ratings, setRatings] = useState(new Map());
+
+  useEffect(() => {
+    const agentIds = invites.map(i => i.agent?.id).filter(Boolean);
+    if (agentIds.length === 0) return;
+    fetchAgentRatings(agentIds).then(setRatings);
+  }, [invites]);
 
   return (
     <div className="max-w-4xl mx-auto w-full">
@@ -45,15 +54,18 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-[#808080]">Rating</span>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-[#E3C567] fill-current" />
-                    <span className="text-[#FAFAFA]">{agent.rating || '4.8'}/5</span>
+                  <AgentRatingStars
+                    rating={ratings.get(agent.id)?.rating}
+                    reviewCount={ratings.get(agent.id)?.reviewCount || 0}
+                    size="sm"
+                  />
+                </div>
+                {agent.completed_deals > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[#808080]">Deals Closed</span>
+                    <span className="text-[#FAFAFA]">{agent.completed_deals}</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[#808080]">Deals Closed</span>
-                  <span className="text-[#FAFAFA]">{agent.completed_deals || '12'}</span>
-                </div>
+                )}
               </div>
 
               {/* Agreement Status */}
