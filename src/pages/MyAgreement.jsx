@@ -128,7 +128,7 @@ export default function MyAgreement() {
           dealData = JSON.parse(draftData);
           agentIds = dealData.selectedAgentIds || [];
 
-          console.log('[MyAgreement] Walkthrough from sessionStorage:', { scheduled: dealData.walkthrough_scheduled, datetime: dealData.walkthrough_datetime });
+
         }
 
         if (agentIds.length === 0) {
