@@ -58,13 +58,14 @@ export default function Room() {
   // Load room + deal when roomId changes
   useEffect(() => {
     if (!roomId) { setRoomLoading(false); return; }
-    setShowBoard(false);
     setDeal(null);
     setCurrentRoom(null);
     setRoomLoading(true);
     setPendingInvites([]);
     setSelectedInvite(null);
     setShowPendingAgents(true);
+    // Default to Deal Board for agents before signing; investors see pending agents
+    setShowBoard(isAgent ? true : false);
 
     const load = async () => {
       try {
@@ -294,7 +295,7 @@ export default function Room() {
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
                 )}
-                {!(isInvestor && pendingInvites.length > 0 && !isSigned) && (
+                {isSigned && (
                   <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Send className="w-4 h-4 mr-2" />Messages
                   </Button>
