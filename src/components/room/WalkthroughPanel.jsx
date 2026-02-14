@@ -44,9 +44,25 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           return;
         }
 
-        // 2. Check Deal entity fields
-        const wtScheduled = deal.walkthrough_scheduled === true;
-        const wtDatetime = deal.walkthrough_datetime || null;
+        // 2. Check Deal entity fields from prop
+        let wtScheduled = deal.walkthrough_scheduled === true;
+        let wtDatetime = deal.walkthrough_datetime || null;
+
+        // 3. If prop doesn't have walkthrough data, fetch fresh from DB
+        // (the deal prop may have been loaded before walkthrough was saved by the automation)
+        if (!wtScheduled) {
+          try {
+            const freshDeals = await base44.entities.Deal.filter({ id: deal.id });
+            const freshDeal = freshDeals?.[0];
+            if (freshDeal?.walkthrough_scheduled === true) {
+              wtScheduled = true;
+              wtDatetime = freshDeal.walkthrough_datetime || null;
+            }
+          } catch (e) {
+            console.warn("[WalkthroughPanel] Failed to fetch fresh deal:", e);
+          }
+        }
+
         if (!cancelled && wtScheduled) {
           setApptData({ status: "PROPOSED", datetime: wtDatetime });
           setLoading(false);
