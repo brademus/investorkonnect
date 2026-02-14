@@ -51,10 +51,23 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     // Optimistically update local status
     setLocalStatus(action);
     try {
-      // Update the original message metadata
-      await base44.entities.Message.update(message.id, {
-        metadata: { ...meta, status: action, responded_by: profile?.id, responded_at: new Date().toISOString() }
-      });
+      const responseTimestamp = new Date().toISOString();
+
+      // Update ALL pending walkthrough_request messages in the room (not just this one)
+      const allMsgs = await base44.entities.Message.filter({ room_id: roomId });
+      for (const m of allMsgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending')) {
+        await base44.entities.Message.update(m.id, {
+          metadata: { ...m.metadata, status: action, responded_by: profile?.id, responded_at: responseTimestamp }
+        });
+      }
+      // Also update this specific message if it wasn't pending (edge case)
+      if (meta.status === 'pending') {
+        // already updated above
+      } else {
+        await base44.entities.Message.update(message.id, {
+          metadata: { ...meta, status: action, responded_by: profile?.id, responded_at: responseTimestamp }
+        });
+      }
 
       // Send a reply message using the same display format
       const displayParts = [wtDate, wtTime].filter(Boolean);
@@ -68,14 +81,12 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, walkthrough_date: wtDate, walkthrough_time: wtTime, status: action }
       });
 
-      // Update deal and DealAppointments regardless of whether dt exists
+      // Update DealAppointments status
       try {
         const rooms = await base44.entities.Room.filter({ id: roomId });
         const room = rooms?.[0];
         if (room?.deal_id) {
           const newApptStatus = action === 'confirmed' ? 'SCHEDULED' : 'CANCELED';
-
-          // Update DealAppointments status
           try {
             const apptRows = await base44.entities.DealAppointments.filter({ dealId: room.deal_id });
             if (apptRows?.[0]) {
@@ -84,7 +95,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
                   ...apptRows[0].walkthrough,
                   status: newApptStatus,
                   updatedByUserId: profile?.id,
-                  updatedAt: new Date().toISOString()
+                  updatedAt: responseTimestamp
                 }
               });
             }
