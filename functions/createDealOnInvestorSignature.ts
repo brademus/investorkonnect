@@ -474,7 +474,7 @@ Deno.serve(async (req) => {
           dealId: newDeal.id,
           walkthrough: {
             status: 'PROPOSED',
-            datetime: draft.walkthrough_datetime,
+            datetime: draftWalkthroughDatetime,
             timezone: null,
             locationType: 'ON_SITE',
             notes: null,
