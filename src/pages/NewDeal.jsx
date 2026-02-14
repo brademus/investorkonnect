@@ -605,7 +605,9 @@ export default function NewDeal() {
     }
   } catch (_) {}
 
+    // CRITICAL: Build walkthrough ISO string for both sessionStorage AND database
     const walkthroughIso = walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null;
+    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
 
     // Save to sessionStorage - include dealId if editing
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
