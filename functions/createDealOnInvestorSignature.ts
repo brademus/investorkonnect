@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
           const apptPatch = {
             walkthrough: {
               status: 'PROPOSED',
-              datetime: `${dealUpdate.walkthrough_date} ${dealUpdate.walkthrough_time}`,
+              datetime: null,
               timezone: null,
               locationType: 'ON_SITE',
               notes: null,
@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
             const apptPatch = {
               walkthrough: {
                 status: 'PROPOSED',
-                datetime: `${draftWalkthroughDate} ${draftWalkthroughTime}`,
+                datetime: null,
                 timezone: null,
                 locationType: 'ON_SITE',
                 notes: null,
@@ -478,7 +478,7 @@ Deno.serve(async (req) => {
           dealId: newDeal.id,
           walkthrough: {
             status: 'PROPOSED',
-            datetime: `${draftWalkthroughDate} ${draftWalkthroughTime}`,
+            datetime: null,
             timezone: null,
             locationType: 'ON_SITE',
             notes: null,

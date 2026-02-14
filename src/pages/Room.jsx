@@ -204,23 +204,19 @@ export default function Room() {
     const unsub = base44.entities.Deal.subscribe(e => {
       if (e?.data?.id === deal.id) {
         setDeal(prev => prev ? { ...prev, ...e.data } : e.data);
-        if (e?.data?.walkthrough_scheduled || e?.data?.walkthrough_datetime) setHasWalkthroughAppt(true);
+        if (e?.data?.walkthrough_scheduled) setHasWalkthroughAppt(true);
       }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // Check DealAppointments for walkthrough (covers cases where deal entity fields are null but appointment exists)
+  // Check if walkthrough is scheduled from deal fields
   useEffect(() => {
     if (!deal?.id) return;
-    if (deal?.walkthrough_scheduled || deal?.walkthrough_datetime) { setHasWalkthroughAppt(true); return; }
-    (async () => {
-      const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
-      if (rows?.[0]?.walkthrough?.status && rows[0].walkthrough.status !== 'NOT_SET' && rows[0].walkthrough.status !== 'CANCELED') {
-        setHasWalkthroughAppt(true);
-      }
-    })();
-  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime]);
+    if (deal?.walkthrough_scheduled && (deal?.walkthrough_date || deal?.walkthrough_time)) {
+      setHasWalkthroughAppt(true);
+    }
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_date, deal?.walkthrough_time]);
 
   const counterpartName = useMemo(() => {
     if (isAgent) return deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor';

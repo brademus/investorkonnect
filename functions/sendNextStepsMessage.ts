@@ -59,51 +59,12 @@ Deno.serve(async (req) => {
       agent = agProfiles?.[0];
     }
 
-    // Resolve walkthrough date/time
-    let walkthroughDate = null;
-    let walkthroughTime = null;
-    let walkthroughScheduled = false;
-
-    // Check Deal entity - raw string fields first (set by NewDeal page)
-    if (deal.walkthrough_date || deal.walkthrough_time) {
-      walkthroughDate = deal.walkthrough_date || null;
-      walkthroughTime = deal.walkthrough_time || null;
-      walkthroughScheduled = true;
-      console.log("[sendNextSteps] Using deal raw walkthrough fields:", walkthroughDate, walkthroughTime);
-    }
-
-    // Fallback: ISO datetime field (set by WalkthroughScheduleModal)
-    if (!walkthroughScheduled && deal.walkthrough_datetime) {
-      try {
-        const d = new Date(deal.walkthrough_datetime);
-        if (!isNaN(d.getTime())) {
-          const isMidnight = d.getHours() === 0 && d.getMinutes() === 0;
-          walkthroughDate = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-          walkthroughTime = isMidnight ? null : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-          walkthroughScheduled = true;
-        }
-      } catch (e) { console.log("walkthrough date parse error", e); }
-    }
-
-    // Fallback to DealAppointments
-    if (!walkthroughScheduled) {
-      try {
-        const appts = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: dealId });
-        const wt = appts?.[0]?.walkthrough;
-        if (wt?.datetime && wt.status !== "NOT_SET" && wt.status !== "CANCELED") {
-          const d = new Date(wt.datetime);
-          if (!isNaN(d.getTime())) {
-            const isMidnight = d.getHours() === 0 && d.getMinutes() === 0;
-            walkthroughDate = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-            walkthroughTime = isMidnight ? null : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-            walkthroughScheduled = true;
-          }
-        }
-      } catch (e) { console.log("appts check error", e); }
-    }
-
-    // Has walkthrough if at least date is present
+    // Resolve walkthrough date/time from Deal entity (single source of truth)
+    const walkthroughDate = deal.walkthrough_date || null;
+    const walkthroughTime = deal.walkthrough_time || null;
+    const walkthroughScheduled = deal.walkthrough_scheduled === true && (walkthroughDate || walkthroughTime);
     const hasFullWalkthrough = walkthroughScheduled && walkthroughDate;
+    console.log("[sendNextSteps] Walkthrough:", { walkthroughDate, walkthroughTime, walkthroughScheduled });
 
     // Resolve placeholders
     const propertyAddress = deal.property_address || "";

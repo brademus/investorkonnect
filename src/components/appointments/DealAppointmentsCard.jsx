@@ -20,8 +20,7 @@ function StatusPill({ status }) {
 }
 
 function EventCard({ label, data, role, onPrimary, onSecondary, onInvestorRequest }) {
-  const hasDate = !!data?.datetime;
-  const dateStr = hasDate ? new Date(data.datetime).toLocaleString() : '—';
+  const dateStr = data?.datetime ? new Date(data.datetime).toLocaleString() : '—';
   const loc = data?.locationType === 'ON_SITE' ? 'On-site' : (data?.locationType === 'VIRTUAL' ? 'Virtual' : '—');
 
   const primaryLabel = useMemo(() => {
@@ -44,7 +43,7 @@ function EventCard({ label, data, role, onPrimary, onSecondary, onInvestorReques
             <CalendarIcon className="w-3.5 h-3.5" /> <span>{dateStr}</span>
             {data?.timezone && (<span className="ml-1">({data.timezone})</span>)}
             <span className="text-[#333]">|</span>
-            <Clock className="w-3.5 h-3.5" /> <span>{hasDate ? new Date(data.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+            <Clock className="w-3.5 h-3.5" /> <span>{data?.datetime ? new Date(data.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
             <span className="text-[#333]">|</span>
             <MapPin className="w-3.5 h-3.5" /> <span>{loc}</span>
           </div>

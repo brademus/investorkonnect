@@ -29,13 +29,6 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
       const rawTime = time || null;
       const displayText = formatWalkthrough(date, rawTime);
 
-      // Build ISO datetime for backward compat
-      let isoDatetime = null;
-      try {
-        const d = new Date(date + ' ' + (time || '12:00 PM'));
-        if (!isNaN(d.getTime())) isoDatetime = d.toISOString();
-      } catch (_) {}
-
       // 1. Update deal entity
       await base44.entities.Deal.update(deal.id, {
         walkthrough_scheduled: true,
@@ -49,7 +42,7 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
         const apptPatch = {
           walkthrough: {
             status: 'PROPOSED',
-            datetime: isoDatetime,
+            datetime: null,
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             locationType: 'ON_SITE',
             notes: null,
@@ -78,7 +71,6 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
         body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayText}\n\nPlease confirm or suggest a different time.`,
         metadata: {
           type: 'walkthrough_request',
-          walkthrough_datetime: isoDatetime,
           walkthrough_date: date,
           walkthrough_time: rawTime,
           status: 'pending'
