@@ -19,6 +19,19 @@ export default function AgentProfile() {
   const [loading, setLoading] = useState(true);
   const [dealsCompleted, setDealsCompleted] = useState(null);
 
+  // Fetch reviews as a separate function so we can call it on mount + real-time
+  const fetchReviews = async () => {
+    if (!profileId) return;
+    try {
+      const agentReviews = await base44.entities.Review.filter({ 
+        reviewee_profile_id: profileId 
+      }, '-created_date', 10);
+      setReviews(agentReviews || []);
+    } catch (err) {
+      console.log('Reviews not available:', err);
+    }
+  };
+
   useEffect(() => {
     if (!profileId) return;
     
@@ -37,16 +50,7 @@ export default function AgentProfile() {
         }
 
         setAgentProfile(agent);
-
-        try {
-          const agentReviews = await base44.entities.Review.filter({ 
-            reviewee_profile_id: profileId 
-          }, '-created_date', 10);
-          setReviews(agentReviews || []);
-        } catch (err) {
-          console.log('Reviews not available:', err);
-          setReviews([]);
-        }
+        await fetchReviews();
 
         try {
           const completedDeals = await base44.entities.Deal.filter({ 
@@ -66,6 +70,18 @@ export default function AgentProfile() {
     };
 
     loadProfile();
+  }, [profileId]);
+
+  // Real-time: refetch reviews when Review entity changes for this agent
+  useEffect(() => {
+    if (!profileId) return;
+    const unsub = base44.entities.Review.subscribe((event) => {
+      const d = event?.data;
+      if (d?.reviewee_profile_id === profileId) {
+        fetchReviews();
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
   }, [profileId]);
 
   // Compute average rating from reviews
