@@ -605,10 +605,7 @@ export default function NewDeal() {
     }
   } catch (_) {}
 
-  // Build walkthrough ISO datetime once for reuse
-    const walkthroughIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
-
-    console.log('[NewDeal] handleContinue saving walkthrough:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
+    const walkthroughIso = walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null;
 
     // Save to sessionStorage - include dealId if editing
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
