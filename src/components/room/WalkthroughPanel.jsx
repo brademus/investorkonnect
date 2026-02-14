@@ -11,18 +11,21 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
  * DealAppointments.walkthrough.status for confirmed/declined.
  */
 // Module-level cache so status persists across tab switches (component remounts)
+// _wtCache stores { status, userAction } — userAction=true means user explicitly confirmed/declined
 const _wtCache = {};
 
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const dealId = deal?.id;
   const cached = dealId ? _wtCache[dealId] : null;
-  const [apptStatus, setApptStatus] = useState(cached || null);
+  const [apptStatus, setApptStatus] = useState(cached?.status || null);
   const [apptLoaded, setApptLoaded] = useState(!!cached);
   const [responding, setResponding] = useState(false);
 
   // Persist to cache whenever apptStatus changes
   useEffect(() => {
-    if (dealId && apptStatus) _wtCache[dealId] = apptStatus;
+    if (dealId && apptStatus) {
+      _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus };
+    }
   }, [dealId, apptStatus]);
 
   const isInvestor = profile?.user_role === "investor";
