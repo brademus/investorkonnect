@@ -58,7 +58,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     // If user explicitly confirmed/declined within last 30s, trust cache and don't overwrite
     const freshCached = _wtCache[dealId];
     if (freshCached?.userActionAt && (Date.now() - freshCached.userActionAt) < 30000) {
-      setApptStatus(freshCached.status);
+      safeSetStatus(freshCached.status);
       setApptLoaded(true);
       return;
     }
@@ -74,15 +74,14 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       }
       const s = rows?.[0]?.walkthrough?.status;
       if (s && s !== "NOT_SET") {
-        setApptStatus(s);
+        safeSetStatus(s);
       } else if (hasWalkthrough) {
-        // Only set PROPOSED if we're not already in a resolved state
-        setApptStatus(prev => (prev === "SCHEDULED" || prev === "CANCELED" || prev === "COMPLETED") ? prev : "PROPOSED");
+        safeSetStatus("PROPOSED");
       }
       setApptLoaded(true);
     }).catch(() => {
       if (!cancelled && hasWalkthrough && !_wtCache[dealId]?.status) {
-        setApptStatus(prev => (prev === "SCHEDULED" || prev === "CANCELED" || prev === "COMPLETED") ? prev : "PROPOSED");
+        safeSetStatus("PROPOSED");
       }
       setApptLoaded(true);
     });
@@ -95,8 +94,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     const unsub = base44.entities.DealAppointments.subscribe(e => {
       if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
         const s = e.data.walkthrough.status;
-        setApptStatus(s);
-        if (s !== "PROPOSED" && s !== "NOT_SET") {
+        safeSetStatus(s);
+        if (RESOLVED_STATUSES.has(s)) {
           _wtCache[deal.id] = { status: s, userActionAt: Date.now() };
         }
       }
@@ -112,12 +111,12 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       if (!d || d.room_id !== roomId) return;
       // Catch both walkthrough_request (status updated) and walkthrough_response messages
       if (d.metadata?.type === "walkthrough_request") {
-        if (d.metadata.status === "confirmed") { setApptStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "denied") { setApptStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
+        if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
+        else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
       }
       if (d.metadata?.type === "walkthrough_response") {
-        if (d.metadata.status === "confirmed") { setApptStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "denied") { setApptStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
+        if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
+        else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
@@ -131,7 +130,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     if (!deal?.id) return;
     setResponding(true);
     const optimistic = action === "confirm" ? "SCHEDULED" : "CANCELED";
-    setApptStatus(optimistic);
+    safeSetStatus(optimistic);
     // Mark cache as user-initiated so refetch won't overwrite
     _wtCache[dealId] = { status: optimistic, userActionAt: Date.now() };
     try {
@@ -145,7 +144,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       });
       toast.success(`Walk-through ${action === "confirm" ? "confirmed" : "declined"}`);
     } catch (e) {
-      setApptStatus("PROPOSED");
+      safeSetStatus("PROPOSED");
       delete _wtCache[dealId];
       toast.error("Failed to respond");
     } finally {
