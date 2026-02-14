@@ -12,6 +12,7 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
  */
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const [apptStatus, setApptStatus] = useState(null);
+  const [apptLoaded, setApptLoaded] = useState(false);
   const [responding, setResponding] = useState(false);
 
   const isInvestor = profile?.user_role === "investor";
@@ -25,21 +26,26 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time || null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
 
-  // Immediately mark PROPOSED if deal says walkthrough is scheduled
-  useEffect(() => {
-    if (hasWalkthrough && !apptStatus) setApptStatus("PROPOSED");
-  }, [hasWalkthrough]);
-
-  // Background load of DealAppointments to get real status
+  // Background load of DealAppointments to get real status — runs first
   useEffect(() => {
     if (!deal?.id) return;
     let cancelled = false;
+    setApptLoaded(false);
     base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+      if (cancelled) return;
       const s = rows?.[0]?.walkthrough?.status;
-      if (!cancelled && s && s !== "NOT_SET") setApptStatus(s);
-    }).catch(() => {});
+      if (s && s !== "NOT_SET") {
+        setApptStatus(s);
+      } else if (hasWalkthrough) {
+        setApptStatus("PROPOSED");
+      }
+      setApptLoaded(true);
+    }).catch(() => {
+      if (!cancelled && hasWalkthrough) setApptStatus("PROPOSED");
+      setApptLoaded(true);
+    });
     return () => { cancelled = true; };
-  }, [deal?.id]);
+  }, [deal?.id, hasWalkthrough]);
 
   // Real-time: DealAppointments
   useEffect(() => {

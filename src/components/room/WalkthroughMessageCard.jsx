@@ -12,17 +12,15 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
 export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned, dealId }) {
   const [responding, setResponding] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
+  const [resolvedWtDate, setResolvedWtDate] = useState(null);
+  const [resolvedWtTime, setResolvedWtTime] = useState(null);
   const meta = message?.metadata || {};
   const status = localStatus || meta.status || 'pending';
-  const wtDate = meta.walkthrough_date;
-  const wtTime = meta.walkthrough_time;
 
   // Sync from real-time message updates
   useEffect(() => {
     if (meta.status && meta.status !== 'pending') setLocalStatus(meta.status);
   }, [meta.status]);
-
-  const displayText = formatWalkthrough(wtDate, wtTime);
 
   // Resolve dealId: prefer prop, then look up from room
   const [resolvedDealId, setResolvedDealId] = useState(dealId || null);
@@ -33,6 +31,24 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
       if (rows?.[0]?.deal_id) setResolvedDealId(rows[0].deal_id);
     }).catch(() => {});
   }, [dealId, roomId]);
+
+  // Get walkthrough date/time from metadata first, fallback to deal entity
+  const wtDate = meta.walkthrough_date || resolvedWtDate;
+  const wtTime = meta.walkthrough_time || resolvedWtTime;
+  const displayText = formatWalkthrough(wtDate, wtTime);
+
+  // If metadata is missing date/time, pull from deal entity
+  useEffect(() => {
+    if (meta.walkthrough_date || meta.walkthrough_time) return; // already have it
+    if (!resolvedDealId) return;
+    base44.entities.Deal.filter({ id: resolvedDealId }).then(deals => {
+      const d = deals?.[0];
+      if (d) {
+        if (d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
+        if (d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
+      }
+    }).catch(() => {});
+  }, [resolvedDealId, meta.walkthrough_date, meta.walkthrough_time]);
 
   const respond = async (action) => {
     setResponding(true);
