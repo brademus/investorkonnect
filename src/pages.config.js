@@ -75,6 +75,7 @@ import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
+import RateAgent from './pages/RateAgent';
 import __Layout from './Layout.jsx';
 
 
@@ -107,6 +108,7 @@ export const PAGES = {
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
+    "RateAgent": RateAgent,
 }
 
 export const pagesConfig = {
