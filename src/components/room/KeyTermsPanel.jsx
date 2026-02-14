@@ -212,8 +212,8 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           </div>
         )}
 
-        {/* Walk-through Status - only show when walkthrough is actually scheduled with a date */}
-        {deal?.walkthrough_scheduled === true && (deal?.walkthrough_date || deal?.walkthrough_time) && (
+        {/* Walk-through Status - only show when walkthrough is actually scheduled with a real date */}
+        {deal?.walkthrough_scheduled === true && deal?.walkthrough_date && deal.walkthrough_date.length >= 8 && (
           <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
             <div>
               <p className="text-xs text-[#808080] mb-1">Walk-through</p>
