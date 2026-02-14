@@ -487,15 +487,14 @@ Deno.serve(async (req) => {
       selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id,
-      walkthrough_scheduled: (draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1) ? true : false,
-      walkthrough_datetime: draft.walkthrough_datetime || null
+      walkthrough_scheduled: draftWalkthroughScheduled,
+      walkthrough_datetime: draftWalkthroughDatetime
     });
     
-    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime, 'draft_wt_raw:', draft.walkthrough_scheduled, 'draft_wt_type:', typeof draft.walkthrough_scheduled);
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime);
 
     // Create DealAppointments record if walkthrough was scheduled
-    const draftWtScheduled = draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1;
-    if (draftWtScheduled && draft.walkthrough_datetime) {
+    if (draftWalkthroughScheduled && draftWalkthroughDatetime) {
       try {
         await base44.asServiceRole.entities.DealAppointments.create({
           dealId: newDeal.id,
