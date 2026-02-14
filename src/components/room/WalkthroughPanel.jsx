@@ -50,8 +50,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
   const wtDate = deal?.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
   const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
+  // Whether the deal itself says walkthrough is scheduled
+  const dealHasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
   // Show walkthrough section if deal says scheduled OR if DealAppointments has a non-NOT_SET status
-  const hasWalkthrough = (deal?.walkthrough_scheduled === true && (wtDate || wtTime)) || (apptStatus && apptStatus !== "NOT_SET");
+  const hasWalkthrough = dealHasWalkthrough || (apptStatus && apptStatus !== "NOT_SET");
 
   // Load DealAppointments to get real status — skip if user recently took action
   useEffect(() => {
@@ -76,18 +78,18 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       const s = rows?.[0]?.walkthrough?.status;
       if (s && s !== "NOT_SET") {
         safeSetStatus(s);
-      } else if (hasWalkthrough) {
+      } else if (dealHasWalkthrough) {
         safeSetStatus("PROPOSED");
       }
       setApptLoaded(true);
     }).catch(() => {
-      if (!cancelled && hasWalkthrough && !_wtCache[dealId]?.status) {
+      if (!cancelled && dealHasWalkthrough && !_wtCache[dealId]?.status) {
         safeSetStatus("PROPOSED");
       }
       setApptLoaded(true);
     });
     return () => { cancelled = true; };
-  }, [dealId, hasWalkthrough]);
+  }, [dealId, dealHasWalkthrough]);
 
   // Real-time: DealAppointments
   useEffect(() => {
