@@ -1,111 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Calendar, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
 
 /**
- * Renders inline in the message list for walkthrough_request messages.
- * Agents see Confirm/Deny buttons. Investors see the status.
+ * Inline walkthrough card shown in the message list.
+ * Uses the same shared respond logic as WalkthroughPanel.
  */
-export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned }) {
+export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned, dealId }) {
   const [responding, setResponding] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
   const meta = message?.metadata || {};
-  const status = localStatus || meta.status || 'pending'; // pending | confirmed | denied
-  const dt = meta.walkthrough_datetime;
+  const status = localStatus || meta.status || 'pending';
   const wtDate = meta.walkthrough_date;
   const wtTime = meta.walkthrough_time;
 
-  // Sync status from parent message metadata updates (real-time subscription)
-  React.useEffect(() => {
-    if (meta.status && meta.status !== 'pending') {
-      setLocalStatus(meta.status);
-    }
+  // Sync from real-time message updates
+  useEffect(() => {
+    if (meta.status && meta.status !== 'pending') setLocalStatus(meta.status);
   }, [meta.status]);
 
-  // Build display: prefer raw date/time strings, fall back to ISO datetime, then body extraction
-  const formatted = (() => {
-    if (wtDate || wtTime) {
-      return [wtDate, wtTime].filter(Boolean).join(' at ') || 'No date set';
-    }
-    if (dt) {
-      try {
-        const d = new Date(dt);
-        if (!isNaN(d.getTime())) {
-          return d.toLocaleString('en-US', {
-            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-            hour: 'numeric', minute: '2-digit'
-          });
-        }
-      } catch (_) {}
-    }
-    // Try to extract from message body as last resort
-    const bodyMatch = message?.body?.match(/Proposed Date & Time:\s*(.+)/);
-    if (bodyMatch) return bodyMatch[1].trim();
-    return 'No date set';
-  })();
+  const displayText = formatWalkthrough(wtDate, wtTime);
+
+  // Resolve dealId: prefer prop, then look up from room
+  const [resolvedDealId, setResolvedDealId] = useState(dealId || null);
+  useEffect(() => {
+    if (dealId) { setResolvedDealId(dealId); return; }
+    if (!roomId) return;
+    base44.entities.Room.filter({ id: roomId }).then(rows => {
+      if (rows?.[0]?.deal_id) setResolvedDealId(rows[0].deal_id);
+    }).catch(() => {});
+  }, [dealId, roomId]);
 
   const respond = async (action) => {
     setResponding(true);
-    // Optimistically update local status
-    setLocalStatus(action);
+    const msgAction = action === 'confirm' ? 'confirmed' : 'denied';
+    setLocalStatus(msgAction);
     try {
-      const responseTimestamp = new Date().toISOString();
-
-      // Update ALL pending walkthrough_request messages in the room (not just this one)
-      const allMsgs = await base44.entities.Message.filter({ room_id: roomId });
-      for (const m of allMsgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending')) {
-        await base44.entities.Message.update(m.id, {
-          metadata: { ...m.metadata, status: action, responded_by: profile?.id, responded_at: responseTimestamp }
-        });
-      }
-      // Also update this specific message if it wasn't pending (edge case)
-      if (meta.status === 'pending') {
-        // already updated above
-      } else {
-        await base44.entities.Message.update(message.id, {
-          metadata: { ...meta, status: action, responded_by: profile?.id, responded_at: responseTimestamp }
-        });
-      }
-
-      // Send a reply message using the same display format
-      const displayParts = [wtDate, wtTime].filter(Boolean);
-      const displayText = displayParts.length > 0 ? displayParts.join(' at ') : formatted;
-      const emoji = action === 'confirmed' ? '✅' : '❌';
-      const label = action === 'confirmed' ? 'Confirmed' : 'Declined';
-      await base44.entities.Message.create({
-        room_id: roomId,
-        sender_profile_id: profile?.id,
-        body: `${emoji} Walk-through ${label}\n\n${action === 'confirmed' ? `See you on ${displayText}` : 'Please propose a different time.'}`,
-        metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, walkthrough_date: wtDate, walkthrough_time: wtTime, status: action }
+      await respondToWalkthrough({
+        action,
+        dealId: resolvedDealId,
+        roomId,
+        profileId: profile?.id,
+        wtDate,
+        wtTime,
       });
-
-      // Update DealAppointments status
-      try {
-        const rooms = await base44.entities.Room.filter({ id: roomId });
-        const room = rooms?.[0];
-        if (room?.deal_id) {
-          const newApptStatus = action === 'confirmed' ? 'SCHEDULED' : 'CANCELED';
-          try {
-            const apptRows = await base44.entities.DealAppointments.filter({ dealId: room.deal_id });
-            if (apptRows?.[0]) {
-              await base44.entities.DealAppointments.update(apptRows[0].id, {
-                walkthrough: {
-                  ...apptRows[0].walkthrough,
-                  status: newApptStatus,
-                  updatedByUserId: profile?.id,
-                  updatedAt: responseTimestamp
-                }
-              });
-            }
-          } catch (_) { /* non-critical */ }
-        }
-      } catch (_) { /* non-critical */ }
-
-      toast.success(`Walk-through ${label.toLowerCase()}`);
+      toast.success(`Walk-through ${action === 'confirm' ? 'confirmed' : 'declined'}`);
     } catch (e) {
-      setLocalStatus(null); // revert on error
+      setLocalStatus(null);
       toast.error('Failed to respond');
     } finally {
       setResponding(false);
@@ -119,27 +63,16 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         <span className="text-sm font-semibold text-[#E3C567]">Walk-through Request</span>
       </div>
       <p className="text-sm text-[#FAFAFA] mb-1">
-        <span className="text-[#808080]">Proposed:</span> {formatted}
+        <span className="text-[#808080]">Proposed:</span> {displayText}
       </p>
 
       {status === 'pending' && isRecipient && isSigned && (
         <div className="flex gap-2 mt-3">
-          <Button
-            onClick={() => respond('confirmed')}
-            disabled={responding}
-            size="sm"
-            className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs"
-          >
+          <Button onClick={() => respond('confirm')} disabled={responding} size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs">
             {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
             Confirm
           </Button>
-          <Button
-            onClick={() => respond('denied')}
-            disabled={responding}
-            size="sm"
-            variant="outline"
-            className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs"
-          >
+          <Button onClick={() => respond('deny')} disabled={responding} size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs">
             {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
             Decline
           </Button>
