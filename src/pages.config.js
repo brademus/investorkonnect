@@ -70,12 +70,12 @@ import PipelineStage from './pages/PipelineStage';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
+import RateAgent from './pages/RateAgent';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import RateAgent from './pages/RateAgent';
 import __Layout from './Layout.jsx';
 
 
@@ -103,12 +103,12 @@ export const PAGES = {
     "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
+    "RateAgent": RateAgent,
     "RoleLanding": RoleLanding,
     "Room": Room,
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "RateAgent": RateAgent,
 }
 
 export const pagesConfig = {

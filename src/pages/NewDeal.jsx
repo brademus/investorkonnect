@@ -333,10 +333,16 @@ export default function NewDeal() {
               }
             }
 
-            // Hydrate walkthrough fields from deal
-            setWalkthroughScheduled(deal.walkthrough_scheduled === true);
-            if (deal.walkthrough_date) setWalkthroughDate(deal.walkthrough_date);
-            if (deal.walkthrough_time) setWalkthroughTime(deal.walkthrough_time);
+            // Hydrate walkthrough fields from deal — only set date/time if actually scheduled
+            const dealWtScheduled = deal.walkthrough_scheduled === true;
+            setWalkthroughScheduled(dealWtScheduled);
+            if (dealWtScheduled) {
+              if (deal.walkthrough_date) setWalkthroughDate(deal.walkthrough_date);
+              if (deal.walkthrough_time) setWalkthroughTime(deal.walkthrough_time);
+            } else {
+              setWalkthroughDate("");
+              setWalkthroughTime("");
+            }
 
             // Fallback: if property details are still empty, try server-normalized details
             const detailsEmpty = !propertyType && !beds && !baths && !sqft && !yearBuilt && !numberOfStories && !hasBasement;
