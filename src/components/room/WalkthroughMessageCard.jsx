@@ -12,15 +12,18 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
 export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned, dealId }) {
   const [responding, setResponding] = useState(false);
   const [localStatus, setLocalStatus] = useState(null);
+  const [userActed, setUserActed] = useState(false);
   const [resolvedWtDate, setResolvedWtDate] = useState(null);
   const [resolvedWtTime, setResolvedWtTime] = useState(null);
   const meta = message?.metadata || {};
-  const status = localStatus || meta.status || 'pending';
+  // If user acted, always trust localStatus — don't let meta.status revert it
+  const status = userActed ? (localStatus || 'pending') : (localStatus || meta.status || 'pending');
 
-  // Sync from real-time message updates
+  // Sync from real-time message updates — but don't overwrite user action
   useEffect(() => {
+    if (userActed) return;
     if (meta.status && meta.status !== 'pending') setLocalStatus(meta.status);
-  }, [meta.status]);
+  }, [meta.status, userActed]);
 
   // Resolve dealId: prefer prop, then look up from room
   const [resolvedDealId, setResolvedDealId] = useState(dealId || null);
