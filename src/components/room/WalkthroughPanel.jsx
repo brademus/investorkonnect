@@ -100,11 +100,11 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     const unsub = base44.entities.Deal.subscribe((event) => {
       if (event?.data?.id === deal.id) {
         const d = event.data;
-        if (d.walkthrough_scheduled === true && d.walkthrough_datetime) {
+        if (d.walkthrough_scheduled === true) {
           setApptData((prev) => {
             // Don't downgrade from a richer DealAppointments status
             if (prev && prev.status !== "PROPOSED" && prev.status !== "NOT_SET") return prev;
-            return { status: "PROPOSED", datetime: d.walkthrough_datetime };
+            return { status: "PROPOSED", datetime: d.walkthrough_datetime || null };
           });
         }
       }
