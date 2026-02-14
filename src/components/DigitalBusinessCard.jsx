@@ -1,9 +1,12 @@
 import React from "react";
 import { Mail, Phone, Building2, Briefcase } from "lucide-react";
+import AgentRatingStars from "@/components/AgentRatingStars";
+import { useAgentRating } from "@/components/useAgentRating";
 
 export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
   if (!agentProfile) return null;
 
+  const { rating, reviewCount } = useAgentRating(agentProfile.id);
   const agent = agentProfile.agent || {};
   const name = agentProfile.full_name || "Agent";
   const email = agentProfile.email;
@@ -40,7 +43,10 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
           {/* Name + Signature */}
           <div className="flex-1 pt-1">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Professional</p>
-            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-3">{name}</h3>
+            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
+            <div className="mb-2">
+              <AgentRatingStars rating={rating} reviewCount={reviewCount} size="sm" />
+            </div>
             {/* Generated signature */}
             <div className="inline-block">
               <p
