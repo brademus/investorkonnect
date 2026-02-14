@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       return Response.json({ rooms: [], count: 0 });
     }
 
-    const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
+    const dealIds = allDealIds;
     // Collect all potential agent IDs so we can resolve names for any of them
     const allAgentIds = new Set();
     const allDealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
