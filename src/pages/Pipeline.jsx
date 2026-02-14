@@ -106,6 +106,15 @@ function PipelineContent() {
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
   }, [profile?.id, isAgent, isInvestor]);
 
+  // Keep previous stages map in sync for detecting transitions
+  useEffect(() => {
+    if (dealsData?.length) {
+      const map = new Map();
+      dealsData.forEach(d => { if (d?.id) map.set(d.id, normalizeStage(d.pipeline_stage)); });
+      prevStagesRef.current = map;
+    }
+  }, [dealsData]);
+
   // Post-signing redirect refresh
   useEffect(() => {
     if (new URLSearchParams(location.search).get('signed') === '1') {
