@@ -109,9 +109,15 @@ export default function NewDeal() {
       setYearBuilt(d.yearBuilt || "");
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
-      setWalkthroughScheduled(d.walkthroughScheduled === true);
-      if (d.walkthroughDate) setWalkthroughDate(d.walkthroughDate);
-      if (d.walkthroughTime) setWalkthroughTime(d.walkthroughTime);
+      const draftWtScheduled = d.walkthroughScheduled === true;
+      setWalkthroughScheduled(draftWtScheduled);
+      if (draftWtScheduled) {
+        if (d.walkthroughDate) setWalkthroughDate(d.walkthroughDate);
+        if (d.walkthroughTime) setWalkthroughTime(d.walkthroughTime);
+      } else {
+        setWalkthroughDate("");
+        setWalkthroughTime("");
+      }
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
