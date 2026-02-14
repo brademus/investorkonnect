@@ -22,7 +22,7 @@ export async function respondToWalkthrough({ action, dealId, roomId, profileId, 
   const now = new Date().toISOString();
   const displayText = formatWalkthrough(wtDate, wtTime);
 
-  // 1. Update DealAppointments
+  // 1. Update DealAppointments (create if missing)
   if (dealId) {
     const apptRows = await base44.entities.DealAppointments.filter({ dealId });
     if (apptRows?.[0]) {
@@ -30,6 +30,20 @@ export async function respondToWalkthrough({ action, dealId, roomId, profileId, 
         walkthrough: {
           ...apptRows[0].walkthrough,
           status: apptStatus,
+          updatedByUserId: profileId,
+          updatedAt: now,
+        },
+      });
+    } else {
+      // No DealAppointments record exists yet — create one
+      await base44.entities.DealAppointments.create({
+        dealId,
+        walkthrough: {
+          status: apptStatus,
+          datetime: null,
+          timezone: null,
+          locationType: 'ON_SITE',
+          notes: null,
           updatedByUserId: profileId,
           updatedAt: now,
         },
