@@ -48,9 +48,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     room?.request_status === "locked" ||
     room?.is_fully_signed === true;
 
-  const wtDate = deal?.walkthrough_date && deal.walkthrough_date.length >= 8 ? deal.walkthrough_date : null;
-  const wtTime = deal?.walkthrough_time && deal.walkthrough_time.length >= 3 ? deal.walkthrough_time : null;
-  const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
+  const wtDate = deal?.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
+  const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
+  // Show walkthrough section if deal says scheduled OR if DealAppointments has a non-NOT_SET status
+  const hasWalkthrough = (deal?.walkthrough_scheduled === true && (wtDate || wtTime)) || (apptStatus && apptStatus !== "NOT_SET");
 
   // Load DealAppointments to get real status — skip if user recently took action
   useEffect(() => {
