@@ -80,15 +80,31 @@ function PipelineContent() {
     enabled: !!profile?.id && ready,
   });
 
+  // Track previous deal stages for detecting transitions to completed/canceled
+  const prevStagesRef = useRef(new Map());
+
   // Real-time refresh for agents
   useEffect(() => {
     if (!profile?.id) return;
     const unsubs = [];
     unsubs.push(base44.entities.Room.subscribe(() => { refetchDeals(); refetchRooms(); }));
-    unsubs.push(base44.entities.Deal.subscribe(() => { refetchDeals(); }));
+    unsubs.push(base44.entities.Deal.subscribe((event) => {
+      refetchDeals();
+      // Detect deal moved to completed/canceled and redirect investor to rate agent
+      if (isInvestor && event?.type === 'update' && event?.data) {
+        const newStage = normalizeStage(event.data.pipeline_stage);
+        const prevStage = prevStagesRef.current.get(event.id);
+        if ((newStage === 'completed' || newStage === 'canceled') && prevStage && prevStage !== 'completed' && prevStage !== 'canceled') {
+          const agentId = event.data.locked_agent_id || event.data.agent_id;
+          if (agentId) {
+            navigate(`${createPageUrl("RateAgent")}?dealId=${event.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+          }
+        }
+      }
+    }));
     if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => { refetchDeals(); refetchRooms(); }));
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
-  }, [profile?.id, isAgent]);
+  }, [profile?.id, isAgent, isInvestor]);
 
   // Post-signing redirect refresh
   useEffect(() => {
