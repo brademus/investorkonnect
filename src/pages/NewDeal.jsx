@@ -231,10 +231,10 @@ export default function NewDeal() {
       walkthroughTime,
       walkthrough_datetime: wtIso || null
     };
-    // For brand new deals (no dealId), only persist if the user actually typed something meaningful
+    // Only persist once hydration is complete (prevents overwriting walkthrough with null on first render)
     const isEditing = !!dealId;
     const hasUserInput = [propertyAddress, city, state, zip, county, purchasePrice, closingDate, sellerName, earnestMoney, sellerCommissionPercentage, sellerFlatFee, buyerCommissionPercentage, buyerFlatFee, agreementLength].some(v => (v ?? '').toString().trim().length > 0);
-    if ((isEditing && hydrated) || hasUserInput) {
+    if (isEditing ? hydrated : hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
   }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, walkthroughScheduled, walkthroughDate, walkthroughTime]);
