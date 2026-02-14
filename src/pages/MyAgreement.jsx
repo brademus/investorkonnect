@@ -325,7 +325,7 @@ export default function MyAgreement() {
     // Clear sessionStorage
     sessionStorage.removeItem('newDealDraft');
     sessionStorage.removeItem('selectedAgentIds');
-    sessionStorage.removeItem('newDealWalkthrough');
+
 
     // Clear caches
     queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
