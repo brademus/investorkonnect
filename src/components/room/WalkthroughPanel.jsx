@@ -101,6 +101,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     setResponding(true);
     const optimistic = action === "confirm" ? "SCHEDULED" : "CANCELED";
     setApptStatus(optimistic);
+    // Mark cache as user-initiated so refetch won't overwrite
+    _wtCache[dealId] = { status: optimistic, userAction: true };
     try {
       await respondToWalkthrough({
         action,
@@ -113,6 +115,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       toast.success(`Walk-through ${action === "confirm" ? "confirmed" : "declined"}`);
     } catch (e) {
       setApptStatus("PROPOSED");
+      _wtCache[dealId] = { status: "PROPOSED", userAction: false };
       toast.error("Failed to respond");
     } finally {
       setResponding(false);
