@@ -6,6 +6,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, MapPin, Award, Briefcase, Star, ExternalLink, Clock, TrendingUp, Home, CreditCard } from "lucide-react";
 import DigitalBusinessCard from "@/components/DigitalBusinessCard";
+import AgentRatingStars from "@/components/AgentRatingStars";
 
 export default function AgentProfile() {
   const navigate = useNavigate();
@@ -68,9 +69,10 @@ export default function AgentProfile() {
   }, [profileId]);
 
   // Compute average rating from reviews
-  const averageRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
-    : agentProfile?.reputationScore || null;
+  const validReviews = reviews.filter(r => r.rating);
+  const averageRating = validReviews.length > 0
+    ? validReviews.reduce((sum, r) => sum + r.rating, 0) / validReviews.length
+    : null;
 
   if (loading) {
     return (
@@ -124,6 +126,12 @@ export default function AgentProfile() {
         {/* Digital Business Card */}
         <div className="mb-6">
           <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} />
+        </div>
+
+        {/* Rating Summary */}
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-6">
+          <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">Agent Rating</h3>
+          <AgentRatingStars rating={averageRating} reviewCount={validReviews.length} size="lg" />
         </div>
 
         {/* Uploaded Business Card */}
@@ -184,7 +192,7 @@ export default function AgentProfile() {
         {reviews.length === 0 && (
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
             <Star className="w-12 h-12 text-[#808080] mx-auto mb-4 opacity-50" />
-            <p className="text-sm text-[#808080]">Reviews coming soon</p>
+            <p className="text-sm text-[#808080]">No reviews yet</p>
           </div>
         )}
 
