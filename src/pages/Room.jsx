@@ -283,7 +283,12 @@ export default function Room() {
           <div className="flex items-center gap-3">
             {roomId && (
               <>
-                <Button onClick={() => { setShowBoard(true); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                <Button
+                  onClick={() => { if (isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite) return; setShowBoard(true); setShowPendingAgents(false); }}
+                  disabled={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite}
+                  title={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite ? "Select an agent first" : ""}
+                  className={`rounded-full font-semibold ${showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}
+                >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
                 {isInvestor && pendingInvites.length > 0 && !isSigned && (
