@@ -116,9 +116,10 @@ Deno.serve(async (req) => {
       const exhibitTerms = agreementData.exhibit_a_terms || {};
 
       if (draftForUpdate) {
-        dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
-        dealUpdate.walkthrough_date = draftForUpdate.walkthrough_date || null;
-        dealUpdate.walkthrough_time = draftForUpdate.walkthrough_time || null;
+        const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
+        dealUpdate.walkthrough_scheduled = draftWtScheduled;
+        dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
+        dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
         dealUpdate.proposed_terms = {
@@ -285,8 +286,8 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
     const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
-    const draftWalkthroughDate = draft.walkthrough_date || null;
-    const draftWalkthroughTime = draft.walkthrough_time || null;
+    const draftWalkthroughDate = draftWalkthroughScheduled ? (draft.walkthrough_date || null) : null;
+    const draftWalkthroughTime = draftWalkthroughScheduled ? (draft.walkthrough_time || null) : null;
     console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime);
 
     // Validate that we have agents

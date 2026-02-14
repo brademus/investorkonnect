@@ -98,8 +98,8 @@ Deno.serve(async (req) => {
       contract_date,
       selected_agent_ids,
       walkthrough_scheduled: walkthrough_scheduled === true ? true : false,
-      walkthrough_date: walkthrough_date || null,
-      walkthrough_time: walkthrough_time || null
+      walkthrough_date: walkthrough_scheduled === true ? (walkthrough_date || null) : null,
+      walkthrough_time: walkthrough_scheduled === true ? (walkthrough_time || null) : null
     });
 
     console.log('[createDealDraft] Created draft:', draft.id);
