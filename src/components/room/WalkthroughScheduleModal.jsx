@@ -6,6 +6,7 @@ import { Calendar, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatWalkthrough } from "@/components/room/walkthroughActions";
+import WalkthroughTimeInput from "@/components/WalkthroughTimeInput";
 
 export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roomId, profile, onScheduled }) {
   const [date, setDate] = useState("");
