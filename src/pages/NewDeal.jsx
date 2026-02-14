@@ -569,6 +569,18 @@ export default function NewDeal() {
       return;
     }
 
+    // Validate walkthrough time is complete if scheduled
+    if (walkthroughScheduled === true) {
+      if (!walkthroughDate || walkthroughDate.length < 10) {
+        toast.error("Please enter a complete walk-through date (MM/DD/YYYY)");
+        return;
+      }
+      if (walkthroughTime && !/^\d{2}:\d{2}(AM|PM)$/.test(walkthroughTime)) {
+        toast.error("Please enter a complete walk-through time (e.g. 02:30PM)");
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
