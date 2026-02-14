@@ -41,10 +41,10 @@ Deno.serve(async (req) => {
       return Response.json({ rooms: [], count: 0 });
     }
 
-    const dealIds = allDealIds;
     // Collect all potential agent IDs so we can resolve names for any of them
     const allAgentIds = new Set();
     const allDealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
+    const dealIds = allDealIds;
     // Pre-fetch deals to get locked_agent_id
     const prefetchDeals = allDealIds.length ? await base44.asServiceRole.entities.Deal.filter({ id: { $in: allDealIds } }) : [];
     const prefetchDealMap = new Map(prefetchDeals.map(d => [d.id, d]));
