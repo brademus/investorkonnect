@@ -185,8 +185,9 @@ Deno.serve(async (req) => {
 
     // --- SCHEDULE WALKTHROUGH if investor set one during deal creation ---
     const wtScheduled = deal.walkthrough_scheduled === true;
-    const wtDatetime = deal.walkthrough_datetime || null;
-    if (wtScheduled && wtDatetime) {
+    const wtDate = deal.walkthrough_date || null;
+    const wtTime = deal.walkthrough_time || null;
+    if (wtScheduled && (wtDate || wtTime)) {
       console.log('[createInvites] Walkthrough scheduled — creating DealAppointments and chat message');
       try {
         // Create or update DealAppointments
@@ -194,7 +195,7 @@ Deno.serve(async (req) => {
         const apptPatch = {
           walkthrough: {
             status: 'PROPOSED',
-            datetime: wtDatetime,
+            datetime: `${wtDate} ${wtTime}`,
             timezone: null,
             locationType: 'ON_SITE',
             notes: null,
@@ -220,16 +221,11 @@ Deno.serve(async (req) => {
 
         if (!alreadyHasWtMessage) {
           // Send walkthrough message to room so agents see it
-          const dt = new Date(wtDatetime);
-          const formatted = dt.toLocaleString('en-US', {
-            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
-          });
-          const isMidnight = dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0;
           await base44.asServiceRole.entities.Message.create({
             room_id: room.id,
             sender_profile_id: investorProfile.id,
-            body: `📅 Walk-through Proposed\n\nProposed Date & Time: ${formatted}${isMidnight ? ' (Time TBD)' : ''}\n\nPlease review and confirm or suggest a different time after signing.`,
-            metadata: { type: 'walkthrough_request', walkthrough_datetime: wtDatetime, status: 'pending' }
+            body: `📅 Walk-through Proposed\n\nProposed Date: ${wtDate || 'TBD'}\nProposed Time: ${wtTime || 'TBD'}\n\nPlease review and confirm or suggest a different time after signing.`,
+            metadata: { type: 'walkthrough_request', walkthrough_date: wtDate, walkthrough_time: wtTime, status: 'pending' }
           });
           console.log('[createInvites] Sent walkthrough message to room:', room.id);
         } else {
@@ -246,7 +242,7 @@ Deno.serve(async (req) => {
         const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
         const agent = agentProfiles?.[0];
         if (agent?.email) {
-          const wtNote = (wtScheduled && wtDatetime) ? `\n\nA walk-through has been proposed — you can confirm or decline after signing.\n` : '';
+          const wtNote = (wtScheduled && (wtDate || wtTime)) ? `\n\nA walk-through has been proposed — you can confirm or decline after signing.\n` : '';
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: agent.email,
             subject: `New Deal Invitation - ${deal.title || deal.property_address || 'New Deal'}`,

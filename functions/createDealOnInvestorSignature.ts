@@ -117,7 +117,8 @@ Deno.serve(async (req) => {
 
       if (draftForUpdate) {
         dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
-        dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
+        dealUpdate.walkthrough_date = draftForUpdate.walkthrough_date || null;
+        dealUpdate.walkthrough_time = draftForUpdate.walkthrough_time || null;
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
         dealUpdate.proposed_terms = {
@@ -147,13 +148,13 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
       // Sync DealAppointments if walkthrough data changed
-      if (dealUpdate.walkthrough_scheduled && dealUpdate.walkthrough_datetime) {
+      if (dealUpdate.walkthrough_scheduled && (dealUpdate.walkthrough_date || dealUpdate.walkthrough_time)) {
         try {
           const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
           const apptPatch = {
             walkthrough: {
               status: 'PROPOSED',
-              datetime: dealUpdate.walkthrough_datetime,
+              datetime: `${dealUpdate.walkthrough_date} ${dealUpdate.walkthrough_time}`,
               timezone: null,
               locationType: 'ON_SITE',
               notes: null,
@@ -284,8 +285,9 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
     const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
-    const draftWalkthroughDatetime = draft.walkthrough_datetime || null;
-    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDatetime);
+    const draftWalkthroughDate = draft.walkthrough_date || null;
+    const draftWalkthroughTime = draft.walkthrough_time || null;
+    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime);
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
@@ -318,7 +320,8 @@ Deno.serve(async (req) => {
         const dupeUpdate = {
           current_legal_agreement_id: agreementData.id,
           walkthrough_scheduled: draftWalkthroughScheduled,
-          walkthrough_datetime: draftWalkthroughDatetime,
+          walkthrough_date: draftWalkthroughDate,
+          walkthrough_time: draftWalkthroughTime,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
             seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
@@ -347,13 +350,13 @@ Deno.serve(async (req) => {
           }
         }
         // Sync DealAppointments for the duplicate deal
-        if (draftWalkthroughScheduled && draftWalkthroughDatetime) {
+        if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime)) {
           try {
             const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
             const apptPatch = {
               walkthrough: {
                 status: 'PROPOSED',
-                datetime: draftWalkthroughDatetime,
+                datetime: `${draftWalkthroughDate} ${draftWalkthroughTime}`,
                 timezone: null,
                 locationType: 'ON_SITE',
                 notes: null,
@@ -462,19 +465,20 @@ Deno.serve(async (req) => {
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id,
       walkthrough_scheduled: draftWalkthroughScheduled,
-      walkthrough_datetime: draftWalkthroughDatetime
+      walkthrough_date: draftWalkthroughDate,
+      walkthrough_time: draftWalkthroughTime
     });
     
-    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime);
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time);
 
     // Create DealAppointments record if walkthrough was scheduled
-    if (draftWalkthroughScheduled && draftWalkthroughDatetime) {
+    if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime)) {
       try {
         await base44.asServiceRole.entities.DealAppointments.create({
           dealId: newDeal.id,
           walkthrough: {
             status: 'PROPOSED',
-            datetime: draftWalkthroughDatetime,
+            datetime: `${draftWalkthroughDate} ${draftWalkthroughTime}`,
             timezone: null,
             locationType: 'ON_SITE',
             notes: null,
