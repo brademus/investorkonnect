@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
         const alreadyHasWtMessage = existingMessages.some(m => m?.metadata?.type === 'walkthrough_request');
 
         if (!alreadyHasWtMessage) {
-          // Build a display string and ISO datetime for the message
+          // Build display and ISO datetime
           const displayParts = [wtDate, wtTime].filter(Boolean);
           const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
           let isoDatetime = null;
@@ -229,16 +229,35 @@ Deno.serve(async (req) => {
             if (!isNaN(d.getTime())) isoDatetime = d.toISOString();
           } catch (_) {}
 
-          // Send walkthrough message to room so agents see it
           await base44.asServiceRole.entities.Message.create({
             room_id: room.id,
             sender_profile_id: investorProfile.id,
             body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time after signing.`,
-            metadata: { type: 'walkthrough_request', walkthrough_datetime: isoDatetime, walkthrough_date: wtDate, walkthrough_time: wtTime, status: 'pending' }
+            metadata: {
+              type: 'walkthrough_request',
+              walkthrough_datetime: isoDatetime,
+              walkthrough_date: wtDate,
+              walkthrough_time: wtTime,
+              status: 'pending'
+            }
           });
           console.log('[createInvites] Sent walkthrough message to room:', room.id);
         } else {
-          console.log('[createInvites] Walkthrough message already exists in room — skipping duplicate');
+          // Ensure existing walkthrough message has proper metadata (fix legacy messages missing date/time)
+          const existingWtMsg = existingMessages.find(m => m?.metadata?.type === 'walkthrough_request');
+          if (existingWtMsg && !existingWtMsg.metadata?.walkthrough_date && wtDate) {
+            let isoDatetime = null;
+            try {
+              const d = new Date((wtDate || '') + ' ' + (wtTime || '12:00 PM'));
+              if (!isNaN(d.getTime())) isoDatetime = d.toISOString();
+            } catch (_) {}
+            await base44.asServiceRole.entities.Message.update(existingWtMsg.id, {
+              metadata: { ...existingWtMsg.metadata, walkthrough_datetime: isoDatetime, walkthrough_date: wtDate, walkthrough_time: wtTime }
+            });
+            console.log('[createInvites] Patched existing walkthrough message with date/time metadata');
+          } else {
+            console.log('[createInvites] Walkthrough message already exists — skipping duplicate');
+          }
         }
       } catch (wtErr) {
         console.warn('[createInvites] Failed to create walkthrough (non-fatal):', wtErr.message);
