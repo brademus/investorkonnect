@@ -526,7 +526,7 @@ export default function NewDeal() {
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
         if (walkthroughScheduled === true) {
           try {
-            const wtIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
+            const wtIso = buildWalkthroughIso(walkthroughDate, walkthroughTime);
             if (wtIso) {
               const apptRows = await base44.entities.DealAppointments.filter({ dealId });
               const apptPatch = {
