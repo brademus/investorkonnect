@@ -224,7 +224,8 @@ export default function MyAgreement() {
           }
           console.log('[MyAgreement] Creating DealDraft with walkthrough:', { wtScheduled, wtDatetime, src1_scheduled: dealData.walkthroughScheduled, src1_snake: dealData.walkthrough_scheduled, src1_dt: dealData.walkthrough_datetime });
 
-          const draftCreated = await base44.entities.DealDraft.create({
+          console.log('[MyAgreement] About to create DealDraft with walkthrough_scheduled:', wtScheduled, '(type:', typeof wtScheduled, ') walkthrough_datetime:', wtDatetime);
+          const draftPayload = {
             investor_profile_id: profile.id,
             property_address: dealData.propertyAddress,
             city: dealData.city,
@@ -255,10 +256,32 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: wtScheduled,
-            walkthrough_datetime: wtDatetime
-          });
+            walkthrough_scheduled: wtScheduled === true ? true : false,
+            walkthrough_datetime: wtDatetime || null
+          };
+          const draftCreated = await base44.entities.DealDraft.create(draftPayload);
           console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime);
+
+          // VERIFY: re-read the draft to confirm walkthrough was persisted
+          try {
+            const verifyDrafts = await base44.entities.DealDraft.filter({ id: draftCreated.id });
+            const verifiedDraft = verifyDrafts?.[0];
+            console.log('[MyAgreement] VERIFY DealDraft read-back:', {
+              id: verifiedDraft?.id,
+              walkthrough_scheduled: verifiedDraft?.walkthrough_scheduled,
+              walkthrough_datetime: verifiedDraft?.walkthrough_datetime
+            });
+            // If walkthrough was lost during create, update it explicitly
+            if (wtScheduled && !verifiedDraft?.walkthrough_scheduled) {
+              console.warn('[MyAgreement] Walkthrough was NOT persisted! Updating DealDraft explicitly...');
+              await base44.entities.DealDraft.update(draftCreated.id, {
+                walkthrough_scheduled: true,
+                walkthrough_datetime: wtDatetime || null
+              });
+            }
+          } catch (verifyErr) {
+            console.warn('[MyAgreement] Failed to verify DealDraft:', verifyErr);
+          }
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
