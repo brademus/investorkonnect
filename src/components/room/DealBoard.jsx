@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Info, Shield, FileText, Image, User, Plus, Download, Activity } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/components/utils";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
@@ -13,6 +15,7 @@ import { validateImage, validateSafeDocument } from "@/components/utils/fileVali
 import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [localRoom, setLocalRoom] = useState(room);
   const [messagePhotos, setMessagePhotos] = useState([]);
@@ -120,7 +123,20 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const isActive = norm === stage.id;
                 const isPast = stage.order < stageOrder(norm);
                 return (
-                  <button key={stage.id} onClick={isAgent ? async () => { if (deal?.id) { await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id }); toast.success(`Moved to ${stage.label}`); } } : undefined} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors">
+                  <button key={stage.id} onClick={isAgent ? async () => {
+                    if (deal?.id) {
+                      await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
+                      toast.success(`Moved to ${stage.label}`);
+                    }
+                  } : isInvestor && stage.id === 'completed' ? async () => {
+                    if (deal?.id) {
+                      await base44.entities.Deal.update(deal.id, { pipeline_stage: 'completed' });
+                      const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+                      if (agentId) {
+                        navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                      }
+                    }
+                  } : undefined} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-black' : isPast ? 'bg-[#34D399]' : 'bg-[#1F1F1F]'}`}>
                       <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
                     </div>
