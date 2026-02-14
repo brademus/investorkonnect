@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, X, Loader2 } from "lucide-react";
+import { Calendar, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { formatWalkthrough } from "@/components/room/walkthroughActions";
 
 export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roomId, profile, onScheduled }) {
   const [date, setDate] = useState("");
@@ -25,17 +26,24 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
     if (!date) { toast.error("Please enter a date"); return; }
     setSaving(true);
     try {
-      const isoDatetime = new Date(date + ' ' + (time || '12:00 PM')).toISOString();
+      const rawTime = time || null;
+      const displayText = formatWalkthrough(date, rawTime);
 
-      // Update the deal — store both raw strings and ISO for backward compatibility
+      // Build ISO datetime for backward compat
+      let isoDatetime = null;
+      try {
+        const d = new Date(date + ' ' + (time || '12:00 PM'));
+        if (!isNaN(d.getTime())) isoDatetime = d.toISOString();
+      } catch (_) {}
+
+      // 1. Update deal entity
       await base44.entities.Deal.update(deal.id, {
         walkthrough_scheduled: true,
         walkthrough_date: date,
-        walkthrough_time: time || null,
-        walkthrough_datetime: isoDatetime
+        walkthrough_time: rawTime,
       });
 
-      // Upsert DealAppointments so the Appointments tab stays in sync
+      // 2. Upsert DealAppointments
       try {
         const apptRows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         const apptPatch = {
@@ -63,26 +71,22 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
         console.warn('[WalkthroughScheduleModal] Failed to upsert DealAppointments:', e);
       }
 
-      // Send a system-style message to the room so the agent sees it
-      const formatted = new Date(date + ' ' + (time || '12:00 PM')).toLocaleString('en-US', {
-        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-        hour: 'numeric', minute: '2-digit'
-      });
+      // 3. Send walkthrough_request message with raw date/time in metadata
       await base44.entities.Message.create({
         room_id: roomId,
         sender_profile_id: profile?.id,
-        body: `📅 Walk-through Requested\n\nProposed Date & Time: ${formatted}\n\nPlease confirm or suggest a different time.`,
+        body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayText}\n\nPlease confirm or suggest a different time.`,
         metadata: {
           type: 'walkthrough_request',
           walkthrough_datetime: isoDatetime,
           walkthrough_date: date,
-          walkthrough_time: time || null,
+          walkthrough_time: rawTime,
           status: 'pending'
         }
       });
 
       toast.success("Walk-through request sent!");
-      onScheduled?.({ walkthrough_scheduled: true, walkthrough_date: date, walkthrough_time: time || null, walkthrough_datetime: isoDatetime });
+      onScheduled?.({ walkthrough_scheduled: true, walkthrough_date: date, walkthrough_time: rawTime });
       onOpenChange(false);
       setDate("");
       setTime("");
