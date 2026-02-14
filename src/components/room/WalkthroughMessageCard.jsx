@@ -10,8 +10,9 @@ import { toast } from "sonner";
  */
 export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile, isSigned }) {
   const [responding, setResponding] = useState(false);
+  const [localStatus, setLocalStatus] = useState(null);
   const meta = message?.metadata || {};
-  const status = meta.status || 'pending'; // pending | confirmed | denied
+  const status = localStatus || meta.status || 'pending'; // pending | confirmed | denied
   const dt = meta.walkthrough_datetime;
   const wtDate = meta.walkthrough_date;
   const wtTime = meta.walkthrough_time;
@@ -23,10 +24,13 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     }
     if (dt) {
       try {
-        return new Date(dt).toLocaleString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-          hour: 'numeric', minute: '2-digit'
-        });
+        const d = new Date(dt);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleString('en-US', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit'
+          });
+        }
       } catch (_) {}
     }
     // Try to extract from message body as last resort
@@ -37,6 +41,8 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
 
   const respond = async (action) => {
     setResponding(true);
+    // Optimistically update local status
+    setLocalStatus(action);
     try {
       // Update the original message metadata
       await base44.entities.Message.update(message.id, {
@@ -50,39 +56,36 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         room_id: roomId,
         sender_profile_id: profile?.id,
         body: `${emoji} Walk-through ${label}\n\n${action === 'confirmed' ? `See you on ${formatted}` : 'Please propose a different time.'}`,
-        metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, status: action }
+        metadata: { type: 'walkthrough_response', walkthrough_datetime: dt, walkthrough_date: wtDate, walkthrough_time: wtTime, status: action }
       });
 
-      // If confirmed, update the deal's walkthrough fields AND DealAppointments status
-      if (action === 'confirmed' && dt) {
-        try {
-          const rooms = await base44.entities.Room.filter({ id: roomId });
-          const room = rooms?.[0];
-          if (room?.deal_id) {
-            await base44.entities.Deal.update(room.deal_id, {
-              walkthrough_scheduled: true,
-              walkthrough_datetime: dt
-            });
-            // Update DealAppointments status to SCHEDULED
-            try {
-              const apptRows = await base44.entities.DealAppointments.filter({ dealId: room.deal_id });
-              if (apptRows?.[0]) {
-                await base44.entities.DealAppointments.update(apptRows[0].id, {
-                  walkthrough: {
-                    ...apptRows[0].walkthrough,
-                    status: 'SCHEDULED',
-                    updatedByUserId: profile?.id,
-                    updatedAt: new Date().toISOString()
-                  }
-                });
-              }
-            } catch (_) { /* non-critical */ }
-          }
-        } catch (_) { /* non-critical */ }
-      }
+      // Update deal and DealAppointments regardless of whether dt exists
+      try {
+        const rooms = await base44.entities.Room.filter({ id: roomId });
+        const room = rooms?.[0];
+        if (room?.deal_id) {
+          const newApptStatus = action === 'confirmed' ? 'SCHEDULED' : 'CANCELED';
+
+          // Update DealAppointments status
+          try {
+            const apptRows = await base44.entities.DealAppointments.filter({ dealId: room.deal_id });
+            if (apptRows?.[0]) {
+              await base44.entities.DealAppointments.update(apptRows[0].id, {
+                walkthrough: {
+                  ...apptRows[0].walkthrough,
+                  status: newApptStatus,
+                  updatedByUserId: profile?.id,
+                  updatedAt: new Date().toISOString()
+                }
+              });
+            }
+          } catch (_) { /* non-critical */ }
+        }
+      } catch (_) { /* non-critical */ }
 
       toast.success(`Walk-through ${label.toLowerCase()}`);
     } catch (e) {
+      setLocalStatus(null); // revert on error
       toast.error('Failed to respond');
     } finally {
       setResponding(false);
