@@ -59,6 +59,7 @@ export default function NewDeal() {
   const [walkthroughDate, setWalkthroughDate] = useState("");
   const [walkthroughTime, setWalkthroughTime] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [walkthroughHydrated, setWalkthroughHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const autoFormatDate = (value) => {
