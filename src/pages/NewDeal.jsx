@@ -231,7 +231,7 @@ export default function NewDeal() {
       yearBuilt,
       numberOfStories,
       hasBasement,
-      walkthroughScheduled,
+      walkthroughScheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
       walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
       walkthroughTime,
