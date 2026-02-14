@@ -491,9 +491,9 @@ export default function NewDeal() {
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
-        if (walkthroughScheduled === true && (walkthroughDate || walkthroughTime)) {
-          try {
-            const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+        try {
+          const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+          if (walkthroughScheduled === true && (walkthroughDate || walkthroughTime)) {
             const apptPatch = {
               walkthrough: {
                 status: 'PROPOSED',
@@ -515,9 +515,22 @@ export default function NewDeal() {
                 rescheduleRequests: []
               });
             }
-          } catch (apptErr) {
-            console.warn('[NewDeal] Failed to sync DealAppointments:', apptErr);
+          } else if (walkthroughScheduled === false && apptRows?.[0]) {
+            // User chose "Not Now" — reset any existing walkthrough appointment to NOT_SET
+            await base44.entities.DealAppointments.update(apptRows[0].id, {
+              walkthrough: {
+                status: 'NOT_SET',
+                datetime: null,
+                timezone: null,
+                locationType: null,
+                notes: null,
+                updatedByUserId: profile?.id || null,
+                updatedAt: new Date().toISOString()
+              }
+            });
           }
+        } catch (apptErr) {
+          console.warn('[NewDeal] Failed to sync DealAppointments:', apptErr);
         }
 
         // Also update Room agent_terms if it exists
