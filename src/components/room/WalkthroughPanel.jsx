@@ -39,13 +39,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time && deal.walkthrough_time.length >= 3 ? deal.walkthrough_time : null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
 
-  // Load DealAppointments to get real status — skip if cache already has authoritative status
+  // Load DealAppointments to get real status — skip if user just took action
   useEffect(() => {
     if (!dealId) return;
-    // Check cache fresh (not the stale `cached` from render) to survive remounts
+    // If user explicitly confirmed/declined, trust that and don't overwrite
     const freshCached = _wtCache[dealId];
-    if (freshCached && freshCached !== "PROPOSED") {
-      setApptStatus(freshCached);
+    if (freshCached?.userAction) {
+      setApptStatus(freshCached.status);
       setApptLoaded(true);
       return;
     }
@@ -61,7 +61,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       }
       setApptLoaded(true);
     }).catch(() => {
-      if (!cancelled && hasWalkthrough && !_wtCache[dealId]) setApptStatus("PROPOSED");
+      if (!cancelled && hasWalkthrough && !_wtCache[dealId]?.status) setApptStatus("PROPOSED");
       setApptLoaded(true);
     });
     return () => { cancelled = true; };
