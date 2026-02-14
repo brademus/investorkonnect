@@ -148,10 +148,10 @@ Deno.serve(async (req) => {
       // Update Deal
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
-      // Sync DealAppointments if walkthrough data changed
-      if (dealUpdate.walkthrough_scheduled && (dealUpdate.walkthrough_date || dealUpdate.walkthrough_time)) {
-        try {
-          const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
+      // Sync DealAppointments — reset to NOT_SET when walkthrough is not scheduled
+      try {
+        const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
+        if (dealUpdate.walkthrough_scheduled && (dealUpdate.walkthrough_date || dealUpdate.walkthrough_time)) {
           const apptPatch = {
             walkthrough: {
               status: 'PROPOSED',
@@ -173,10 +173,24 @@ Deno.serve(async (req) => {
               rescheduleRequests: []
             });
           }
-          console.log('[createDealOnInvestorSignature] Synced DealAppointments for existing deal');
-        } catch (apptErr) {
-          console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
+          console.log('[createDealOnInvestorSignature] Synced DealAppointments (PROPOSED) for existing deal');
+        } else if (apptRows?.[0]) {
+          // Walkthrough not scheduled — reset existing appointment to NOT_SET
+          await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, {
+            walkthrough: {
+              status: 'NOT_SET',
+              datetime: null,
+              timezone: null,
+              locationType: null,
+              notes: null,
+              updatedByUserId: agreementData.investor_profile_id || null,
+              updatedAt: new Date().toISOString()
+            }
+          });
+          console.log('[createDealOnInvestorSignature] Reset DealAppointments to NOT_SET for existing deal');
         }
+      } catch (apptErr) {
+        console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
       }
 
       // Update existing Room agreement pointer and status
