@@ -78,6 +78,9 @@ export default function RateAgent() {
         await base44.entities.Review.create(data);
       }
 
+      // Bust the rating cache so AgentProfile page shows fresh data immediately
+      invalidateRatingCache(agentProfileId);
+
       setSubmitted(true);
       toast.success("Thank you for your review!");
       setTimeout(() => navigate(createPageUrl(returnTo)), 1500);
