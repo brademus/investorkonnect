@@ -60,6 +60,20 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
+  // Real-time: Message updates (catch confirmations done via WalkthroughMessageCard)
+  useEffect(() => {
+    if (!roomId) return;
+    const unsub = base44.entities.Message.subscribe((event) => {
+      const d = event?.data;
+      if (!d || d.room_id !== roomId) return;
+      if (d.metadata?.type === 'walkthrough_request') {
+        if (d.metadata.status === 'confirmed') setApptStatus('SCHEDULED');
+        else if (d.metadata.status === 'denied') setApptStatus('CANCELED');
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [roomId]);
+
   const status = apptStatus || (wtScheduled && hasDateOrTime ? "PROPOSED" : null);
   const hasWalkthrough = wtScheduled && hasDateOrTime;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
