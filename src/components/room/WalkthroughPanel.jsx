@@ -81,8 +81,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const handleRespond = async (action) => {
     if (!deal?.id) return;
     setResponding(true);
+    const newStatus = action === "confirm" ? "SCHEDULED" : "CANCELED";
+    // Optimistic update
+    setApptStatus(newStatus);
     try {
-      const newStatus = action === "confirm" ? "SCHEDULED" : "CANCELED";
       const apptRows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
       if (apptRows?.[0]) {
         await base44.entities.DealAppointments.update(apptRows[0].id, {
@@ -96,6 +98,17 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       }
 
       if (roomId) {
+        const msgStatus = action === "confirm" ? "confirmed" : "denied";
+
+        // Update all pending walkthrough_request messages so the message card shows confirmed/denied
+        const msgs = await base44.entities.Message.filter({ room_id: roomId });
+        for (const m of msgs.filter(m => m.metadata?.type === "walkthrough_request" && m.metadata?.status === "pending")) {
+          await base44.entities.Message.update(m.id, {
+            metadata: { ...m.metadata, status: msgStatus, responded_by: profile?.id, responded_at: new Date().toISOString() },
+          });
+        }
+
+        // Send a reply message
         const emoji = action === "confirm" ? "✅" : "❌";
         const label = action === "confirm" ? "Confirmed" : "Declined";
         const displayText = `${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
@@ -103,20 +116,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           room_id: roomId,
           sender_profile_id: profile?.id,
           body: `${emoji} Walk-through ${label}\n\n${action === "confirm" ? `See you on ${displayText}` : "Please propose a different time."}`,
-          metadata: { type: "walkthrough_response", walkthrough_date: wtDate, walkthrough_time: wtTime, status: action === "confirm" ? "confirmed" : "denied" },
+          metadata: { type: "walkthrough_response", walkthrough_date: wtDate, walkthrough_time: wtTime, status: msgStatus },
         });
-
-        const msgs = await base44.entities.Message.filter({ room_id: roomId });
-        for (const m of msgs.filter(m => m.metadata?.type === "walkthrough_request" && m.metadata?.status === "pending")) {
-          await base44.entities.Message.update(m.id, {
-            metadata: { ...m.metadata, status: action === "confirm" ? "confirmed" : "denied", responded_by: profile?.id, responded_at: new Date().toISOString() },
-          });
-        }
       }
 
-      setApptStatus(newStatus);
       toast.success(`Walk-through ${action === "confirm" ? "confirmed" : "declined"}`);
     } catch (e) {
+      setApptStatus("PROPOSED"); // revert on error
       toast.error("Failed to respond");
     } finally {
       setResponding(false);
