@@ -27,9 +27,11 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
     try {
       const isoDatetime = new Date(date + ' ' + (time || '12:00 PM')).toISOString();
 
-      // Update the deal
+      // Update the deal — store both raw strings and ISO for backward compatibility
       await base44.entities.Deal.update(deal.id, {
         walkthrough_scheduled: true,
+        walkthrough_date: date,
+        walkthrough_time: time || null,
         walkthrough_datetime: isoDatetime
       });
 
@@ -73,12 +75,14 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
         metadata: {
           type: 'walkthrough_request',
           walkthrough_datetime: isoDatetime,
+          walkthrough_date: date,
+          walkthrough_time: time || null,
           status: 'pending'
         }
       });
 
       toast.success("Walk-through request sent!");
-      onScheduled?.({ walkthrough_scheduled: true, walkthrough_datetime: isoDatetime });
+      onScheduled?.({ walkthrough_scheduled: true, walkthrough_date: date, walkthrough_time: time || null, walkthrough_datetime: isoDatetime });
       onOpenChange(false);
       setDate("");
       setTime("");
