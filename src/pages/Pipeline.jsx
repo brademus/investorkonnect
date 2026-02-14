@@ -144,6 +144,10 @@ function PipelineContent() {
       let counterparty = 'Not Assigned';
       if (isSigned) counterparty = room?.counterparty_name || (isAgent ? 'Investor' : 'Agent');
       else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : 'Pending Agent Signature';
+      // For investor: if deal has a locked agent, always show that agent's name
+      if (isInvestor && deal.locked_agent_id && room?.counterparty_name && room?.counterparty_id === deal.locked_agent_id) {
+        counterparty = room.counterparty_name;
+      }
 
       return {
         id: deal.id, deal_id: deal.id, room_id: room?.id || null,
