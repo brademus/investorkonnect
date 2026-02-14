@@ -1093,7 +1093,7 @@ export default function NewDeal() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDate(""); setWalkthroughTime(""); }}
+                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDate(""); setWalkthroughTime(""); console.log('[NewDeal] Walkthrough set to NOT scheduled, cleared date/time'); }}
                   className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     walkthroughScheduled === false
                       ? "bg-[#F59E0B] text-black"
