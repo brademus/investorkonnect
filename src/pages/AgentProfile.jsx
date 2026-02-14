@@ -75,13 +75,18 @@ export default function AgentProfile() {
   // Real-time: refetch reviews when Review entity changes for this agent
   useEffect(() => {
     if (!profileId) return;
-    const unsub = base44.entities.Review.subscribe((event) => {
-      const d = event?.data;
-      if (d?.reviewee_profile_id === profileId) {
-        fetchReviews();
-      }
+    const unsub = base44.entities.Review.subscribe(() => {
+      // Refetch on any Review change — don't filter, subscription data may be incomplete
+      fetchReviews();
     });
     return () => { try { unsub(); } catch (_) {} };
+  }, [profileId]);
+
+  // Also refetch on window focus (e.g. user comes back from RateAgent page)
+  useEffect(() => {
+    const onFocus = () => { fetchReviews(); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [profileId]);
 
   // Compute average rating from reviews
