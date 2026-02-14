@@ -39,12 +39,12 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time && deal.walkthrough_time.length >= 3 ? deal.walkthrough_time : null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
 
-  // Load DealAppointments to get real status — skip if user just took action
+  // Load DealAppointments to get real status — skip if user recently took action
   useEffect(() => {
     if (!dealId) return;
-    // If user explicitly confirmed/declined, trust that and don't overwrite
+    // If user explicitly confirmed/declined within last 30s, trust cache and don't overwrite
     const freshCached = _wtCache[dealId];
-    if (freshCached?.userAction) {
+    if (freshCached?.userActionAt && (Date.now() - freshCached.userActionAt) < 30000) {
       setApptStatus(freshCached.status);
       setApptLoaded(true);
       return;
@@ -53,15 +53,24 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     setApptLoaded(false);
     base44.entities.DealAppointments.filter({ dealId }).then(rows => {
       if (cancelled) return;
+      // Re-check cache after async — user may have acted while fetch was in-flight
+      const latestCache = _wtCache[dealId];
+      if (latestCache?.userActionAt && (Date.now() - latestCache.userActionAt) < 30000) {
+        setApptLoaded(true);
+        return;
+      }
       const s = rows?.[0]?.walkthrough?.status;
       if (s && s !== "NOT_SET") {
         setApptStatus(s);
       } else if (hasWalkthrough) {
-        setApptStatus("PROPOSED");
+        // Only set PROPOSED if we're not already in a resolved state
+        setApptStatus(prev => (prev === "SCHEDULED" || prev === "CANCELED" || prev === "COMPLETED") ? prev : "PROPOSED");
       }
       setApptLoaded(true);
     }).catch(() => {
-      if (!cancelled && hasWalkthrough && !_wtCache[dealId]?.status) setApptStatus("PROPOSED");
+      if (!cancelled && hasWalkthrough && !_wtCache[dealId]?.status) {
+        setApptStatus(prev => (prev === "SCHEDULED" || prev === "CANCELED" || prev === "COMPLETED") ? prev : "PROPOSED");
+      }
       setApptLoaded(true);
     });
     return () => { cancelled = true; };
