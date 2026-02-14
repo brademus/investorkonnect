@@ -63,6 +63,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     setResponding(true);
     const msgAction = action === 'confirm' ? 'confirmed' : 'denied';
     setLocalStatus(msgAction);
+    setUserActed(true);
     try {
       await respondToWalkthrough({
         action,
@@ -75,6 +76,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
       toast.success(`Walk-through ${action === 'confirm' ? 'confirmed' : 'declined'}`);
     } catch (e) {
       setLocalStatus(null);
+      setUserActed(false);
       toast.error('Failed to respond');
     } finally {
       setResponding(false);
