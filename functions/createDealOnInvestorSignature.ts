@@ -112,19 +112,12 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Build update payload - always update agreement pointer
-      // CRITICAL: Only overwrite walkthrough/terms if we have better data (draft or exhibit_a_terms).
-      // If no draft found, the deal may already have correct data from its initial creation — do NOT clear it.
-      const dealUpdate = {
-        current_legal_agreement_id: agreementData.id
-      };
-
+      const dealUpdate = { current_legal_agreement_id: agreementData.id };
       const exhibitTerms = agreementData.exhibit_a_terms || {};
 
       if (draftForUpdate) {
         dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
         dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
-        // Also update proposed_terms from draft + exhibit_a_terms
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
         dealUpdate.proposed_terms = {
@@ -136,11 +129,8 @@ Deno.serve(async (req) => {
           buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
           agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
         };
-        console.log('[createDealOnInvestorSignature] Updating existing deal with draft data:', { walkthrough: dealUpdate.walkthrough_scheduled, terms: dealUpdate.proposed_terms });
       } else if (Object.keys(exhibitTerms).length > 0) {
-        // No draft found, but we have exhibit_a_terms from the agreement — use those for proposed_terms
-        // Do NOT touch walkthrough fields (the deal may already have them set from initial creation)
-        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v !== null && v !== undefined)) {
+        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
           dealUpdate.proposed_terms = {
             seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
             seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
@@ -150,12 +140,7 @@ Deno.serve(async (req) => {
             buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
             agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
           };
-          console.log('[createDealOnInvestorSignature] No draft found, populating terms from exhibit_a_terms:', dealUpdate.proposed_terms);
-        } else {
-          console.log('[createDealOnInvestorSignature] No draft found, but deal already has proposed_terms - skipping overwrite');
         }
-      } else {
-        console.log('[createDealOnInvestorSignature] No draft and no exhibit_a_terms - only updating agreement pointer');
       }
 
       // Update Deal
