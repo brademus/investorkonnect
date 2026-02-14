@@ -64,8 +64,16 @@ Deno.serve(async (req) => {
     let walkthroughTime = null;
     let walkthroughScheduled = false;
 
-    // Check Deal entity first
-    if (deal.walkthrough_datetime) {
+    // Check Deal entity - raw string fields first (set by NewDeal page)
+    if (deal.walkthrough_date || deal.walkthrough_time) {
+      walkthroughDate = deal.walkthrough_date || null;
+      walkthroughTime = deal.walkthrough_time || null;
+      walkthroughScheduled = true;
+      console.log("[sendNextSteps] Using deal raw walkthrough fields:", walkthroughDate, walkthroughTime);
+    }
+
+    // Fallback: ISO datetime field (set by WalkthroughScheduleModal)
+    if (!walkthroughScheduled && deal.walkthrough_datetime) {
       try {
         const d = new Date(deal.walkthrough_datetime);
         if (!isNaN(d.getTime())) {
@@ -94,8 +102,8 @@ Deno.serve(async (req) => {
       } catch (e) { console.log("appts check error", e); }
     }
 
-    // WALKTHROUGH_SCHEDULED requires BOTH date AND time to be present
-    const hasFullWalkthrough = walkthroughScheduled && walkthroughDate && walkthroughTime;
+    // Has walkthrough if at least date is present
+    const hasFullWalkthrough = walkthroughScheduled && walkthroughDate;
 
     // Resolve placeholders
     const propertyAddress = deal.property_address || "";
@@ -109,8 +117,10 @@ Deno.serve(async (req) => {
 
     // Build walkthrough section conditionally
     let walkthroughSection;
-    if (hasFullWalkthrough) {
+    if (hasFullWalkthrough && walkthroughTime) {
       walkthroughSection = `We are planning to schedule the walkthrough for:\n\n${walkthroughDate} at ${walkthroughTime}\n\nPlease let me know if that works for you, or feel free to suggest another time.`;
+    } else if (hasFullWalkthrough) {
+      walkthroughSection = `We are planning to schedule the walkthrough for:\n\n${walkthroughDate}\n\nPlease let me know if that works for you and what time is best, or feel free to suggest another date.`;
     } else {
       walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
     }

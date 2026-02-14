@@ -13,11 +13,27 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const meta = message?.metadata || {};
   const status = meta.status || 'pending'; // pending | confirmed | denied
   const dt = meta.walkthrough_datetime;
+  const wtDate = meta.walkthrough_date;
+  const wtTime = meta.walkthrough_time;
 
-  const formatted = dt ? new Date(dt).toLocaleString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit'
-  }) : 'No date set';
+  // Build display: prefer raw date/time strings, fall back to ISO datetime, then body extraction
+  const formatted = (() => {
+    if (wtDate || wtTime) {
+      return [wtDate, wtTime].filter(Boolean).join(' at ') || 'No date set';
+    }
+    if (dt) {
+      try {
+        return new Date(dt).toLocaleString('en-US', {
+          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+          hour: 'numeric', minute: '2-digit'
+        });
+      } catch (_) {}
+    }
+    // Try to extract from message body as last resort
+    const bodyMatch = message?.body?.match(/Proposed Date & Time:\s*(.+)/);
+    if (bodyMatch) return bodyMatch[1].trim();
+    return 'No date set';
+  })();
 
   const respond = async (action) => {
     setResponding(true);
