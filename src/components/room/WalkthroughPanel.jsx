@@ -10,10 +10,20 @@ import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkt
  * Single source of truth: deal.walkthrough_date / walkthrough_time for display,
  * DealAppointments.walkthrough.status for confirmed/declined.
  */
+// Module-level cache so status persists across tab switches (component remounts)
+const _wtCache = {};
+
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
-  const [apptStatus, setApptStatus] = useState(null);
-  const [apptLoaded, setApptLoaded] = useState(false);
+  const dealId = deal?.id;
+  const cached = dealId ? _wtCache[dealId] : null;
+  const [apptStatus, setApptStatus] = useState(cached || null);
+  const [apptLoaded, setApptLoaded] = useState(!!cached);
   const [responding, setResponding] = useState(false);
+
+  // Persist to cache whenever apptStatus changes
+  useEffect(() => {
+    if (dealId && apptStatus) _wtCache[dealId] = apptStatus;
+  }, [dealId, apptStatus]);
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
@@ -26,12 +36,17 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time || null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
 
-  // Background load of DealAppointments to get real status — runs first
+  // Load DealAppointments to get real status — skip if we already have a cached authoritative status
   useEffect(() => {
-    if (!deal?.id) return;
+    if (!dealId) return;
+    // If we already have a confirmed/canceled status from cache, mark loaded immediately
+    if (cached && cached !== "PROPOSED") {
+      setApptLoaded(true);
+      return;
+    }
     let cancelled = false;
     setApptLoaded(false);
-    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+    base44.entities.DealAppointments.filter({ dealId }).then(rows => {
       if (cancelled) return;
       const s = rows?.[0]?.walkthrough?.status;
       if (s && s !== "NOT_SET") {
@@ -41,11 +56,11 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       }
       setApptLoaded(true);
     }).catch(() => {
-      if (!cancelled && hasWalkthrough) setApptStatus("PROPOSED");
+      if (!cancelled && hasWalkthrough && !cached) setApptStatus("PROPOSED");
       setApptLoaded(true);
     });
     return () => { cancelled = true; };
-  }, [deal?.id, hasWalkthrough]);
+  }, [dealId, hasWalkthrough]);
 
   // Real-time: DealAppointments
   useEffect(() => {
