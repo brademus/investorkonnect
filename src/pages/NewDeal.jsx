@@ -467,7 +467,8 @@ export default function NewDeal() {
               const mins = String(dt.getMinutes()).padStart(2,'0');
               const ampm = hrs >= 12 ? 'PM' : 'AM';
               const h12 = hrs % 12 || 12;
-              setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ' ' + ampm);
+              // Strict format: no space before AM/PM (e.g. "02:30PM")
+              setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ampm);
             }
 
             // Fallback: if property details are still empty, try server-normalized details
