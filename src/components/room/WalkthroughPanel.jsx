@@ -17,7 +17,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const isAgent = profile?.user_role === "agent";
   const isSigned =
     room?.agreement_status === "fully_signed" ||
-    room?.request_status === "locked";
+    room?.request_status === "locked" ||
+    room?.is_fully_signed === true;
 
   // The walkthrough data comes from the deal — stored as raw strings (date + time)
   const wtScheduled = deal?.walkthrough_scheduled === true;
