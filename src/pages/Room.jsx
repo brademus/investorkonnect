@@ -353,13 +353,13 @@ export default function Room() {
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const dealId = deal.id;
+                    const dealIdVal = deal.id;
                     setDeal(prev => prev ? { ...prev, pipeline_stage: 'active_listings' } : prev);
                     try {
-                      await base44.entities.Deal.update(dealId, { pipeline_stage: 'active_listings' });
+                      await base44.entities.Deal.update(dealIdVal, { pipeline_stage: 'active_listings' });
                       queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                       toast.success('Moved to Active Listings');
-                    } catch (e) {
+                    } catch (err) {
                       setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
                       toast.error("Failed to update stage");
                     }
