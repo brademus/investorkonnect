@@ -122,11 +122,8 @@ Deno.serve(async (req) => {
       const exhibitTerms = agreementData.exhibit_a_terms || {};
 
       if (draftForUpdate) {
-        if (draftForUpdate.walkthrough_scheduled !== undefined && draftForUpdate.walkthrough_scheduled !== null) {
-          dealUpdate.walkthrough_scheduled = (draftForUpdate.walkthrough_scheduled === true || draftForUpdate.walkthrough_scheduled === 'true' || draftForUpdate.walkthrough_scheduled === 1) ? true : false;
-          dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
-          console.log('[createDealOnInvestorSignature] Draft walkthrough data for update:', { raw: draftForUpdate.walkthrough_scheduled, type: typeof draftForUpdate.walkthrough_scheduled, resolved: dealUpdate.walkthrough_scheduled, datetime: dealUpdate.walkthrough_datetime });
-        }
+        dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
+        dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
         // Also update proposed_terms from draft + exhibit_a_terms
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
