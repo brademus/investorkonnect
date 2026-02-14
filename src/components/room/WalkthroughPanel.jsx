@@ -83,7 +83,9 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
         const s = e.data.walkthrough.status;
         setApptStatus(s);
-        _wtCache[deal.id] = { status: s, userAction: s !== "PROPOSED" && s !== "NOT_SET" };
+        if (s !== "PROPOSED" && s !== "NOT_SET") {
+          _wtCache[deal.id] = { status: s, userActionAt: Date.now() };
+        }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
