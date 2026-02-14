@@ -163,8 +163,9 @@ export default function MyAgreement() {
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
           const wtScheduled = dealData.walkthroughScheduled === true;
-          const wtDatetime = dealData.walkthrough_datetime || null;
-          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_datetime: dealData.walkthrough_datetime, resolved_wtScheduled: wtScheduled, resolved_wtDatetime: wtDatetime });
+          const wtDate = dealData.walkthroughDate || null;
+          const wtTime = dealData.walkthroughTime || null;
+          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime });
 
           const draftPayload = {
             investor_profile_id: profile.id,

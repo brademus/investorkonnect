@@ -153,8 +153,7 @@ export default function NewDeal() {
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
       walkthroughDate,
-      walkthroughTime,
-      walkthrough_datetime: walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
+      walkthroughTime
     };
     const isEditing = !!dealId;
     const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
@@ -520,7 +519,7 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true,
-          walkthrough_datetime: walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
+          walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
@@ -605,12 +604,10 @@ export default function NewDeal() {
     }
   } catch (_) {}
 
-    // CRITICAL: Build walkthrough ISO string for both sessionStorage AND database
-    const walkthroughIso = walkthroughScheduled === true ? buildWalkthroughIso(walkthroughDate, walkthroughTime) : null;
-    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
-
     // Save to sessionStorage - include dealId if editing
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
+    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughDate, walkthroughTime });
+    
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -643,8 +640,7 @@ export default function NewDeal() {
       hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
       walkthroughDate,
-      walkthroughTime,
-      walkthrough_datetime: walkthroughIso
+      walkthroughTime
     }));
 
     // Navigate with dealId if editing
