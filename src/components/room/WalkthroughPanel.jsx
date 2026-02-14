@@ -10,10 +10,7 @@ import { toast } from "sonner";
  * Falls back to DealAppointments only for status updates (confirmed/declined).
  */
 export default function WalkthroughPanel({ deal, room, profile, roomId }) {
-  // Initialize status immediately from deal data instead of waiting for DealAppointments fetch
-  const wtScheduledInit = deal?.walkthrough_scheduled === true;
-  const hasDateOrTimeInit = deal?.walkthrough_date || deal?.walkthrough_time;
-  const [apptStatus, setApptStatus] = useState(wtScheduledInit && hasDateOrTimeInit ? "PROPOSED" : null);
+  const [apptStatus, setApptStatus] = useState(null);
   const [responding, setResponding] = useState(false);
 
   const isInvestor = profile?.user_role === "investor";
@@ -28,7 +25,14 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
   const wtTime = deal?.walkthrough_time || null;
   const hasDateOrTime = wtDate || wtTime;
 
-  // Load DealAppointments to get the *status* (confirmed/declined by agent)
+  // Set status immediately from deal data so the panel renders instantly
+  useEffect(() => {
+    if (wtScheduled && hasDateOrTime && !apptStatus) {
+      setApptStatus("PROPOSED");
+    }
+  }, [wtScheduled, hasDateOrTime]);
+
+  // Load DealAppointments to get the *status* (confirmed/declined by agent) — overrides PROPOSED if found
   useEffect(() => {
     if (!deal?.id) return;
     let cancelled = false;
@@ -38,13 +42,11 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       const appt = rows?.[0]?.walkthrough;
       if (!cancelled && appt?.status && appt.status !== "NOT_SET") {
         setApptStatus(appt.status);
-      } else if (!cancelled && wtScheduled && hasDateOrTime) {
-        setApptStatus("PROPOSED");
       }
     })();
 
     return () => { cancelled = true; };
-  }, [deal?.id, wtScheduled, hasDateOrTime]);
+  }, [deal?.id]);
 
   // Real-time: DealAppointments status changes
   useEffect(() => {
