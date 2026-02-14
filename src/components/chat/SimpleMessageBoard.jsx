@@ -16,7 +16,7 @@ function isFromMe(m, user, profile) {
   return myEmail && createdBy && myEmail === createdBy;
 }
 
-export default function SimpleMessageBoard({ roomId, profile, user, isChatEnabled, isSigned }) {
+export default function SimpleMessageBoard({ roomId, profile, user, isChatEnabled, isSigned, dealId }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -30,12 +30,12 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     const load = async () => {
       const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
       if (!cancelled) {
-        // Deduplicate walkthrough_request messages with the same date/time
+        // Deduplicate walkthrough_request messages — keep only the first per date+time combo
         const deduped = [];
         const seenWtKeys = new Set();
         for (const r of (rows || [])) {
           if (r?.metadata?.type === 'walkthrough_request') {
-            const key = `wt_${r.metadata.walkthrough_date || ''}_${r.metadata.walkthrough_time || ''}_${r.metadata.walkthrough_datetime || ''}`;
+            const key = `wt_${r.metadata.walkthrough_date || ''}_${r.metadata.walkthrough_time || ''}`;
             if (seenWtKeys.has(key)) continue;
             seenWtKeys.add(key);
           }
@@ -53,6 +53,11 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       if (event.type === "create") {
         setMessages(prev => {
           if (prev.some(m => m.id === d.id)) return prev;
+          // Dedupe: if this is a walkthrough_request and we already have one with same date/time, skip
+          if (d.metadata?.type === 'walkthrough_request') {
+            const key = `wt_${d.metadata.walkthrough_date || ''}_${d.metadata.walkthrough_time || ''}`;
+            if (prev.some(m => m.metadata?.type === 'walkthrough_request' && `wt_${m.metadata?.walkthrough_date || ''}_${m.metadata?.walkthrough_time || ''}` === key)) return prev;
+          }
           const optMatch = prev.findIndex(m => m._optimistic && m.sender_profile_id === d.sender_profile_id && m.body === d.body);
           if (optMatch >= 0) return prev.map((m, i) => i === optMatch ? msg : m);
           return [...prev, msg];
@@ -100,7 +105,6 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           body: `${type === 'photo' ? '📷' : '📎'} ${file.name}`,
           metadata: { type, file_url, file_name: file.name, file_type: file.type, file_size: file.size }
         });
-        // Also save photos to room.photos so they appear in the Photos tab
         if (type === 'photo') {
           try {
             const roomArr = await base44.entities.Room.filter({ id: roomId });
@@ -113,7 +117,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
                 });
               }
             }
-          } catch (_) { /* non-critical */ }
+          } catch (_) {}
         }
         toast.success('Uploaded');
       } catch (_) { toast.error('Upload failed'); }
@@ -130,16 +134,14 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           const isFile = m?.metadata?.type === 'file' && !(m?.metadata?.file_type || '').startsWith('image/');
           const isWalkthroughRequest = m?.metadata?.type === 'walkthrough_request';
           const isWalkthroughResponse = m?.metadata?.type === 'walkthrough_response';
-          const isAgent = profile?.user_role === 'agent';
+          const isAgentUser = profile?.user_role === 'agent';
 
-          // Always show walkthrough messages even before chat is unlocked
-          // Hide regular messages when chat is not enabled
           if (!isChatEnabled && !isWalkthroughRequest && !isWalkthroughResponse) return null;
 
           if (isWalkthroughRequest) {
             return (
               <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
-                <WalkthroughMessageCard message={m} isAgent={isAgent} isRecipient={!isMe} roomId={roomId} profile={profile} isSigned={isSigned} />
+                <WalkthroughMessageCard message={m} isAgent={isAgentUser} isRecipient={!isMe} roomId={roomId} profile={profile} isSigned={isSigned} dealId={dealId} />
               </div>
             );
           }
