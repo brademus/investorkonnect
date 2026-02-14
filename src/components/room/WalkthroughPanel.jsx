@@ -19,12 +19,11 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     room?.agreement_status === "fully_signed" ||
     room?.request_status === "locked";
 
-  // The walkthrough data comes from the deal — same as purchase_price, city, etc.
-  // Accept walkthrough if EITHER flag is true OR a datetime exists (belt + suspenders)
-  const wtDatetime = deal?.walkthrough_datetime || null;
-  const dt = wtDatetime ? new Date(wtDatetime) : null;
-  const isValidDate = dt && !isNaN(dt.getTime());
-  const wtScheduled = deal?.walkthrough_scheduled === true || isValidDate;
+  // The walkthrough data comes from the deal — stored as raw strings (date + time)
+  const wtScheduled = deal?.walkthrough_scheduled === true;
+  const wtDate = deal?.walkthrough_date || null;
+  const wtTime = deal?.walkthrough_time || null;
+  const hasDateOrTime = wtDate || wtTime;
 
   // Load DealAppointments to get the *status* (confirmed/declined by agent)
   useEffect(() => {
@@ -36,13 +35,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       const appt = rows?.[0]?.walkthrough;
       if (!cancelled && appt?.status && appt.status !== "NOT_SET") {
         setApptStatus(appt.status);
-      } else if (!cancelled && wtScheduled) {
+      } else if (!cancelled && wtScheduled && hasDateOrTime) {
         setApptStatus("PROPOSED");
       }
     })();
 
     return () => { cancelled = true; };
-  }, [deal?.id, wtScheduled]);
+  }, [deal?.id, wtScheduled, hasDateOrTime]);
 
   // Real-time: DealAppointments status changes
   useEffect(() => {
@@ -55,8 +54,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  const status = apptStatus || (wtScheduled ? "PROPOSED" : null);
-  const hasWalkthrough = wtScheduled;
+  const status = apptStatus || (wtScheduled && hasDateOrTime ? "PROPOSED" : null);
+  const hasWalkthrough = wtScheduled && hasDateOrTime;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
 
   const handleRespond = async (action) => {
@@ -79,14 +78,12 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
       if (roomId) {
         const emoji = action === "confirm" ? "✅" : "❌";
         const label = action === "confirm" ? "Confirmed" : "Declined";
-        const formatted = isValidDate
-          ? dt.toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })
-          : "the proposed date";
+        const displayText = `${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
         await base44.entities.Message.create({
           room_id: roomId,
           sender_profile_id: profile?.id,
-          body: `${emoji} Walk-through ${label}\n\n${action === "confirm" ? `See you on ${formatted}` : "Please propose a different time."}`,
-          metadata: { type: "walkthrough_response", walkthrough_datetime: wtDatetime, status: action === "confirm" ? "confirmed" : "denied" },
+          body: `${emoji} Walk-through ${label}\n\n${action === "confirm" ? `See you on ${displayText}` : "Please propose a different time."}`,
+          metadata: { type: "walkthrough_response", walkthrough_date: wtDate, walkthrough_time: wtTime, status: action === "confirm" ? "confirmed" : "denied" },
         });
 
         const msgs = await base44.entities.Message.filter({ room_id: roomId });
@@ -137,42 +134,28 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
           </div>
 
           {/* Date & Time */}
-          {isValidDate ? (
-            <>
-              <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-                <div className="w-10 h-10 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-5 h-5 text-[#E3C567]" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#808080]">Date</p>
-                  <p className="text-sm font-medium text-[#FAFAFA]">
-                    {dt.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-                <div className="w-10 h-10 rounded-full bg-[#60A5FA]/15 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-[#60A5FA]" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#808080]">Time</p>
-                  <p className="text-sm font-medium text-[#FAFAFA]">
-                    {dt.getHours() === 0 && dt.getMinutes() === 0 ? "TBD" : dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-              <div className="w-10 h-10 rounded-full bg-[#F59E0B]/15 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-[#F59E0B]" />
-              </div>
-              <div>
-                <p className="text-xs text-[#808080]">Date & Time</p>
-                <p className="text-sm font-medium text-[#F59E0B]">Pending</p>
-              </div>
+          <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+            <div className="w-10 h-10 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-5 h-5 text-[#E3C567]" />
             </div>
-          )}
+            <div>
+              <p className="text-xs text-[#808080]">Date</p>
+              <p className="text-sm font-medium text-[#FAFAFA]">
+                {wtDate || 'TBD'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+            <div className="w-10 h-10 rounded-full bg-[#60A5FA]/15 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 text-[#60A5FA]" />
+            </div>
+            <div>
+              <p className="text-xs text-[#808080]">Time</p>
+              <p className="text-sm font-medium text-[#FAFAFA]">
+                {wtTime || 'TBD'}
+              </p>
+            </div>
+          </div>
 
           {/* Agent: confirm/decline */}
           {canAgentRespond && (
