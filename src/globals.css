@@ -103,10 +103,6 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     --accent: 45 64% 65%; /* #E3C567 */
     --accent-foreground: 0 0% 0%;
 
-    /* Popover */
-    --popover: 0 0% 5%; /* #0D0D0D */
-    --popover-foreground: 0 0% 98%;
-
     /* Borders - Subtle dark */
     --border: 0 0% 12%;
     --input: 0 0% 12%;
