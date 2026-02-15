@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { CheckCircle, Plus, X } from "lucide-react";
+import { CheckCircle, Plus, X, Upload, Trash2 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
