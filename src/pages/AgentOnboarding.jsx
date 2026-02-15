@@ -159,7 +159,8 @@ export default function AgentOnboarding() {
         deals_closed: agent.investment_deals_last_12m || '',
         investment_strategies: agent.investment_strategies || [],
         specialties: agent.specialties || [],
-        bio: agent.bio || ''
+        bio: agent.bio || '',
+        headshotUrl: profile.headshotUrl || ''
       }));
     }
   }, [profile]);
