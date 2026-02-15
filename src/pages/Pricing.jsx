@@ -174,7 +174,7 @@ export default function Pricing() {
               <h3 className="text-2xl font-bold text-white mb-2">Investor Konnect Membership</h3>
               <p className="text-[#808080] mb-4">Full access to everything you need</p>
               <div className="flex items-baseline justify-center">
-                <span className="text-5xl font-bold text-white">$50</span>
+                <span className="text-5xl font-bold text-white">$49</span>
                 <span className="text-[#808080] ml-1">/month</span>
               </div>
             </div>
