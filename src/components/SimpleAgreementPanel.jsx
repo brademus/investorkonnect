@@ -367,8 +367,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
   const agreementBody = (
     <div className="space-y-4">
-        {/* No agreement yet */}
-        {!agreement && !investorSigned && (
+      {/* No agreement yet */}
+      {!agreement && !investorSigned && (
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
             <p className="text-[#808080] mb-4">No agreement yet</p>
