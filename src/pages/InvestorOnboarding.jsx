@@ -259,6 +259,25 @@ export default function InvestorOnboarding() {
     </div>
   );
 
+  const toggleState = (state) => {
+    setFormData(prev => {
+      const current = prev.primary_states || [];
+      const updated = current.includes(state)
+        ? current.filter(s => s !== state)
+        : [...current, state];
+      return { ...prev, primary_states: updated, primary_state: updated[0] || '' };
+    });
+  };
+
+  const toggleNationwide = (checked) => {
+    setFormData(prev => ({
+      ...prev,
+      nationwide: checked,
+      primary_states: checked ? [] : prev.primary_states,
+      primary_state: checked ? 'Nationwide' : (prev.primary_states[0] || '')
+    }));
+  };
+
   const renderStep2 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
@@ -266,16 +285,52 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="primary_state" className="text-[#FAFAFA] text-[19px] font-medium">Primary Market / State *</Label>
-          <select 
-            id="primary_state" 
-            value={formData.primary_state} 
-            onChange={(e) => updateField('primary_state', e.target.value)} 
-            className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
+          <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Primary Market / State *</Label>
+          
+          {/* Nationwide option */}
+          <label className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all mb-4"
+            style={{
+              borderColor: formData.nationwide ? '#E3C567' : '#1F1F1F',
+              backgroundColor: formData.nationwide ? 'rgba(227,197,103,0.1)' : '#141414'
+            }}
           >
-            <option value="">Select your target state</option>
-            {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
-          </select>
+            <input
+              type="checkbox"
+              checked={formData.nationwide}
+              onChange={(e) => toggleNationwide(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.nationwide ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+              {formData.nationwide && <CheckCircle className="w-3.5 h-3.5 text-black" />}
+            </div>
+            <div>
+              <span className="text-[#FAFAFA] text-[17px] font-semibold">🌎 Nationwide</span>
+              <p className="text-[#808080] text-sm mt-0.5">I'm open to investing in any state</p>
+            </div>
+          </label>
+
+          {/* State checkboxes */}
+          {!formData.nationwide && (
+            <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 max-h-[280px] overflow-y-auto p-1">
+              {US_STATES.map(state => (
+                <button
+                  key={state}
+                  type="button"
+                  onClick={() => toggleState(state)}
+                  className={`p-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${
+                    (formData.primary_states || []).includes(state)
+                      ? 'border-[#E3C567] bg-[#E3C567]/15 text-[#E3C567]'
+                      : 'border-[#1F1F1F] bg-[#141414] text-[#808080] hover:border-[#E3C567]/40 hover:text-[#FAFAFA]'
+                  }`}
+                >
+                  {state}
+                </button>
+              ))}
+            </div>
+          )}
+          {!formData.nationwide && (formData.primary_states || []).length > 0 && (
+            <p className="text-sm text-[#E3C567] mt-2">{formData.primary_states.length} state{formData.primary_states.length !== 1 ? 's' : ''} selected</p>
+          )}
         </div>
         <div>
           <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">Investment Experience</Label>
