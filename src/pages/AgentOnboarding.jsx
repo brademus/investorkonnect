@@ -320,7 +320,14 @@ export default function AgentOnboarding() {
             id="phone" 
             type="tel" 
             value={formData.phone} 
-            onChange={(e) => updateField('phone', e.target.value)} 
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+              let formatted = '';
+              if (digits.length > 0) formatted = '(' + digits.slice(0, 3);
+              if (digits.length >= 3) formatted += ') ' + digits.slice(3, 6);
+              if (digits.length >= 6) formatted += '-' + digits.slice(6, 10);
+              updateField('phone', formatted);
+            }} 
             placeholder="(555) 123-4567" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
