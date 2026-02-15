@@ -127,27 +127,37 @@ export default function AgentOnboarding() {
       const nameParts = (profile.full_name || '').split(' ');
       const existingFirst = profile.onboarding_first_name || nameParts[0] || '';
       const existingLast = profile.onboarding_last_name || nameParts.slice(1).join(' ') || '';
+      // Rebuild state_licenses from existing data
+      const existingMarkets = agent.markets || profile.markets || [];
+      const existingStateLicenses = agent.state_licenses || {};
+      // If no state_licenses saved yet, try to build from legacy data
+      if (Object.keys(existingStateLicenses).length === 0) {
+        const primary = agent.license_number || profile.license_number || '';
+        const primaryState = agent.license_state || profile.license_state || '';
+        if (primaryState && primary) {
+          existingStateLicenses[primaryState] = primary;
+        }
+        const additional = agent.additional_license_numbers || [];
+        const licensedStates = agent.licensed_states || [];
+        licensedStates.forEach((st, i) => {
+          if (!existingStateLicenses[st] && additional[i]) {
+            existingStateLicenses[st] = additional[i];
+          }
+        });
+      }
       setFormData(prev => ({
         ...prev,
         first_name: existingFirst,
         last_name: existingLast,
         phone: profile.phone || '',
-        license_numbers: (() => {
-          const primary = agent.license_number || profile.license_number || '';
-          // Check if there are additional license numbers stored
-          const additional = agent.additional_license_numbers || [];
-          const all = [primary, ...additional].filter(Boolean);
-          return all.length > 0 ? all : [''];
-        })(),
+        state_licenses: existingStateLicenses,
         brokerage: agent.brokerage || profile.broker || '',
-        license_state: agent.license_state || profile.license_state || '',
         main_county: agent.main_county || '',
-        markets: agent.markets || profile.markets || [],
+        markets: existingMarkets,
         experience_years: agent.experience_years || '',
         deals_closed: agent.investment_deals_last_12m || '',
         investment_strategies: agent.investment_strategies || [],
         specialties: agent.specialties || [],
-        typical_response_time: agent.typical_response_time || '',
         bio: agent.bio || ''
       }));
     }
