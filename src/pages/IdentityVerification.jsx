@@ -72,19 +72,30 @@ export default function IdentityVerification() {
     try {
       // 1) Ask backend to create a Stripe Identity Verification Session (with retry on 502)
       let sessionData = null;
+      let lastError = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
+          console.log(`[IdentityVerification] Attempt ${attempt + 1} - calling createStripeIdentitySession`);
           const resp = await base44.functions.invoke('createStripeIdentitySession');
+          console.log(`[IdentityVerification] Attempt ${attempt + 1} - response status:`, resp?.status, 'data keys:', resp?.data ? Object.keys(resp.data) : 'no data');
           sessionData = resp.data;
           if (sessionData?.client_secret) break;
+          // If we got a response but no client_secret, check for error
+          if (sessionData?.error) {
+            lastError = sessionData.error;
+            console.error(`[IdentityVerification] Attempt ${attempt + 1} - server error:`, sessionData.error);
+          }
         } catch (invokeErr) {
-          console.warn(`[IdentityVerification] Attempt ${attempt + 1} failed:`, invokeErr?.message);
+          lastError = invokeErr?.response?.data?.error || invokeErr?.message || 'Unknown error';
+          console.error(`[IdentityVerification] Attempt ${attempt + 1} failed:`, lastError, 'Full error:', JSON.stringify(invokeErr?.response?.data || invokeErr?.message));
           if (attempt < 2) {
             await new Promise(r => setTimeout(r, 1500));
-          } else {
-            throw new Error('Verification service is temporarily unavailable. Please try again.');
           }
         }
+      }
+
+      if (!sessionData?.client_secret) {
+        throw new Error(lastError || 'Verification service is temporarily unavailable. Please try again.');
       }
 
       const clientSecret = sessionData?.client_secret;
