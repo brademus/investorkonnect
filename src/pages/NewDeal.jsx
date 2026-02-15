@@ -1128,15 +1128,11 @@ export default function NewDeal() {
                             const times = [];
                             for (let h = 1; h <= 12; h++) {
                               const hh = h.toString().padStart(2, '0');
-                              for (const m of ['00', '15', '30', '45']) {
-                                times.push(`${hh}:${m}AM`);
-                              }
+                              times.push(`${hh}:00AM`);
                             }
                             for (let h = 1; h <= 12; h++) {
                               const hh = h.toString().padStart(2, '0');
-                              for (const m of ['00', '15', '30', '45']) {
-                                times.push(`${hh}:${m}PM`);
-                              }
+                              times.push(`${hh}:00PM`);
                             }
                             return times.map(t => (
                               <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
