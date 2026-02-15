@@ -17,6 +17,7 @@ export default function SelectAgent() {
   const [proceeding, setProceeding] = useState(false);
   const [dealData, setDealData] = useState(null);
   const [ratings, setRatings] = useState(new Map());
+  const [ikDeals, setIkDeals] = useState(new Map());
 
   // Get state from deal data
   useEffect(() => {
