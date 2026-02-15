@@ -170,45 +170,25 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           <p className="text-[#808080] text-sm">No terms set yet</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <div className="bg-[#141414] rounded-xl p-4">
-            <p className="text-xs text-[#808080] mb-1">Purchase Price</p>
-            <p className="text-sm font-semibold text-[#34D399]">${purchasePrice}</p>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+            <span className="text-sm text-[#808080]">Purchase Price</span>
+            <span className="text-sm font-medium text-[#34D399]">${purchasePrice}</span>
           </div>
-          <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#808080] mb-1">Seller's Agent Commission</p>
-              <p className="text-sm font-semibold text-[#FAFAFA]">{sellerComm}</p>
-            </div>
-            {displayTerms.seller_commission_type && (
-              <Badge className="bg-[#60A5FA]/20 text-[#60A5FA] border-[#60A5FA]/30">
-                {(displayTerms.seller_commission_type === 'percentage') ? 'Percentage' : 'Flat Fee'}
-              </Badge>
-            )}
+          <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+            <span className="text-sm text-[#808080]">Seller's Agent Commission</span>
+            <span className="text-sm font-medium text-[#FAFAFA]">{sellerComm}{displayTerms.seller_commission_type ? ` (${displayTerms.seller_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'})` : ''}</span>
           </div>
-          <div className="bg-[#141414] rounded-xl p-4">
-            <p className="text-xs text-[#808080] mb-1">Agreement Length</p>
-            <p className="text-sm font-semibold text-[#FAFAFA]">{agreementLength}</p>
+          <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+            <span className="text-sm text-[#808080]">Agreement Length</span>
+            <span className="text-sm font-medium text-[#FAFAFA]">{agreementLength}</span>
           </div>
-          {displayTerms && (
-            <p className="text-xs text-[#808080] text-right pt-2">
-              Updated {new Date(displayTerms.updated_at || deal?.updated_date || room?.requested_at).toLocaleDateString()}
-            </p>
-          )}
         </div>
       )}
       {deal?.walkthrough_scheduled === true && deal?.walkthrough_date && deal.walkthrough_date.length >= 8 && (
-        <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
-          <div>
-            <p className="text-xs text-[#808080] mb-1">Walk-through</p>
-            <p className="text-sm font-semibold text-[#FAFAFA]">
-              {deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}
-            </p>
-          </div>
-          <Badge className="bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30">
-            <CalendarCheck className="w-3 h-3 mr-1" />
-            Set
-          </Badge>
+        <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
+          <span className="text-sm text-[#808080]">Walk-through</span>
+          <span className="text-sm font-medium text-[#FAFAFA]">{deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}</span>
         </div>
       )}
     </>
