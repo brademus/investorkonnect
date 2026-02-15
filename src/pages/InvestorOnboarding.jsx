@@ -347,8 +347,8 @@ export default function InvestorOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">What are your goals?</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Help us understand what you're looking for</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Tell us about yourself</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Let agents know a little bit about you</p>
       
       <div className="space-y-7">
         <div>
