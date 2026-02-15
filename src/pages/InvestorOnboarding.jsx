@@ -347,12 +347,12 @@ export default function InvestorOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell agents a little bit about yourself</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">What are your goals?</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Help us understand what you're looking for</p>
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Bio</Label>
+          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Investment Goals</Label>
           <Textarea 
             id="goals" 
             value={formData.goals} 
