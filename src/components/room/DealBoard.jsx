@@ -106,15 +106,29 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               </div>
             </div>
           )}
-          {/* Deal Header */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-            <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
-            <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
-            <div className="text-3xl font-bold text-[#34D399] mb-4">${(deal?.purchase_price || room?.budget || 0).toLocaleString()}</div>
-            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
-              {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
-            </span>
+          {/* Deal Header with property details, key terms, and agreement actions (pre-signing) */}
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 space-y-6">
+            <div>
+              <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
+              <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
+              <div className="text-3xl font-bold text-[#34D399] mb-4">${(deal?.purchase_price || room?.budget || 0).toLocaleString()}</div>
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
+              </span>
+            </div>
+
+            {/* Inline Property Details */}
+            <PropertyDetailsCard deal={deal || {}} inline />
+
+            {/* Inline Key Terms */}
+            <KeyTermsPanel deal={deal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} inline />
+
+            {/* Agreement actions (before signing) */}
+            {!isSigned && (
+              <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} inline />
+            )}
           </div>
+
           {/* Deal Progress */}
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
@@ -127,7 +141,6 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                   if (!deal?.id) return;
                   await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
                   toast.success(`Moved to ${stage.label}`);
-                  // Redirect to rate agent when moved to completed or canceled
                   if (stage.id === 'completed' || stage.id === 'canceled') {
                     const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
                     if (agentId) {
@@ -147,11 +160,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           </div>
           <WalkthroughPanel deal={deal} room={room} profile={profile} roomId={roomId} />
-          <PropertyDetailsCard deal={deal || {}} />
         </div>
       )}
 
-      {/* Agreement Tab */}
+      {/* Agreement Tab (only shown after signing) */}
       {activeTab === 'agreement' && (
         <div className="space-y-6">
           <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
