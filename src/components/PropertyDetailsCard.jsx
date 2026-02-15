@@ -65,7 +65,7 @@ export default function PropertyDetailsCard({ deal, inline = false }) {
       {rows.length === 0 ? (
         <p className="text-sm text-[#808080]">No property details provided yet.</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {rows.map((row, idx) => (
             <div key={idx} className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
               <span className="text-sm text-[#808080]">{row.label}</span>
