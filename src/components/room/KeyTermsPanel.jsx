@@ -12,7 +12,7 @@ import { AlertCircle, Loader2, CalendarCheck } from 'lucide-react';
  * CRITICAL: Each agent has THEIR OWN terms stored in room.agent_terms[agentId]
  * Counter offers and negotiations are agent-specific, not deal-wide
  */
-export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement, selectedAgentId }) {
+export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement, selectedAgentId, inline = false }) {
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -157,76 +157,79 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
     || deal?.agreement_length;
   const agreementLength = rawLength ? `${rawLength} days` : 'Not set';
 
+  const termsContent = (
+    <>
+      {loading ? (
+        <div className="text-center py-6">
+          <Loader2 className="w-8 h-8 text-[#E3C567] mx-auto mb-2 animate-spin" />
+          <p className="text-[#808080] text-sm">Loading terms...</p>
+        </div>
+      ) : !displayTerms ? (
+        <div className="text-center py-6">
+          <AlertCircle className="w-10 h-10 text-[#808080] mx-auto mb-2 opacity-50" />
+          <p className="text-[#808080] text-sm">No terms set yet</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="bg-[#141414] rounded-xl p-4">
+            <p className="text-xs text-[#808080] mb-1">Purchase Price</p>
+            <p className="text-sm font-semibold text-[#34D399]">${purchasePrice}</p>
+          </div>
+          <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-[#808080] mb-1">Seller's Agent Commission</p>
+              <p className="text-sm font-semibold text-[#FAFAFA]">{sellerComm}</p>
+            </div>
+            {displayTerms.seller_commission_type && (
+              <Badge className="bg-[#60A5FA]/20 text-[#60A5FA] border-[#60A5FA]/30">
+                {(displayTerms.seller_commission_type === 'percentage') ? 'Percentage' : 'Flat Fee'}
+              </Badge>
+            )}
+          </div>
+          <div className="bg-[#141414] rounded-xl p-4">
+            <p className="text-xs text-[#808080] mb-1">Agreement Length</p>
+            <p className="text-sm font-semibold text-[#FAFAFA]">{agreementLength}</p>
+          </div>
+          {displayTerms && (
+            <p className="text-xs text-[#808080] text-right pt-2">
+              Updated {new Date(displayTerms.updated_at || deal?.updated_date || room?.requested_at).toLocaleDateString()}
+            </p>
+          )}
+        </div>
+      )}
+      {deal?.walkthrough_scheduled === true && deal?.walkthrough_date && deal.walkthrough_date.length >= 8 && (
+        <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
+          <div>
+            <p className="text-xs text-[#808080] mb-1">Walk-through</p>
+            <p className="text-sm font-semibold text-[#FAFAFA]">
+              {deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}
+            </p>
+          </div>
+          <Badge className="bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30">
+            <CalendarCheck className="w-3 h-3 mr-1" />
+            Set
+          </Badge>
+        </div>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div className="border-t border-[#1F1F1F] pt-5">
+        <h4 className="text-base font-semibold text-[#FAFAFA] mb-3">Key Terms</h4>
+        {termsContent}
+      </div>
+    );
+  }
+
   return (
     <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
       <CardHeader className="border-b border-[#1F1F1F]">
         <CardTitle className="text-lg text-[#FAFAFA]">Key Terms</CardTitle>
       </CardHeader>
-
       <CardContent className="p-6 space-y-4">
-        {loading ? (
-          <div className="text-center py-6">
-            <Loader2 className="w-8 h-8 text-[#E3C567] mx-auto mb-2 animate-spin" />
-            <p className="text-[#808080] text-sm">Loading terms...</p>
-          </div>
-        ) : !displayTerms ? (
-          <div className="text-center py-6">
-            <AlertCircle className="w-10 h-10 text-[#808080] mx-auto mb-2 opacity-50" />
-            <p className="text-[#808080] text-sm">No terms set yet</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {/* Purchase Price */}
-            <div className="bg-[#141414] rounded-xl p-4">
-              <p className="text-xs text-[#808080] mb-1">Purchase Price</p>
-              <p className="text-sm font-semibold text-[#34D399]">${purchasePrice}</p>
-            </div>
-
-            {/* Seller Commission */}
-            <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-[#808080] mb-1">Seller's Agent Commission</p>
-                <p className="text-sm font-semibold text-[#FAFAFA]">{sellerComm}</p>
-              </div>
-              {displayTerms.seller_commission_type && (
-                <Badge className="bg-[#60A5FA]/20 text-[#60A5FA] border-[#60A5FA]/30">
-                  {(displayTerms.seller_commission_type === 'percentage') ? 'Percentage' : 'Flat Fee'}
-                </Badge>
-              )}
-            </div>
-
-
-
-            {/* Agreement Length */}
-            <div className="bg-[#141414] rounded-xl p-4">
-              <p className="text-xs text-[#808080] mb-1">Agreement Length</p>
-              <p className="text-sm font-semibold text-[#FAFAFA]">{agreementLength}</p>
-            </div>
-
-            {/* Last Updated */}
-            {displayTerms && (
-              <p className="text-xs text-[#808080] text-right pt-2">
-                Updated {new Date(displayTerms.updated_at || deal?.updated_date || room?.requested_at).toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Walk-through Status - only show when walkthrough is actually scheduled with a real date */}
-        {deal?.walkthrough_scheduled === true && deal?.walkthrough_date && deal.walkthrough_date.length >= 8 && (
-          <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between mt-4">
-            <div>
-              <p className="text-xs text-[#808080] mb-1">Walk-through</p>
-              <p className="text-sm font-semibold text-[#FAFAFA]">
-                {deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}
-              </p>
-            </div>
-            <Badge className="bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30">
-              <CalendarCheck className="w-3 h-3 mr-1" />
-              Set
-            </Badge>
-          </div>
-        )}
+        {termsContent}
       </CardContent>
     </Card>
   );
