@@ -237,7 +237,10 @@ export default function AgentOnboarding() {
       }
 
       // Build the complete update data
-      const licensedStates = formData.markets.length > 0 ? formData.markets : [formData.license_state];
+      const licensedStates = formData.markets;
+      const firstState = licensedStates[0] || '';
+      const firstLicense = formData.state_licenses[firstState] || '';
+      const additionalLicenses = licensedStates.slice(1).map(st => formData.state_licenses[st] || '').filter(Boolean);
       
       const combinedName = `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim();
       const updateData = {
@@ -248,18 +251,19 @@ export default function AgentOnboarding() {
           user_role: 'agent',
           user_type: 'agent',
           broker: formData.brokerage,
-          license_number: formData.license_numbers[0] || '',
-          license_state: formData.license_state,
+          license_number: firstLicense,
+          license_state: firstState,
           markets: licensedStates,
-          target_state: formData.license_state || formData.markets[0] || '',
+          target_state: firstState,
           onboarding_step: 'basic_complete',
           onboarding_completed_at: new Date().toISOString(),
           onboarding_version: 'agent-v1',
           agent: {
             ...(profileToUpdate.agent || {}),
-            license_number: formData.license_numbers[0] || '',
-            additional_license_numbers: formData.license_numbers.slice(1).filter(Boolean),
-            license_state: formData.license_state,
+            license_number: firstLicense,
+            additional_license_numbers: additionalLicenses,
+            state_licenses: formData.state_licenses,
+            license_state: firstState,
             licensed_states: licensedStates,
             main_county: formData.main_county,
             markets: licensedStates,
@@ -267,7 +271,6 @@ export default function AgentOnboarding() {
             investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
             investment_strategies: formData.investment_strategies,
             specialties: formData.specialties,
-            typical_response_time: formData.typical_response_time,
             bio: formData.bio,
             investor_friendly: true,
             brokerage: formData.brokerage
