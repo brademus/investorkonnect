@@ -1119,11 +1119,31 @@ export default function NewDeal() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Time</label>
-                      <WalkthroughTimeInput
-                        value={walkthroughTime}
-                        onChange={setWalkthroughTime}
-                        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
-                      />
+                      <Select value={walkthroughTime} onValueChange={setWalkthroughTime}>
+                        <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {(() => {
+                            const times = [];
+                            for (let h = 1; h <= 12; h++) {
+                              const hh = h.toString().padStart(2, '0');
+                              for (const m of ['00', '15', '30', '45']) {
+                                times.push(`${hh}:${m}AM`);
+                              }
+                            }
+                            for (let h = 1; h <= 12; h++) {
+                              const hh = h.toString().padStart(2, '0');
+                              for (const m of ['00', '15', '30', '45']) {
+                                times.push(`${hh}:${m}PM`);
+                              }
+                            }
+                            return times.map(t => (
+                              <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
