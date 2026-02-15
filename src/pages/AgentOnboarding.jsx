@@ -37,6 +37,7 @@ export default function AgentOnboarding() {
   }, [step]);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [step4Error, setStep4Error] = useState('');
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
