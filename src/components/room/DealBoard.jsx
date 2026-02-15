@@ -49,11 +49,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
     ? [{ id: 'details', label: 'Details', icon: Info }, { id: 'agreement', label: 'Agreement', icon: Shield }, { id: 'files', label: 'Files', icon: FileText }, { id: 'photos', label: 'Photos', icon: Image }, { id: 'activity', label: 'Activity', icon: Activity }]
     : [{ id: 'details', label: 'Details', icon: Info }];
 
-  // Open agreement tab if URL param
+  // Open agreement tab if URL param (only if signed, otherwise stay on details)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('tab') === 'agreement') setActiveTab('agreement');
-  }, []);
+    if (p.get('tab') === 'agreement') setActiveTab(isSigned ? 'agreement' : 'details');
+  }, [isSigned]);
 
   const uploadToRoom = async (type) => {
     const input = document.createElement('input');
