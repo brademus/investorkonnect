@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle2, Users } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Users, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import AgentRatingStars from "@/components/AgentRatingStars";
 import { fetchAgentRatings } from "@/components/useAgentRating";
