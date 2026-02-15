@@ -50,7 +50,8 @@ export default function AgentOnboarding() {
     deals_closed: '',
     investment_strategies: [],
     specialties: [],
-    bio: ''
+    bio: '',
+    headshotUrl: ''
   });
 
   const TOTAL_STEPS = 4;
