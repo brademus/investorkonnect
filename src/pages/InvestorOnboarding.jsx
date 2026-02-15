@@ -237,7 +237,7 @@ export default function InvestorOnboarding() {
           </div>
         </div>
         <div>
-          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number</Label>
+          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number *</Label>
           <Input 
             id="phone" 
             type="tel" 
