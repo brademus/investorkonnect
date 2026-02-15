@@ -217,7 +217,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   if (inline) {
     return (
       <div className="border-t border-[#1F1F1F] pt-5">
-        <h4 className="text-base font-semibold text-[#FAFAFA] mb-3">Key Terms</h4>
+        <h4 className="text-base font-semibold text-[#FAFAFA] mb-3">Deal Details</h4>
         {termsContent}
       </div>
     );
@@ -226,7 +226,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   return (
     <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
       <CardHeader className="border-b border-[#1F1F1F]">
-        <CardTitle className="text-lg text-[#FAFAFA]">Key Terms</CardTitle>
+        <CardTitle className="text-lg text-[#FAFAFA]">Deal Details</CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
         {termsContent}
