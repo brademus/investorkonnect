@@ -229,6 +229,17 @@ async function ensureDealCreated(base44, agreement) {
 
   console.log('[pollAndFinalize] Creating deal from draft:', draft.id, 'agents:', selectedAgents);
 
+  // Resolve walkthrough fields from draft
+  const draftWtScheduled = draft.walkthrough_scheduled === true;
+  const draftWtDate = (draftWtScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
+  const draftWtTime = (draftWtScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
+  console.log('[pollAndFinalize] Walkthrough from draft:', { draftWtScheduled, draftWtDate, draftWtTime });
+
+  // Resolve commission terms — prefer agreement exhibit_a_terms (source of truth), fall back to draft
+  const exhibitTerms = agreement.exhibit_a_terms || {};
+  const draftBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
+  const draftSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
+
   // Create Deal
   const newDeal = await base44.asServiceRole.entities.Deal.create({
     title: draft.property_address,
@@ -258,6 +269,15 @@ async function ensureDealCreated(base44, agreement) {
       number_of_signers: draft.number_of_signers,
       second_signer_name: draft.second_signer_name,
     },
+    proposed_terms: {
+      seller_commission_type: exhibitTerms.seller_commission_type || draftSellerType,
+      seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
+      seller_flat_fee: exhibitTerms.seller_flat_fee ?? draft.seller_flat_fee ?? null,
+      buyer_commission_type: exhibitTerms.buyer_commission_type || draftBuyerType,
+      buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draft.buyer_commission_percentage ?? null,
+      buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draft.buyer_flat_fee ?? null,
+      agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draft.agreement_length || 180,
+    },
     contract_document: draft.contract_url ? {
       url: draft.contract_url,
       name: "contract.pdf",
@@ -268,10 +288,13 @@ async function ensureDealCreated(base44, agreement) {
     investor_id: draft.investor_profile_id,
     selected_agent_ids: selectedAgents,
     pending_agreement_generation: false,
-    current_legal_agreement_id: agreement.id
+    current_legal_agreement_id: agreement.id,
+    walkthrough_scheduled: draftWtScheduled,
+    walkthrough_date: draftWtDate,
+    walkthrough_time: draftWtTime
   });
 
-  console.log('[pollAndFinalize] Created Deal:', newDeal.id);
+  console.log('[pollAndFinalize] Created Deal:', newDeal.id, 'walkthrough:', draftWtScheduled, draftWtDate, draftWtTime);
 
   // Update agreement to point to real Deal
   await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
