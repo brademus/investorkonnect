@@ -595,7 +595,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name)) || (step === 2 && (!formData.license_numbers[0] || !formData.brokerage || !formData.license_state || !formData.main_county)) || (step === 4 && formData.markets.length === 0)}
+              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name || (formData.phone || '').replace(/\D/g, '').length < 10)) || (step === 2 && (!formData.license_numbers[0] || !formData.brokerage || !formData.license_state || !formData.main_county)) || (step === 4 && formData.markets.length === 0)}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
