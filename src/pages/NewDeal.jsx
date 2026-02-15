@@ -1126,7 +1126,7 @@ export default function NewDeal() {
                         <SelectContent className="max-h-60">
                           {(() => {
                             const times = [];
-                            for (let h = 1; h <= 12; h++) {
+                            for (let h = 6; h <= 12; h++) {
                               const hh = h.toString().padStart(2, '0');
                               times.push(`${hh}:00AM`);
                             }
