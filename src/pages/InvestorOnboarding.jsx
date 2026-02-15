@@ -330,18 +330,16 @@ export default function InvestorOnboarding() {
           )}
         </div>
         <div>
-          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">Investment Experience</Label>
-          <select 
+          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">How many deals have you done?</Label>
+          <input 
             id="investment_experience" 
+            type="text"
+            inputMode="numeric"
+            placeholder="e.g. 5"
             value={formData.investment_experience} 
             onChange={(e) => updateField('investment_experience', e.target.value)} 
             className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
-          >
-            <option value="">Select your experience level</option>
-            <option value="beginner">Beginner (0-2 deals)</option>
-            <option value="intermediate">Intermediate (3-10 deals)</option>
-            <option value="experienced">Experienced (10+ deals)</option>
-          </select>
+          />
         </div>
       </div>
     </div>
