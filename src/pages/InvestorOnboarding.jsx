@@ -303,10 +303,7 @@ export default function InvestorOnboarding() {
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.nationwide ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
               {formData.nationwide && <CheckCircle className="w-3.5 h-3.5 text-black" />}
             </div>
-            <div>
-              <span className="text-[#FAFAFA] text-[17px] font-semibold">🌎 Nationwide</span>
-              <p className="text-[#808080] text-sm mt-0.5">I'm open to investing in any state</p>
-            </div>
+            <span className="text-[#FAFAFA] text-[17px] font-semibold">Nationwide</span>
           </label>
 
           {/* State checkboxes */}
