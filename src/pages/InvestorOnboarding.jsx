@@ -285,7 +285,7 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Primary Market / State *</Label>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Primary States *</Label>
           
           {/* Nationwide option */}
           <label className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all mb-4"
