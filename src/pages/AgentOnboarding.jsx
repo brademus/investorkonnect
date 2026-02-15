@@ -525,8 +525,6 @@ export default function AgentOnboarding() {
     </div>
   );
 
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
   const handleHeadshotUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
