@@ -74,10 +74,21 @@ export default function SelectAgent() {
 
         console.log('[SelectAgent] Filtered agents for', dealData.city, dealData.state, ':', sortedAgents.length);
         setAgents(sortedAgents);
-        // Fetch ratings for all agents
+        // Fetch ratings and IK deals for all agents
         const agentIds = sortedAgents.map(a => a.id);
         if (agentIds.length > 0) {
           fetchAgentRatings(agentIds).then(setRatings);
+          // Fetch IK deals count per agent
+          base44.entities.Deal.filter({}).then(allDeals => {
+            const counts = new Map();
+            agentIds.forEach(id => counts.set(id, 0));
+            (allDeals || []).forEach(deal => {
+              if (deal.locked_agent_id && counts.has(deal.locked_agent_id)) {
+                counts.set(deal.locked_agent_id, counts.get(deal.locked_agent_id) + 1);
+              }
+            });
+            setIkDeals(counts);
+          }).catch(err => console.log('Could not fetch IK deals:', err));
         }
         if (sortedAgents.length === 0) {
           toast.info("No agents available in this market yet");
