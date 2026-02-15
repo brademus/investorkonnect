@@ -528,28 +528,10 @@ export default function AgentOnboarding() {
 
   const renderStep4 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Markets & Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Service areas and professional background</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Professional Bio</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Tell investors about your background</p>
       
       <div className="space-y-7">
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">All States Where You're Licensed *</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
-          <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
-            {US_STATES.map((state) => (
-              <div key={state} className="flex items-center gap-3">
-                <Checkbox 
-                  id={`market-${state}`} 
-                  checked={formData.markets.includes(state)} 
-                  onCheckedChange={() => toggleMarket(state)} 
-                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
-                />
-                <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div>
           <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
           <Textarea 
@@ -562,12 +544,6 @@ export default function AgentOnboarding() {
           />
           <p className="text-[16px] text-[#808080] mt-2">This will appear on your public profile</p>
         </div>
-
-        {step4Error && (
-          <div className="bg-red-500/15 border border-red-500/30 rounded-xl p-5">
-            <p className="text-sm text-red-400 font-medium">{step4Error}</p>
-          </div>
-        )}
 
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
