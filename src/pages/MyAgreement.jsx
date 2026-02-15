@@ -356,9 +356,39 @@ export default function MyAgreement() {
 
 
 
+  // Helper to get commission display
+  const getSellerComp = () => {
+    const terms = deal.proposed_terms || {};
+    const type = terms.seller_commission_type || deal.sellerCommissionType || 'percentage';
+    const pct = terms.seller_commission_percentage ?? deal.sellerCommissionPercentage;
+    const flat = terms.seller_flat_fee ?? deal.sellerFlatFee;
+    if (type === 'flat_fee' || type === 'flat') return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
+    return pct != null ? `${pct}%` : '—';
+  };
+  const getBuyerComp = () => {
+    const terms = deal.proposed_terms || {};
+    const type = terms.buyer_commission_type || deal.buyerCommissionType || 'percentage';
+    const pct = terms.buyer_commission_percentage ?? deal.buyerCommissionPercentage;
+    const flat = terms.buyer_flat_fee ?? deal.buyerFlatFee;
+    if (type === 'flat_fee' || type === 'flat') return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
+    return pct != null ? `${pct}%` : '—';
+  };
+  const getAgreementLength = () => {
+    const terms = deal.proposed_terms || {};
+    const len = terms.agreement_length ?? deal.agreementLength;
+    return len != null ? `${len} days` : '—';
+  };
+  const getWalkthrough = () => {
+    if (deal.walkthroughScheduled !== true) return 'Not scheduled';
+    const wtDate = deal.walkthrough_date || deal.walkthroughDate;
+    const wtTime = deal.walkthrough_time || deal.walkthroughTime;
+    if (!wtDate && !wtTime) return 'Proposed (date TBD)';
+    return `Proposed: ${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
+  };
+
   return (
-    <div className="min-h-screen bg-transparent px-6 py-10">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-transparent px-4 sm:px-6 py-10">
+      <div className="max-w-5xl mx-auto space-y-6">
         <button
           onClick={() => navigate(createPageUrl('NewDeal'))}
           className="text-[#808080] hover:text-[#E3C567] text-sm"
@@ -397,8 +427,92 @@ export default function MyAgreement() {
           </div>
         )}
 
+        {/* Property Details (left) + Key Terms (right) — side by side */}
+        {deal && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left: Property Details */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
+              <h2 className="text-lg font-bold text-[#E3C567] mb-4">Property Details</h2>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-[#808080]">Address</p>
+                  <p className="text-[#FAFAFA] font-semibold">{deal.propertyAddress || deal.property_address || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[#808080]">City, State</p>
+                  <p className="text-[#FAFAFA] font-semibold">{deal.city}, {deal.state} {deal.zip}</p>
+                </div>
+                <div>
+                  <p className="text-[#808080]">Purchase Price</p>
+                  <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || deal.purchasePrice || 0).toLocaleString()}</p>
+                </div>
+                {(deal.propertyType || deal.property_type) && (
+                  <div>
+                    <p className="text-[#808080]">Property Type</p>
+                    <p className="text-[#FAFAFA] font-semibold">{deal.propertyType || deal.property_type}</p>
+                  </div>
+                )}
+                {(deal.beds || deal.baths || deal.sqft) && (
+                  <div>
+                    <p className="text-[#808080]">Details</p>
+                    <p className="text-[#FAFAFA] font-semibold">
+                      {[deal.beds && `${deal.beds} bed`, deal.baths && `${deal.baths} bath`, deal.sqft && `${Number(deal.sqft).toLocaleString()} sqft`].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                )}
+                {(deal.closingDate || deal.key_dates?.closing_date) && (
+                  <div>
+                    <p className="text-[#808080]">Closing Date</p>
+                    <p className="text-[#FAFAFA] font-semibold">{deal.closingDate || deal.key_dates?.closing_date}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-[#808080]">Walk-through</p>
+                  <p className="text-[#FAFAFA] font-semibold">{getWalkthrough()}</p>
+                </div>
+              </div>
+            </div>
 
+            {/* Right: Key Terms */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
+              <h2 className="text-lg font-bold text-[#E3C567] mb-4">Key Terms</h2>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-[#808080]">Seller's Agent Compensation</p>
+                  <p className="text-[#FAFAFA] font-semibold">{getSellerComp()}</p>
+                </div>
+                <div>
+                  <p className="text-[#808080]">Buyer's Agent Compensation</p>
+                  <p className="text-[#FAFAFA] font-semibold">{getBuyerComp()}</p>
+                </div>
+                <div>
+                  <p className="text-[#808080]">Agreement Length</p>
+                  <p className="text-[#FAFAFA] font-semibold">{getAgreementLength()}</p>
+                </div>
+                {deal.sellerName && (
+                  <div>
+                    <p className="text-[#808080]">Seller Name</p>
+                    <p className="text-[#FAFAFA] font-semibold">{deal.sellerName}</p>
+                  </div>
+                )}
+                {(deal.earnestMoney || deal.seller_info?.earnest_money) && (
+                  <div>
+                    <p className="text-[#808080]">Earnest Money</p>
+                    <p className="text-[#FAFAFA] font-semibold">${Number(deal.earnestMoney || deal.seller_info?.earnest_money || 0).toLocaleString()}</p>
+                  </div>
+                )}
+                {deal.specialNotes && (
+                  <div>
+                    <p className="text-[#808080]">Special Notes</p>
+                    <p className="text-[#FAFAFA] font-semibold">{deal.specialNotes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
+        {/* Agreement + Sign Button — full width below */}
         <SimpleAgreementPanel 
           key={`${draft?.id}-${room?.id}`}
           dealId={draft?.id}
@@ -416,75 +530,6 @@ export default function MyAgreement() {
             if (updatedRoom) setRoom(updatedRoom);
           }}
         />
-
-        {/* Deal Summary */}
-         {deal && (
-           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
-             <h2 className="text-lg font-bold text-[#E3C567] mb-4">Deal Summary</h2>
-             <div className="grid grid-cols-2 gap-4 text-sm">
-               <div>
-                 <p className="text-[#808080]">Property</p>
-                 <p className="text-[#FAFAFA] font-semibold">{deal.city}, {deal.state}</p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Price</p>
-                 <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || deal.purchasePrice || 0).toLocaleString()}</p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Seller's Agent Compensation</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {(() => {
-                     const terms = deal.proposed_terms || {};
-                     const type = terms.seller_commission_type || deal.sellerCommissionType || 'percentage';
-                     const pct = terms.seller_commission_percentage ?? deal.sellerCommissionPercentage;
-                     const flat = terms.seller_flat_fee ?? deal.sellerFlatFee;
-                     if (type === 'flat_fee' || type === 'flat') {
-                       return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
-                     }
-                     return pct != null ? `${pct}%` : '—';
-                   })()}
-                 </p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Buyer's Agent Compensation</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {(() => {
-                     const terms = deal.proposed_terms || {};
-                     const type = terms.buyer_commission_type || deal.buyerCommissionType || 'percentage';
-                     const pct = terms.buyer_commission_percentage ?? deal.buyerCommissionPercentage;
-                     const flat = terms.buyer_flat_fee ?? deal.buyerFlatFee;
-                     if (type === 'flat_fee' || type === 'flat') {
-                       return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
-                     }
-                     return pct != null ? `${pct}%` : '—';
-                   })()}
-                 </p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Agreement Length</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {(() => {
-                     const terms = deal.proposed_terms || {};
-                     const len = terms.agreement_length ?? deal.agreementLength;
-                     return len != null ? `${len} days` : '—';
-                   })()}
-                 </p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Walk-through</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {(() => {
-                      if (deal.walkthroughScheduled !== true) return 'Not scheduled';
-                      const wtDate = deal.walkthrough_date || deal.walkthroughDate;
-                      const wtTime = deal.walkthrough_time || deal.walkthroughTime;
-                      if (!wtDate && !wtTime) return 'Proposed (date TBD)';
-                      return `Proposed: ${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
-                    })()}
-                 </p>
-               </div>
-             </div>
-           </div>
-         )}
       </div>
     </div>
   );
