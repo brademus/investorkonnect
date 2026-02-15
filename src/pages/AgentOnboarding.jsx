@@ -169,12 +169,17 @@ export default function AgentOnboarding() {
   };
 
   const toggleMarket = (state) => {
-    setFormData(prev => ({
-      ...prev,
-      markets: prev.markets.includes(state)
+    setFormData(prev => {
+      const isSelected = prev.markets.includes(state);
+      const newMarkets = isSelected
         ? prev.markets.filter(s => s !== state)
-        : [...prev.markets, state]
-    }));
+        : [...prev.markets, state];
+      const newLicenses = { ...prev.state_licenses };
+      if (isSelected) {
+        delete newLicenses[state];
+      }
+      return { ...prev, markets: newMarkets, state_licenses: newLicenses };
+    });
   };
 
   const handleNext = async () => {
