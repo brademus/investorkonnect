@@ -111,13 +111,8 @@ export default function NewDeal() {
       setHasBasement(d.hasBasement || "");
       const draftWtScheduled = d.walkthroughScheduled === true;
       setWalkthroughScheduled(draftWtScheduled);
-      if (draftWtScheduled) {
-        if (d.walkthroughDate) setWalkthroughDate(d.walkthroughDate);
-        if (d.walkthroughTime) setWalkthroughTime(d.walkthroughTime);
-      } else {
-        setWalkthroughDate("");
-        setWalkthroughTime("");
-      }
+      setWalkthroughDate(draftWtScheduled && d.walkthroughDate ? d.walkthroughDate : "");
+      setWalkthroughTime(draftWtScheduled && d.walkthroughTime ? d.walkthroughTime : "");
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
