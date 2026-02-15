@@ -260,6 +260,7 @@ export default function AgentOnboarding() {
           onboarding_step: 'basic_complete',
           onboarding_completed_at: new Date().toISOString(),
           onboarding_version: 'agent-v1',
+          headshotUrl: formData.headshotUrl || '',
           agent: {
             ...(profileToUpdate.agent || {}),
             license_number: firstLicense,
