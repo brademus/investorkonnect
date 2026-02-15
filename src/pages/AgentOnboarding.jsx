@@ -381,47 +381,59 @@ export default function AgentOnboarding() {
     </div>
   );
 
+  const updateStateLicense = (state, value) => {
+    setFormData(prev => ({
+      ...prev,
+      state_licenses: { ...prev.state_licenses, [state]: value }
+    }));
+  };
+
+  const step2HasAllLicenses = formData.markets.length > 0 && formData.markets.every(st => (formData.state_licenses[st] || '').trim().length > 0);
+
   const renderStep2 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Your license info and main service area</p>
+      <p className="text-[18px] text-[#808080] mb-10">Select your licensed states and enter each license number</p>
       
       <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">License Number *</Label>
-          <div className="space-y-3 mt-3">
-            {formData.license_numbers.map((num, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <Input 
-                  value={num} 
-                  onChange={(e) => {
-                    const updated = [...formData.license_numbers];
-                    updated[idx] = e.target.value;
-                    updateField('license_numbers', updated);
-                  }} 
-                  placeholder="e.g., TX-123456" 
-                  className="h-16 text-[19px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">States Where You're Licensed *</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
+          <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
+            {US_STATES.map((state) => (
+              <div key={state} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`market-${state}`} 
+                  checked={formData.markets.includes(state)} 
+                  onCheckedChange={() => toggleMarket(state)} 
+                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
                 />
-                {idx > 0 && (
-                  <button 
-                    type="button" 
-                    onClick={() => updateField('license_numbers', formData.license_numbers.filter((_, i) => i !== idx))}
-                    className="p-2 text-[#808080] hover:text-red-400 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
+                <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
               </div>
             ))}
           </div>
-          <button 
-            type="button" 
-            onClick={() => updateField('license_numbers', [...formData.license_numbers, ''])}
-            className="flex items-center gap-2 mt-3 text-[#E3C567] hover:text-[#EDD89F] text-[15px] font-medium transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add Another License Number
-          </button>
         </div>
+
+        {formData.markets.length > 0 && (
+          <div>
+            <Label className="text-[#FAFAFA] text-[19px] font-medium">License Numbers *</Label>
+            <p className="text-sm text-[#808080] mt-1 mb-3">Enter your license number for each state</p>
+            <div className="space-y-3">
+              {formData.markets.map((state) => (
+                <div key={state}>
+                  <Label className="text-[#FAFAFA] text-[15px] font-medium mb-1 block">{state} License Number</Label>
+                  <Input 
+                    value={formData.state_licenses[state] || ''} 
+                    onChange={(e) => updateStateLicense(state, e.target.value)} 
+                    placeholder={`e.g., ${state}-123456`} 
+                    className="h-14 text-[17px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <Label htmlFor="brokerage" className="text-[#FAFAFA] text-[19px] font-medium">Brokerage Name *</Label>
           <Input 
@@ -431,18 +443,6 @@ export default function AgentOnboarding() {
             placeholder="e.g., Keller Williams, eXp Realty" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
-        </div>
-        <div>
-          <Label htmlFor="license_state" className="text-[#FAFAFA] text-[19px] font-medium">Main State You're Licensed In *</Label>
-          <select 
-            id="license_state" 
-            value={formData.license_state} 
-            onChange={(e) => updateField('license_state', e.target.value)} 
-            className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
-          >
-            <option value="">Select state</option>
-            {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
-          </select>
         </div>
         <div>
           <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Main County *</Label>
