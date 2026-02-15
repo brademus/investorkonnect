@@ -46,6 +46,7 @@ export default function InvestorOnboarding() {
     primary_states: selectedState ? [selectedState] : [],
     nationwide: false,
     investment_experience: '',
+    deal_types: [],
     goals: ''
   });
 
