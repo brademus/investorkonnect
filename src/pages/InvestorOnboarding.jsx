@@ -99,13 +99,18 @@ export default function InvestorOnboarding() {
       const nameParts = (profile.full_name || '').split(' ');
       const existingFirst = profile.onboarding_first_name || nameParts[0] || '';
       const existingLast = profile.onboarding_last_name || nameParts.slice(1).join(' ') || '';
+      const existingMarkets = profile.markets || [];
+      const existingPrimaryState = selectedState || profile.target_state || existingMarkets[0] || '';
+      const isNationwide = existingPrimaryState === 'Nationwide' || existingMarkets.includes('Nationwide');
       setFormData(prev => ({
         ...prev,
         first_name: existingFirst,
         last_name: existingLast,
         phone: profile.phone || '',
         company: profile.company || '',
-        primary_state: selectedState || profile.target_state || profile.markets?.[0] || '',
+        primary_state: existingPrimaryState,
+        primary_states: isNationwide ? [] : (existingMarkets.length > 0 ? existingMarkets : (existingPrimaryState ? [existingPrimaryState] : [])),
+        nationwide: isNationwide,
         investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
         goals: profile.goals || ''
       }));
