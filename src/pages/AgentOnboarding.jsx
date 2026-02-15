@@ -42,16 +42,14 @@ export default function AgentOnboarding() {
     first_name: '',
     last_name: '',
     phone: '',
-    license_numbers: [''],
+    state_licenses: {},  // { "IL": "IL-123456", "WI": "WI-789" }
     brokerage: '',
-    license_state: '',
     main_county: '',
     markets: [],
     experience_years: '',
     deals_closed: '',
     investment_strategies: [],
     specialties: [],
-    typical_response_time: '',
     bio: ''
   });
 
