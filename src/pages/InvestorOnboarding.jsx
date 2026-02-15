@@ -43,6 +43,8 @@ export default function InvestorOnboarding() {
     phone: '',
     company: '',
     primary_state: selectedState || '',
+    primary_states: selectedState ? [selectedState] : [],
+    nationwide: false,
     investment_experience: '',
     goals: ''
   });
