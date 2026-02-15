@@ -281,7 +281,7 @@ export default function InvestorOnboarding() {
   const renderStep2 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Where are you looking to invest?</p>
+      <p className="text-[18px] text-[#808080] mb-10">What are your primary states?</p>
       
       <div className="space-y-7">
         <div>
