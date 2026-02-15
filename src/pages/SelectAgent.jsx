@@ -231,6 +231,29 @@ export default function SelectAgent() {
                           </span>
                         )}
                       </div>
+                      {/* Deal Stats */}
+                      {(agent.agent?.investment_deals_last_12m > 0 || (ikDeals.get(agent.id) || 0) > 0) && (
+                        <div className="flex gap-3 mt-3">
+                          {agent.agent?.investment_deals_last_12m > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
+                              <Briefcase className="w-3.5 h-3.5 text-[#E3C567]" />
+                              <span className="text-sm font-bold text-[#E3C567]">{agent.agent.investment_deals_last_12m}</span>
+                              <span className="text-[10px] uppercase tracking-wider text-[#808080]">Outside IK</span>
+                            </div>
+                          )}
+                          {(ikDeals.get(agent.id) || 0) > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
+                              <img 
+                                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+                                alt="IK"
+                                className="w-4 h-4 object-contain"
+                              />
+                              <span className="text-sm font-bold text-[#E3C567]">{ikDeals.get(agent.id)}</span>
+                              <span className="text-[10px] uppercase tracking-wider text-[#808080]">IK Deals</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {isSelected && (
                       <CheckCircle2 className="w-6 h-6 text-[#E3C567] flex-shrink-0 ml-4" />
