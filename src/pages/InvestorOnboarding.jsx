@@ -352,7 +352,7 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Investment Goals</Label>
+          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Your Bio</Label>
           <Textarea 
             id="goals" 
             value={formData.goals} 
