@@ -302,6 +302,29 @@ async function ensureDealCreated(base44, agreement) {
     status: 'investor_signed'
   });
 
+  // Create DealAppointments if walkthrough was scheduled
+  if (draftWtScheduled && (draftWtDate || draftWtTime)) {
+    try {
+      await base44.asServiceRole.entities.DealAppointments.create({
+        dealId: newDeal.id,
+        walkthrough: {
+          status: 'PROPOSED',
+          datetime: null,
+          timezone: null,
+          locationType: 'ON_SITE',
+          notes: null,
+          updatedByUserId: draft.investor_profile_id || null,
+          updatedAt: new Date().toISOString()
+        },
+        inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+        rescheduleRequests: []
+      });
+      console.log('[pollAndFinalize] Created DealAppointments for walkthrough');
+    } catch (apptErr) {
+      console.warn('[pollAndFinalize] Failed to create DealAppointments:', apptErr.message);
+    }
+  }
+
   // Delete DealDraft
   await base44.asServiceRole.entities.DealDraft.delete(draft.id).catch(() => {});
 
