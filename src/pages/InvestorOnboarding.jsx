@@ -181,7 +181,8 @@ export default function InvestorOnboarding() {
         metadata: {
           ...(currentProfile.metadata || {}),
           basicProfile: {
-            investment_experience: formData.investment_experience
+            investment_experience: formData.investment_experience,
+            deal_types: formData.deal_types
           }
         }
       });
