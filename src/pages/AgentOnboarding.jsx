@@ -181,6 +181,13 @@ export default function AgentOnboarding() {
 
   const handleNext = async () => {
     if (step === TOTAL_STEPS) {
+      const licenseCount = formData.license_numbers.filter(Boolean).length;
+      const stateCount = formData.markets.length;
+      if (stateCount !== licenseCount) {
+        setStep4Error(`You selected ${stateCount} state${stateCount !== 1 ? 's' : ''} but entered ${licenseCount} license${licenseCount !== 1 ? 's' : ''}. Please go back and add a license for each state.`);
+        return;
+      }
+      setStep4Error('');
       await handleSubmit();
     } else {
       setStep(step + 1);
