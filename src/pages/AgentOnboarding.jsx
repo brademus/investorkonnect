@@ -437,35 +437,58 @@ export default function AgentOnboarding() {
     </div>
   );
 
+  const DEAL_TYPE_OPTIONS = [
+    { label: 'Wholesale', value: 'Wholesale' },
+    { label: 'Novation', value: 'Novation' },
+    { label: 'Whole-tail', value: 'Whole-tail' },
+    { label: 'Fix & Flip', value: 'Fix & Flip' },
+    { label: 'Buy & Hold', value: 'Buy & Hold' },
+    { label: 'Sub-2', value: 'Sub-2', tooltip: 'Taking over seller\'s existing mortgage' },
+  ];
+
+  const PROPERTY_TYPE_OPTIONS = [
+    'Single-Family', 'Multi-Family', 'Condo', 'Townhouse', 'Manufactured', 'Land'
+  ];
+
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Investor Experience</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Help investors understand what you bring to the table</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your Expertise</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Tell investors what types of deals and properties you specialize in</p>
       
       <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Investment Strategies You Support</Label>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Type of Deals</Label>
           <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
           <div className="grid grid-cols-2 gap-3">
-            {STRATEGY_OPTIONS.map((strategy) => (
-              <div key={strategy} className="flex items-center gap-3">
+            {DEAL_TYPE_OPTIONS.map((deal) => (
+              <div key={deal.value} className="flex items-center gap-3">
                 <Checkbox 
-                  id={`strategy-${strategy}`} 
-                  checked={formData.investment_strategies.includes(strategy)} 
-                  onCheckedChange={() => toggleArrayItem('investment_strategies', strategy)} 
+                  id={`strategy-${deal.value}`} 
+                  checked={formData.investment_strategies.includes(deal.value)} 
+                  onCheckedChange={() => toggleArrayItem('investment_strategies', deal.value)} 
                   className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
                 />
-                <Label htmlFor={`strategy-${strategy}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{strategy}</Label>
+                <Label htmlFor={`strategy-${deal.value}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex items-center gap-1.5">
+                  {deal.label}
+                  {deal.tooltip && (
+                    <span className="relative group">
+                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-[#808080] text-[10px] text-[#808080] cursor-help">?</span>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] text-[#FAFAFA] text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                        {deal.tooltip}
+                      </span>
+                    </span>
+                  )}
+                </Label>
               </div>
             ))}
           </div>
         </div>
 
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property Specialties</Label>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property Types</Label>
           <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
           <div className="grid grid-cols-2 gap-3">
-            {SPECIALTY_OPTIONS.map((specialty) => (
+            {PROPERTY_TYPE_OPTIONS.map((specialty) => (
               <div key={specialty} className="flex items-center gap-3">
                 <Checkbox 
                   id={`specialty-${specialty}`} 
@@ -475,26 +498,6 @@ export default function AgentOnboarding() {
                 />
                 <Label htmlFor={`specialty-${specialty}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{specialty}</Label>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Typical Response Time</Label>
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            {RESPONSE_TIME_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => updateField('typical_response_time', option)}
-                className={`px-4 py-3 rounded-lg border text-left text-[16px] transition-all ${
-                  formData.typical_response_time === option
-                    ? 'border-[#E3C567] bg-[#E3C567]/20 text-[#E3C567]'
-                    : 'border-[#1F1F1F] bg-[#141414] text-[#FAFAFA] hover:border-[#E3C567]/50'
-                }`}
-              >
-                {option}
-              </button>
             ))}
           </div>
         </div>
