@@ -362,23 +362,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     }
   }, [dealId, roomId, loaded]);
 
+  if (!loaded && inline) return <div className="border-t border-[#1F1F1F] pt-5 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#808080]" /></div>;
   if (!loaded) return <Card className="bg-[#0D0D0D] border-[#1F1F1F]"><CardContent className="p-6 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[#808080]" /></CardContent></Card>;
 
-  return (
-    <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
-      <CardHeader className="border-b border-[#1F1F1F]">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg text-[#FAFAFA]">Agreement & Terms</CardTitle>
-          {agreement && (
-            <Badge className="bg-transparent border-[#1F1F1F]">
-              {fullySigned ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Signed</span>
-                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Awaiting Agent</span>
-                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Pending</span>}
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
+  const agreementBody = (
+    <div className="space-y-4">
         {/* No agreement yet */}
         {!agreement && !investorSigned && (
           <div className="text-center py-8">
