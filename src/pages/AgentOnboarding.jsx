@@ -524,12 +524,70 @@ export default function AgentOnboarding() {
     </div>
   );
 
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handleHeadshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file (JPG, PNG, etc.)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    updateField('headshotUrl', file_url);
+    setUploadingPhoto(false);
+    toast.success('Photo uploaded!');
+  };
+
   const renderStep4 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Professional Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell investors about your background</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Profile Photo & Bio</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Add a photo and tell investors about your background</p>
       
       <div className="space-y-7">
+        <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Profile Photo</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Optional — a photo helps investors put a face to your name</p>
+          <div className="flex items-center gap-5">
+            {formData.headshotUrl ? (
+              <div className="relative group">
+                <img 
+                  src={formData.headshotUrl} 
+                  alt="Headshot" 
+                  className="w-24 h-24 rounded-full object-cover border-2 border-[#E3C567]" 
+                />
+                <button 
+                  type="button"
+                  onClick={() => updateField('headshotUrl', '')}
+                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-3 h-3 text-white" />
+                </button>
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-[#141414] border-2 border-dashed border-[#1F1F1F] flex items-center justify-center">
+                <Upload className="w-6 h-6 text-[#808080]" />
+              </div>
+            )}
+            <label className="cursor-pointer">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleHeadshotUpload} 
+                className="hidden" 
+              />
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#1F1F1F] bg-[#141414] text-[#FAFAFA] text-sm hover:border-[#E3C567] transition-colors">
+                {uploadingPhoto ? 'Uploading...' : formData.headshotUrl ? 'Change Photo' : 'Upload Photo'}
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div>
           <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
           <Textarea 
