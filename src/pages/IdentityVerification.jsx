@@ -73,7 +73,7 @@ export default function IdentityVerification() {
       // 1) Ask backend to create a Stripe Identity Verification Session (with retry on 502)
       console.log('[IdentityVerification] Calling createStripeIdentitySession...');
       const resp = await base44.functions.invoke('createStripeIdentitySession', {});
-      sessionData = resp.data;
+      const sessionData = resp.data;
       console.log('[IdentityVerification] Response:', JSON.stringify(sessionData));
 
       const clientSecret = sessionData?.client_secret;
