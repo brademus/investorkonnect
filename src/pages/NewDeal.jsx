@@ -783,7 +783,7 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectItem value="single_family">Single Family</SelectItem>
                       <SelectItem value="multi_family">Multi-Family</SelectItem>
                       <SelectItem value="condo">Condo</SelectItem>
@@ -857,7 +857,7 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectItem value="1">1</SelectItem>
                       <SelectItem value="2">2</SelectItem>
                       <SelectItem value="3+">3+</SelectItem>
@@ -874,7 +874,7 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectItem value="yes">Yes</SelectItem>
                       <SelectItem value="no">No</SelectItem>
                     </SelectContent>
@@ -928,7 +928,7 @@ export default function NewDeal() {
                 <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectItem value="1">1 Signer</SelectItem>
                   <SelectItem value="2">2 Signers</SelectItem>
                 </SelectContent>
@@ -972,7 +972,7 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
                       <SelectItem value="flat">Flat Fee</SelectItem>
                     </SelectContent>
@@ -1022,7 +1022,7 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
                       <SelectItem value="flat">Flat Fee</SelectItem>
                     </SelectContent>
@@ -1123,7 +1123,7 @@ export default function NewDeal() {
                         <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                           <SelectValue placeholder="Select time" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
+                        <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                           {(() => {
                             const times = [];
                             for (let h = 6; h <= 12; h++) {
