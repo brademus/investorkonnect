@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function PropertyDetailsCard({ deal }) {
+export default function PropertyDetailsCard({ deal, inline = false }) {
   const pd = deal?.property_details || {};
 
   // Helpers
@@ -59,9 +59,9 @@ export default function PropertyDetailsCard({ deal }) {
     { label: "Walk-through", value: walkthroughLabel },
   ].filter(r => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
 
-  return (
-    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-      <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Details</h4>
+  const content = (
+    <>
+      <h4 className={`font-semibold text-[#FAFAFA] ${inline ? 'text-base mb-3' : 'text-lg mb-4'}`}>Property Details</h4>
       {rows.length === 0 ? (
         <p className="text-sm text-[#808080]">No property details provided yet.</p>
       ) : (
@@ -74,13 +74,21 @@ export default function PropertyDetailsCard({ deal }) {
           ))}
         </div>
       )}
-
-      {/* Always show city/state and masked address for agents before signing */}
-      <div className="mt-4 text-xs text-[#808080]">
-        {deal?._is_redacted ? (
+      {deal?._is_redacted && (
+        <div className="mt-4 text-xs text-[#808080]">
           <span>Address hidden until agreement is fully signed</span>
-        ) : null}
-      </div>
+        </div>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return <div className="border-t border-[#1F1F1F] pt-5">{content}</div>;
+  }
+
+  return (
+    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+      {content}
     </div>
   );
 }
