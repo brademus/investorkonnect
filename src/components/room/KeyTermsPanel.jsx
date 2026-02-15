@@ -204,13 +204,9 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   }
 
   return (
-    <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
-      <CardHeader className="border-b border-[#1F1F1F]">
-        <CardTitle className="text-lg text-[#FAFAFA]">Deal Details</CardTitle>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
-        {termsContent}
-      </CardContent>
-    </Card>
+    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+      <h4 className="font-semibold text-[#FAFAFA] text-lg mb-4">Deal Details</h4>
+      {termsContent}
+    </div>
   );
 }
