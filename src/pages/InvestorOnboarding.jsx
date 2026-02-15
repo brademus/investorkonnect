@@ -331,6 +331,54 @@ export default function InvestorOnboarding() {
           )}
         </div>
         <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Type of Deals *</Label>
+          {(() => {
+            const DEAL_TYPES = ["Wholesale", "Novation", "Whole-tail", "Fix & Flip", "Buy & Hold", "Sub-2"];
+            const allSelected = formData.deal_types.length === DEAL_TYPES.length;
+            const toggleAll = (checked) => {
+              updateField('deal_types', checked ? [...DEAL_TYPES] : []);
+            };
+            const toggleDealType = (type) => {
+              const current = formData.deal_types || [];
+              const updated = current.includes(type) ? current.filter(t => t !== type) : [...current, type];
+              updateField('deal_types', updated);
+            };
+            return (
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                  style={{
+                    borderColor: allSelected ? '#E3C567' : '#1F1F1F',
+                    backgroundColor: allSelected ? 'rgba(227,197,103,0.1)' : '#141414'
+                  }}>
+                  <input type="checkbox" checked={allSelected} onChange={(e) => toggleAll(e.target.checked)} className="sr-only" />
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${allSelected ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+                    {allSelected && <CheckCircle className="w-3.5 h-3.5 text-black" />}
+                  </div>
+                  <span className="text-[#FAFAFA] text-[17px] font-semibold">All</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {DEAL_TYPES.map(type => {
+                    const selected = (formData.deal_types || []).includes(type);
+                    return (
+                      <label key={type} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                        style={{
+                          borderColor: selected ? '#E3C567' : '#1F1F1F',
+                          backgroundColor: selected ? 'rgba(227,197,103,0.1)' : '#141414'
+                        }}>
+                        <input type="checkbox" checked={selected} onChange={() => toggleDealType(type)} className="sr-only" />
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+                          {selected && <CheckCircle className="w-3.5 h-3.5 text-black" />}
+                        </div>
+                        <span className="text-[#FAFAFA] text-[15px]">{type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+        <div>
           <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">How many deals have you done?</Label>
           <input 
             id="investment_experience" 
