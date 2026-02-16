@@ -1085,7 +1085,7 @@ export default function NewDeal() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDate(""); setWalkthroughTime(""); console.log('[NewDeal] Walkthrough set to NOT scheduled, cleared date/time'); }}
+                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughSlots([{ date: "", timeStart: "", timeEnd: "" }]); }}
                   className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     walkthroughScheduled === false
                       ? "bg-[#F59E0B] text-black"
@@ -1096,60 +1096,95 @@ export default function NewDeal() {
                 </button>
               </div>
               {walkthroughScheduled === true && (
-                <div className="mt-4">
-                  <div className="grid grid-cols-3 gap-4 max-w-lg">
-                    <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Date</label>
-                      <Input
-                        type="text"
-                        value={walkthroughDate}
-                        onChange={(e) => setWalkthroughDate(autoFormatDate(e.target.value))}
-                        placeholder="MM/DD/YYYY"
-                        maxLength={10}
-                        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Start Time</label>
-                      <Select value={walkthroughTime} onValueChange={setWalkthroughTime}>
-                        <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                          <SelectValue placeholder="Start" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                          {(() => {
-                            const times = [];
-                            for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
-                            for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
-                            return times.map(t => (
-                              <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">End Time</label>
-                      <Select value={walkthroughTimeEnd} onValueChange={setWalkthroughTimeEnd}>
-                        <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                          <SelectValue placeholder="End" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                          {(() => {
-                            const times = [];
-                            for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
-                            for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
-                            return times.map(t => (
-                              <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
-                            ));
-                          })()}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {walkthroughTime && walkthroughTimeEnd && (
-                    <p className="text-xs text-[#808080] mt-2">
-                      Proposed window: {walkthroughTime.replace(/(AM|PM)/, ' $1')} – {walkthroughTimeEnd.replace(/(AM|PM)/, ' $1')}
-                    </p>
+                <div className="mt-4 space-y-4">
+                  {walkthroughSlots.map((slot, idx) => {
+                    const updateSlot = (field, value) => {
+                      const updated = [...walkthroughSlots];
+                      updated[idx] = { ...updated[idx], [field]: value };
+                      setWalkthroughSlots(updated);
+                    };
+                    return (
+                      <div key={idx} className="relative">
+                        {walkthroughSlots.length > 1 && (
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-medium text-[#E3C567]">Option {idx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => setWalkthroughSlots(walkthroughSlots.filter((_, i) => i !== idx))}
+                              className="text-[#808080] hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-3 gap-4 max-w-lg">
+                          <div>
+                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                              {walkthroughSlots.length === 1 ? "Proposed Date" : "Date"}
+                            </label>
+                            <Input
+                              type="text"
+                              value={slot.date}
+                              onChange={(e) => updateSlot("date", autoFormatDate(e.target.value))}
+                              placeholder="MM/DD/YYYY"
+                              maxLength={10}
+                              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Start Time</label>
+                            <Select value={slot.timeStart} onValueChange={(v) => updateSlot("timeStart", v)}>
+                              <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                                <SelectValue placeholder="Start" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                                {(() => {
+                                  const times = [];
+                                  for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
+                                  for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
+                                  return times.map(t => (
+                                    <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                                  ));
+                                })()}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">End Time</label>
+                            <Select value={slot.timeEnd} onValueChange={(v) => updateSlot("timeEnd", v)}>
+                              <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                                <SelectValue placeholder="End" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                                {(() => {
+                                  const times = [];
+                                  for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
+                                  for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
+                                  return times.map(t => (
+                                    <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                                  ));
+                                })()}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        {slot.timeStart && slot.timeEnd && (
+                          <p className="text-xs text-[#808080] mt-1">
+                            Window: {slot.timeStart.replace(/(AM|PM)/, ' $1')} – {slot.timeEnd.replace(/(AM|PM)/, ' $1')}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {walkthroughSlots.length < 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setWalkthroughSlots([...walkthroughSlots, { date: "", timeStart: "", timeEnd: "" }])}
+                      className="flex items-center gap-2 text-sm text-[#E3C567] hover:text-[#EDD89F] transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add another date option {walkthroughSlots.length < 3 && `(${3 - walkthroughSlots.length} remaining)`}
+                    </button>
                   )}
                 </div>
               )}
