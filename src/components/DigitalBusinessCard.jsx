@@ -93,6 +93,14 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
           )}
         </div>
 
+        {/* Bio */}
+        {(agent.bio || agentProfile.bio) && (
+          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+            <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-2">About</p>
+            <p className="text-sm text-[#FAFAFA]/80 leading-relaxed whitespace-pre-wrap">{agent.bio || agentProfile.bio}</p>
+          </div>
+        )}
+
         {/* Specialties */}
         {allSpecialties.length > 0 && (
           <div className="mt-6 pt-4 border-t border-[#1F1F1F]">

@@ -103,6 +103,14 @@ export default function InvestorBusinessCard({ investorProfile }) {
           )}
         </div>
 
+        {/* Bio */}
+        {(inv.bio || investorProfile.bio || investorProfile.goals) && (
+          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+            <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-2">About</p>
+            <p className="text-sm text-[#FAFAFA]/80 leading-relaxed whitespace-pre-wrap">{inv.bio || investorProfile.bio || investorProfile.goals}</p>
+          </div>
+        )}
+
         {/* Investment Focus Tags */}
         {allTags.length > 0 && (
           <div className="mt-6 pt-4 border-t border-[#1F1F1F]">

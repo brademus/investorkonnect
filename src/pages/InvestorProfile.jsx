@@ -193,13 +193,7 @@ export default function InvestorProfile() {
           </div>
         )}
 
-        {/* Bio / Goals */}
-        {investorProfile.goals && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-4">
-            <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">About</h3>
-            <p className="text-sm text-[#FAFAFA]/80 leading-relaxed whitespace-pre-wrap">{investorProfile.goals}</p>
-          </div>
-        )}
+
 
         {/* Markets & Geography */}
         <InfoSection icon={MapPin} title="Markets & Geography">
