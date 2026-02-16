@@ -176,8 +176,21 @@ function LayoutContent({ children }) {
                     )}
                     <DropdownMenuItem onClick={() => navigate(createPageUrl("AccountProfile"))} className="text-[#FAFAFA] cursor-pointer">
                       <User className="w-4 h-4 mr-2" />
-                      Account
+                      Edit Profile
                     </DropdownMenuItem>
+                    {profile?.id && (
+                      <DropdownMenuItem 
+                        onClick={() => navigate(
+                          role === 'agent' 
+                            ? `${createPageUrl("AgentProfile")}?profileId=${profile.id}` 
+                            : `${createPageUrl("InvestorProfile")}?profileId=${profile.id}`
+                        )} 
+                        className="text-[#FAFAFA] cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View My Public Profile
+                      </DropdownMenuItem>
+                    )}
                     {role === 'investor' && (
                       <DropdownMenuItem onClick={() => navigate(createPageUrl("Pricing"))} className="text-[#FAFAFA] cursor-pointer">
                         <FileText className="w-4 h-4 mr-2" />
