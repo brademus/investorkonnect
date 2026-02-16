@@ -59,6 +59,7 @@ export default function NewDeal() {
   const [walkthroughScheduled, setWalkthroughScheduled] = useState(false);
   const [walkthroughDate, setWalkthroughDate] = useState("");
   const [walkthroughTime, setWalkthroughTime] = useState("");
+  const [walkthroughTimeEnd, setWalkthroughTimeEnd] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
