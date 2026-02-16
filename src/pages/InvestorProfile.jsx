@@ -174,40 +174,32 @@ export default function InvestorProfile() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
 
-        {/* Header Card */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center flex-shrink-0">
-              {investorProfile.headshotUrl ? (
-                <img src={investorProfile.headshotUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-8 h-8 text-[#E3C567]" />
-              )}
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[#E3C567]">{investorProfile.full_name || "Investor"}</h1>
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
-                {investorProfile.company && (
-                  <span className="text-sm text-[#808080] flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5" /> {investorProfile.company}
-                  </span>
-                )}
-                {targetState && (
-                  <span className="text-sm text-[#808080] flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" /> {targetState}
-                  </span>
-                )}
-              </div>
+        {/* Digital Business Card */}
+        <div className="mb-6">
+          <InvestorBusinessCard investorProfile={investorProfile} />
+        </div>
+
+        {/* Uploaded Business Card */}
+        {investorProfile.businessCardUrl && (
+          <div className="mb-6">
+            <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">Uploaded Business Card</h3>
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl overflow-hidden">
+              <img
+                src={investorProfile.businessCardUrl}
+                alt={`${investorProfile.full_name}'s business card`}
+                className="w-full object-contain max-h-[400px]"
+              />
             </div>
           </div>
+        )}
 
-          {/* Bio / Goals */}
-          {investorProfile.goals && (
-            <div className="mt-4 pt-4 border-t border-[#1F1F1F]">
-              <p className="text-sm text-[#FAFAFA]/80 leading-relaxed whitespace-pre-wrap">{investorProfile.goals}</p>
-            </div>
-          )}
-        </div>
+        {/* Bio / Goals */}
+        {investorProfile.goals && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-4">
+            <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">About</h3>
+            <p className="text-sm text-[#FAFAFA]/80 leading-relaxed whitespace-pre-wrap">{investorProfile.goals}</p>
+          </div>
+        )}
 
         {/* Markets & Geography */}
         <InfoSection icon={MapPin} title="Markets & Geography">
