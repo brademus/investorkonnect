@@ -80,7 +80,7 @@ export default function ContractVerify() {
       - City: ${dealData.city}
       - State: ${dealData.state}
       - ZIP: ${dealData.zip}
-      - Purchase Price: $${dealData.purchasePrice}
+      - Contract Price: $${dealData.purchasePrice}
       - Seller Name: ${dealData.sellerName}
       - Earnest Money: $${dealData.earnestMoney}
       - Closing Date: ${dealData.closingDate}
@@ -95,7 +95,7 @@ export default function ContractVerify() {
       - city: May be part of address or listed separately
       - state: 2-letter abbreviation (e.g., AZ, TX, FL)
       - zip: 5-digit postal code
-      - purchase_price: May be labeled as "purchase price", "sales price", "offer amount", or similar
+      - purchase_price: May be labeled as "purchase price", "contract price", "sales price", "offer amount", or similar
       - seller_name: May be in seller section, grantor, or signatures
       - earnest_money: May be labeled as "earnest money", "deposit", "good faith deposit", "EMD"
       - closing_date: May be "closing date", "settlement date", "COE", or similar

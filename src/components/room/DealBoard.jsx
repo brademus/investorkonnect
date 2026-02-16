@@ -111,6 +111,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
             <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
             <div className="text-3xl font-bold text-[#34D399] mb-4">${(deal?.purchase_price || room?.budget || 0).toLocaleString()}</div>
+            <p className="text-xs text-[#808080] -mt-3 mb-3">Contract Price</p>
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
               {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
             </span>

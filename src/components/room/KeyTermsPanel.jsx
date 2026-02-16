@@ -6,7 +6,7 @@ import { AlertCircle, Loader2, CalendarCheck } from 'lucide-react';
 
 /**
  * KEY TERMS PANEL for Room Page
- * Shows purchase price, buyer agent commission, and agreement length - updates when counters are accepted
+ * Shows contract price, buyer agent commission, and agreement length - updates when counters are accepted
  * ALWAYS fetches latest non-voided agreement for this specific room to get the most current terms
  * 
  * CRITICAL: Each agent has THEIR OWN terms stored in room.agent_terms[agentId]
@@ -150,7 +150,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       )
     : 'Not set';
 
-  const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
+  const contractPrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
   const DEAL_TYPE_LABELS = {
     wholesale: "Wholesale",
@@ -183,7 +183,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         <div className="grid grid-cols-1 gap-4">
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
             <span className="text-sm text-[#808080]">Contract Price</span>
-            <span className="text-sm font-medium text-[#34D399]">${purchasePrice}</span>
+            <span className="text-sm font-medium text-[#34D399]">${contractPrice}</span>
           </div>
           {dealTypeLabel && (
             <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
