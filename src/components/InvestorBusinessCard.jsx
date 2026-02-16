@@ -111,23 +111,6 @@ export default function InvestorBusinessCard({ investorProfile }) {
           </div>
         )}
 
-        {/* Investment Focus Tags */}
-        {allTags.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
-            <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-3">Investment Focus</p>
-            <div className="flex flex-wrap gap-2">
-              {allTags.map((item, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1.5 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium"
-                >
-                  {item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Markets & Geography */}
         {(targetState || markets.length > 0) && (
           <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
