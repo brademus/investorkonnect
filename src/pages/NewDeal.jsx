@@ -518,7 +518,7 @@ export default function NewDeal() {
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
         try {
           const apptRows = await base44.entities.DealAppointments.filter({ dealId });
-          if (walkthroughScheduled === true && (walkthroughDate || walkthroughTime)) {
+          if (walkthroughScheduled === true && walkthroughSlots.some(s => s.date)) {
             const apptPatch = {
               walkthrough: {
                 status: 'PROPOSED',
