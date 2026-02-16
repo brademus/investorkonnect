@@ -1101,7 +1101,7 @@ export default function NewDeal() {
               </div>
               {walkthroughScheduled === true && (
                 <div className="mt-4">
-                  <div className="grid grid-cols-2 gap-4 max-w-sm">
+                  <div className="grid grid-cols-3 gap-4 max-w-lg">
                     <div>
                       <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Date</label>
                       <Input
@@ -1114,22 +1114,34 @@ export default function NewDeal() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Proposed Time</label>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Start Time</label>
                       <Select value={walkthroughTime} onValueChange={setWalkthroughTime}>
                         <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                          <SelectValue placeholder="Select time" />
+                          <SelectValue placeholder="Start" />
                         </SelectTrigger>
                         <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                           {(() => {
                             const times = [];
-                            for (let h = 6; h <= 12; h++) {
-                              const hh = h.toString().padStart(2, '0');
-                              times.push(`${hh}:00AM`);
-                            }
-                            for (let h = 1; h <= 12; h++) {
-                              const hh = h.toString().padStart(2, '0');
-                              times.push(`${hh}:00PM`);
-                            }
+                            for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
+                            for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
+                            return times.map(t => (
+                              <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                            ));
+                          })()}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">End Time</label>
+                      <Select value={walkthroughTimeEnd} onValueChange={setWalkthroughTimeEnd}>
+                        <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                          <SelectValue placeholder="End" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                          {(() => {
+                            const times = [];
+                            for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
+                            for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
                             return times.map(t => (
                               <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
                             ));
@@ -1138,6 +1150,11 @@ export default function NewDeal() {
                       </Select>
                     </div>
                   </div>
+                  {walkthroughTime && walkthroughTimeEnd && (
+                    <p className="text-xs text-[#808080] mt-2">
+                      Proposed window: {walkthroughTime.replace(/(AM|PM)/, ' $1')} – {walkthroughTimeEnd.replace(/(AM|PM)/, ' $1')}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
