@@ -6,7 +6,7 @@ export default function InvestorBusinessCard({ investorProfile }) {
 
   const inv = investorProfile.investor || {};
   const meta = investorProfile.metadata || {};
-  const ob = { ...meta, ...(investorProfile.onboarding || {}), ...(meta.basicProfile || {}) };
+  const ob = { ...meta, ...(investorProfile.onboarding || {}), ...(meta.basicProfile || {}), ...(investorProfile.onboarding || {}) };
 
   const name = investorProfile.full_name || "Investor";
   const email = investorProfile.email;
