@@ -56,6 +56,7 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
+  const [dealType, setDealType] = useState("");
   const [walkthroughScheduled, setWalkthroughScheduled] = useState(false);
   const [walkthroughSlots, setWalkthroughSlots] = useState([
     { date: "", timeStart: "", timeEnd: "" }
@@ -110,6 +111,7 @@ export default function NewDeal() {
       setYearBuilt(d.yearBuilt || "");
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
+      setDealType(d.dealType || "");
       const draftWtScheduled = d.walkthroughScheduled === true;
       setWalkthroughScheduled(draftWtScheduled);
       if (draftWtScheduled && d.walkthroughSlots?.length > 0) {
@@ -147,7 +149,7 @@ export default function NewDeal() {
     if (isEditing ? hydrated : hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
-  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, walkthroughScheduled, walkthroughSlots]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughScheduled, walkthroughSlots]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
@@ -249,7 +251,7 @@ export default function NewDeal() {
               setYearBuilt((deal.property_details.year_built ?? deal.property_details.yearBuilt ?? deal.property_details.built_year)?.toString() || "");
               setNumberOfStories(normalizeStories(deal.property_details.number_of_stories ?? deal.property_details.stories ?? deal.property_details.floors));
               setHasBasement(normalizeBasement(deal.property_details.has_basement ?? deal.property_details.basement ?? deal.property_details.hasBasement ?? deal.property_details.basement_yn));
-            } else {
+            } else { /* no property_details */
               setBeds((deal.beds ?? deal.bedrooms ?? deal.bedrooms_total)?.toString() || "");
               setBaths((deal.baths ?? deal.bathrooms ?? deal.bathrooms_total ?? deal.bathrooms_total_integer)?.toString() || "");
               {
@@ -262,6 +264,9 @@ export default function NewDeal() {
               setHasBasement(normalizeBasement(deal.has_basement ?? deal.basement ?? deal.basement_yn));
             }
             
+            // Deal type
+            if (deal.deal_type) setDealType(deal.deal_type);
+
             // Load terms from Deal entity first, fallback to Room for backward compatibility
             let terms = deal.proposed_terms;
             
@@ -485,6 +490,7 @@ export default function NewDeal() {
           },
           special_notes: specialNotes,
           property_type: propertyType || null,
+          deal_type: dealType || null,
           property_details: {
             ...(beds ? { beds: Number(beds) } : {}),
             ...(baths ? { baths: Number(baths) } : {}),
@@ -872,6 +878,35 @@ export default function NewDeal() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </div>
+
+            {/* Deal Type */}
+            <div className="pt-4 border-t border-[#1F1F1F]">
+              <h3 className="text-sm font-semibold text-[#FAFAFA] mb-2">Deal Type</h3>
+              <p className="text-xs text-[#808080] mb-3">What kind of deal is this?</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "wholesale", label: "Wholesale" },
+                  { value: "novation", label: "Novation" },
+                  { value: "whole_tail", label: "Whole-tail" },
+                  { value: "fix_and_flip", label: "Fix & Flip" },
+                  { value: "buy_and_hold", label: "Buy & Hold" },
+                  { value: "sub_2", label: "Sub-2" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setDealType(dealType === opt.value ? "" : opt.value)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      dealType === opt.value
+                        ? "bg-[#E3C567] text-black"
+                        : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#E3C567]/50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
