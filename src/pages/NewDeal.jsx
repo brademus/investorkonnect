@@ -1001,9 +1001,9 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                      <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
-                      <SelectItem value="flat">Flat Fee</SelectItem>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Purchase Price</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="flat">Flat Fee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1051,9 +1051,9 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                      <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
-                      <SelectItem value="flat">Flat Fee</SelectItem>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Purchase Price</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="flat">Flat Fee</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
