@@ -255,9 +255,9 @@ export default function CounterOfferPage() {
               <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-[#141414] border-[#1F1F1F]">
-                <SelectItem value="percentage">Percentage</SelectItem>
-                <SelectItem value="flat_fee">Flat Fee</SelectItem>
+              <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                <SelectItem value="percentage" className="text-[#FAFAFA] focus:bg-[#1F1F1F] focus:text-[#FAFAFA]">Percentage</SelectItem>
+                <SelectItem value="flat_fee" className="text-[#FAFAFA] focus:bg-[#1F1F1F] focus:text-[#FAFAFA]">Flat Fee</SelectItem>
               </SelectContent>
             </Select>
           </div>
