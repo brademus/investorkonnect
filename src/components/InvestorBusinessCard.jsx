@@ -128,12 +128,65 @@ export default function InvestorBusinessCard({ investorProfile }) {
           </div>
         )}
 
-        {/* Markets footer */}
+        {/* Markets & Geography */}
         {(targetState || markets.length > 0) && (
+          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4 text-[#E3C567]" />
+              <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Markets & Geography</p>
+            </div>
+            <div className="space-y-2">
+              {targetState && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#808080]">Primary State</span>
+                  <span className="text-sm text-[#FAFAFA]/80">{targetState}</span>
+                </div>
+              )}
+              {markets.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#808080]">Target Markets</span>
+                  <span className="text-sm text-[#FAFAFA]/80">{markets.join(", ")}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Experience & Background */}
+        {(ob.investment_experience || ob.investor_description) && (
           <div className="mt-4 pt-4 border-t border-[#1F1F1F]">
-            <p className="text-xs text-[#808080]">
-              Investing in: {targetState || ''}{markets.length > 0 ? (targetState ? ' · ' : '') + markets.join(' · ') : ''}
-            </p>
+            <div className="flex items-center gap-2 mb-3">
+              <Briefcase className="w-4 h-4 text-[#E3C567]" />
+              <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Experience & Background</p>
+            </div>
+            <div className="space-y-2">
+              {ob.investment_experience && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#808080]">Total Deals Done</span>
+                  <span className="text-sm text-[#FAFAFA]/80">{ob.investment_experience}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Investment Strategy */}
+        {allTags.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-[#1F1F1F]">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-[#E3C567]" />
+              <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Investment Strategy</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((item, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1.5 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium"
+                >
+                  {item.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
