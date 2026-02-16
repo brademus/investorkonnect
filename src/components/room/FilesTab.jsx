@@ -100,6 +100,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
   const listingAgreementUrl = resolved.listingAgreement?.url;
   // Buyer's contract from deal.documents
   const buyerContractUrl = deal?.documents?.buyer_contract?.url || deal?.documents?.buyer_contract?.file_url;
+  const cmaUrl = deal?.documents?.cma?.url || deal?.documents?.cma?.file_url;
 
   const uploadDocToRoom = async (docKey) => {
     const input = document.createElement('input');
@@ -180,6 +181,13 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={agreementLabel}
             verified={true}
             available={!!internalAgreementUrl}
+          />
+          <DocRow
+            label="CMA"
+            url={cmaUrl}
+            filename={deal?.documents?.cma?.name}
+            available={!!cmaUrl}
+            onUpload={() => uploadDocToRoom('cma')}
           />
           <DocRow
             label="Listing Agreement"
