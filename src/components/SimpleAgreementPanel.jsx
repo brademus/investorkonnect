@@ -491,8 +491,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           {agreement && (
             <Badge className="bg-transparent border-[#1F1F1F]">
               {fullySigned ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Signed</span>
-                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Awaiting Agent</span>
-                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Pending</span>}
+                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Ready to Sign' : 'Waiting for Agent'}</span>
+                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Pending'}</span>}
             </Badge>
           )}
         </div>
@@ -509,8 +509,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           {agreement && (
             <Badge className="bg-transparent border-[#1F1F1F]">
               {fullySigned ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Signed</span>
-                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Awaiting Agent</span>
-                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Pending</span>}
+                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Ready to Sign' : 'Waiting for Agent'}</span>
+                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Pending'}</span>}
             </Badge>
           )}
         </div>
