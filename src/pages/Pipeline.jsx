@@ -215,8 +215,8 @@ function PipelineContent() {
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
 
-    // Redirect to rate agent when deal moves to completed or canceled
-    if (newStage === 'completed' || newStage === 'canceled') {
+    // Only investors get prompted to rate the agent
+    if (isInvestor && !isAgent && (newStage === 'completed' || newStage === 'canceled')) {
       const agentId = draggedDeal.locked_agent_id || draggedDeal.room_agent_ids?.[0];
       if (agentId) {
         navigate(`${createPageUrl("RateAgent")}?dealId=${draggedDeal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
