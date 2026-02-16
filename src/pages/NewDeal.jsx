@@ -456,10 +456,13 @@ export default function NewDeal() {
       return;
     }
 
-    // Validate walkthrough date if scheduled
-    if (walkthroughScheduled === true && (!walkthroughDate || walkthroughDate.length < 10)) {
-      toast.error("Please enter a complete walk-through date (MM/DD/YYYY)");
-      return;
+    // Validate walkthrough dates if scheduled
+    if (walkthroughScheduled === true) {
+      const firstSlot = walkthroughSlots[0];
+      if (!firstSlot?.date || firstSlot.date.length < 10) {
+        toast.error("Please enter a complete walk-through date (MM/DD/YYYY) for at least the first option");
+        return;
+      }
     }
 
     setSubmitting(true);
