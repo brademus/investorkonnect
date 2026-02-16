@@ -609,41 +609,20 @@ export default function NewDeal() {
 
     // Save to sessionStorage - include dealId if editing
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
-    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughDate, walkthroughTime });
+    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughSlots });
     
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
-      propertyAddress,
-      city,
-      state,
-      zip,
-      county,
-      purchasePrice,
-      closingDate,
-      contractDate,
-      specialNotes,
-      sellerName,
-      earnestMoney,
-      numberOfSigners,
-      secondSignerName,
-      sellerCommissionType,
-      sellerCommissionPercentage,
-      sellerFlatFee,
-      buyerCommissionType,
-      buyerCommissionPercentage,
-      buyerFlatFee,
-      agreementLength,
-      beds,
-      baths,
-      sqft,
-      propertyType,
-      notes,
-      yearBuilt,
-      numberOfStories,
-      hasBasement,
+      propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
+      sellerName, earnestMoney, numberOfSigners, secondSignerName,
+      sellerCommissionType, sellerCommissionPercentage, sellerFlatFee,
+      buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
+      beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthroughDate: (walkthroughScheduled === true && walkthroughDate && walkthroughDate.length >= 8) ? walkthroughDate : null,
-      walkthroughTime: (walkthroughScheduled === true && walkthroughTime && walkthroughTime.length >= 3) ? walkthroughTime : null
+      walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [],
+      // Legacy
+      walkthroughDate: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
+      walkthroughTime: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
     }));
 
     // Navigate with dealId if editing
