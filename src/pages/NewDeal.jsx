@@ -57,9 +57,9 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
   const [walkthroughScheduled, setWalkthroughScheduled] = useState(false);
-  const [walkthroughDate, setWalkthroughDate] = useState("");
-  const [walkthroughTime, setWalkthroughTime] = useState("");
-  const [walkthroughTimeEnd, setWalkthroughTimeEnd] = useState("");
+  const [walkthroughSlots, setWalkthroughSlots] = useState([
+    { date: "", timeStart: "", timeEnd: "" }
+  ]);
   const [hydrated, setHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
