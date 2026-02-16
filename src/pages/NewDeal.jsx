@@ -509,8 +509,10 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true,
-          walkthrough_date: (walkthroughScheduled === true && walkthroughDate && walkthroughDate.length >= 8) ? walkthroughDate : null,
-          walkthrough_time: (walkthroughScheduled === true && walkthroughTime && walkthroughTime.length >= 3) ? walkthroughTime : null,
+          walkthrough_slots: walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [],
+          // Legacy fields — first slot
+          walkthrough_date: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
+          walkthrough_time: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
         });
         
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
