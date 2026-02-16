@@ -60,6 +60,7 @@ import Home from './pages/Home';
 import IdentityVerification from './pages/IdentityVerification';
 import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
+import InvestorProfile from './pages/InvestorProfile';
 import Logout from './pages/Logout';
 import MyAgreement from './pages/MyAgreement';
 import NDA from './pages/NDA';
@@ -76,7 +77,6 @@ import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import InvestorProfile from './pages/InvestorProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -94,6 +94,7 @@ export const PAGES = {
     "IdentityVerification": IdentityVerification,
     "InvestorLanding": InvestorLanding,
     "InvestorOnboarding": InvestorOnboarding,
+    "InvestorProfile": InvestorProfile,
     "Logout": Logout,
     "MyAgreement": MyAgreement,
     "NDA": NDA,
@@ -110,7 +111,6 @@ export const PAGES = {
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "InvestorProfile": InvestorProfile,
 }
 
 export const pagesConfig = {

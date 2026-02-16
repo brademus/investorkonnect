@@ -59,6 +59,16 @@ export default function RateAgent() {
       toast.error("Please select a star rating");
       return;
     }
+    // Prevent self-reviews
+    if (profile?.id === agentProfileId) {
+      toast.error("You cannot review yourself");
+      return;
+    }
+    // Only investors can review agents
+    if (profile?.user_role === 'agent') {
+      toast.error("Only investors can review agents");
+      return;
+    }
     setSubmitting(true);
     try {
       const body = reviewBody.trim() || `${rating}-star rating`;
