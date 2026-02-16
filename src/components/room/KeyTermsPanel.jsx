@@ -152,6 +152,16 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
 
   const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
+  const DEAL_TYPE_LABELS = {
+    wholesale: "Wholesale",
+    novation: "Novation",
+    whole_tail: "Whole-tail",
+    fix_and_flip: "Fix & Flip",
+    buy_and_hold: "Buy & Hold",
+    sub_2: "Sub-2",
+  };
+  const dealTypeLabel = deal?.deal_type ? (DEAL_TYPE_LABELS[deal.deal_type] || deal.deal_type) : null;
+
   const rawLength = displayTerms?.agreement_length_days || displayTerms?.agreement_length 
     || deal?.proposed_terms?.agreement_length_days || deal?.proposed_terms?.agreement_length 
     || deal?.agreement_length;
@@ -175,6 +185,12 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
             <span className="text-sm text-[#808080]">Purchase Price</span>
             <span className="text-sm font-medium text-[#34D399]">${purchasePrice}</span>
           </div>
+          {dealTypeLabel && (
+            <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+              <span className="text-sm text-[#808080]">Deal Type</span>
+              <span className="text-sm font-medium text-[#E3C567]">{dealTypeLabel}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
             <span className="text-sm text-[#808080]">Seller's Agent Commission</span>
             <span className="text-sm font-medium text-[#FAFAFA]">{sellerComm}{displayTerms.seller_commission_type ? ` (${displayTerms.seller_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'})` : ''}</span>
