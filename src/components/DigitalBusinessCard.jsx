@@ -119,35 +119,29 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
         )}
 
         {/* Deal stats */}
-        {(agent.investment_deals_last_12m > 0 || (ikDealsCount != null && ikDealsCount > 0)) && (
-          <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
-            <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-3">Deal History</p>
-            <div className="flex gap-4">
-              {agent.investment_deals_last_12m > 0 && (
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
-                  <Briefcase className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
-                  <div>
-                    <p className="text-lg font-bold text-[#E3C567]">{agent.investment_deals_last_12m}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investment Deals Outside IK</p>
-                  </div>
-                </div>
-              )}
-              {ikDealsCount != null && ikDealsCount > 0 && (
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
-                  <img 
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
-                    alt="IK"
-                    className="w-5 h-5 object-contain flex-shrink-0"
-                  />
-                  <div>
-                    <p className="text-lg font-bold text-[#E3C567]">{ikDealsCount}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investor Konnect Deals</p>
-                  </div>
-                </div>
-              )}
+        <div className="mt-6 pt-4 border-t border-[#1F1F1F]">
+          <p className="text-xs uppercase tracking-[0.15em] text-[#808080] mb-3">Deal History</p>
+          <div className="flex gap-4">
+            <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
+              <Briefcase className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
+              <div>
+                <p className="text-lg font-bold text-[#E3C567]">{agent.investment_deals_last_12m || 0}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#808080]">Total Deals Outside IK</p>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+                alt="IK"
+                className="w-5 h-5 object-contain flex-shrink-0"
+              />
+              <div>
+                <p className="text-lg font-bold text-[#E3C567]">{ikDealsCount ?? 0}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investor Konnect Deals</p>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Markets footer */}
         {markets.length > 0 && (

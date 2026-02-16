@@ -1,7 +1,7 @@
 import React from "react";
 import { Mail, Phone, Building2, MapPin, Target, Briefcase } from "lucide-react";
 
-export default function InvestorBusinessCard({ investorProfile }) {
+export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) {
   if (!investorProfile) return null;
 
   const inv = investorProfile.investor || {};
@@ -136,19 +136,33 @@ export default function InvestorBusinessCard({ investorProfile }) {
         )}
 
         {/* Experience & Background */}
-        {(ob.investment_experience || ob.investor_description) && (
+        {(ob.investment_experience || ob.investor_description || ikDealsCount != null) && (
           <div className="mt-4 pt-4 border-t border-[#1F1F1F]">
             <div className="flex items-center gap-2 mb-3">
               <Briefcase className="w-4 h-4 text-[#E3C567]" />
               <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Experience & Background</p>
             </div>
-            <div className="space-y-2">
+            <div className="flex gap-4">
               {ob.investment_experience && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#808080]">Total Deals Done</span>
-                  <span className="text-sm text-[#FAFAFA]/80">{ob.investment_experience}</span>
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
+                  <Briefcase className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
+                  <div>
+                    <p className="text-lg font-bold text-[#E3C567]">{ob.investment_experience}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-[#808080]">Total Deals Outside IK</p>
+                  </div>
                 </div>
               )}
+              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+                  alt="IK"
+                  className="w-5 h-5 object-contain flex-shrink-0"
+                />
+                <div>
+                  <p className="text-lg font-bold text-[#E3C567]">{ikDealsCount ?? 0}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#808080]">Investor Konnect Deals</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

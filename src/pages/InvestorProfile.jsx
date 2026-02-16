@@ -117,6 +117,7 @@ export default function InvestorProfile() {
 
   const [investorProfile, setInvestorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ikDealsCount, setIkDealsCount] = useState(null);
 
   useEffect(() => {
     if (!profileId) return;
@@ -125,6 +126,13 @@ export default function InvestorProfile() {
       try {
         const profiles = await base44.entities.Profile.filter({ id: profileId });
         setInvestorProfile(profiles?.[0] || null);
+        try {
+          const deals = await base44.entities.Deal.filter({ investor_id: profileId });
+          setIkDealsCount(deals?.length || 0);
+        } catch (e) {
+          console.log('[InvestorProfile] Could not count IK deals:', e);
+          setIkDealsCount(0);
+        }
       } catch (err) {
         console.error("[InvestorProfile] Load failed:", err);
       } finally {
@@ -176,7 +184,7 @@ export default function InvestorProfile() {
 
         {/* Digital Business Card */}
         <div className="mb-6">
-          <InvestorBusinessCard investorProfile={investorProfile} />
+          <InvestorBusinessCard investorProfile={investorProfile} ikDealsCount={ikDealsCount} />
         </div>
 
         {/* Uploaded Business Card */}
