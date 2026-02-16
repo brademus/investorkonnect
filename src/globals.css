@@ -108,6 +108,10 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     --input: 0 0% 12%;
     --ring: 45 64% 65%;
 
+    /* Popover */
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
+
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
