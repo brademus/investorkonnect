@@ -114,6 +114,7 @@ export default function NewDeal() {
       setWalkthroughScheduled(draftWtScheduled);
       setWalkthroughDate(draftWtScheduled && d.walkthroughDate ? d.walkthroughDate : "");
       setWalkthroughTime(draftWtScheduled && d.walkthroughTime ? d.walkthroughTime : "");
+      setWalkthroughTimeEnd(draftWtScheduled && d.walkthroughTimeEnd ? d.walkthroughTimeEnd : "");
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
