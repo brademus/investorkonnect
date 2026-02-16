@@ -312,6 +312,14 @@ export default function Room() {
                     <User className="w-4 h-4 mr-2" />Agent Profile
                   </Button>
                 )}
+                {isAgent && currentRoom?.investorId && (
+                  <Button
+                    onClick={() => navigate(`${createPageUrl("InvestorProfile")}?profileId=${currentRoom.investorId}`)}
+                    className="rounded-full font-semibold bg-[#1F1F1F] text-[#FAFAFA]"
+                  >
+                    <User className="w-4 h-4 mr-2" />Investor Profile
+                  </Button>
+                )}
               </>
             )}
           </div>
