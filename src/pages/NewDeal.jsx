@@ -137,6 +137,7 @@ export default function NewDeal() {
       sellerCommissionType, sellerCommissionPercentage, sellerFlatFee,
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
+      dealType,
       walkthroughScheduled: walkthroughScheduled === true,
       walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [],
       // Legacy fields for backward compat
@@ -624,6 +625,7 @@ export default function NewDeal() {
       sellerCommissionType, sellerCommissionPercentage, sellerFlatFee,
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
+      dealType,
       walkthroughScheduled: walkthroughScheduled === true,
       walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [],
       // Legacy
