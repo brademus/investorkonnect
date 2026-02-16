@@ -5,6 +5,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, MapPin, Briefcase, DollarSign, Target, Building2, User, TrendingUp, Handshake, MessageSquare, Shield, Layers, Home, Banknote } from "lucide-react";
+import InvestorBusinessCard from "@/components/InvestorBusinessCard";
 
 // Label maps for onboarding values
 const INVESTOR_DESCRIPTION_LABELS = {
