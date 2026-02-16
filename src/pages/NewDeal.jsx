@@ -112,9 +112,14 @@ export default function NewDeal() {
       setHasBasement(d.hasBasement || "");
       const draftWtScheduled = d.walkthroughScheduled === true;
       setWalkthroughScheduled(draftWtScheduled);
-      setWalkthroughDate(draftWtScheduled && d.walkthroughDate ? d.walkthroughDate : "");
-      setWalkthroughTime(draftWtScheduled && d.walkthroughTime ? d.walkthroughTime : "");
-      setWalkthroughTimeEnd(draftWtScheduled && d.walkthroughTimeEnd ? d.walkthroughTimeEnd : "");
+      if (draftWtScheduled && d.walkthroughSlots?.length > 0) {
+        setWalkthroughSlots(d.walkthroughSlots);
+      } else if (draftWtScheduled && d.walkthroughDate) {
+        // Legacy single-slot migration
+        setWalkthroughSlots([{ date: d.walkthroughDate || "", timeStart: d.walkthroughTime || "", timeEnd: d.walkthroughTimeEnd || "" }]);
+      } else {
+        setWalkthroughSlots([{ date: "", timeStart: "", timeEnd: "" }]);
+      }
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
