@@ -195,56 +195,7 @@ export default function InvestorProfile() {
 
 
 
-        {/* Markets & Geography */}
-        <InfoSection icon={MapPin} title="Markets & Geography">
-          <InfoRow label="Primary State" value={targetState} />
-          <InfoRow label="Target Markets" value={markets.length > 0 ? markets.join(", ") : null} />
-          {ob.target_markets?.length > 0 && <InfoRow label="Target Cities" value={ob.target_markets.join(", ")} />}
-          {ob.secondary_states?.length > 0 && <InfoRow label="Secondary States" value={ob.secondary_states.join(", ")} />}
-          {ob.will_consider_other_markets && <InfoRow label="Open to Other Markets" value="Yes" />}
-        </InfoSection>
 
-        {/* Experience & Background */}
-        <InfoSection icon={Briefcase} title="Experience & Background">
-          <InfoRow label="Investor Type" value={INVESTOR_DESCRIPTION_LABELS[ob.investor_description]} />
-          <InfoRow label="Deals Closed (24 mo)" value={ob.deals_closed_24mo?.replace('_', '–').replace('plus', '+')} />
-          <InfoRow label="Total Deals Done" value={ob.investment_experience || basicProfile.investment_experience} />
-          <InfoRow label="Typical Deal Size" value={DEAL_SIZE_LABELS[ob.typical_deal_size]} />
-          <InfoRow label="Accredited Investor" value={ACCREDITED_LABELS[ob.accredited_investor]} />
-        </InfoSection>
-
-        {/* Investment Strategy */}
-        {(ob.strategies?.length > 0 || ob.deal_types?.length > 0 || basicProfile.deal_types?.length > 0) && (
-          <InfoSection icon={Target} title="Investment Strategy">
-            {(ob.strategies?.length > 0) && (
-              <div className="mb-3">
-                <p className="text-xs text-[#808080] mb-2">Strategies</p>
-                <TagList items={ob.strategies} />
-              </div>
-            )}
-            {(ob.deal_types?.length > 0 || basicProfile.deal_types?.length > 0) && (
-              <div className="mb-3">
-                <p className="text-xs text-[#808080] mb-2">Deal Types</p>
-                <TagList items={ob.deal_types || basicProfile.deal_types} />
-              </div>
-            )}
-            {ob.asset_types?.length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs text-[#808080] mb-2">Asset Types</p>
-                <TagList items={ob.asset_types} />
-              </div>
-            )}
-            {ob.condition_preferences?.length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs text-[#808080] mb-2">Property Condition</p>
-                <TagList items={ob.condition_preferences} />
-              </div>
-            )}
-            <InfoRow label="Deal Volume Goal (12 mo)" value={ob.deal_volume_goal ? `${ob.deal_volume_goal} deals` : null} />
-            <InfoRow label="Top Priority" value={PRIORITY_LABELS[ob.most_important_now]} />
-            <InfoRow label="Target Hold Period" value={HOLD_PERIOD_LABELS[ob.target_hold_period]} />
-          </InfoSection>
-        )}
 
         {/* Deal Structure */}
         {(ob.deal_types_open_to?.length > 0 || ob.preferred_deal_structure?.length > 0) && (
