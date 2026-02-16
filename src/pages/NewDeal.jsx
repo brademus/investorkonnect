@@ -735,7 +735,7 @@ export default function NewDeal() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Purchase Price *</label>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Contract Price *</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                   <Input
@@ -1002,7 +1002,7 @@ export default function NewDeal() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#141414] border-[#1F1F1F]">
-                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Purchase Price</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Contract Price</SelectItem>
                       <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="flat">Flat Fee</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1052,7 +1052,7 @@ export default function NewDeal() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#141414] border-[#1F1F1F]">
-                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Purchase Price</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="percentage">Percentage of Contract Price</SelectItem>
                       <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="flat">Flat Fee</SelectItem>
                     </SelectContent>
                   </Select>
