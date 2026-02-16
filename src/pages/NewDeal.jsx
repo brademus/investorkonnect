@@ -421,7 +421,7 @@ export default function NewDeal() {
     
     const cleanedPrice = String(purchasePrice || '').replace(/[$,\s]/g, '').trim();
     if (!cleanedPrice || isNaN(Number(cleanedPrice)) || Number(cleanedPrice) <= 0) {
-      toast.error("Please enter a valid purchase price");
+      toast.error("Please enter a valid contract price");
       return;
     }
     

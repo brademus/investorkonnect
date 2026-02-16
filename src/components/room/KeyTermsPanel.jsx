@@ -182,7 +182,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       ) : (
         <div className="grid grid-cols-1 gap-4">
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
-            <span className="text-sm text-[#808080]">Purchase Price</span>
+            <span className="text-sm text-[#808080]">Contract Price</span>
             <span className="text-sm font-medium text-[#34D399]">${purchasePrice}</span>
           </div>
           {dealTypeLabel && (
