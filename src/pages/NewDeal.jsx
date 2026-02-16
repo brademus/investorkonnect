@@ -344,15 +344,18 @@ export default function NewDeal() {
               }
             }
 
-            // Hydrate walkthrough fields from deal — only set date/time if actually scheduled
+            // Hydrate walkthrough fields from deal
             const dealWtScheduled = deal.walkthrough_scheduled === true;
             setWalkthroughScheduled(dealWtScheduled);
             if (dealWtScheduled) {
-              if (deal.walkthrough_date) setWalkthroughDate(deal.walkthrough_date);
-              if (deal.walkthrough_time) setWalkthroughTime(deal.walkthrough_time);
+              // Prefer multi-slot walkthrough_slots if available
+              if (deal.walkthrough_slots?.length > 0) {
+                setWalkthroughSlots(deal.walkthrough_slots);
+              } else if (deal.walkthrough_date) {
+                setWalkthroughSlots([{ date: deal.walkthrough_date, timeStart: deal.walkthrough_time || "", timeEnd: "" }]);
+              }
             } else {
-              setWalkthroughDate("");
-              setWalkthroughTime("");
+              setWalkthroughSlots([{ date: "", timeStart: "", timeEnd: "" }]);
             }
 
             // Fallback: if property details are still empty, try server-normalized details
