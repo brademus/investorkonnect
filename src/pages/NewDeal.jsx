@@ -783,14 +783,14 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                      <SelectItem value="single_family">Single Family</SelectItem>
-                      <SelectItem value="multi_family">Multi-Family</SelectItem>
-                      <SelectItem value="condo">Condo</SelectItem>
-                      <SelectItem value="townhouse">Townhouse</SelectItem>
-                      <SelectItem value="manufactured">Manufactured</SelectItem>
-                      <SelectItem value="land">Land</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="single_family">Single Family</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="multi_family">Multi-Family</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="condo">Condo</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="townhouse">Townhouse</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="manufactured">Manufactured</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="land">Land</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -857,10 +857,10 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3+">3+</SelectItem>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="1">1</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="2">2</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="3+">3+</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -874,9 +874,9 @@ export default function NewDeal() {
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
+                    <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="yes">Yes</SelectItem>
+                      <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="no">No</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -957,9 +957,9 @@ export default function NewDeal() {
                 <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                  <SelectItem value="1">1 Signer</SelectItem>
-                  <SelectItem value="2">2 Signers</SelectItem>
+                <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                  <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="1">1 Signer</SelectItem>
+                  <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" value="2">2 Signers</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1174,13 +1174,13 @@ export default function NewDeal() {
                               <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                                 <SelectValue placeholder="Start" />
                               </SelectTrigger>
-                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F]">
                                 {(() => {
                                   const times = [];
                                   for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
                                   for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
                                   return times.map(t => (
-                                    <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                                    <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
                                   ));
                                 })()}
                               </SelectContent>
@@ -1192,13 +1192,13 @@ export default function NewDeal() {
                               <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                                 <SelectValue placeholder="End" />
                               </SelectTrigger>
-                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F]">
                                 {(() => {
                                   const times = [];
                                   for (let h = 6; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00AM`);
                                   for (let h = 1; h <= 12; h++) times.push(`${h.toString().padStart(2,'0')}:00PM`);
                                   return times.map(t => (
-                                    <SelectItem key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
+                                    <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>
                                   ));
                                 })()}
                               </SelectContent>
