@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Phone, Building2, MapPin, Target, DollarSign } from "lucide-react";
+import { Mail, Phone, Building2, MapPin, Target, Briefcase } from "lucide-react";
 
 export default function InvestorBusinessCard({ investorProfile }) {
   if (!investorProfile) return null;
