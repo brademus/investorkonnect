@@ -70,39 +70,81 @@ export default function Room() {
   // Load room + deal when roomId changes
   useEffect(() => {
     if (!roomId) { setRoomLoading(false); return; }
-    setDeal(null);
-    setCurrentRoom(null);
-    setRoomLoading(true);
-    setPendingInvites([]);
-    setSelectedInvite(null);
-    // Reset mounted views on room switch
-    const defaultView = isAgent ? 'board' : 'pending_agents';
+
+    // --- Phase 0: Instant render from enriched rooms cache ---
+    const enrichedRoom = rooms?.find(r => r.id === roomId);
+    const cachedIsSigned = enrichedRoom?.is_fully_signed || false;
+
+    // Pick the right default view BEFORE any async work
+    let defaultView;
+    if (cachedIsSigned) {
+      defaultView = 'messages';
+    } else if (isAgent) {
+      defaultView = 'board';
+    } else {
+      defaultView = 'pending_agents';
+    }
     setActiveView(defaultView);
     setMountedViews(new Set([defaultView]));
+    setPendingInvites([]);
+    setSelectedInvite(null);
 
+    // If we have enriched data, show it immediately (no blank screen)
+    if (enrichedRoom) {
+      setCurrentRoom(prev => {
+        // Don't overwrite with less data if we already have richer data for this room
+        if (prev?.id === roomId && prev?.investor_contact) return prev;
+        return {
+          id: enrichedRoom.id,
+          deal_id: enrichedRoom.deal_id,
+          title: enrichedRoom.title,
+          property_address: enrichedRoom.property_address,
+          city: enrichedRoom.city,
+          state: enrichedRoom.state,
+          budget: enrichedRoom.budget || 0,
+          is_fully_signed: cachedIsSigned,
+          request_status: enrichedRoom.request_status,
+          agreement_status: enrichedRoom.agreement_status,
+          counterparty_name: enrichedRoom.counterparty_name || (isAgent ? 'Investor' : 'Agent'),
+          counterparty_headshot: enrichedRoom.counterparty_headshot || null,
+          investorId: enrichedRoom.investorId,
+          agent_ids: enrichedRoom.agent_ids || [],
+          locked_agent_id: enrichedRoom.agentId || null,
+          proposed_terms: enrichedRoom.proposed_terms || null,
+          agent_terms: enrichedRoom.agent_terms || null,
+          files: enrichedRoom.files || [],
+          photos: enrichedRoom.photos || [],
+        };
+      });
+      setRoomLoading(false); // Show UI immediately
+    } else {
+      setCurrentRoom(null);
+      setDeal(null);
+      setRoomLoading(true);
+    }
+
+    // --- Phase 1: Parallel fetch of full room + deal details ---
     const load = async () => {
       try {
-        // Fetch room and deal in parallel
-        const roomPromise = base44.entities.Room.filter({ id: roomId }).then(arr => arr?.[0]);
-        const room = await roomPromise;
-        if (!room) { setRoomLoading(false); return; }
+        const dealId = enrichedRoom?.deal_id;
 
-        // Start deal fetch immediately (don't wait)
-        const dealPromise = room.deal_id
-          ? base44.functions.invoke('getDealDetailsForUser', { dealId: room.deal_id }).then(r => r?.data).catch(() => null)
+        // Fire all fetches in parallel — don't waterfall
+        const roomPromise = base44.entities.Room.filter({ id: roomId }).then(arr => arr?.[0]);
+        const dealPromise = dealId
+          ? base44.functions.invoke('getDealDetailsForUser', { dealId }).then(r => r?.data).catch(() => null)
           : Promise.resolve(null);
 
-        // Start invites fetch in parallel for investors
-        const isLocked = room.locked_agent_id || room.agreement_status === 'fully_signed' || room.request_status === 'locked';
-        const invitesPromise = (isInvestor && room.deal_id && !isLocked)
-          ? base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => [])
-          : Promise.resolve([]);
-
-        // Wait for both
-        const [dealData, rawInvites] = await Promise.all([dealPromise, invitesPromise]);
+        const [room, dealData] = await Promise.all([roomPromise, dealPromise]);
+        if (!room) { setRoomLoading(false); return; }
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
-        const enrichedRoom = rooms?.find(r => r.id === roomId);
+        const resolvedIsSigned = dealData?.is_fully_signed || roomIsLocked;
+
+        // If signing status changed from cache, update view
+        if (resolvedIsSigned && defaultView !== 'messages') {
+          setActiveView('messages');
+          setMountedViews(prev => { const n = new Set(prev); n.add('messages'); return n; });
+        }
 
         setCurrentRoom({
           ...room,
@@ -111,39 +153,45 @@ export default function Room() {
           city: dealData?.city || room.city,
           state: dealData?.state || room.state,
           budget: dealData?.purchase_price || room.budget,
-          is_fully_signed: dealData?.is_fully_signed || roomIsLocked,
-          counterparty_name: room.counterparty_name || enrichedRoom?.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
+          is_fully_signed: resolvedIsSigned,
+          counterparty_name: enrichedRoom?.counterparty_name || room.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
           counterparty_headshot: enrichedRoom?.counterparty_headshot || (isAgent ? dealData?.investor_contact?.headshotUrl : dealData?.agent_contact?.headshotUrl) || null,
           investor_contact: dealData?.investor_contact || null,
           agent_contact: dealData?.agent_contact || null,
           agent_terms: room.agent_terms || dealData?.room?.agent_terms || null,
-          agent_ids: room.agent_ids || dealData?.room?.agent_ids || []
+          agent_ids: room.agent_ids || dealData?.room?.agent_ids || [],
+          investorId: room.investorId,
+          locked_agent_id: room.locked_agent_id,
         });
         if (dealData) setDeal(dealData);
+        setRoomLoading(false);
 
-        // Enrich invites with agent profiles (all in parallel)
-        if (rawInvites.length > 0) {
-          const activeInvites = rawInvites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-          if (activeInvites.length > 0) {
-            const enriched = await Promise.all(activeInvites.map(async (inv) => {
-              const agent = await base44.entities.Profile.filter({ id: inv.agent_profile_id }).then(a => a?.[0]).catch(() => null);
+        // --- Phase 2: Fetch invites in background (non-blocking) ---
+        if (isInvestor && room.deal_id && !roomIsLocked) {
+          base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
+            const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
+            if (activeInvites.length === 0) return;
+            // Batch-fetch all agent profiles at once instead of one-by-one
+            const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
+            const agentProfiles = agentIds.length > 0
+              ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
+              : [];
+            const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
+            const enriched = activeInvites.map(inv => {
+              const agent = profileMap.get(inv.agent_profile_id);
               return {
                 ...inv,
                 agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m } : { id: inv.agent_profile_id, full_name: 'Agent' },
                 agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
               };
-            }));
+            });
             setPendingInvites(enriched);
-          }
-          if (room.locked_agent_id || room.agreement_status === 'fully_signed') {
-            if (activeView === 'pending_agents') setActiveView('messages');
-          }
+          }).catch(() => {});
         }
-      } catch (e) { console.error('[Room] Load error:', e); }
-      finally { setRoomLoading(false); }
+      } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
     };
     load();
-  }, [roomId, profile?.user_role]);
+  }, [roomId, profile?.user_role, rooms]);
 
   // Open agreement tab from URL
   useEffect(() => {
