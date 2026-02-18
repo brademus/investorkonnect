@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Info, Shield, FileText, Image, User, Plus, Download, Activity } from "lucide-react";
@@ -197,6 +197,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           inline
                           onDealUpdate={async (optimisticPatch) => {
                             if (optimisticPatch) {
+                              // Track optimistic docs so they survive parent deal prop resets
+                              if (optimisticPatch.documents) {
+                                optimisticDocsRef.current = { ...(optimisticDocsRef.current || {}), ...optimisticPatch.documents };
+                              }
                               setLocalDeal(prev => {
                                 if (!prev) return prev;
                                 const merged = { ...prev };
