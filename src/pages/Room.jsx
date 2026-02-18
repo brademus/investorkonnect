@@ -136,7 +136,7 @@ export default function Room() {
             setPendingInvites(enriched);
           }
           if (room.locked_agent_id || room.agreement_status === 'fully_signed') {
-            setShowPendingAgents(false);
+            if (activeView === 'pending_agents') setActiveView('messages');
           }
         }
       } catch (e) { console.error('[Room] Load error:', e); }
@@ -310,20 +310,20 @@ export default function Room() {
             {roomId && (
               <>
                 <Button
-                  onClick={() => { if (isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite) return; setShowBoard(true); setShowPendingAgents(false); }}
+                  onClick={() => { if (isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite) return; setActiveView('board'); }}
                   disabled={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite}
                   title={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite ? "Select an agent first" : ""}
-                  className={`rounded-full font-semibold ${showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}
+                  className={`rounded-full font-semibold ${activeView === 'board' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
                 {isInvestor && pendingInvites.length > 0 && !isSigned && (
-                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(true); }} className={`rounded-full font-semibold ${showPendingAgents && !showBoard ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                  <Button onClick={() => setActiveView('pending_agents')} className={`rounded-full font-semibold ${activeView === 'pending_agents' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
                 )}
                 {isSigned && (
-                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                  <Button onClick={() => setActiveView('messages')} className={`rounded-full font-semibold ${activeView === 'messages' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Send className="w-4 h-4 mr-2" />Messages
                   </Button>
                 )}
@@ -354,7 +354,7 @@ export default function Room() {
 
 
         {/* Deal Summary Bar (messages view only) */}
-        {!showBoard && currentRoom && !roomLoading && (
+        {activeView === 'messages' && currentRoom && !roomLoading && (
           <>
             {(isSigned || isAgent) && (
               <CounterpartyInfoBar
@@ -412,58 +412,66 @@ export default function Room() {
           </>
         )}
 
-        {/* Content */}
+        {/* Content — keep views mounted once activated to avoid re-fetching */}
         <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
-          {showBoard ? (
-            <DealBoard
-              deal={deal}
-              room={currentRoom}
-              profile={profile}
-              roomId={roomId}
-              selectedAgentProfileId={selectedInvite?.agent_profile_id}
-              onInvestorSigned={async () => {
-                if (!currentRoom?.deal_id) return;
-                try {
-                  await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
-                  queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                } catch (e) { console.error('[Room] Invite creation failed:', e); }
-              }}
-            />
-          ) : isInvestor && showPendingAgents && pendingInvites.length > 0 && !isSigned ? (
+          {/* Deal Board */}
+          {mountedViews.has('board') && (
+            <div style={{ display: activeView === 'board' ? 'block' : 'none' }}>
+              <DealBoard
+                deal={deal}
+                room={currentRoom}
+                profile={profile}
+                roomId={roomId}
+                selectedAgentProfileId={selectedInvite?.agent_profile_id}
+                onInvestorSigned={async () => {
+                  if (!currentRoom?.deal_id) return;
+                  try {
+                    await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
+                    queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                  } catch (e) { console.error('[Room] Invite creation failed:', e); }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Pending Agents */}
+          {activeView === 'pending_agents' && isInvestor && pendingInvites.length > 0 && !isSigned && (
             <PendingAgentsList
               invites={pendingInvites}
               selectedInviteId={selectedInvite?.id}
               onSelectAgent={(invite) => {
                 setSelectedInvite(invite);
-                setShowBoard(true);
-                setShowPendingAgents(false);
+                setActiveView('board');
               }}
             />
-          ) : (
-            <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+          )}
+
+          {/* Messages */}
+          {mountedViews.has('messages') && (
+            <div className="max-w-4xl mx-auto w-full h-full flex flex-col" style={{ display: activeView === 'messages' ? 'flex' : 'none' }}>
               {/* Signing banners */}
               {isAgent && !isSigned && (currentRoom?.agreement_status === 'investor_signed' || deal?.is_fully_signed === false) && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex items-start justify-between gap-3 flex-shrink-0">
                   <div className="flex items-start gap-3"><Shield className="w-5 h-5 text-[#60A5FA] mt-0.5" /><div><h3 className="text-md font-bold text-[#60A5FA] mb-1">Review & Sign</h3><p className="text-sm text-[#FAFAFA]/80">Investor has signed. Review terms and sign to lock in.</p></div></div>
-                  <Button onClick={() => setShowBoard(true)} className="bg-[#E3C567] text-black rounded-full font-semibold">My Agreement</Button>
+                  <Button onClick={() => setActiveView('board')} className="bg-[#E3C567] text-black rounded-full font-semibold">My Agreement</Button>
                 </div>
               )}
               {isInvestor && !isSigned && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex items-start justify-between gap-3 flex-shrink-0">
                   <div className="flex items-start gap-3"><Shield className="w-5 h-5 text-[#60A5FA] mt-0.5" /><div><h3 className="text-md font-bold text-[#60A5FA] mb-1">Review & Sign</h3><p className="text-sm text-[#FAFAFA]/80">Open My Agreement to review and sign.</p></div></div>
-                  <Button onClick={() => setShowBoard(true)} className="bg-[#E3C567] text-black rounded-full font-semibold">My Agreement</Button>
+                  <Button onClick={() => setActiveView('board')} className="bg-[#E3C567] text-black rounded-full font-semibold">My Agreement</Button>
                 </div>
               )}
 
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} isSigned={isSigned} dealId={deal?.id} />
-            <WalkthroughScheduleModal
-              open={walkthroughModalOpen}
-              onOpenChange={setWalkthroughModalOpen}
-              deal={deal}
-              roomId={roomId}
-              profile={profile}
-              onScheduled={(updates) => setDeal(prev => prev ? { ...prev, ...updates } : prev)}
-            />
+              <WalkthroughScheduleModal
+                open={walkthroughModalOpen}
+                onOpenChange={setWalkthroughModalOpen}
+                deal={deal}
+                roomId={roomId}
+                profile={profile}
+                onScheduled={(updates) => setDeal(prev => prev ? { ...prev, ...updates } : prev)}
+              />
             </div>
           )}
         </div>
