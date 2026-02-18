@@ -21,7 +21,20 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const [activeTab, setActiveTab] = useState('details');
   const [wtModalOpen, setWtModalOpen] = useState(false);
   const [localDeal, setLocalDeal] = useState(deal);
-  useEffect(() => { if (deal) setLocalDeal(deal); }, [deal]);
+  const optimisticDocsRef = useRef(null);
+  useEffect(() => {
+    if (!deal) return;
+    // Preserve any optimistic document uploads when the parent deal prop re-syncs
+    if (optimisticDocsRef.current) {
+      setLocalDeal(prev => {
+        const merged = { ...deal };
+        merged.documents = { ...(deal.documents || {}), ...optimisticDocsRef.current };
+        return merged;
+      });
+    } else {
+      setLocalDeal(deal);
+    }
+  }, [deal]);
   const [localRoom, setLocalRoom] = useState(room);
   const [messagePhotos, setMessagePhotos] = useState([]);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
