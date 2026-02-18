@@ -107,10 +107,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Agent: limited until signed
+    // Agent: limited until signed — but include documents they may have uploaded (CMA, listing_agreement, buyer_contract)
+    const agentDocs = {};
+    if (deal?.documents) {
+      for (const key of ['purchase_contract', 'cma', 'listing_agreement', 'buyer_contract']) {
+        if (deal.documents[key]) agentDocs[key] = deal.documents[key];
+      }
+    }
     return Response.json({
       ...base, property_address: null, seller_info: null, notes: null, special_notes: null,
-      documents: deal?.documents?.purchase_contract ? { purchase_contract: deal.documents.purchase_contract } : null
+      documents: Object.keys(agentDocs).length > 0 ? agentDocs : null
     });
   } catch (error) {
     console.error('[getDealDetails] Error:', error);
