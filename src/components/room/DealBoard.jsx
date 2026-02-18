@@ -130,7 +130,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
           {/* Agreement actions (below, full width) */}
           {!isSigned && (
-            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <div data-agreement-panel className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} inline />
             </div>
           )}
