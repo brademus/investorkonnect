@@ -58,9 +58,13 @@ Deno.serve(async (req) => {
     }
 
     console.log('[updateDealDocuments] Updating deal', dealId, 'with payload keys:', Object.keys(updatePayload));
+    if (updatePayload.documents) {
+      console.log('[updateDealDocuments] Full documents payload:', JSON.stringify(updatePayload.documents));
+    }
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
     const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
     console.log('[updateDealDocuments] Fresh deal document keys:', Object.keys(freshDeal?.documents || {}));
+    console.log('[updateDealDocuments] CMA present?', !!freshDeal?.documents?.cma);
     return Response.json({ success: true, data: freshDeal });
   } catch (error) {
     console.error('[updateDealDocuments] Error:', error);
