@@ -8,7 +8,7 @@ import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { toast } from "sonner";
 import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
-  Clock, Loader2, XCircle, Star
+  Clock, Loader2, XCircle, Star, FileCheck
 } from "lucide-react";
 
 export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
@@ -167,7 +167,20 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     cta = { type: 'canceled', icon: XCircle, label: 'Deal Canceled', description: 'This deal has been canceled.' };
   }
 
-  if (!cta && !showClosePrompt) return null;
+  // Build completed milestones for connected_deals stage
+  const completedMilestones = [];
+  if (stage === 'connected_deals') {
+    if (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED') {
+      completedMilestones.push({ icon: Calendar, label: 'Walkthrough Scheduled' });
+    } else if (wtStatus === 'PROPOSED' || hasWalkthrough) {
+      completedMilestones.push({ icon: Clock, label: 'Walkthrough Proposed', pending: true });
+    }
+    if (hasCma) {
+      completedMilestones.push({ icon: FileCheck, label: 'CMA Uploaded' });
+    }
+  }
+
+  if (!cta && !showClosePrompt && completedMilestones.length === 0) return null;
 
   // Close prompt UI
   const closePromptUI = (
@@ -256,7 +269,17 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
   return (
     <div className={`${inline ? 'bg-[#141414] border border-[#1F1F1F] rounded-xl p-4' : 'bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6'}`}>
-      {renderCta()}
+      {completedMilestones.length > 0 && (
+        <div className={`space-y-1.5 ${cta || showClosePrompt ? 'mb-3 pb-3 border-b border-[#1F1F1F]' : ''}`}>
+          {completedMilestones.map((m, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <m.icon className={`w-3.5 h-3.5 flex-shrink-0 ${m.pending ? 'text-[#F59E0B]' : 'text-[#10B981]'}`} />
+              <span className={`text-xs font-medium ${m.pending ? 'text-[#F59E0B]' : 'text-[#10B981]'}`}>{m.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {(cta || showClosePrompt) && renderCta()}
     </div>
   );
 }
