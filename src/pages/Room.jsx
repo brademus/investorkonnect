@@ -191,7 +191,8 @@ export default function Room() {
       } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
     };
     load();
-  }, [roomId, profile?.user_role, rooms]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, profile?.user_role]);
 
   // Open agreement tab from URL
   useEffect(() => {
