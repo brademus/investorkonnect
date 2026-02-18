@@ -217,14 +217,19 @@ export default function Room() {
     }
   }, [location.search, roomId]);
 
-  // Sync counterparty headshot from enriched rooms when they load
+  // Sync counterparty data from enriched rooms cache (covers late-loading headshots)
+  const enrichedRoomForSync = useMemo(() => rooms?.find(r => r.id === roomId), [rooms, roomId]);
   useEffect(() => {
-    if (!roomId || !rooms?.length) return;
-    const enriched = rooms.find(r => r.id === roomId);
-    if (enriched?.counterparty_headshot) {
-      setCurrentRoom(prev => prev ? { ...prev, counterparty_headshot: enriched.counterparty_headshot, counterparty_name: enriched.counterparty_name || prev.counterparty_name } : prev);
-    }
-  }, [roomId, rooms]);
+    if (!enrichedRoomForSync) return;
+    setCurrentRoom(prev => {
+      if (!prev) return prev;
+      const updates = {};
+      if (enrichedRoomForSync.counterparty_headshot && !prev.counterparty_headshot) updates.counterparty_headshot = enrichedRoomForSync.counterparty_headshot;
+      if (enrichedRoomForSync.counterparty_name && prev.counterparty_name === 'Agent') updates.counterparty_name = enrichedRoomForSync.counterparty_name;
+      if (Object.keys(updates).length === 0) return prev;
+      return { ...prev, ...updates };
+    });
+  }, [enrichedRoomForSync?.counterparty_headshot]);
 
   // Real-time room updates
   useEffect(() => {
