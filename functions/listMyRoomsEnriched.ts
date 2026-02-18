@@ -15,8 +15,10 @@ Deno.serve(async (req) => {
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
-    const isInvestor = profile.user_role === 'investor' || isAdmin;
-    const isAgent = !isAdmin && profile.user_role === 'agent';
+    // For room fetching: admins get all rooms
+    // For counterparty resolution: use actual user_role, not admin status
+    const isInvestor = profile.user_role === 'investor';
+    const isAgent = profile.user_role === 'agent';
 
     // Get rooms - limit scope to avoid timeouts
     let rooms = [];
