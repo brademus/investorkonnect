@@ -135,6 +135,33 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           )}
 
+          {/* Smart Next Step CTA */}
+          <DealNextStepCTA
+            deal={localDeal}
+            room={localRoom}
+            profile={profile}
+            roomId={roomId}
+            onDealUpdate={() => {
+              // Refetch deal to reflect changes
+              if (localDeal?.id) {
+                base44.entities.Deal.filter({ id: localDeal.id }).then(d => { if (d?.[0]) setLocalDeal(d[0]); });
+              }
+            }}
+            onOpenWalkthroughModal={() => setWtModalOpen(true)}
+          />
+
+          {/* Walkthrough Schedule Modal (triggered by CTA) */}
+          <WalkthroughScheduleModal
+            open={wtModalOpen}
+            onOpenChange={setWtModalOpen}
+            deal={localDeal}
+            roomId={roomId}
+            profile={profile}
+            onScheduled={(updated) => {
+              setLocalDeal(prev => prev ? { ...prev, ...updated } : prev);
+            }}
+          />
+
           {/* Deal Progress */}
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
