@@ -35,9 +35,19 @@ function DocRow({ label, url, filename, verified, available, onUpload }) {
 
 export default function FilesTab({ deal, room, roomId, profile }) {
   const [localRoom, setLocalRoom] = useState(room);
+  const [localDeal, setLocalDeal] = useState(deal);
   const [messageFiles, setMessageFiles] = useState([]);
 
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
+  useEffect(() => {
+    if (!deal) return;
+    // Merge incoming deal docs with any we've already uploaded locally
+    setLocalDeal(prev => {
+      if (!prev) return deal;
+      const mergedDocs = { ...(deal.documents || {}), ...(prev.documents || {}) };
+      return { ...deal, documents: mergedDocs };
+    });
+  }, [deal]);
 
   // Load file attachments from messages
   useEffect(() => {
