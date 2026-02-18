@@ -1,9 +1,10 @@
 import React from "react";
+import * as Sentry from "@sentry/react";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, eventId: null };
   }
 
   static getDerivedStateFromError(error) {
@@ -13,7 +14,8 @@ export default class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error("UI Error:", error, errorInfo);
     console.error("Full error stack:", error?.stack);
-    this.setState({ errorInfo });
+    const eventId = Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo?.componentStack } } });
+    this.setState({ errorInfo, eventId });
   }
 
   render() {
