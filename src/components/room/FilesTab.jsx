@@ -124,17 +124,24 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       toast.info('Uploading...');
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        // Save to deal.documents under the correct key
         const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
-        await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, documents: { [docKey]: docEntry } });
-        // Immediately update local state so it sticks
-        setLocalDeal(prev => prev ? { ...prev, documents: { ...(prev.documents || {}), [docKey]: docEntry } } : prev);
+        const res = await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, documents: { [docKey]: docEntry } });
+        // Use server-returned deal as source of truth
+        const serverDocs = res?.data?.data?.documents;
+        if (serverDocs) {
+          setLocalDeal(prev => prev ? { ...prev, documents: serverDocs } : prev);
+        } else {
+          setLocalDeal(prev => prev ? { ...prev, documents: { ...(prev.documents || {}), [docKey]: docEntry } } : prev);
+        }
         toast.success('Document uploaded');
-        // Also add to room files for shared visibility
+        // Also add to room shared files
         const roomFiles = [...(localRoom?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
         await base44.entities.Room.update(roomId, { files: roomFiles });
         setLocalRoom(prev => prev ? { ...prev, files: roomFiles } : prev);
-      } catch (_) { toast.error('Upload failed'); }
+      } catch (err) {
+        console.error('[FilesTab] Upload failed:', err);
+        toast.error('Upload failed');
+      }
     };
     input.click();
   };
