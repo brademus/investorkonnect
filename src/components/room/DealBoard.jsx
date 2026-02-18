@@ -182,9 +182,17 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           profile={profile}
                           roomId={roomId}
                           inline
-                          onDealUpdate={() => {
+                          onDealUpdate={async () => {
                             if (localDeal?.id) {
-                              base44.entities.Deal.filter({ id: localDeal.id }).then(d => { if (d?.[0]) setLocalDeal(d[0]); });
+                              try {
+                                // Re-fetch via backend function to get role-aware response with documents
+                                const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
+                                if (res?.data) setLocalDeal(res.data);
+                              } catch (_) {
+                                // Fallback to raw entity
+                                const d = await base44.entities.Deal.filter({ id: localDeal.id });
+                                if (d?.[0]) setLocalDeal(d[0]);
+                              }
                             }
                           }}
                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
