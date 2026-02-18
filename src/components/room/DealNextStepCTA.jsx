@@ -174,14 +174,13 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         } else {
           cta = { type: 'waiting', icon: Clock, label: 'Waiting for CMA', description: 'The agent is preparing the Comparative Market Analysis.' };
         }
-      } else if (!hasListingAgreement) {
-        if (isAgent) {
-          cta = { type: 'action', icon: Upload, label: 'Upload Listing Agreement', description: 'Upload the signed listing agreement.', onClick: () => triggerUpload('listing_agreement') };
-        } else {
-          cta = { type: 'waiting', icon: Clock, label: 'Waiting for Listing Agreement', description: 'The agent is preparing the listing agreement.' };
-        }
       } else {
-        cta = { type: 'action', icon: ArrowRight, label: 'Mark as Active Listing', description: 'All documents are in. Move this deal to the active listings stage.', onClick: () => updateStage('active_listings') };
+        // CMA uploaded — ask if property has been listed
+        cta = {
+          type: 'action', icon: ArrowRight, label: 'Has This Property Been Listed?',
+          description: 'CMA uploaded. Confirm this property is now listed to move it forward.',
+          onClick: () => updateStage('active_listings')
+        };
       }
     }
   } else if (stage === 'active_listings') {
