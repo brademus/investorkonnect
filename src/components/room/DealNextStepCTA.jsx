@@ -14,7 +14,7 @@ import {
 /**
  * Smart Next-Step CTA — shows the single most important action the user should take.
  */
-export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal }) {
+export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
@@ -189,6 +189,77 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
   if (!cta && !showClosePrompt) return null;
 
+  // --- Inline (compact) rendering for inside the stepper ---
+  if (inline) {
+    return (
+      <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
+        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
+
+        {showClosePrompt ? (
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-[#FAFAFA]">Did this deal close?</p>
+            <div className="flex gap-2">
+              <Button onClick={() => updateStage('completed')} disabled={updatingStage} size="sm" className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs">
+                {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                Yes, Closed
+              </Button>
+              <Button onClick={() => updateStage('canceled')} disabled={updatingStage} size="sm" variant="outline" className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs">
+                {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                No, Canceled
+              </Button>
+            </div>
+            <button onClick={() => setShowClosePrompt(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Go back</button>
+          </div>
+        ) : cta.type === 'waiting' ? (
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4 text-[#808080] flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[#808080]">{cta.label}</p>
+              <p className="text-xs text-[#666]">{cta.description}</p>
+            </div>
+          </div>
+        ) : cta.type === 'complete' ? (
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-[#10B981]">{cta.label}</p>
+              {isInvestor && (
+                <button
+                  onClick={() => {
+                    const agentId = deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+                    if (agentId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                  }}
+                  className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
+                >
+                  <Star className="w-3 h-3" /> Leave a Review
+                </button>
+              )}
+            </div>
+          </div>
+        ) : cta.type === 'canceled' ? (
+          <div className="flex items-center gap-3">
+            <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <p className="text-sm font-medium text-red-400">{cta.label}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-[#808080]">{cta.description}</p>
+            <Button
+              onClick={cta.onClick}
+              disabled={uploading || updatingStage}
+              size="sm"
+              className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-xs h-9"
+            >
+              {(uploading || updatingStage) ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <cta.icon className="w-3 h-3 mr-1" />}
+              {cta.label}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // --- Full-size standalone rendering ---
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
       <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleFileChange} />
