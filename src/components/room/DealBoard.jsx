@@ -13,10 +13,15 @@ import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipeli
 import FilesTab from "@/components/room/FilesTab.jsx";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import DealActivityTab from "@/components/room/DealActivityTab.jsx";
+import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
+import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
+  const [wtModalOpen, setWtModalOpen] = useState(false);
+  const [localDeal, setLocalDeal] = useState(deal);
+  useEffect(() => { if (deal) setLocalDeal(deal); }, [deal]);
   const [localRoom, setLocalRoom] = useState(room);
   const [messagePhotos, setMessagePhotos] = useState([]);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
