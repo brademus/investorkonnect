@@ -135,21 +135,6 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           )}
 
-          {/* Smart Next Step CTA */}
-          <DealNextStepCTA
-            deal={localDeal}
-            room={localRoom}
-            profile={profile}
-            roomId={roomId}
-            onDealUpdate={() => {
-              // Refetch deal to reflect changes
-              if (localDeal?.id) {
-                base44.entities.Deal.filter({ id: localDeal.id }).then(d => { if (d?.[0]) setLocalDeal(d[0]); });
-              }
-            }}
-            onOpenWalkthroughModal={() => setWtModalOpen(true)}
-          />
-
           {/* Walkthrough Schedule Modal (triggered by CTA) */}
           <WalkthroughScheduleModal
             open={wtModalOpen}
@@ -162,32 +147,51 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             }}
           />
 
-          {/* Deal Progress */}
+          {/* Deal Progress with inline Next Step CTA */}
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
             <div className="space-y-3">
               {PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(stage => {
-                const norm = normalizeStage(deal?.pipeline_stage);
+                const norm = normalizeStage(localDeal?.pipeline_stage);
                 const isActive = norm === stage.id;
                 const isPast = stage.order < stageOrder(norm);
                 const handleStageClick = async () => {
-                  if (!deal?.id) return;
-                  await base44.entities.Deal.update(deal.id, { pipeline_stage: stage.id });
+                  if (!localDeal?.id) return;
+                  await base44.entities.Deal.update(localDeal.id, { pipeline_stage: stage.id });
                   toast.success(`Moved to ${stage.label}`);
                   if (stage.id === 'completed' || stage.id === 'canceled') {
-                    const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+                    const agentId = localDeal.locked_agent_id || localRoom?.locked_agent_id || localRoom?.agent_ids?.[0];
                     if (agentId) {
-                      navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                      navigate(`${createPageUrl("RateAgent")}?dealId=${localDeal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
                     }
                   }
                 };
                 return (
-                  <button key={stage.id} onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-black' : isPast ? 'bg-[#34D399]' : 'bg-[#1F1F1F]'}`}>
-                      <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
-                    </div>
-                    <div><p className={`text-sm font-medium ${isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666]'}`}>{stage.label}</p>{isActive && <p className="text-xs text-[#E3C567]">Current</p>}</div>
-                  </button>
+                  <div key={stage.id}>
+                    <button onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-black' : isPast ? 'bg-[#34D399]' : 'bg-[#1F1F1F]'}`}>
+                        <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
+                      </div>
+                      <div><p className={`text-sm font-medium ${isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666]'}`}>{stage.label}</p>{isActive && <p className="text-xs text-[#E3C567]">Current</p>}</div>
+                    </button>
+                    {isActive && (
+                      <div className="ml-[52px] mt-2 mb-1">
+                        <DealNextStepCTA
+                          deal={localDeal}
+                          room={localRoom}
+                          profile={profile}
+                          roomId={roomId}
+                          inline
+                          onDealUpdate={() => {
+                            if (localDeal?.id) {
+                              base44.entities.Deal.filter({ id: localDeal.id }).then(d => { if (d?.[0]) setLocalDeal(d[0]); });
+                            }
+                          }}
+                          onOpenWalkthroughModal={() => setWtModalOpen(true)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
