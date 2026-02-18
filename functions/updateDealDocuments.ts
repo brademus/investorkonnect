@@ -49,15 +49,18 @@ Deno.serve(async (req) => {
 
     const updatePayload = {};
     if (documents) {
-      updatePayload.documents = { ...(deal.documents || {}), ...documents };
+      const merged = { ...(deal.documents || {}), ...documents };
+      updatePayload.documents = merged;
+      console.log('[updateDealDocuments] Merging docs. Existing keys:', Object.keys(deal.documents || {}), 'New keys:', Object.keys(documents), 'Merged keys:', Object.keys(merged));
     }
     if (pipeline_stage) {
       updatePayload.pipeline_stage = pipeline_stage;
     }
 
+    console.log('[updateDealDocuments] Updating deal', dealId, 'with payload keys:', Object.keys(updatePayload));
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
-    // Re-fetch to return the full merged state
     const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
+    console.log('[updateDealDocuments] Fresh deal document keys:', Object.keys(freshDeal?.documents || {}));
     return Response.json({ success: true, data: freshDeal });
   } catch (error) {
     console.error('[updateDealDocuments] Error:', error);
