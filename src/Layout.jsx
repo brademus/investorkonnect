@@ -60,8 +60,27 @@ function LayoutContent({ children }) {
   const location = useLocation();
   const { loading, user, role, hasRoom, onboarded, profile, error } = useCurrentProfile();
   
+  // #3 — Identify user in Sentry for better debugging
   useEffect(() => {
-    if (error) console.error('[Layout] Profile error:', error);
+    if (user) {
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        username: profile?.full_name || user.full_name || undefined,
+      });
+      Sentry.setTag("user_role", role || "unknown");
+      Sentry.setTag("subscription_status", profile?.subscription_status || "none");
+    } else if (!loading) {
+      Sentry.setUser(null);
+    }
+  }, [user, profile, role, loading]);
+
+  useEffect(() => {
+    if (error) {
+      console.error('[Layout] Profile error:', error);
+      // #2 — Manual error capture for async profile errors
+      Sentry.captureException(new Error(`Profile load error: ${error}`), { tags: { source: "useCurrentProfile" } });
+    }
   }, [error]);
 
   const [showAppLoader, setShowAppLoader] = React.useState(true);
