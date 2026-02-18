@@ -29,15 +29,17 @@ export default function Room() {
 
   const [drawer, setDrawer] = useState(false);
   const [search, setSearch] = useState("");
-  const [showBoard, setShowBoard] = useState(false);
+  // activeView: 'board' | 'messages' | 'pending_agents'
+  const [activeView, setActiveView] = useState('messages');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [pendingInvites, setPendingInvites] = useState([]);
   const [selectedInvite, setSelectedInvite] = useState(null);
-  const [showPendingAgents, setShowPendingAgents] = useState(true); // default to showing agents for investor
   const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
   const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
+  // Track which views have been mounted so they stay alive
+  const [mountedViews, setMountedViews] = useState(new Set(['messages']));
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
@@ -55,6 +57,16 @@ export default function Room() {
   const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
 
+  // Keep views mounted once activated
+  useEffect(() => {
+    setMountedViews(prev => {
+      if (prev.has(activeView)) return prev;
+      const next = new Set(prev);
+      next.add(activeView);
+      return next;
+    });
+  }, [activeView]);
+
   // Load room + deal when roomId changes
   useEffect(() => {
     if (!roomId) { setRoomLoading(false); return; }
@@ -63,9 +75,10 @@ export default function Room() {
     setRoomLoading(true);
     setPendingInvites([]);
     setSelectedInvite(null);
-    setShowPendingAgents(true);
-    // Default to Deal Board for agents before signing; investors see pending agents
-    setShowBoard(isAgent ? true : false);
+    // Reset mounted views on room switch
+    const defaultView = isAgent ? 'board' : 'pending_agents';
+    setActiveView(defaultView);
+    setMountedViews(new Set([defaultView]));
 
     const load = async () => {
       try {
@@ -134,7 +147,7 @@ export default function Room() {
 
   // Open agreement tab from URL
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('tab') === 'agreement') setShowBoard(true);
+    if (new URLSearchParams(window.location.search).get('tab') === 'agreement') setActiveView('board');
   }, [roomId, location.search]);
 
   // Post-signing refresh
@@ -182,7 +195,7 @@ export default function Room() {
         // If room just became locked, clear pending agents
         if (updated.request_status === 'locked' || updated.agreement_status === 'fully_signed') {
           setPendingInvites([]);
-          setShowPendingAgents(false);
+          if (activeView === 'pending_agents') setActiveView('messages');
         }
       }
     });
