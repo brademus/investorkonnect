@@ -20,21 +20,20 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [wtModalOpen, setWtModalOpen] = useState(false);
-  const [localDeal, setLocalDeal] = useState(deal);
-  const localDocsRef = useRef(null); // Always holds the most trusted documents state
+  // localDocsRef is the single source of truth for documents uploaded in this session.
+  // It NEVER gets cleared — it only grows. This ensures no real-time event or prop change can erase uploads.
+  const localDocsRef = useRef({});
+  const [localDeal, setLocalDeal] = useState(() => {
+    if (!deal) return deal;
+    return { ...deal, documents: { ...(deal?.documents || {}), ...localDocsRef.current } };
+  });
 
   useEffect(() => {
     if (!deal) return;
-    // When parent deal prop updates, merge but NEVER lose documents we already know about
-    setLocalDeal(prev => {
-      const incomingDocs = deal.documents || {};
-      const prevDocs = prev?.documents || {};
-      const savedDocs = localDocsRef.current || {};
-      // Merge: start with incoming, layer prev on top, layer saved on top
-      const mergedDocs = { ...incomingDocs, ...prevDocs, ...savedDocs };
-      const merged = { ...deal, documents: mergedDocs };
-      localDocsRef.current = mergedDocs;
-      return merged;
+    setLocalDeal(() => {
+      // Always merge: incoming deal + anything we've uploaded locally
+      const mergedDocs = { ...(deal.documents || {}), ...localDocsRef.current };
+      return { ...deal, documents: mergedDocs };
     });
   }, [deal]);
 
