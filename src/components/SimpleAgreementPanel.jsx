@@ -30,39 +30,31 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     if (externalRoom) setRoom(externalRoom);
   }, [externalRoom]);
 
-  // Load agreement + room + counters on mount
-  // If investor is viewing a specific agent (selectedAgentProfileId), load that agent's agreement
+  // Load agreement + room + counters on mount — all in parallel
   useEffect(() => {
     if (!dealId) return;
     let cancelled = false;
     const load = async () => {
-      let agResult = null;
-      
-      // If investor is viewing a specific agent, try to load that agent's DealInvite agreement
-      if (selectedAgentProfileId && roomId) {
-        const invites = await base44.entities.DealInvite.filter({
-          deal_id: dealId, agent_profile_id: selectedAgentProfileId
-        }).catch(() => []);
-        const invite = invites?.[0];
-        if (invite?.legal_agreement_id) {
-          const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
-          if (agArr?.[0] && !['superseded', 'voided'].includes(agArr[0].status)) {
-            agResult = agArr[0];
-          }
-        }
-      }
-      
-      // Fallback to regular getLegalAgreement
-      if (!agResult) {
-        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
-        agResult = agRes?.data?.agreement || null;
-      }
-      
-      const [roomRes, counterRes] = await Promise.all([
-        roomId ? base44.entities.Room.filter({ id: roomId }).catch(() => []) : Promise.resolve([]),
-        roomId ? base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50).catch(() => []) : Promise.resolve([])
-      ]);
+      // Fire all requests in parallel
+      const invitePromise = (selectedAgentProfileId && roomId)
+        ? base44.entities.DealInvite.filter({ deal_id: dealId, agent_profile_id: selectedAgentProfileId }).catch(() => [])
+        : Promise.resolve([]);
+      const fallbackAgPromise = base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
+      const roomPromise = roomId ? base44.entities.Room.filter({ id: roomId }).catch(() => []) : Promise.resolve([]);
+      const counterPromise = roomId ? base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50).catch(() => []) : Promise.resolve([]);
+
+      const [invites, fallbackAgRes, roomRes, counterRes] = await Promise.all([invitePromise, fallbackAgPromise, roomPromise, counterPromise]);
       if (cancelled) return;
+
+      // Resolve agreement: prefer agent-specific from invite
+      let agResult = null;
+      const invite = invites?.[0];
+      if (invite?.legal_agreement_id) {
+        const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
+        if (agArr?.[0] && !['superseded', 'voided'].includes(agArr[0].status)) agResult = agArr[0];
+      }
+      if (!agResult) agResult = fallbackAgRes?.data?.agreement || null;
+
       if (agResult) setAgreement(agResult);
       if (roomRes?.[0]) setRoom(roomRes[0]);
       setPendingCounters(counterRes || []);
@@ -148,8 +140,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     agreement?.status === 'fully_signed' ||
     isAgentOnlyMode // agent_only means investor already signed the base agreement
   );
-  // Debug: log agreement state for troubleshooting signing issues
-  console.log('[SimpleAgreementPanel] agreement:', agreement?.id, 'signer_mode:', agreement?.signer_mode, 'investor_signed_at:', agreement?.investor_signed_at, 'agent_recipient_id:', agreement?.agent_recipient_id, 'agent_client_user_id:', agreement?.agent_client_user_id, 'needsRegen:', needsRegen, 'investorSigned:', investorSigned);
   const agentSigned = !needsRegen && (!!agreement?.agent_signed_at || agreement?.status === 'agent_signed' || agreement?.status === 'fully_signed');
   const fullySigned = investorSigned && agentSigned;
 

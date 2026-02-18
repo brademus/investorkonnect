@@ -69,20 +69,26 @@ export default function Room() {
 
     const load = async () => {
       try {
-        const roomArr = await base44.entities.Room.filter({ id: roomId });
-        const room = roomArr?.[0];
+        // Fetch room and deal in parallel
+        const roomPromise = base44.entities.Room.filter({ id: roomId }).then(arr => arr?.[0]);
+        const room = await roomPromise;
         if (!room) { setRoomLoading(false); return; }
 
-        let dealData = null;
-        if (room.deal_id) {
-          try {
-            const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: room.deal_id });
-            dealData = res?.data;
-          } catch (_) {}
-        }
+        // Start deal fetch immediately (don't wait)
+        const dealPromise = room.deal_id
+          ? base44.functions.invoke('getDealDetailsForUser', { dealId: room.deal_id }).then(r => r?.data).catch(() => null)
+          : Promise.resolve(null);
+
+        // Start invites fetch in parallel for investors
+        const isLocked = room.locked_agent_id || room.agreement_status === 'fully_signed' || room.request_status === 'locked';
+        const invitesPromise = (isInvestor && room.deal_id && !isLocked)
+          ? base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => [])
+          : Promise.resolve([]);
+
+        // Wait for both
+        const [dealData, rawInvites] = await Promise.all([dealPromise, invitesPromise]);
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
-        // Find enriched room from useRooms for counterparty headshot
         const enrichedRoom = rooms?.find(r => r.id === roomId);
 
         setCurrentRoom({
@@ -102,38 +108,23 @@ export default function Room() {
         });
         if (dealData) setDeal(dealData);
 
-        // For investors: load pending agent invites (only if deal not locked)
-        const isLocked = room.locked_agent_id || room.agreement_status === 'fully_signed' || room.request_status === 'locked';
-        if (isInvestor && room.deal_id && !isLocked) {
-          try {
-            const invites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id });
-            const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-            // Load agent profiles for each invite
+        // Enrich invites with agent profiles (all in parallel)
+        if (rawInvites.length > 0) {
+          const activeInvites = rawInvites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
+          if (activeInvites.length > 0) {
             const enriched = await Promise.all(activeInvites.map(async (inv) => {
-              try {
-                const agentProfiles = await base44.entities.Profile.filter({ id: inv.agent_profile_id });
-                const agent = agentProfiles?.[0];
-                return {
-                  ...inv,
-                  agent: agent ? {
-                    id: agent.id,
-                    full_name: agent.full_name,
-                    brokerage: agent.agent?.brokerage,
-                    rating: null,
-                    completed_deals: agent.agent?.investment_deals_last_12m
-                  } : { id: inv.agent_profile_id, full_name: 'Agent' },
-                  agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
-                };
-              } catch (_) {
-                return { ...inv, agent: { id: inv.agent_profile_id, full_name: 'Agent' }, agreement_status: 'sent' };
-              }
+              const agent = await base44.entities.Profile.filter({ id: inv.agent_profile_id }).then(a => a?.[0]).catch(() => null);
+              return {
+                ...inv,
+                agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
+              };
             }));
             setPendingInvites(enriched);
-            // If deal is locked (has a winning agent), auto-select that agent and go to messages
-            if (room.locked_agent_id || room.agreement_status === 'fully_signed') {
-              setShowPendingAgents(false);
-            }
-          } catch (e) { console.error('[Room] Failed to load invites:', e); }
+          }
+          if (room.locked_agent_id || room.agreement_status === 'fully_signed') {
+            setShowPendingAgents(false);
+          }
         }
       } catch (e) { console.error('[Room] Load error:', e); }
       finally { setRoomLoading(false); }
@@ -152,12 +143,12 @@ export default function Room() {
     if (p.get('signed') === '1' && roomId) {
       const refresh = async () => {
         await new Promise(r => setTimeout(r, 1500));
-        const roomArr = await base44.entities.Room.filter({ id: roomId });
+        const [roomArr, dealRes] = await Promise.all([
+          base44.entities.Room.filter({ id: roomId }).catch(() => []),
+          currentRoom?.deal_id ? base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id }).catch(() => ({})) : Promise.resolve({})
+        ]);
         if (roomArr?.[0]) setCurrentRoom(prev => ({ ...prev, ...roomArr[0] }));
-        if (currentRoom?.deal_id) {
-          const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id }).catch(() => ({}));
-          if (res?.data) setDeal(res.data);
-        }
+        if (dealRes?.data) setDeal(dealRes.data);
         queryClient.invalidateQueries({ queryKey: ['rooms'] });
         queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
       };

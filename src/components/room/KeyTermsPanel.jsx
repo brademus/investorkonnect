@@ -32,7 +32,6 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       try {
         // CRITICAL: Determine which agent we're showing terms for
         const targetAgentId = selectedAgentId || room.agent_ids?.[0];
-        console.log('[KeyTermsPanel] Loading terms for agent:', targetAgentId, 'room:', room?.id);
         
         // Helper: merge multiple term sources, preferring the first non-null value for each field
         const mergeTerms = (...sources) => {
@@ -54,36 +53,36 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           return hasAny ? merged : null;
         };
 
-        // CRITICAL: Always fetch the agent's specific agreement (from DealInvite) to get authoritative terms
-        // After counter offer + regeneration, the agreement's exhibit_a_terms has the final merged terms
+        // Fetch agreement terms — run both queries in parallel
         let agentAgreementTerms = null;
         const dealId = deal?.id || room?.deal_id;
         
-        if (targetAgentId && dealId) {
-          // Try to find the agent's DealInvite to get their specific agreement
-          const invites = await base44.entities.DealInvite.filter({
-            deal_id: dealId, agent_profile_id: targetAgentId
-          }).catch(() => []);
-          const invite = invites?.[0];
+        if (dealId) {
+          const [inviteResults, roomAgreements] = await Promise.all([
+            (targetAgentId ? base44.entities.DealInvite.filter({ deal_id: dealId, agent_profile_id: targetAgentId }).catch(() => []) : Promise.resolve([])),
+            (room?.id ? base44.entities.LegalAgreement.filter({ deal_id: dealId, room_id: room.id }).catch(() => []) : Promise.resolve([]))
+          ]);
+
+          // Try agent-specific agreement from DealInvite first
+          const invite = inviteResults?.[0];
           if (invite?.legal_agreement_id) {
-            const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
-            if (agArr?.[0]?.exhibit_a_terms && !['superseded', 'voided'].includes(agArr[0].status)) {
-              agentAgreementTerms = agArr[0].exhibit_a_terms;
-              console.log('[KeyTermsPanel] Found agent-specific agreement terms from DealInvite:', invite.legal_agreement_id, agentAgreementTerms);
+            const match = roomAgreements.find(a => a.id === invite.legal_agreement_id && a.exhibit_a_terms && !['superseded', 'voided'].includes(a.status));
+            if (match) {
+              agentAgreementTerms = match.exhibit_a_terms;
+            } else {
+              // Agreement might not be in room-scoped results, fetch directly
+              const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
+              if (agArr?.[0]?.exhibit_a_terms && !['superseded', 'voided'].includes(agArr[0].status)) {
+                agentAgreementTerms = agArr[0].exhibit_a_terms;
+              }
             }
           }
-        }
-        
-        // If no agent-specific agreement, try room-level agreements
-        if (!agentAgreementTerms && dealId && room?.id) {
-          const agreements = await base44.entities.LegalAgreement.filter({ 
-            deal_id: dealId, room_id: room.id 
-          }).catch(() => []);
-          const agentAgreements = agreements.filter(a => !a.agent_profile_id || a.agent_profile_id === targetAgentId);
-          const latest = agentAgreements.find(a => a.status === 'sent') || agentAgreements.find(a => !['superseded', 'voided'].includes(a.status));
-          if (latest?.exhibit_a_terms) {
-            agentAgreementTerms = latest.exhibit_a_terms;
-            console.log('[KeyTermsPanel] Found agreement terms from room agreements:', latest.id);
+          
+          // Fallback to room-level agreements
+          if (!agentAgreementTerms && roomAgreements.length > 0) {
+            const filtered = roomAgreements.filter(a => !a.agent_profile_id || a.agent_profile_id === targetAgentId);
+            const latest = filtered.find(a => a.status === 'sent') || filtered.find(a => !['superseded', 'voided'].includes(a.status));
+            if (latest?.exhibit_a_terms) agentAgreementTerms = latest.exhibit_a_terms;
           }
         }
 
@@ -106,7 +105,6 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           // After regen, agreement is authoritative: agreement > agent terms > room > deal
           terms = mergeTerms(agentAgreementTerms, agentSpecificTerms, passedAgreementTerms, roomTerms, dealTerms);
         }
-        console.log('[KeyTermsPanel] Merged terms from all sources:', terms);
         
 
       } catch (e) {
