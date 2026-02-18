@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
       selected_agent_ids,
       walkthrough_scheduled,
       walkthrough_date,
-      walkthrough_time
+      walkthrough_time,
+      walkthrough_slots
     } = body;
 
     // Validation
@@ -99,7 +100,8 @@ Deno.serve(async (req) => {
       selected_agent_ids,
       walkthrough_scheduled: walkthrough_scheduled === true ? true : false,
       walkthrough_date: (walkthrough_scheduled === true && walkthrough_date && String(walkthrough_date).length >= 8) ? walkthrough_date : null,
-      walkthrough_time: (walkthrough_scheduled === true && walkthrough_time && String(walkthrough_time).length >= 3) ? walkthrough_time : null
+      walkthrough_time: (walkthrough_scheduled === true && walkthrough_time && String(walkthrough_time).length >= 3) ? walkthrough_time : null,
+      walkthrough_slots: (walkthrough_scheduled === true && Array.isArray(walkthrough_slots) && walkthrough_slots.length > 0) ? walkthrough_slots : []
     });
 
     console.log('[createDealDraft] Created draft:', draft.id);
