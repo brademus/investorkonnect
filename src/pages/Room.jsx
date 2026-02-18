@@ -369,7 +369,7 @@ export default function Room() {
                     const dealIdVal = deal.id;
                     setDeal(prev => prev ? { ...prev, pipeline_stage: 'active_listings' } : prev);
                     try {
-                      await base44.entities.Deal.update(dealIdVal, { pipeline_stage: 'active_listings' });
+                      await base44.functions.invoke('updateDealDocuments', { dealId: dealIdVal, pipeline_stage: 'active_listings' });
                       queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                       toast.success('Moved to Active Listings');
                     } catch (err) {
