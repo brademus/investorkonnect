@@ -75,16 +75,19 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const docs = { ...(deal?.documents || {}) };
-      docs[docKey] = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
-      await base44.entities.Deal.update(deal.id, { documents: docs });
-      // Also add to room files
+      const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
+
+      await base44.functions.invoke('updateDealDocuments', {
+        dealId: deal.id,
+        documents: { [docKey]: docEntry }
+      });
+
       if (roomId) {
         const roomFiles = [...(room?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
         await base44.entities.Room.update(roomId, { files: roomFiles });
       }
       toast.success('Document uploaded');
-      onDealUpdate?.({ documents: { [docKey]: { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id } } });
+      onDealUpdate?.({ documents: { [docKey]: docEntry } });
     } catch (_) {
       toast.error('Upload failed');
     } finally {
