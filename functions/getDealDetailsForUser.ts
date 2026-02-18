@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
     const [profileArr, dealArr] = await Promise.all([
       base44.entities.Profile.filter({ user_id: user.id }),
-      base44.entities.Deal.filter({ id: dealId })
+      base44.asServiceRole.entities.Deal.filter({ id: dealId })
     ]);
     const profile = profileArr?.[0];
     const deal = dealArr?.[0];
