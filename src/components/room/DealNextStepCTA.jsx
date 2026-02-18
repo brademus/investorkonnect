@@ -84,7 +84,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         await base44.entities.Room.update(roomId, { files: roomFiles });
       }
       toast.success('Document uploaded');
-      onDealUpdate?.();
+      onDealUpdate?.({ documents: { [docKey]: { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id } } });
     } catch (_) {
       toast.error('Upload failed');
     } finally {
@@ -100,7 +100,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     try {
       await base44.entities.Deal.update(deal.id, { pipeline_stage: newStage });
       toast.success('Deal updated');
-      onDealUpdate?.();
+      onDealUpdate?.({ pipeline_stage: newStage });
       if (newStage === 'completed') {
         const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
         if (agentId && isInvestor) {

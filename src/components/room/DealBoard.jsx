@@ -182,14 +182,30 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           profile={profile}
                           roomId={roomId}
                           inline
-                          onDealUpdate={async () => {
+                          onDealUpdate={async (optimisticPatch) => {
+                            if (optimisticPatch) {
+                              setLocalDeal(prev => {
+                                if (!prev) return prev;
+                                const merged = { ...prev };
+                                if (optimisticPatch.documents) {
+                                  merged.documents = { ...(prev.documents || {}), ...optimisticPatch.documents };
+                                }
+                                for (const key of Object.keys(optimisticPatch)) {
+                                  if (key !== 'documents') merged[key] = optimisticPatch[key];
+                                }
+                                return merged;
+                              });
+                            }
+                            await new Promise(r => setTimeout(r, 500));
                             if (localDeal?.id) {
                               try {
                                 const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
                                 if (res?.data) setLocalDeal(res.data);
                               } catch (_) {
-                                const d = await base44.entities.Deal.filter({ id: localDeal.id });
-                                if (d?.[0]) setLocalDeal(d[0]);
+                                try {
+                                  const d = await base44.entities.Deal.filter({ id: localDeal.id });
+                                  if (d?.[0]) setLocalDeal(d[0]);
+                                } catch (_) {}
                               }
                             }
                             if (roomId) {
