@@ -21,20 +21,23 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const [activeTab, setActiveTab] = useState('details');
   const [wtModalOpen, setWtModalOpen] = useState(false);
   const [localDeal, setLocalDeal] = useState(deal);
-  const optimisticDocsRef = useRef(null);
+  const localDocsRef = useRef(null); // Always holds the most trusted documents state
+
   useEffect(() => {
     if (!deal) return;
-    // Preserve any optimistic document uploads when the parent deal prop re-syncs
-    if (optimisticDocsRef.current) {
-      setLocalDeal(prev => {
-        const merged = { ...deal };
-        merged.documents = { ...(deal.documents || {}), ...optimisticDocsRef.current };
-        return merged;
-      });
-    } else {
-      setLocalDeal(deal);
-    }
+    // When parent deal prop updates, merge but NEVER lose documents we already know about
+    setLocalDeal(prev => {
+      const incomingDocs = deal.documents || {};
+      const prevDocs = prev?.documents || {};
+      const savedDocs = localDocsRef.current || {};
+      // Merge: start with incoming, layer prev on top, layer saved on top
+      const mergedDocs = { ...incomingDocs, ...prevDocs, ...savedDocs };
+      const merged = { ...deal, documents: mergedDocs };
+      localDocsRef.current = mergedDocs;
+      return merged;
+    });
   }, [deal]);
+
   const [localRoom, setLocalRoom] = useState(room);
   const [messagePhotos, setMessagePhotos] = useState([]);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
