@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     if (!documents && !pipeline_stage) return Response.json({ error: 'Nothing to update' }, { status: 400 });
 
     const [profileArr, dealArr] = await Promise.all([
-      base44.entities.Profile.filter({ user_id: user.id }),
+      base44.asServiceRole.entities.Profile.filter({ user_id: user.id }),
       base44.asServiceRole.entities.Deal.filter({ id: dealId })
     ]);
     const profile = profileArr?.[0];
