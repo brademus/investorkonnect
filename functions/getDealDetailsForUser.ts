@@ -13,13 +13,16 @@ Deno.serve(async (req) => {
     const { dealId } = await req.json();
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
 
-    const [profileArr, dealArr] = await Promise.all([
-      base44.entities.Profile.filter({ user_id: user.id }),
-      base44.asServiceRole.entities.Deal.filter({ id: dealId })
-    ]);
+    const profileArr = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profileArr?.[0];
-    const deal = dealArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+
+    let deal;
+    try {
+      deal = await base44.asServiceRole.entities.Deal.get(dealId);
+    } catch (e) {
+      return Response.json({ error: 'Deal not found' }, { status: 404 });
+    }
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
 
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
