@@ -30,14 +30,35 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
 
-  // Load walkthrough appointment status
+  // Load walkthrough appointment status + subscribe to real-time changes
   useEffect(() => {
     if (!deal?.id) return;
     base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
       setApptStatus(rows?.[0]?.walkthrough?.status || null);
       setApptLoaded(true);
     }).catch(() => setApptLoaded(true));
+
+    const unsub = base44.entities.DealAppointments.subscribe(e => {
+      if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
+        setApptStatus(e.data.walkthrough.status);
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
+
+  // Also listen for walkthrough response messages
+  useEffect(() => {
+    if (!roomId) return;
+    const unsub = base44.entities.Message.subscribe(e => {
+      const d = e?.data;
+      if (!d || d.room_id !== roomId) return;
+      if (d.metadata?.type === "walkthrough_request" || d.metadata?.type === "walkthrough_response") {
+        if (d.metadata.status === "confirmed") setApptStatus("SCHEDULED");
+        else if (d.metadata.status === "denied") setApptStatus("CANCELED");
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [roomId]);
 
   // File upload handler
   const triggerUpload = (docKey) => {
