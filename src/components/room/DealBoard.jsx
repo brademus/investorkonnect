@@ -198,58 +198,23 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           profile={profile}
                           roomId={roomId}
                           inline
-                          onDealUpdate={async (optimisticPatch) => {
-                            if (optimisticPatch) {
-                              if (optimisticPatch.documents) {
-                                optimisticDocsRef.current = { ...(optimisticDocsRef.current || {}), ...optimisticPatch.documents };
-                              }
-                              setLocalDeal(prev => {
-                                if (!prev) return prev;
-                                const merged = { ...prev };
-                                if (optimisticPatch.documents) {
-                                  merged.documents = { ...(prev.documents || {}), ...optimisticPatch.documents };
-                                }
-                                for (const key of Object.keys(optimisticPatch)) {
-                                  if (key !== 'documents') merged[key] = optimisticPatch[key];
-                                }
-                                return merged;
-                              });
+                          onDealUpdate={(patch) => {
+                            if (!patch) return;
+                            // Immediately apply the patch — this is the source of truth
+                            if (patch.documents) {
+                              localDocsRef.current = { ...(localDocsRef.current || {}), ...patch.documents };
                             }
-                            // Wait longer to give service-role write time to propagate
-                            await new Promise(r => setTimeout(r, 2000));
-                            const applyServerData = (serverDeal) => {
-                              if (!serverDeal) return;
-                              const serverDocs = serverDeal.documents || {};
-                              if (optimisticDocsRef.current) {
-                                const allPresent = Object.keys(optimisticDocsRef.current).every(k => serverDocs[k]?.url);
-                                if (allPresent) {
-                                  optimisticDocsRef.current = null;
-                                  setLocalDeal(serverDeal);
-                                } else {
-                                  // Server hasn't caught up yet — merge optimistic on top
-                                  setLocalDeal({ ...serverDeal, documents: { ...serverDocs, ...optimisticDocsRef.current } });
-                                }
-                              } else {
-                                setLocalDeal(serverDeal);
+                            setLocalDeal(prev => {
+                              if (!prev) return prev;
+                              const merged = { ...prev };
+                              if (patch.documents) {
+                                merged.documents = { ...(prev.documents || {}), ...patch.documents };
                               }
-                            };
-                            if (localDeal?.id) {
-                              try {
-                                const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
-                                applyServerData(res?.data);
-                              } catch (_) {
-                                try {
-                                  const d = await base44.entities.Deal.filter({ id: localDeal.id });
-                                  applyServerData(d?.[0]);
-                                } catch (_) {}
+                              for (const key of Object.keys(patch)) {
+                                if (key !== 'documents') merged[key] = patch[key];
                               }
-                            }
-                            if (roomId) {
-                              try {
-                                const r = await base44.entities.Room.filter({ id: roomId });
-                                if (r?.[0]) setLocalRoom(r[0]);
-                              } catch (_) {}
-                            }
+                              return merged;
+                            });
                           }}
                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
                         />
