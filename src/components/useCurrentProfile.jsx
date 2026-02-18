@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import * as Sentry from '@sentry/react';
 
 // Global cache to prevent redundant API calls across component instances
 let globalProfileCache = null;
