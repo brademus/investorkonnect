@@ -126,13 +126,19 @@ export default function Room() {
     // --- Phase 1: Parallel fetch of full room + deal details ---
     const load = async () => {
       try {
-        const dealId = enrichedRoom?.deal_id;
-
-        // Fire all fetches in parallel — don't waterfall
+        // Fire room fetch immediately
         const roomPromise = base44.entities.Room.filter({ id: roomId }).then(arr => arr?.[0]);
-        const dealPromise = dealId
-          ? base44.functions.invoke('getDealDetailsForUser', { dealId }).then(r => r?.data).catch(() => null)
-          : Promise.resolve(null);
+        
+        // If we know deal_id from cache, fire deal fetch in parallel; otherwise wait for room
+        const cachedDealId = enrichedRoom?.deal_id;
+        let dealPromise;
+        if (cachedDealId) {
+          dealPromise = base44.functions.invoke('getDealDetailsForUser', { dealId: cachedDealId }).then(r => r?.data).catch(() => null);
+        } else {
+          dealPromise = roomPromise.then(r => 
+            r?.deal_id ? base44.functions.invoke('getDealDetailsForUser', { dealId: r.deal_id }).then(res => res?.data).catch(() => null) : null
+          );
+        }
 
         const [room, dealData] = await Promise.all([roomPromise, dealPromise]);
         if (!room) { setRoomLoading(false); return; }
