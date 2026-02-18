@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     if (!isAdmin) {
       if (isInvestor && deal.investor_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
       if (isAgent) {
-        const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+        const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
         const hasAccess = rooms.some(r => r.agentId === profile.id || r.agent_ids?.includes(profile.id));
         const inSelected = deal.selected_agent_ids?.includes(profile.id);
         if (!hasAccess && !inSelected && deal.agent_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     }
 
     // Get room for proposed_terms
-    const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+    const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
     const room = rooms?.[0];
 
     const base = {
