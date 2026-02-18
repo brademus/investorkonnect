@@ -22,7 +22,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const [apptStatus, setApptStatus] = useState(null);
   const [apptLoaded, setApptLoaded] = useState(false);
   const fileInputRef = useRef(null);
-  const [uploadDocKey, setUploadDocKey] = useState(null);
+  const uploadDocKeyRef = useRef(null);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
@@ -62,20 +62,21 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
   // File upload handler
   const triggerUpload = (docKey) => {
-    setUploadDocKey(docKey);
+    uploadDocKeyRef.current = docKey;
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    if (!file || !uploadDocKey) return;
+    const docKey = uploadDocKeyRef.current;
+    if (!file || !docKey) return;
     const v = validateSafeDocument(file);
     if (!v.valid) { toast.error(v.error); return; }
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const docs = { ...(deal?.documents || {}) };
-      docs[uploadDocKey] = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
+      docs[docKey] = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
       await base44.entities.Deal.update(deal.id, { documents: docs });
       // Also add to room files
       if (roomId) {
@@ -88,7 +89,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       toast.error('Upload failed');
     } finally {
       setUploading(false);
-      setUploadDocKey(null);
+      uploadDocKeyRef.current = null;
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -177,8 +178,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       } else {
         // CMA uploaded — ask if property has been listed
         cta = {
-          type: 'action', icon: ArrowRight, label: 'Has This Property Been Listed?',
-          description: 'CMA uploaded. Confirm this property is now listed to move it forward.',
+          type: 'action', icon: CheckCircle2, label: 'Has this property been listed?',
+          description: 'CMA is uploaded. Confirm when the property has been listed to move forward.',
           onClick: () => updateStage('active_listings')
         };
       }

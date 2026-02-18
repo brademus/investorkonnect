@@ -124,14 +124,14 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
           {/* Property Details (left) + Key Terms (right) side by side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PropertyDetailsCard deal={deal || {}} />
-            <KeyTermsPanel deal={deal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
+            <PropertyDetailsCard deal={localDeal || {}} />
+            <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
           </div>
 
           {/* Agreement actions (below, full width) */}
           {!isSigned && (
             <div data-agreement-panel className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-              <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} inline />
+              <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} inline />
             </div>
           )}
 
@@ -185,14 +185,18 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           onDealUpdate={async () => {
                             if (localDeal?.id) {
                               try {
-                                // Re-fetch via backend function to get role-aware response with documents
                                 const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
                                 if (res?.data) setLocalDeal(res.data);
                               } catch (_) {
-                                // Fallback to raw entity
                                 const d = await base44.entities.Deal.filter({ id: localDeal.id });
                                 if (d?.[0]) setLocalDeal(d[0]);
                               }
+                            }
+                            if (roomId) {
+                              try {
+                                const r = await base44.entities.Room.filter({ id: roomId });
+                                if (r?.[0]) setLocalRoom(r[0]);
+                              } catch (_) {}
                             }
                           }}
                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
@@ -213,14 +217,14 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
       {/* Agreement Tab (only shown after signing) */}
       {activeTab === 'agreement' && (
         <div className="space-y-6">
-          <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
-          <KeyTermsPanel deal={deal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
+          <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
+          <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
         </div>
       )}
 
       {/* Files Tab */}
       {activeTab === 'files' && (
-        <FilesTab deal={deal} room={localRoom} roomId={roomId} profile={profile} />
+        <FilesTab deal={localDeal} room={localRoom} roomId={roomId} profile={profile} />
       )}
 
       {/* Photos Tab */}
