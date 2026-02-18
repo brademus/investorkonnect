@@ -33,17 +33,20 @@ if (!window.__SENTRY_INITIALIZED__) {
   window.__SENTRY_INITIALIZED__ = true;
 }
 
-// Create a QueryClient for the entire app
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 60_000, // keep data fresh for 60s
-      gcTime: 300_000,   // cache for 5 minutes to avoid flicker on revisit
+// Singleton QueryClient — survives HMR re-evaluation
+if (!window.__QUERY_CLIENT__) {
+  window.__QUERY_CLIENT__ = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 60_000,
+        gcTime: 300_000,
+      },
     },
-  },
-});
+  });
+}
+const queryClient = window.__QUERY_CLIENT__;
 
 /**
  * LAYOUT - Airbnb-style shell with conditional navigation
