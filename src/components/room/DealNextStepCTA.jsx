@@ -60,48 +60,47 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
-  // File upload handler
+  // File upload handler — uses a dynamically created input to avoid ref timing issues
   const triggerUpload = (docKey) => {
-    uploadDocKeyRef.current = docKey;
-    fileInputRef.current?.click();
-  };
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx';
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const v = validateSafeDocument(file);
+      if (!v.valid) { toast.error(v.error); return; }
+      setUploading(true);
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    const docKey = uploadDocKeyRef.current;
-    if (!file || !docKey) return;
-    const v = validateSafeDocument(file);
-    if (!v.valid) { toast.error(v.error); return; }
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
+        const res = await base44.functions.invoke('updateDealDocuments', {
+          dealId: deal.id,
+          documents: { [docKey]: docEntry }
+        });
 
-      const res = await base44.functions.invoke('updateDealDocuments', {
-        dealId: deal.id,
-        documents: { [docKey]: docEntry }
-      });
+        // Use server-returned documents as the authoritative source
+        const serverDocs = res?.data?.data?.documents;
+        if (serverDocs) {
+          onDealUpdate?.({ documents: serverDocs });
+        } else {
+          onDealUpdate?.({ documents: { [docKey]: docEntry } });
+        }
 
-      // Use server-returned documents as the authoritative source
-      const serverDocs = res?.data?.data?.documents;
-      if (serverDocs) {
-        onDealUpdate?.({ documents: serverDocs });
-      } else {
-        onDealUpdate?.({ documents: { [docKey]: docEntry } });
+        if (roomId) {
+          const roomFiles = [...(room?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
+          await base44.entities.Room.update(roomId, { files: roomFiles });
+        }
+        toast.success('Document uploaded');
+      } catch (err) {
+        console.error('[DealNextStepCTA] Upload failed:', err);
+        toast.error('Upload failed');
+      } finally {
+        setUploading(false);
       }
-
-      if (roomId) {
-        const roomFiles = [...(room?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
-        await base44.entities.Room.update(roomId, { files: roomFiles });
-      }
-      toast.success('Document uploaded');
-    } catch (_) {
-      toast.error('Upload failed');
-    } finally {
-      setUploading(false);
-      uploadDocKeyRef.current = null;
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    };
+    input.click();
   };
 
   const updateStage = async (newStage) => {
