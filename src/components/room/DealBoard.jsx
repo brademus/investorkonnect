@@ -170,7 +170,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const isPast = stage.order < stageOrder(norm);
                 const handleStageClick = async () => {
                   if (!localDeal?.id) return;
-                  await base44.entities.Deal.update(localDeal.id, { pipeline_stage: stage.id });
+                  await base44.functions.invoke('updateDealDocuments', { dealId: localDeal.id, pipeline_stage: stage.id });
                   toast.success(`Moved to ${stage.label}`);
                   if (stage.id === 'completed' || stage.id === 'canceled') {
                     const agentId = localDeal.locked_agent_id || localRoom?.locked_agent_id || localRoom?.agent_ids?.[0];

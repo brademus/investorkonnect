@@ -98,7 +98,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     if (!deal?.id) return;
     setUpdatingStage(true);
     try {
-      await base44.entities.Deal.update(deal.id, { pipeline_stage: newStage });
+      await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, pipeline_stage: newStage });
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
       if (newStage === 'completed') {

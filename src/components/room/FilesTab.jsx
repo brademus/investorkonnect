@@ -115,9 +115,8 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         // Save to deal.documents under the correct key
-        const existingDocs = deal?.documents || {};
-        existingDocs[docKey] = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
-        await base44.entities.Deal.update(deal.id, { documents: existingDocs });
+        const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
+        await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, documents: { [docKey]: docEntry } });
         toast.success('Document uploaded');
         // Also add to room files for shared visibility
         const roomFiles = [...(localRoom?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
