@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     const { dealId } = await req.json();
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
 
-    const profileArr = await base44.entities.Profile.filter({ user_id: user.id });
+    const profileArr = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profileArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
+    console.log('[getDealDetails] Deal doc keys:', Object.keys(deal.documents || {}));
 
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
     const isAgent = profile.user_role === 'agent';
