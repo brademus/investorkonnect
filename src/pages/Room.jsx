@@ -203,7 +203,18 @@ export default function Room() {
     if (!deal?.id) return;
     const unsub = base44.entities.Deal.subscribe(e => {
       if (e?.data?.id === deal.id) {
-        setDeal(prev => prev ? { ...prev, ...e.data } : e.data);
+        setDeal(prev => {
+          if (!prev) return e.data;
+          const merged = { ...prev, ...e.data };
+          // Preserve any documents the prev state has that the event might not include
+          // (e.g. agent can't read Deal directly, so subscription event may lack documents)
+          if (prev.documents && (!e.data.documents || Object.keys(e.data.documents).length === 0)) {
+            merged.documents = prev.documents;
+          } else if (prev.documents && e.data.documents) {
+            merged.documents = { ...prev.documents, ...e.data.documents };
+          }
+          return merged;
+        });
         if (e?.data?.walkthrough_scheduled) setHasWalkthroughAppt(true);
       }
     });
