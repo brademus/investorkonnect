@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
@@ -11,17 +11,12 @@ import {
   Clock, Loader2, XCircle, Star
 } from "lucide-react";
 
-/**
- * Smart Next-Step CTA — shows the single most important action the user should take.
- */
 export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [showClosePrompt, setShowClosePrompt] = useState(false);
   const [apptStatus, setApptStatus] = useState(null);
-  const [apptLoaded, setApptLoaded] = useState(false);
-  // no refs needed — triggerUpload creates input dynamically
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
@@ -29,13 +24,12 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
 
-  // Load walkthrough appointment status + subscribe to real-time changes
+  // Load walkthrough appointment status
   useEffect(() => {
     if (!deal?.id) return;
     base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
       setApptStatus(rows?.[0]?.walkthrough?.status || null);
-      setApptLoaded(true);
-    }).catch(() => setApptLoaded(true));
+    }).catch(() => {});
 
     const unsub = base44.entities.DealAppointments.subscribe(e => {
       if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
@@ -45,7 +39,6 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // Also listen for walkthrough response messages
   useEffect(() => {
     if (!roomId) return;
     const unsub = base44.entities.Message.subscribe(e => {
@@ -59,7 +52,6 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
-  // Simple file upload: upload file → save to deal documents via backend → update local state
   const triggerUpload = (docKey) => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -75,18 +67,15 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
 
-        // Save via backend
         await base44.functions.invoke('updateDealDocuments', {
           dealId: deal.id,
           documents: { [docKey]: docEntry }
         });
 
-        // Optimistically update local state immediately — this is what the UI reads
-        const mergedDocs = { ...(deal?.documents || {}), [docKey]: docEntry };
-        onDealUpdate?.({ documents: mergedDocs });
+        // Optimistic local update
+        onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
         toast.success('Document uploaded');
       } catch (err) {
-        console.error('[CTA Upload] Error:', err);
         toast.error('Upload failed — please try again');
       } finally {
         setUploading(false);
@@ -116,7 +105,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   };
 
-  // --- Determine what to render ---
+  // Determine CTA
   const wtScheduled = deal?.walkthrough_scheduled === true;
   const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
   const wtDate = deal?.walkthrough_date;
@@ -124,30 +113,15 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const wtStatus = apptStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
 
   const hasCma = !!(deal?.documents?.cma?.url);
-  const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
   const hasBuyerContract = !!(deal?.documents?.buyer_contract?.url);
 
   let cta = null;
 
   if (stage === 'new_deals') {
     if (!isSigned) {
-      cta = {
-        type: 'action',
-        icon: FileSignature,
-        label: 'Sign Agreement',
-        description: 'Review and sign the agreement to move this deal forward.',
-        onClick: () => {
-          const el = document.querySelector('[data-agreement-panel]');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      };
+      cta = { type: 'action', icon: FileSignature, label: 'Sign Agreement', description: 'Review and sign the agreement to move this deal forward.', onClick: () => { const el = document.querySelector('[data-agreement-panel]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
     } else {
-      cta = {
-        type: 'waiting',
-        icon: Clock,
-        label: 'Waiting for Counterparty Signature',
-        description: 'The other party needs to sign the agreement to proceed.'
-      };
+      cta = { type: 'waiting', icon: Clock, label: 'Waiting for Counterparty Signature', description: 'The other party needs to sign the agreement to proceed.' };
     }
   } else if (stage === 'connected_deals') {
     if (!hasWalkthrough && wtStatus === 'NOT_SET') {
@@ -158,14 +132,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       }
     } else if (wtStatus === 'PROPOSED') {
       if (isAgent) {
-        cta = {
-          type: 'action', icon: Calendar, label: 'Confirm Walkthrough',
-          description: 'Review and confirm the proposed walkthrough dates.',
-          onClick: () => {
-            const el = document.querySelector('[data-walkthrough-panel]');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        };
+        cta = { type: 'action', icon: Calendar, label: 'Confirm Walkthrough', description: 'Review and confirm the proposed walkthrough dates.', onClick: () => { const el = document.querySelector('[data-walkthrough-panel]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
       } else {
         cta = { type: 'waiting', icon: Clock, label: 'Walkthrough Proposed', description: 'Awaiting agent confirmation of the walkthrough.' };
       }
@@ -177,12 +144,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           cta = { type: 'waiting', icon: Clock, label: 'Waiting for CMA', description: 'The agent is preparing the Comparative Market Analysis.' };
         }
       } else {
-        // CMA uploaded — ask if property has been listed
-        cta = {
-          type: 'action', icon: CheckCircle2, label: 'Has this property been listed?',
-          description: 'CMA is uploaded. Confirm when the property has been listed to move forward.',
-          onClick: () => updateStage('active_listings')
-        };
+        cta = { type: 'action', icon: CheckCircle2, label: 'Has this property been listed?', description: 'CMA is uploaded. Confirm when the property has been listed to move forward.', onClick: () => updateStage('active_listings') };
       }
     }
   } else if (stage === 'active_listings') {
@@ -197,11 +159,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   } else if (stage === 'in_closing') {
     if (!showClosePrompt) {
-      cta = {
-        type: 'action', icon: CheckCircle2, label: 'Did This Deal Close?',
-        description: 'Confirm whether this transaction closed successfully.',
-        onClick: () => setShowClosePrompt(true)
-      };
+      cta = { type: 'action', icon: CheckCircle2, label: 'Did This Deal Close?', description: 'Confirm whether this transaction closed successfully.', onClick: () => setShowClosePrompt(true) };
     }
   } else if (stage === 'completed') {
     cta = { type: 'complete', icon: CheckCircle2, label: 'Deal Complete ✓', description: 'This deal has been successfully closed.' };
@@ -211,168 +169,94 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
   if (!cta && !showClosePrompt) return null;
 
-  // --- Inline (compact) rendering for inside the stepper ---
-  if (inline) {
-    return (
-      <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
-
-        {showClosePrompt ? (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-[#FAFAFA]">Did this deal close?</p>
-            <div className="flex gap-2">
-              <Button onClick={() => updateStage('completed')} disabled={updatingStage} size="sm" className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs">
-                {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-                Yes, Closed
-              </Button>
-              <Button onClick={() => updateStage('canceled')} disabled={updatingStage} size="sm" variant="outline" className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs">
-                {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-                No, Canceled
-              </Button>
-            </div>
-            <button onClick={() => setShowClosePrompt(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Go back</button>
-          </div>
-        ) : cta.type === 'waiting' ? (
-          <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 text-[#808080] flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-[#808080]">{cta.label}</p>
-              <p className="text-xs text-[#666]">{cta.description}</p>
-            </div>
-          </div>
-        ) : cta.type === 'complete' ? (
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-[#10B981]">{cta.label}</p>
-              {isInvestor && (
-                <button
-                  onClick={() => {
-                    const agentId = deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-                    if (agentId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-                  }}
-                  className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
-                >
-                  <Star className="w-3 h-3" /> Leave a Review
-                </button>
-              )}
-            </div>
-          </div>
-        ) : cta.type === 'canceled' ? (
-          <div className="flex items-center gap-3">
-            <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <p className="text-sm font-medium text-red-400">{cta.label}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-[#808080]">{cta.description}</p>
-            <Button
-              onClick={cta.onClick}
-              disabled={uploading || updatingStage}
-              size="sm"
-              className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-xs h-9"
-            >
-              {(uploading || updatingStage) ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <cta.icon className="w-3 h-3 mr-1" />}
-              {cta.label}
-            </Button>
-          </div>
-        )}
+  // Close prompt UI
+  const closePromptUI = (
+    <div className="space-y-3">
+      <p className={`font-medium text-[#FAFAFA] ${inline ? 'text-sm' : 'text-lg'}`}>Did this deal close?</p>
+      {!inline && <p className="text-sm text-[#808080]">Confirm the outcome of this transaction.</p>}
+      <div className="flex gap-2">
+        <Button onClick={() => updateStage('completed')} disabled={updatingStage} size={inline ? 'sm' : 'default'} className={`flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full ${inline ? 'text-xs' : 'font-semibold'}`}>
+          {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+          Yes, Closed
+        </Button>
+        <Button onClick={() => updateStage('canceled')} disabled={updatingStage} size={inline ? 'sm' : 'default'} variant="outline" className={`flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full ${inline ? 'text-xs' : 'font-semibold'}`}>
+          {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+          No, Canceled
+        </Button>
       </div>
-    );
-  }
+      <button onClick={() => setShowClosePrompt(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Go back</button>
+    </div>
+  );
 
-  // --- Full-size standalone rendering ---
-  return (
-    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+  const renderCta = () => {
+    if (showClosePrompt) return closePromptUI;
 
-      {showClosePrompt ? (
-        <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-[#FAFAFA]">Did this deal close?</h4>
-          <p className="text-sm text-[#808080]">Confirm the outcome of this transaction.</p>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => updateStage('completed')}
-              disabled={updatingStage}
-              className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full font-semibold"
-            >
-              {updatingStage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-              Yes, Closed
-            </Button>
-            <Button
-              onClick={() => updateStage('canceled')}
-              disabled={updatingStage}
-              variant="outline"
-              className="flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full font-semibold"
-            >
-              {updatingStage ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <XCircle className="w-4 h-4 mr-2" />}
-              No, Canceled
-            </Button>
-          </div>
-          <button onClick={() => setShowClosePrompt(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA] transition-colors">
-            Go back
-          </button>
-        </div>
-      ) : cta.type === 'waiting' ? (
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#1F1F1F] flex items-center justify-center flex-shrink-0">
-            <cta.icon className="w-6 h-6 text-[#808080]" />
-          </div>
+    if (cta.type === 'waiting') {
+      return (
+        <div className="flex items-center gap-3">
+          <Clock className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#808080] flex-shrink-0`} />
           <div>
-            <h4 className="text-base font-semibold text-[#FAFAFA] mb-1">{cta.label}</h4>
-            <p className="text-sm text-[#808080]">{cta.description}</p>
+            <p className={`font-medium text-[#808080] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
+            <p className={`text-[#666] ${inline ? 'text-xs' : 'text-sm'}`}>{cta.description}</p>
           </div>
         </div>
-      ) : cta.type === 'complete' ? (
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#10B981]/15 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
-          </div>
+      );
+    }
+
+    if (cta.type === 'complete') {
+      return (
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#10B981] flex-shrink-0`} />
           <div className="flex-1">
-            <h4 className="text-base font-semibold text-[#10B981] mb-1">{cta.label}</h4>
-            <p className="text-sm text-[#808080]">{cta.description}</p>
+            <p className={`font-medium text-[#10B981] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
             {isInvestor && (
               <button
                 onClick={() => {
                   const agentId = deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
                   if (agentId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
                 }}
-                className="mt-3 inline-flex items-center gap-2 text-sm text-[#E3C567] hover:text-[#EDD89F] transition-colors"
+                className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
               >
-                <Star className="w-4 h-4" /> Leave a Review
+                <Star className="w-3 h-3" /> Leave a Review
               </button>
             )}
           </div>
         </div>
-      ) : cta.type === 'canceled' ? (
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
-            <XCircle className="w-6 h-6 text-red-400" />
-          </div>
-          <div>
-            <h4 className="text-base font-semibold text-red-400 mb-1">{cta.label}</h4>
-            <p className="text-sm text-[#808080]">{cta.description}</p>
-          </div>
+      );
+    }
+
+    if (cta.type === 'canceled') {
+      return (
+        <div className="flex items-center gap-3">
+          <XCircle className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-red-400 flex-shrink-0`} />
+          <p className={`font-medium text-red-400 ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0">
-              <cta.icon className="w-6 h-6 text-[#E3C567]" />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-base font-semibold text-[#FAFAFA] mb-1">Next Step</h4>
-              <p className="text-sm text-[#808080]">{cta.description}</p>
-            </div>
-          </div>
-          <Button
-            onClick={cta.onClick}
-            disabled={uploading || updatingStage}
-            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold h-11"
-          >
-            {(uploading || updatingStage) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <cta.icon className="w-4 h-4 mr-2" />}
-            {cta.label}
-          </Button>
-        </div>
-      )}
+      );
+    }
+
+    // Action type
+    return (
+      <div className="space-y-3">
+        {!inline && (
+          <h4 className="text-base font-semibold text-[#FAFAFA]">Next Step</h4>
+        )}
+        <p className={`text-[#808080] ${inline ? 'text-xs' : 'text-sm'}`}>{cta.description}</p>
+        <Button
+          onClick={cta.onClick}
+          disabled={uploading || updatingStage}
+          size={inline ? 'sm' : 'default'}
+          className={`w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold ${inline ? 'text-xs h-9' : 'h-11'}`}
+        >
+          {(uploading || updatingStage) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <cta.icon className="w-4 h-4 mr-2" />}
+          {cta.label}
+        </Button>
+      </div>
+    );
+  };
+
+  return (
+    <div className={`${inline ? 'bg-[#141414] border border-[#1F1F1F] rounded-xl p-4' : 'bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6'}`}>
+      {renderCta()}
     </div>
   );
 }

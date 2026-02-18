@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Upload, Lock, CheckCircle2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { resolveDealDocuments } from "@/components/utils/dealDocuments";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 
 function DocRow({ label, url, filename, verified, available, onUpload }) {
@@ -68,8 +67,6 @@ export default function FilesTab({ deal, room, roomId, profile }) {
     })();
   }, [roomId]);
 
-  const resolved = resolveDealDocuments({ deal: localDeal || {}, room: localRoom || {} });
-
   // Fetch the agreement's signed/final PDF URL — show immediately, upgrade in background
   const [agreementUrl, setAgreementUrl] = useState(null);
   const [agreementLabel, setAgreementLabel] = useState('Legal Agreement');
@@ -105,12 +102,13 @@ export default function FilesTab({ deal, room, roomId, profile }) {
     })();
   }, [roomId, localRoom?.id, deal?.id]);
 
-  const sellerContractUrl = resolved.sellerContract?.url;
-  const internalAgreementUrl = agreementUrl || resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.urlDraft;
-  const listingAgreementUrl = resolved.listingAgreement?.url;
-  // Buyer's contract from deal.documents
-  const buyerContractUrl = localDeal?.documents?.buyer_contract?.url || localDeal?.documents?.buyer_contract?.file_url;
-  const cmaUrl = localDeal?.documents?.cma?.url || localDeal?.documents?.cma?.file_url;
+  const docs = localDeal?.documents || {};
+  const sellerContractUrl = docs.purchase_contract?.url || localDeal?.contract_document?.url || localDeal?.contract_url || localRoom?.contract_document?.url;
+  const sellerContractName = docs.purchase_contract?.name || localDeal?.contract_document?.name || 'Purchase Contract';
+  const internalAgreementUrl = agreementUrl;
+  const listingAgreementUrl = docs.listing_agreement?.url;
+  const buyerContractUrl = docs.buyer_contract?.url;
+  const cmaUrl = docs.cma?.url;
 
   const uploadDocToRoom = async (docKey) => {
     const input = document.createElement('input');
@@ -175,8 +173,11 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       sharedFiles.push({ name, url, source });
     }
   };
-  addShared(agreementLabel.includes('Signed') ? 'Internal Agreement (Signed)' : 'Internal Agreement', internalAgreementUrl, 'system');
+  addShared(agreementLabel, internalAgreementUrl, 'system');
   addShared("Seller's Contract", sellerContractUrl, 'system');
+  addShared("CMA", cmaUrl, 'system');
+  addShared("Listing Agreement", listingAgreementUrl, 'system');
+  addShared("Buyer's Contract", buyerContractUrl, 'system');
   (localRoom?.files || []).forEach(f => addShared(f.name, f.url, f.uploaded_by_name || 'User'));
   messageFiles.filter(f => !(f.type || '').startsWith('image/')).forEach(f => addShared(f.name, f.url, 'Message'));
 
@@ -189,8 +190,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
           <DocRow
             label="Seller's Contract"
             url={sellerContractUrl}
-            filename={resolved.sellerContract?.filename || 'Purchase Contract'}
-            verified={resolved.sellerContract?.verified}
+            filename={sellerContractName}
             available={!!sellerContractUrl}
           />
           <DocRow
@@ -203,21 +203,21 @@ export default function FilesTab({ deal, room, roomId, profile }) {
           <DocRow
             label="CMA"
             url={cmaUrl}
-            filename={localDeal?.documents?.cma?.name}
+            filename={docs.cma?.name}
             available={!!cmaUrl}
             onUpload={() => uploadDocToRoom('cma')}
           />
           <DocRow
             label="Listing Agreement"
             url={listingAgreementUrl}
-            filename={resolved.listingAgreement?.filename}
+            filename={docs.listing_agreement?.name}
             available={!!listingAgreementUrl}
             onUpload={() => uploadDocToRoom('listing_agreement')}
           />
           <DocRow
             label="Buyer's Contract"
             url={buyerContractUrl}
-            filename={localDeal?.documents?.buyer_contract?.name}
+            filename={docs.buyer_contract?.name}
             available={!!buyerContractUrl}
             onUpload={() => uploadDocToRoom('buyer_contract')}
           />

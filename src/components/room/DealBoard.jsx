@@ -199,17 +199,13 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           inline
                           onDealUpdate={(patch) => {
                             if (!patch) return;
-                            console.log('[DealBoard] onDealUpdate patch keys:', Object.keys(patch), patch.documents ? 'doc keys: ' + Object.keys(patch.documents) : '');
-                            // Save uploaded docs to our ref — they can NEVER be lost
                             if (patch.documents) {
                               localDocsRef.current = { ...localDocsRef.current, ...patch.documents };
                             }
                             setLocalDeal(prev => {
                               if (!prev) return prev;
                               const updated = { ...prev, ...patch };
-                              // Always layer localDocsRef on top
                               updated.documents = { ...(updated.documents || {}), ...localDocsRef.current };
-                              console.log('[DealBoard] localDeal updated. Doc keys:', Object.keys(updated.documents));
                               return updated;
                             });
                           }}

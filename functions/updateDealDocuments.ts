@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
     const profile = profileArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    // Use get() instead of filter() by id — filter by id doesn't work reliably
     let deal;
     try {
       deal = await base44.asServiceRole.entities.Deal.get(dealId);
@@ -29,11 +28,11 @@ Deno.serve(async (req) => {
     }
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
 
+    // Access control
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
-    const isInvestor = profile.user_role === 'investor';
-    const isAgent = profile.user_role === 'agent';
-
     if (!isAdmin) {
+      const isInvestor = profile.user_role === 'investor';
+      const isAgent = profile.user_role === 'agent';
       if (isInvestor && deal.investor_id !== profile.id) {
         return Response.json({ error: 'Access denied' }, { status: 403 });
       }
@@ -49,25 +48,16 @@ Deno.serve(async (req) => {
 
     const updatePayload = {};
     if (documents) {
-      const merged = { ...(deal.documents || {}), ...documents };
-      updatePayload.documents = merged;
-      console.log('[updateDealDocuments] Merging docs. Existing keys:', Object.keys(deal.documents || {}), 'New keys:', Object.keys(documents), 'Merged keys:', Object.keys(merged));
+      updatePayload.documents = { ...(deal.documents || {}), ...documents };
     }
     if (pipeline_stage) {
       updatePayload.pipeline_stage = pipeline_stage;
     }
 
-    console.log('[updateDealDocuments] Updating deal', dealId, 'with payload keys:', Object.keys(updatePayload));
-    if (updatePayload.documents) {
-      console.log('[updateDealDocuments] Full documents payload:', JSON.stringify(updatePayload.documents));
-    }
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
     const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
-    console.log('[updateDealDocuments] Fresh deal document keys:', Object.keys(freshDeal?.documents || {}));
-    console.log('[updateDealDocuments] CMA present?', !!freshDeal?.documents?.cma);
     return Response.json({ success: true, data: freshDeal });
   } catch (error) {
-    console.error('[updateDealDocuments] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
