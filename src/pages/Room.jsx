@@ -203,18 +203,29 @@ export default function Room() {
     if (!deal?.id) return;
     const unsub = base44.entities.Deal.subscribe(e => {
       if (e?.data?.id === deal.id) {
-        setDeal(prev => {
-          if (!prev) return e.data;
-          const merged = { ...prev, ...e.data };
-          // Preserve any documents the prev state has that the event might not include
-          // (e.g. agent can't read Deal directly, so subscription event may lack documents)
-          if (prev.documents && (!e.data.documents || Object.keys(e.data.documents).length === 0)) {
-            merged.documents = prev.documents;
-          } else if (prev.documents && e.data.documents) {
-            merged.documents = { ...prev.documents, ...e.data.documents };
-          }
-          return merged;
-        });
+        // Re-fetch deal from server to get full documents (subscription events may not include all fields)
+        base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
+          .then(res => {
+            if (res?.data) {
+              setDeal(prev => {
+                if (!prev) return res.data;
+                // Always merge: server data + any local docs we already have
+                const mergedDocs = { ...(prev.documents || {}), ...(res.data.documents || {}) };
+                return { ...prev, ...res.data, documents: mergedDocs };
+              });
+            }
+          })
+          .catch(() => {
+            // Fallback: merge event data preserving existing documents
+            setDeal(prev => {
+              if (!prev) return e.data;
+              const merged = { ...prev, ...e.data };
+              if (prev.documents) {
+                merged.documents = { ...prev.documents, ...(e.data.documents || {}) };
+              }
+              return merged;
+            });
+          });
         if (e?.data?.walkthrough_scheduled) setHasWalkthroughAppt(true);
       }
     });
