@@ -199,18 +199,20 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           inline
                           onDealUpdate={(patch) => {
                             if (!patch) return;
-                            // Immediately apply the patch — this is the source of truth
+                            // Save uploaded docs to our ref — they can NEVER be lost
                             if (patch.documents) {
-                              localDocsRef.current = { ...(localDocsRef.current || {}), ...patch.documents };
+                              localDocsRef.current = { ...localDocsRef.current, ...patch.documents };
                             }
                             setLocalDeal(prev => {
                               if (!prev) return prev;
                               const merged = { ...prev };
-                              if (patch.documents) {
-                                merged.documents = { ...(prev.documents || {}), ...patch.documents };
-                              }
+                              // Apply all patch keys
                               for (const key of Object.keys(patch)) {
-                                if (key !== 'documents') merged[key] = patch[key];
+                                if (key === 'documents') {
+                                  merged.documents = { ...(prev.documents || {}), ...patch.documents };
+                                } else {
+                                  merged[key] = patch[key];
+                                }
                               }
                               return merged;
                             });
