@@ -51,8 +51,10 @@ Deno.serve(async (req) => {
       updatePayload.pipeline_stage = pipeline_stage;
     }
 
-    const updated = await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
-    return Response.json({ success: true, data: updated });
+    await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
+    // Re-fetch to return the full merged state
+    const [freshDeal] = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    return Response.json({ success: true, data: freshDeal });
   } catch (error) {
     console.error('[updateDealDocuments] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
