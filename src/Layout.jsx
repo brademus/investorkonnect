@@ -33,7 +33,20 @@ if (!window.__SENTRY_INITIALIZED__) {
   window.__SENTRY_INITIALIZED__ = true;
 }
 
-
+// Singleton QueryClient — survives HMR re-evaluation of this module
+if (!window.__QUERY_CLIENT__) {
+  window.__QUERY_CLIENT__ = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 60_000,
+        gcTime: 300_000,
+      },
+    },
+  });
+}
+const queryClient = window.__QUERY_CLIENT__;
 
 /**
  * LAYOUT - Airbnb-style shell with conditional navigation
