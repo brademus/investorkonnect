@@ -4,13 +4,12 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { devLog } from "@/components/devLogger";
+
 
 
 /**
@@ -101,7 +100,7 @@ function NDAContent() {
   // Redirect if already accepted (check after loading completes)
   useEffect(() => {
     if (!loading && hasNDA) {
-      devLog('[NDA] Already accepted, redirecting to dashboard...');
+      console.log('[NDA] Already accepted, redirecting to dashboard...');
       setTimeout(() => {
         navigate(createPageUrl("Pipeline"), { replace: true });
       }, 500);
@@ -115,12 +114,12 @@ function NDAContent() {
       return;
     }
 
-    devLog('[NDA] 🎯 Accepting NDA...');
+    console.log('[NDA] Accepting NDA...');
     setAccepting(true);
     setError(null);
 
     try {
-      devLog('[NDA] Updating profile directly with NDA acceptance...');
+      console.log('[NDA] Updating profile directly with NDA acceptance...');
       
       // Get fresh profile data to ensure we have the latest
       let currentProfile = profile;
@@ -138,15 +137,15 @@ function NDAContent() {
         nda_accepted_at: new Date().toISOString(),
         nda_version: 'v1.0'
       });
-      devLog('[NDA] ✅ Profile updated with NDA flags');
+      console.log('[NDA] Profile updated with NDA flags');
       
       toast.success("NDA accepted successfully!");
       
       // Hard navigate to ensure fresh page load with updated profile
-      devLog('[NDA] Navigating to Pipeline...');
+      console.log('[NDA] Navigating to Pipeline...');
       window.location.href = createPageUrl("Pipeline");
     } catch (error) {
-      devLog('[NDA] ❌ Exception:', error);
+      console.error('[NDA] Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg);
