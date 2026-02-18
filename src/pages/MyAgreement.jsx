@@ -164,9 +164,10 @@ export default function MyAgreement() {
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
           const wtScheduled = dealData.walkthroughScheduled === true;
-          const wtDate = dealData.walkthroughDate || null;
-          const wtTime = dealData.walkthroughTime || null;
-          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime });
+          const wtDate = dealData.walkthroughDate || (dealData.walkthroughSlots?.[0]?.date) || null;
+          const wtTime = dealData.walkthroughTime || (dealData.walkthroughSlots?.[0]?.timeStart) || null;
+          const wtSlots = (wtScheduled && Array.isArray(dealData.walkthroughSlots) && dealData.walkthroughSlots.length > 0) ? dealData.walkthroughSlots : [];
+          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, slots: wtSlots.length });
 
           const draftPayload = {
             investor_profile_id: profile.id,
@@ -201,7 +202,8 @@ export default function MyAgreement() {
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
             walkthrough_scheduled: wtScheduled,
             walkthrough_date: wtDate,
-            walkthrough_time: wtTime
+            walkthrough_time: wtTime,
+            walkthrough_slots: wtSlots
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
           console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
