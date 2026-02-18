@@ -17,17 +17,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 if (!window.__SENTRY_INITIALIZED__) {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   Sentry.init({
     dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
+    release: "investor-konnect@2.0.0",
+    environment: isLocalhost ? "development" : "production",
     sendDefaultPii: true,
     enableLogs: true,
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
     ],
-    tracesSampleRate: 1.0,
-    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
-    replaysSessionSampleRate: 0.1,
+    // #5 — Production-appropriate sampling rates
+    tracesSampleRate: isLocalhost ? 1.0 : 0.15,
+    tracePropagationTargets: ["localhost", /^https:\/\/.*\.base44\.app/],
+    replaysSessionSampleRate: isLocalhost ? 0.5 : 0.1,
     replaysOnErrorSampleRate: 1.0,
   });
   window.__SENTRY_INITIALIZED__ = true;
