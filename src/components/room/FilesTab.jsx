@@ -68,7 +68,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
     })();
   }, [roomId]);
 
-  const resolved = resolveDealDocuments({ deal: deal || {}, room: localRoom || {} });
+  const resolved = resolveDealDocuments({ deal: localDeal || {}, room: localRoom || {} });
 
   // Fetch the agreement's signed/final PDF URL — show immediately, upgrade in background
   const [agreementUrl, setAgreementUrl] = useState(null);
@@ -109,8 +109,8 @@ export default function FilesTab({ deal, room, roomId, profile }) {
   const internalAgreementUrl = agreementUrl || resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.urlDraft;
   const listingAgreementUrl = resolved.listingAgreement?.url;
   // Buyer's contract from deal.documents
-  const buyerContractUrl = deal?.documents?.buyer_contract?.url || deal?.documents?.buyer_contract?.file_url;
-  const cmaUrl = deal?.documents?.cma?.url || deal?.documents?.cma?.file_url;
+  const buyerContractUrl = localDeal?.documents?.buyer_contract?.url || localDeal?.documents?.buyer_contract?.file_url;
+  const cmaUrl = localDeal?.documents?.cma?.url || localDeal?.documents?.cma?.file_url;
 
   const uploadDocToRoom = async (docKey) => {
     const input = document.createElement('input');
@@ -127,6 +127,8 @@ export default function FilesTab({ deal, room, roomId, profile }) {
         // Save to deal.documents under the correct key
         const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
         await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, documents: { [docKey]: docEntry } });
+        // Immediately update local state so it sticks
+        setLocalDeal(prev => prev ? { ...prev, documents: { ...(prev.documents || {}), [docKey]: docEntry } } : prev);
         toast.success('Document uploaded');
         // Also add to room files for shared visibility
         const roomFiles = [...(localRoom?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
@@ -194,7 +196,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
           <DocRow
             label="CMA"
             url={cmaUrl}
-            filename={deal?.documents?.cma?.name}
+            filename={localDeal?.documents?.cma?.name}
             available={!!cmaUrl}
             onUpload={() => uploadDocToRoom('cma')}
           />
@@ -208,7 +210,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
           <DocRow
             label="Buyer's Contract"
             url={buyerContractUrl}
-            filename={deal?.documents?.buyer_contract?.name}
+            filename={localDeal?.documents?.buyer_contract?.name}
             available={!!buyerContractUrl}
             onUpload={() => uploadDocToRoom('buyer_contract')}
           />
