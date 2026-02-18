@@ -71,26 +71,30 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       if (!v.valid) { toast.error(v.error); return; }
       setUploading(true);
       toast.info('Uploading document...');
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
+      try {
+        // Step 1: Upload file
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
 
-      const res = await base44.functions.invoke('updateDealDocuments', {
-        dealId: deal.id,
-        documents: { [docKey]: docEntry }
-      });
+        // Step 2: Save to deal.documents via backend
+        const res = await base44.functions.invoke('updateDealDocuments', {
+          dealId: deal.id,
+          documents: { [docKey]: docEntry }
+        });
+        console.log('[CTA Upload] Server response:', JSON.stringify(res?.data));
 
-      // Use the full deal returned by the server as source of truth
-      const serverDeal = res?.data?.data;
-      const serverDocs = serverDeal?.documents;
-      if (serverDocs) {
-        onDealUpdate?.({ documents: serverDocs });
-      } else {
-        // Fallback: optimistic
-        onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
+        // res.data = { success, data: freshDeal } from the backend function
+        const serverDocs = res?.data?.data?.documents;
+        // Always call onDealUpdate so DealBoard picks it up
+        onDealUpdate?.({ documents: serverDocs || { ...(deal?.documents || {}), [docKey]: docEntry } });
+
+        toast.success('Document uploaded');
+      } catch (err) {
+        console.error('[CTA Upload] Error:', err);
+        toast.error('Upload failed — please try again');
+      } finally {
+        setUploading(false);
       }
-
-      toast.success('Document uploaded');
-      setUploading(false);
     };
     input.click();
   };
