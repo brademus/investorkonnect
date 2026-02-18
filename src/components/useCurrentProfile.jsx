@@ -196,6 +196,7 @@ export function useCurrentProfile() {
 
       } catch (error) {
         console.error('[useCurrentProfile] Fatal error:', error);
+        Sentry.captureException(error, { tags: { source: 'useCurrentProfile' } });
         
         // On rate limit, use stale cache if available
         if (error?.message?.includes('Rate limit') && globalProfileCache) {
