@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home, Calendar, DollarSign, CheckCircle, MessageSquare, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel } from "@/components/pipelineStages";
-import { getOrCreateDealRoom } from "@/components/dealRooms";
-import { setCachedDeal } from "@/components/utils/dealCache";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 
 export default function PipelineStage() {
@@ -89,57 +87,22 @@ export default function PipelineStage() {
   }, [dealsData, rooms, stageId, isAgent]);
 
   const handleDealClick = async (deal) => {
-    if (deal?.id) {
-      base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
-        .then((res) => { if (res?.data) setCachedDeal(deal.id, res.data); })
-        .catch(() => {});
-      base44.functions.invoke('getLegalAgreement', { deal_id: deal.id }).catch(() => {});
-    }
-
     const existingRoom = rooms.find(r => r.deal_id === deal.id && !r.is_orphan);
     if (existingRoom?.id) {
-      if (isAgent) {
-        const masked = {
-          id: deal.id,
-          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
-          property_address: null,
-          city: deal.city,
-          state: deal.state,
-          purchase_price: deal.purchase_price,
-          pipeline_stage: deal.pipeline_stage,
-        };
-        setCachedDeal(deal.id, masked);
-      }
       navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}&tab=agreement`);
       return;
     }
 
-    const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
-    if (!agentProfileId) {
-      toast.info('Select an agent for this deal to open a room.');
-      return;
-    }
-
+    // No room found — try to find one via API
     try {
-      const roomId = await getOrCreateDealRoom({
-        dealId: deal.id,
-        agentProfileId
-      });
-      if (isAgent) {
-        const masked = {
-          id: deal.id,
-          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
-          property_address: null,
-          city: deal.city,
-          state: deal.state,
-          purchase_price: deal.purchase_price,
-          pipeline_stage: deal.pipeline_stage,
-        };
-        setCachedDeal(deal.id, masked);
+      const roomArr = await base44.entities.Room.filter({ deal_id: deal.id });
+      if (roomArr?.length) {
+        navigate(`${createPageUrl("Room")}?roomId=${roomArr[0].id}&tab=agreement`);
+      } else {
+        toast.info('Room not ready yet. Please try again in a moment.');
       }
-      navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
     } catch (error) {
-      console.error("Failed to create/find room:", error);
+      console.error("Failed to find room:", error);
       toast.error("Failed to open conversation");
     }
   };

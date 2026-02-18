@@ -9,7 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { FileText, Calendar, TrendingUp, CheckCircle, Plus, Home, Clock, XCircle, Circle, Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { setCachedDeal } from "@/components/utils/dealCache";
+
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
