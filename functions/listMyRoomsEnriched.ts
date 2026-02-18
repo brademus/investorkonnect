@@ -41,20 +41,27 @@ Deno.serve(async (req) => {
       return Response.json({ rooms: [], count: 0 });
     }
 
-    // Collect all potential agent IDs so we can resolve names for any of them
-    const allAgentIds = new Set();
+    // Collect IDs for batch fetching
     const allDealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
-    const dealIds = allDealIds;
-    // Pre-fetch deals to get locked_agent_id
-    const prefetchDeals = allDealIds.length ? await base44.asServiceRole.entities.Deal.filter({ id: { $in: allDealIds } }) : [];
+    const roomIds = rooms.map(r => r.id);
+
+    // Batch 1: deals + agreements + counters in parallel
+    const [prefetchDeals, allAgreements, allCounters] = await Promise.all([
+      allDealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: allDealIds } }) : [],
+      allDealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: allDealIds } }) : [],
+      base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: roomIds }, status: 'pending' }).catch(() => [])
+    ]);
     const prefetchDealMap = new Map(prefetchDeals.map(d => [d.id, d]));
-    
+    const allDeals = prefetchDeals;
+    const dealIds = allDealIds;
+
+    // Collect counterparty IDs from rooms + deals
+    const allAgentIds = new Set();
     rooms.forEach(r => {
       if (isInvestor) {
         const deal = prefetchDealMap.get(r.deal_id);
         const agentId = deal?.locked_agent_id || r.locked_agent_id || r.agent_ids?.[0] || r.agentId;
         if (agentId) allAgentIds.add(agentId);
-        // Also add all agent_ids from room in case we need them
         (r.agent_ids || []).forEach(id => allAgentIds.add(id));
       } else {
         if (r.investorId) allAgentIds.add(r.investorId);
@@ -62,15 +69,8 @@ Deno.serve(async (req) => {
     });
     const counterpartyIds = [...allAgentIds];
 
-    // Load profiles (deals already pre-fetched above)
-    const allDeals = prefetchDeals;
+    // Batch 2: profiles
     const allProfiles = counterpartyIds.length ? await base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [];
-
-    // Load agreements and counters in a second batch
-    const [allAgreements, allCounters] = await Promise.all([
-      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } }) : [],
-      base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id) }, status: 'pending' }).catch(() => [])
-    ]);
 
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
     const profileMap = new Map(allProfiles.map(p => [p.id, p]));
