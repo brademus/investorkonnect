@@ -10,9 +10,11 @@ import * as Sentry from "@sentry/react";
 Sentry.init({
   dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
   sendDefaultPii: true,
+  enableLogs: true,
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
+    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
   ],
   tracesSampleRate: 1.0,
   tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
