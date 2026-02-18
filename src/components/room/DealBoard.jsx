@@ -217,11 +217,25 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                             if (localDeal?.id) {
                               try {
                                 const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
-                                if (res?.data) setLocalDeal(res.data);
+                                if (res?.data) {
+                                  // Clear optimistic docs if server now has them
+                                  if (optimisticDocsRef.current && res.data.documents) {
+                                    const serverDocs = res.data.documents || {};
+                                    const allPresent = Object.keys(optimisticDocsRef.current).every(k => serverDocs[k]?.url);
+                                    if (allPresent) optimisticDocsRef.current = null;
+                                  }
+                                  setLocalDeal(res.data);
+                                }
                               } catch (_) {
                                 try {
                                   const d = await base44.entities.Deal.filter({ id: localDeal.id });
-                                  if (d?.[0]) setLocalDeal(d[0]);
+                                  if (d?.[0]) {
+                                    if (optimisticDocsRef.current && d[0].documents) {
+                                      const allPresent = Object.keys(optimisticDocsRef.current).every(k => d[0].documents[k]?.url);
+                                      if (allPresent) optimisticDocsRef.current = null;
+                                    }
+                                    setLocalDeal(d[0]);
+                                  }
                                 } catch (_) {}
                               }
                             }
