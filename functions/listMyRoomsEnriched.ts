@@ -22,9 +22,20 @@ Deno.serve(async (req) => {
 
     // Get rooms - limit scope to avoid timeouts
     let rooms = [];
-    if (isAdmin) {
-      // Admin: get recent rooms only (small batch)
+    if (isAdmin && !isInvestor && !isAgent) {
+      // Pure admin (no investor/agent role): get recent rooms only (small batch)
       rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 30);
+    } else if (isAdmin && isInvestor) {
+      // Admin who is also an investor
+      rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
+    } else if (isAdmin && isAgent) {
+      // Admin who is also an agent
+      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
+      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      const roomIds = activeInvites.map(i => i.room_id).filter(Boolean);
+      if (roomIds.length > 0) {
+        rooms = await base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } });
+      }
     } else if (isInvestor) {
       rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
     } else if (isAgent) {
