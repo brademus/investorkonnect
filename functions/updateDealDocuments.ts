@@ -16,13 +16,17 @@ Deno.serve(async (req) => {
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
     if (!documents && !pipeline_stage) return Response.json({ error: 'Nothing to update' }, { status: 400 });
 
-    const [profileArr, dealArr] = await Promise.all([
-      base44.asServiceRole.entities.Profile.filter({ user_id: user.id }),
-      base44.asServiceRole.entities.Deal.filter({ id: dealId })
-    ]);
+    const profileArr = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profileArr?.[0];
-    const deal = dealArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+
+    // Use get() instead of filter() by id — filter by id doesn't work reliably
+    let deal;
+    try {
+      deal = await base44.asServiceRole.entities.Deal.get(dealId);
+    } catch (e) {
+      return Response.json({ error: 'Deal not found' }, { status: 404 });
+    }
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
 
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
@@ -53,7 +57,7 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
     // Re-fetch to return the full merged state
-    const [freshDeal] = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
     return Response.json({ success: true, data: freshDeal });
   } catch (error) {
     console.error('[updateDealDocuments] Error:', error);
