@@ -30,18 +30,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     const load = async () => {
       const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
       if (!cancelled) {
-        // Deduplicate walkthrough_request messages — keep only the first per date+time combo
-        const deduped = [];
-        const seenWtKeys = new Set();
-        for (const r of (rows || [])) {
-          if (r?.metadata?.type === 'walkthrough_request') {
-            const key = `wt_${r.metadata.walkthrough_date || ''}_${r.metadata.walkthrough_time || ''}`;
-            if (seenWtKeys.has(key)) continue;
-            seenWtKeys.add(key);
-          }
-          deduped.push(r);
-        }
-        setMessages(deduped.map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })));
+        setMessages((rows || []).map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })));
         setTimeout(scroll, 0);
       }
     };
@@ -53,11 +42,6 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       if (event.type === "create") {
         setMessages(prev => {
           if (prev.some(m => m.id === d.id)) return prev;
-          // Dedupe: if this is a walkthrough_request and we already have one with same date/time, skip
-          if (d.metadata?.type === 'walkthrough_request') {
-            const key = `wt_${d.metadata.walkthrough_date || ''}_${d.metadata.walkthrough_time || ''}`;
-            if (prev.some(m => m.metadata?.type === 'walkthrough_request' && `wt_${m.metadata?.walkthrough_date || ''}_${m.metadata?.walkthrough_time || ''}` === key)) return prev;
-          }
           const optMatch = prev.findIndex(m => m._optimistic && m.sender_profile_id === d.sender_profile_id && m.body === d.body);
           if (optMatch >= 0) return prev.map((m, i) => i === optMatch ? msg : m);
           return [...prev, msg];
