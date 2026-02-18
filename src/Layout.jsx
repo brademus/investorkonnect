@@ -6,6 +6,15 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye } from "lucide-react";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 Sentry.init({
   dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
@@ -14,25 +23,12 @@ Sentry.init({
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
-
   ],
   tracesSampleRate: 1.0,
   tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
 });
-
-import LoadingAnimation from "@/components/LoadingAnimation";
-
-      import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye } from "lucide-react";
-      
-      import ErrorBoundary from "@/components/ErrorBoundary";
-      import {
-        DropdownMenu,
-        DropdownMenuContent,
-        DropdownMenuItem,
-        DropdownMenuTrigger,
-      } from "@/components/ui/dropdown-menu";
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
