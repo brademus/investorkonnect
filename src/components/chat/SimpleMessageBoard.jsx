@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Send, Image as ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import WalkthroughMessageCard from "@/components/room/WalkthroughMessageCard";
+import { useRoomMessages } from "@/components/room/useRoomMessages";
 
 function isFromMe(m, user, profile) {
   if (m?._isMe) return true;
@@ -17,56 +18,39 @@ function isFromMe(m, user, profile) {
 }
 
 export default function SimpleMessageBoard({ roomId, profile, user, isChatEnabled, isSigned, dealId }) {
-  const [messages, setMessages] = useState([]);
+  const { messages: rawMessages, loaded, addOptimistic, replaceOptimistic, removeOptimistic } = useRoomMessages(roomId);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const endRef = useRef(null);
   const scroll = () => endRef.current?.scrollIntoView({ behavior: "auto" });
+  const prevLenRef = useRef(0);
 
-  // Load + subscribe
+  // Enrich with _isMe flag
+  const messages = useMemo(() =>
+    rawMessages.map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })),
+    [rawMessages, user?.id, profile?.id]
+  );
+
+  // Auto-scroll on new messages
   useEffect(() => {
-    if (!roomId) return;
-    let cancelled = false;
-    const load = async () => {
-      const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
-      if (!cancelled) {
-        setMessages((rows || []).map(r => ({ ...r, _isMe: isFromMe(r, user, profile) })));
-        setTimeout(scroll, 0);
-      }
-    };
-    load();
-    const unsub = base44.entities.Message.subscribe((event) => {
-      const d = event?.data;
-      if (!d || d.room_id !== roomId) return;
-      const msg = { ...d, _isMe: isFromMe(d, user, profile) };
-      if (event.type === "create") {
-        setMessages(prev => {
-          if (prev.some(m => m.id === d.id)) return prev;
-          const optMatch = prev.findIndex(m => m._optimistic && m.sender_profile_id === d.sender_profile_id && m.body === d.body);
-          if (optMatch >= 0) return prev.map((m, i) => i === optMatch ? msg : m);
-          return [...prev, msg];
-        });
-        scroll();
-      } else if (event.type === "delete") setMessages(prev => prev.filter(m => m.id !== event.id));
-      else if (event.type === "update") setMessages(prev => prev.map(m => m.id === event.id ? { ...m, ...msg } : m));
-    });
-    return () => { cancelled = true; try { unsub(); } catch (_) {} };
-  }, [roomId, user?.id, profile?.id]);
+    if (messages.length > prevLenRef.current) setTimeout(scroll, 0);
+    prevLenRef.current = messages.length;
+  }, [messages.length]);
 
   const send = async () => {
     const body = text.trim();
     if (!roomId || !body || !isChatEnabled) return;
     const tempId = `temp_${Date.now()}`;
-    setMessages(prev => [...prev, { id: tempId, room_id: roomId, sender_profile_id: profile?.id, body, created_date: new Date().toISOString(), _optimistic: true, _isMe: true }]);
+    addOptimistic({ id: tempId, room_id: roomId, sender_profile_id: profile?.id, body, created_date: new Date().toISOString(), _optimistic: true, _isMe: true });
     setText(""); scroll();
     setSending(true);
     try {
       const res = await base44.functions.invoke("sendMessage", { room_id: roomId, body });
       if (!res?.data?.ok) throw new Error(res?.data?.error || "Failed");
       const real = res?.data?.message;
-      if (real?.id) setMessages(prev => prev.some(m => m.id === real.id) ? prev.filter(m => m.id !== tempId) : prev.map(m => m.id === tempId ? { ...real, _isMe: true } : m));
+      if (real?.id) replaceOptimistic(tempId, { ...real, _isMe: true });
     } catch (e) {
-      setMessages(prev => prev.filter(m => m.id !== tempId));
+      removeOptimistic(tempId);
       setText(body);
       toast.error(e?.response?.data?.error || e?.message || "Failed to send");
     } finally { setSending(false); }
