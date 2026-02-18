@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Upload, Lock, CheckCircle2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -35,37 +36,32 @@ function DocRow({ label, url, filename, verified, available, onUpload }) {
 export default function FilesTab({ deal, room, roomId, profile }) {
   const [localRoom, setLocalRoom] = useState(room);
   const [localDeal, setLocalDeal] = useState(deal);
-  const [messageFiles, setMessageFiles] = useState([]);
+
+  // Shared messages hook — no duplicate fetch
+  const { messages: roomMessages } = useRoomMessages(roomId);
+  const messageFiles = useMemo(() =>
+    (roomMessages || [])
+      .filter(m => m?.metadata?.file_url)
+      .map(m => ({
+        name: m.metadata.file_name || 'Attachment',
+        url: m.metadata.file_url,
+        uploaded_by_name: m.sender_profile_id,
+        uploaded_at: m.created_date,
+        type: m.metadata.file_type,
+        source: 'message'
+      })),
+    [roomMessages]
+  );
 
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
   useEffect(() => {
     if (!deal) return;
-    // Merge incoming deal docs with any we've already uploaded locally
     setLocalDeal(prev => {
       if (!prev) return deal;
       const mergedDocs = { ...(deal.documents || {}), ...(prev.documents || {}) };
       return { ...deal, documents: mergedDocs };
     });
   }, [deal]);
-
-  // Load file attachments from messages
-  useEffect(() => {
-    if (!roomId) return;
-    (async () => {
-      const msgs = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
-      const files = (msgs || [])
-        .filter(m => m?.metadata?.file_url)
-        .map(m => ({
-          name: m.metadata.file_name || 'Attachment',
-          url: m.metadata.file_url,
-          uploaded_by_name: m.sender_profile_id,
-          uploaded_at: m.created_date,
-          type: m.metadata.file_type,
-          source: 'message'
-        }));
-      setMessageFiles(files);
-    })();
-  }, [roomId]);
 
   // Fetch the agreement's signed/final PDF URL — show immediately, upgrade in background
   const [agreementUrl, setAgreementUrl] = useState(null);

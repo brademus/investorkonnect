@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { Button } from "@/components/ui/button";
 import { Info, Shield, FileText, Image, User, Plus, Download, Activity } from "lucide-react";
 import { toast } from "sonner";
@@ -38,9 +39,22 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   }, [deal]);
 
   const [localRoom, setLocalRoom] = useState(room);
-  const [messagePhotos, setMessagePhotos] = useState([]);
-  const [photosLoaded, setPhotosLoaded] = useState(false);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
+
+  // Shared messages hook — no duplicate fetch
+  const { messages: roomMessages } = useRoomMessages(roomId);
+  const messagePhotos = useMemo(() =>
+    (roomMessages || [])
+      .filter(m => m?.metadata?.file_url && (m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/')))
+      .map(m => ({
+        name: m.metadata.file_name || 'Photo',
+        url: m.metadata.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_at: m.created_date,
+        source: 'message'
+      })),
+    [roomMessages]
+  );
 
   // Track which tabs have been visited to avoid unmounting/remounting
   const [visitedTabs, setVisitedTabs] = useState(new Set(['details']));
@@ -52,25 +66,6 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
       return next;
     });
   }, [activeTab]);
-
-  // Lazy-load photos only when photos tab is first visited
-  useEffect(() => {
-    if (!roomId || photosLoaded || !visitedTabs.has('photos')) return;
-    setPhotosLoaded(true);
-    (async () => {
-      const msgs = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
-      const photos = (msgs || [])
-        .filter(m => m?.metadata?.file_url && (m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/')))
-        .map(m => ({
-          name: m.metadata.file_name || 'Photo',
-          url: m.metadata.file_url,
-          uploaded_by: m.sender_profile_id,
-          uploaded_at: m.created_date,
-          source: 'message'
-        }));
-      setMessagePhotos(photos);
-    })();
-  }, [roomId, visitedTabs, photosLoaded]);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
