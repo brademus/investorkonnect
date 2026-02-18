@@ -20,9 +20,8 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   // If user acted, always trust localStatus — don't let meta.status revert it
   const status = userActed ? (localStatus || 'pending') : (localStatus || meta.status || 'pending');
 
-  // Multiple walkthrough slots from message metadata
-  const wtSlots = (meta.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
-  const hasMultipleSlots = wtSlots.length > 1;
+  // Multiple walkthrough slots from message metadata, with deal fallback
+  const [dealSlots, setDealSlots] = useState([]);
 
   // Sync from real-time message updates — but don't overwrite user action
   useEffect(() => {
@@ -45,7 +44,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const wtTime = meta.walkthrough_time || resolvedWtTime;
   const displayText = formatWalkthrough(wtDate, wtTime);
 
-  // If metadata is missing date/time, pull from deal entity
+  // If metadata is missing date/time or slots, pull from deal entity
   // Also sync appointment status from DealAppointments (authoritative source)
   useEffect(() => {
     if (!resolvedDealId) return;
@@ -54,6 +53,10 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
       if (d) {
         if (!meta.walkthrough_date && d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
         if (!meta.walkthrough_time && d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
+        // Fallback: load slots from deal if message metadata doesn't have them
+        if (!(meta.walkthrough_slots?.length > 0) && d.walkthrough_slots?.length > 0) {
+          setDealSlots(d.walkthrough_slots);
+        }
       }
     }).catch(() => {});
     // Also check DealAppointments for authoritative status
