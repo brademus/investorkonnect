@@ -15,9 +15,14 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const [userActed, setUserActed] = useState(false);
   const [resolvedWtDate, setResolvedWtDate] = useState(null);
   const [resolvedWtTime, setResolvedWtTime] = useState(null);
+  const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const meta = message?.metadata || {};
   // If user acted, always trust localStatus — don't let meta.status revert it
   const status = userActed ? (localStatus || 'pending') : (localStatus || meta.status || 'pending');
+
+  // Multiple walkthrough slots from message metadata
+  const wtSlots = (meta.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
+  const hasMultipleSlots = wtSlots.length > 1;
 
   // Sync from real-time message updates — but don't overwrite user action
   useEffect(() => {
@@ -64,14 +69,24 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     const msgAction = action === 'confirm' ? 'confirmed' : 'denied';
     setLocalStatus(msgAction);
     setUserActed(true);
+
+    // Determine which slot is being confirmed
+    let chosenDate = wtDate;
+    let chosenTime = wtTime;
+    if (action === 'confirm' && hasMultipleSlots && selectedSlotIdx != null && wtSlots[selectedSlotIdx]) {
+      const slot = wtSlots[selectedSlotIdx];
+      chosenDate = slot.date;
+      chosenTime = slot.timeStart || null;
+    }
+
     try {
       await respondToWalkthrough({
         action,
         dealId: resolvedDealId,
         roomId,
         profileId: profile?.id,
-        wtDate,
-        wtTime,
+        wtDate: chosenDate,
+        wtTime: chosenTime,
       });
       toast.success(`Walk-through ${action === 'confirm' ? 'confirmed' : 'declined'}`);
     } catch (e) {
@@ -83,21 +98,74 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     }
   };
 
+  const canRespond = isRecipient && isSigned && status === 'pending';
+
   return (
     <div className="bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-4 max-w-[85%]">
       <div className="flex items-center gap-2 mb-2">
         <Calendar className="w-4 h-4 text-[#E3C567]" />
         <span className="text-sm font-semibold text-[#E3C567]">Walk-through Request</span>
       </div>
-      <p className="text-sm text-[#FAFAFA] mb-1">
-        <span className="text-[#808080]">Proposed:</span> {displayText}
-      </p>
 
-      {status === 'pending' && isRecipient && isSigned && (
+      {/* Show all proposed slots if multiple were sent */}
+      {hasMultipleSlots ? (
+        <div className="space-y-2 mb-2">
+          <p className="text-xs text-[#808080]">
+            {canRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
+          </p>
+          {wtSlots.map((slot, idx) => {
+            const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+            const isSelected = selectedSlotIdx === idx;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => canRespond && setSelectedSlotIdx(idx)}
+                disabled={!canRespond}
+                className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition-all text-left ${
+                  isSelected
+                    ? "bg-[#E3C567]/10 border-[#E3C567]"
+                    : "bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]/40"
+                } ${canRespond ? "cursor-pointer" : "cursor-default"}`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isSelected ? "bg-[#E3C567]/20" : "bg-[#E3C567]/10"
+                }`}>
+                  <Calendar className={`w-4 h-4 ${isSelected ? "text-[#E3C567]" : "text-[#E3C567]/70"}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#FAFAFA]">
+                    Option {idx + 1}: {slot.date}
+                  </p>
+                  {timeLabel && (
+                    <p className="text-xs text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</p>
+                  )}
+                </div>
+                {isSelected && (
+                  <div className="w-5 h-5 rounded-full bg-[#E3C567] flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-black" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-sm text-[#FAFAFA] mb-1">
+          <span className="text-[#808080]">Proposed:</span> {displayText}
+        </p>
+      )}
+
+      {canRespond && (
         <div className="flex gap-2 mt-3">
-          <Button onClick={() => respond('confirm')} disabled={responding} size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs">
+          <Button
+            onClick={() => respond('confirm')}
+            disabled={responding || (hasMultipleSlots && selectedSlotIdx == null)}
+            size="sm"
+            className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs"
+          >
             {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-            Confirm
+            {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date" : "Confirm"}
           </Button>
           <Button onClick={() => respond('deny')} disabled={responding} size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs">
             {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
