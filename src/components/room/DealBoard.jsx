@@ -192,7 +192,9 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               })}
             </div>
           </div>
-          <WalkthroughPanel deal={deal} room={room} profile={profile} roomId={roomId} />
+          <div data-walkthrough-panel>
+            <WalkthroughPanel deal={localDeal} room={localRoom} profile={profile} roomId={roomId} />
+          </div>
         </div>
       )}
 
