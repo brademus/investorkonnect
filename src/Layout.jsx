@@ -16,19 +16,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-Sentry.init({
-  dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
-  sendDefaultPii: true,
-  enableLogs: true,
-  integrations: [
-    Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
-  ],
-  tracesSampleRate: 1.0,
-  tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
-  replaysSessionSampleRate: 0.1,
-  replaysOnErrorSampleRate: 1.0,
-});
+if (!window.__SENTRY_INITIALIZED__) {
+  Sentry.init({
+    dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
+    sendDefaultPii: true,
+    enableLogs: true,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: 1.0,
+    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  });
+  window.__SENTRY_INITIALIZED__ = true;
+}
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
