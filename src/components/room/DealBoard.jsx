@@ -197,7 +197,6 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           inline
                           onDealUpdate={async (optimisticPatch) => {
                             if (optimisticPatch) {
-                              // Track optimistic docs so they survive parent deal prop resets
                               if (optimisticPatch.documents) {
                                 optimisticDocsRef.current = { ...(optimisticDocsRef.current || {}), ...optimisticPatch.documents };
                               }
@@ -213,29 +212,32 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                                 return merged;
                               });
                             }
-                            await new Promise(r => setTimeout(r, 500));
+                            // Wait longer to give service-role write time to propagate
+                            await new Promise(r => setTimeout(r, 2000));
+                            const applyServerData = (serverDeal) => {
+                              if (!serverDeal) return;
+                              const serverDocs = serverDeal.documents || {};
+                              if (optimisticDocsRef.current) {
+                                const allPresent = Object.keys(optimisticDocsRef.current).every(k => serverDocs[k]?.url);
+                                if (allPresent) {
+                                  optimisticDocsRef.current = null;
+                                  setLocalDeal(serverDeal);
+                                } else {
+                                  // Server hasn't caught up yet — merge optimistic on top
+                                  setLocalDeal({ ...serverDeal, documents: { ...serverDocs, ...optimisticDocsRef.current } });
+                                }
+                              } else {
+                                setLocalDeal(serverDeal);
+                              }
+                            };
                             if (localDeal?.id) {
                               try {
                                 const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: localDeal.id });
-                                if (res?.data) {
-                                  // Clear optimistic docs if server now has them
-                                  if (optimisticDocsRef.current && res.data.documents) {
-                                    const serverDocs = res.data.documents || {};
-                                    const allPresent = Object.keys(optimisticDocsRef.current).every(k => serverDocs[k]?.url);
-                                    if (allPresent) optimisticDocsRef.current = null;
-                                  }
-                                  setLocalDeal(res.data);
-                                }
+                                applyServerData(res?.data);
                               } catch (_) {
                                 try {
                                   const d = await base44.entities.Deal.filter({ id: localDeal.id });
-                                  if (d?.[0]) {
-                                    if (optimisticDocsRef.current && d[0].documents) {
-                                      const allPresent = Object.keys(optimisticDocsRef.current).every(k => d[0].documents[k]?.url);
-                                      if (allPresent) optimisticDocsRef.current = null;
-                                    }
-                                    setLocalDeal(d[0]);
-                                  }
+                                  applyServerData(d?.[0]);
                                 } catch (_) {}
                               }
                             }
