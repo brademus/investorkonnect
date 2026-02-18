@@ -67,6 +67,11 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     }).catch(() => {});
   }, [resolvedDealId]);
 
+  // Combine: prefer message metadata slots, fallback to deal slots
+  const rawSlots = (meta.walkthrough_slots?.length > 0) ? meta.walkthrough_slots : dealSlots;
+  const wtSlots = (rawSlots || []).filter(s => s.date && s.date.length >= 8);
+  const hasMultipleSlots = wtSlots.length > 1;
+
   const respond = async (action) => {
     setResponding(true);
     const msgAction = action === 'confirm' ? 'confirmed' : 'denied';
