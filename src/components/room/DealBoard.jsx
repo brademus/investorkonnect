@@ -39,11 +39,24 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
   const [localRoom, setLocalRoom] = useState(room);
   const [messagePhotos, setMessagePhotos] = useState([]);
+  const [photosLoaded, setPhotosLoaded] = useState(false);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
 
-  // Load photos shared via chat messages
+  // Track which tabs have been visited to avoid unmounting/remounting
+  const [visitedTabs, setVisitedTabs] = useState(new Set(['details']));
   useEffect(() => {
-    if (!roomId) return;
+    setVisitedTabs(prev => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
+
+  // Lazy-load photos only when photos tab is first visited
+  useEffect(() => {
+    if (!roomId || photosLoaded || !visitedTabs.has('photos')) return;
+    setPhotosLoaded(true);
     (async () => {
       const msgs = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
       const photos = (msgs || [])
@@ -57,7 +70,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
         }));
       setMessagePhotos(photos);
     })();
-  }, [roomId]);
+  }, [roomId, visitedTabs, photosLoaded]);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
@@ -224,17 +237,19 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
         </div>
       )}
 
-      {/* Agreement Tab (only shown after signing) */}
-      {activeTab === 'agreement' && (
-        <div className="space-y-6">
+      {/* Agreement Tab (only shown after signing) — keep mounted once visited */}
+      {visitedTabs.has('agreement') && (
+        <div className="space-y-6" style={{ display: activeTab === 'agreement' ? 'flex' : 'none', flexDirection: 'column', gap: '1.5rem' }}>
           <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
           <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
         </div>
       )}
 
-      {/* Files Tab */}
-      {activeTab === 'files' && (
-        <FilesTab deal={localDeal} room={localRoom} roomId={roomId} profile={profile} />
+      {/* Files Tab — keep mounted once visited */}
+      {visitedTabs.has('files') && (
+        <div style={{ display: activeTab === 'files' ? 'block' : 'none' }}>
+          <FilesTab deal={localDeal} room={localRoom} roomId={roomId} profile={profile} />
+        </div>
       )}
 
       {/* Photos Tab */}
@@ -266,9 +281,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
         </div>
       )}
 
-      {/* Activity Tab */}
-      {activeTab === 'activity' && (
-        <DealActivityTab dealId={deal?.id} roomId={roomId} />
+      {/* Activity Tab — keep mounted once visited */}
+      {visitedTabs.has('activity') && (
+        <div style={{ display: activeTab === 'activity' ? 'block' : 'none' }}>
+          <DealActivityTab dealId={deal?.id} roomId={roomId} />
+        </div>
       )}
     </div>
   );
