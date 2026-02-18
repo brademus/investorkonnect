@@ -206,10 +206,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                             setLocalDeal(prev => {
                               if (!prev) return prev;
                               const merged = { ...prev };
-                              // Apply all patch keys
                               for (const key of Object.keys(patch)) {
                                 if (key === 'documents') {
-                                  merged.documents = { ...(prev.documents || {}), ...patch.documents };
+                                  // Full replace with server docs merged with local ref
+                                  merged.documents = { ...patch.documents, ...localDocsRef.current };
                                 } else {
                                   merged[key] = patch[key];
                                 }
