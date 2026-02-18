@@ -72,22 +72,18 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       setUploading(true);
       toast.info('Uploading document...');
       try {
-        // Step 1: Upload file
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         const docEntry = { url: file_url, name: file.name, uploaded_at: new Date().toISOString(), uploaded_by: profile?.id };
 
-        // Step 2: Save to deal.documents via backend
-        const res = await base44.functions.invoke('updateDealDocuments', {
+        // Save via backend
+        await base44.functions.invoke('updateDealDocuments', {
           dealId: deal.id,
           documents: { [docKey]: docEntry }
         });
-        console.log('[CTA Upload] Server response:', JSON.stringify(res?.data));
 
-        // res.data = { success, data: freshDeal } from the backend function
-        const serverDocs = res?.data?.data?.documents;
-        // Always call onDealUpdate so DealBoard picks it up
-        onDealUpdate?.({ documents: serverDocs || { ...(deal?.documents || {}), [docKey]: docEntry } });
-
+        // Optimistically update local state immediately — this is what the UI reads
+        const mergedDocs = { ...(deal?.documents || {}), [docKey]: docEntry };
+        onDealUpdate?.({ documents: mergedDocs });
         toast.success('Document uploaded');
       } catch (err) {
         console.error('[CTA Upload] Error:', err);
