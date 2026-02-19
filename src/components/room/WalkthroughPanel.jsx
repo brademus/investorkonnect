@@ -287,8 +287,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId }) {
 
           {isInvestor && status === "CANCELED" && (
             <div className="pt-3 border-t border-[#1F1F1F] mt-3">
-              <p className="text-xs text-[#808080]">
-                The agent declined. Use the <span className="text-[#E3C567]">Schedule Walk-through</span> button in the messages header to propose a new date.
+              <p className="text-xs text-[#808080] mb-2">
+                The agent declined your proposed dates.
               </p>
             </div>
           )}
