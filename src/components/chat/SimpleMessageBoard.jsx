@@ -107,6 +107,8 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           if (!isChatEnabled && !isWalkthroughRequest && !isWalkthroughResponse) return null;
 
           if (isWalkthroughRequest) {
+            const wtStatus = m?.metadata?.status;
+            if (wtStatus === 'confirmed' || wtStatus === 'denied') return null;
             return (
               <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
                 <WalkthroughMessageCard message={m} isAgent={isAgentUser} isRecipient={!isMe} roomId={roomId} profile={profile} isSigned={isSigned} dealId={dealId} />
