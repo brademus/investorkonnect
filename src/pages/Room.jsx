@@ -291,7 +291,7 @@ export default function Room() {
               return merged;
             });
           });
-        if (e?.data?.walkthrough_scheduled) setHasWalkthroughAppt(true);
+        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); setWalkthroughDeclined(false); }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
