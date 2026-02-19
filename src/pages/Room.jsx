@@ -38,7 +38,7 @@ export default function Room() {
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
   const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
-  const [walkthroughDeclined, setWalkthroughDeclined] = useState(false);
+  
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set(['messages']));
 
@@ -291,7 +291,7 @@ export default function Room() {
               return merged;
             });
           });
-        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); setWalkthroughDeclined(false); }
+        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
@@ -303,11 +303,9 @@ export default function Room() {
     if (deal?.walkthrough_scheduled && (deal?.walkthrough_date || deal?.walkthrough_time)) {
       setHasWalkthroughAppt(true);
     }
-    // Check DealAppointments for declined status
     base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
       const status = rows?.[0]?.walkthrough?.status;
-      if (status === 'CANCELED') setWalkthroughDeclined(true);
-      else if (status === 'SCHEDULED' || status === 'COMPLETED') { setWalkthroughDeclined(false); setHasWalkthroughAppt(true); }
+      if (status === 'SCHEDULED' || status === 'COMPLETED') { setHasWalkthroughAppt(true); }
     }).catch(() => {});
   }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_date, deal?.walkthrough_time]);
 
@@ -443,13 +441,13 @@ export default function Room() {
               />
             )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
-              {isInvestor && isSigned && deal?.id && (!hasWalkthroughAppt || walkthroughDeclined) && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
+              {isInvestor && isSigned && deal?.id && !hasWalkthroughAppt && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
                 <button
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
                   onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  {walkthroughDeclined ? 'Reschedule Walk-through' : 'Schedule Walk-through'}
+                  Schedule Walk-through
                 </button>
               )}
               <div className="flex flex-col items-center">
@@ -548,7 +546,7 @@ export default function Room() {
                 deal={deal}
                 roomId={roomId}
                 profile={profile}
-                onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); setHasWalkthroughAppt(true); setWalkthroughDeclined(false); }}
+                onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); setHasWalkthroughAppt(true); }}
               />
             </div>
           )}
