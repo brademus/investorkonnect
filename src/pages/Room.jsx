@@ -548,7 +548,7 @@ export default function Room() {
                 deal={deal}
                 roomId={roomId}
                 profile={profile}
-                onScheduled={(updates) => setDeal(prev => prev ? { ...prev, ...updates } : prev)}
+                onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); setHasWalkthroughAppt(true); setWalkthroughDeclined(false); }}
               />
             </div>
           )}
