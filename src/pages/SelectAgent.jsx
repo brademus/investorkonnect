@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle2, Users, Briefcase } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Users, Briefcase, Trophy, MapPin, Star } from "lucide-react";
 import { toast } from "sonner";
 import AgentRatingStars from "@/components/AgentRatingStars";
 import { fetchAgentRatings } from "@/components/useAgentRating";
+import { rankAgentsForDeal, getZipCoords } from "@/components/utils/agentScoring";
 
 export default function SelectAgent() {
   const navigate = useNavigate();
@@ -16,8 +17,6 @@ export default function SelectAgent() {
   const [loading, setLoading] = useState(true);
   const [proceeding, setProceeding] = useState(false);
   const [dealData, setDealData] = useState(null);
-  const [ratings, setRatings] = useState(new Map());
-  const [ikDeals, setIkDeals] = useState(new Map());
 
   // Get state from deal data
   useEffect(() => {
@@ -33,7 +32,7 @@ export default function SelectAgent() {
     }
   }, []);
 
-  // Load agents that have this state and city as a target market
+  // Load agents using ranking algorithm
   useEffect(() => {
     const loadAgents = async () => {
       if (!dealData?.state || !dealData?.city) {
@@ -45,52 +44,51 @@ export default function SelectAgent() {
       console.log('[SelectAgent] Loading agents for city:', dealData.city, 'state:', dealData.state);
       setLoading(true);
       try {
-        const allAgents = await base44.entities.Profile.filter({ user_role: "agent" });
+        // Fetch all agents and all deals in parallel
+        const [allAgents, allDeals] = await Promise.all([
+          base44.entities.Profile.filter({ user_role: "agent" }),
+          base44.entities.Deal.filter({})
+        ]);
+
         console.log('[SelectAgent] Total agents found:', allAgents.length);
-        
-        // Filter agents that have this state in their markets AND prefer by nearest city match
-        const filteredAgents = allAgents.filter(agent => {
-          const markets = agent.agent?.markets || agent.markets || [];
-          const licensedStates = agent.agent?.licensed_states || [];
-          return (
-            markets.some(m => m === dealData.state || m.toUpperCase() === dealData.state.toUpperCase()) ||
-            licensedStates.some(s => s === dealData.state || s.toUpperCase() === dealData.state.toUpperCase())
-          );
+
+        // Build IK deals count map
+        const ikMap = new Map();
+        allAgents.forEach(a => ikMap.set(a.id, 0));
+        (allDeals || []).forEach(deal => {
+          if (deal.locked_agent_id && ikMap.has(deal.locked_agent_id)) {
+            ikMap.set(deal.locked_agent_id, ikMap.get(deal.locked_agent_id) + 1);
+          }
         });
 
-        // Sort by city proximity - prioritize agents with matching city in their profile
-        const sortedAgents = filteredAgents.sort((a, b) => {
-          const aCity = (a.agent?.primary_neighborhoods_notes || a.location || '').toLowerCase();
-          const bCity = (b.agent?.primary_neighborhoods_notes || b.location || '').toLowerCase();
-          const dealCity = dealData.city.toLowerCase();
-          
-          const aHasCity = aCity.includes(dealCity);
-          const bHasCity = bCity.includes(dealCity);
-          
-          if (aHasCity && !bHasCity) return -1;
-          if (!aHasCity && bHasCity) return 1;
-          return 0;
-        });
+        // Fetch ratings for all agents
+        const agentIds = allAgents.map(a => a.id);
+        const ratingsMap = agentIds.length > 0 ? await fetchAgentRatings(agentIds) : new Map();
 
-        console.log('[SelectAgent] Filtered agents for', dealData.city, dealData.state, ':', sortedAgents.length);
-        setAgents(sortedAgents);
-        // Fetch ratings and IK deals for all agents
-        const agentIds = sortedAgents.map(a => a.id);
-        if (agentIds.length > 0) {
-          fetchAgentRatings(agentIds).then(setRatings);
-          // Fetch IK deals count per agent
-          base44.entities.Deal.filter({}).then(allDeals => {
-            const counts = new Map();
-            agentIds.forEach(id => counts.set(id, 0));
-            (allDeals || []).forEach(deal => {
-              if (deal.locked_agent_id && counts.has(deal.locked_agent_id)) {
-                counts.set(deal.locked_agent_id, counts.get(deal.locked_agent_id) + 1);
-              }
-            });
-            setIkDeals(counts);
-          }).catch(err => console.log('Could not fetch IK deals:', err));
+        // Get deal coordinates
+        let lat = dealData.deal_lat ?? null;
+        let lng = dealData.deal_lng ?? null;
+        if ((lat == null || lng == null) && dealData.zip) {
+          const coords = await getZipCoords(dealData.zip);
+          if (coords) {
+            lat = coords.lat;
+            lng = coords.lng;
+          }
         }
-        if (sortedAgents.length === 0) {
+
+        const dealLocation = {
+          state: dealData.state,
+          county: dealData.county || "",
+          lat,
+          lng,
+        };
+
+        // Rank agents
+        const ranked = rankAgentsForDeal(allAgents, dealLocation, ratingsMap, ikMap);
+        console.log('[SelectAgent] Ranked agents for', dealData.city, dealData.state, ':', ranked.length);
+        setAgents(ranked);
+
+        if (ranked.length === 0) {
           toast.info("No agents available in this market yet");
         }
       } catch (err) {
@@ -166,7 +164,10 @@ export default function SelectAgent() {
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
           <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Select Your Agents</h1>
-          <p className="text-sm text-[#808080]">Choose up to 3 agents to send this deal to ({selectedAgentIds.length}/3 selected)</p>
+          <p className="text-sm text-[#808080]">
+            Showing agents licensed in {dealData.state} · sorted by proximity &amp; rating
+            {" "}({selectedAgentIds.length}/3 selected)
+          </p>
         </div>
 
         {loading ? (
@@ -191,6 +192,8 @@ export default function SelectAgent() {
           <div className="space-y-4">
             {agents.map((agent) => {
               const isSelected = selectedAgentIds.includes(agent.id);
+              const md = agent.matchData || {};
+              const badges = md.badges || [];
               return (
                 <div
                   key={agent.id}
@@ -202,20 +205,43 @@ export default function SelectAgent() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
+                      {/* Badges */}
+                      {badges.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {badges.includes("bestMatch") && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                              <Trophy className="w-3 h-3" /> Best Match
+                            </span>
+                          )}
+                          {badges.includes("local") && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#34D399]/20 text-[#34D399] border border-[#34D399]/30">
+                              <MapPin className="w-3 h-3" /> Local Expert
+                            </span>
+                          )}
+                          {badges.includes("topRated") && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#A78BFA]/20 text-[#A78BFA] border border-[#A78BFA]/30">
+                              <Star className="w-3 h-3" /> Top Rated
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
                         {agent.full_name || "Unnamed Agent"}
                       </h3>
+                      {md.distanceMiles != null && (
+                        <p className="text-xs text-[#808080] mb-1">~{md.distanceMiles} miles away</p>
+                      )}
                       <p className="text-sm text-[#808080] mb-3">{agent.email}</p>
                       {/* Rating */}
                       <div className="mb-3">
                         <AgentRatingStars
-                          rating={ratings.get(agent.id)?.rating}
-                          reviewCount={ratings.get(agent.id)?.reviewCount || 0}
+                          rating={md.ratingScore != null ? (md.ratingScore / 80) * 5 : null}
+                          reviewCount={0}
                           size="sm"
                         />
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {agent.agent?.agent_friendly && (
+                        {agent.agent?.investor_friendly && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#34D399]/20 text-[#34D399] text-xs font-medium">
                             ✓ Investor Friendly
                           </span>
@@ -225,31 +251,20 @@ export default function SelectAgent() {
                             Licensed
                           </span>
                         )}
-                        {agent.agent?.investor_experience_years && (
+                        {agent.agent?.experience_years > 0 && (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium">
-                            {agent.agent.investor_experience_years}+ years
+                            {agent.agent.experience_years}+ years
                           </span>
                         )}
                       </div>
                       {/* Deal Stats */}
-                      {(agent.agent?.investment_deals_last_12m > 0 || (ikDeals.get(agent.id) || 0) > 0) && (
+                      {(agent.agent?.investment_deals_last_12m > 0 || (md.activityScore > 0)) && (
                         <div className="flex gap-3 mt-3">
                           {agent.agent?.investment_deals_last_12m > 0 && (
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
                               <Briefcase className="w-3.5 h-3.5 text-[#E3C567]" />
                               <span className="text-sm font-bold text-[#E3C567]">{agent.agent.investment_deals_last_12m}</span>
                               <span className="text-[10px] uppercase tracking-wider text-[#808080]">Outside IK</span>
-                            </div>
-                          )}
-                          {(ikDeals.get(agent.id) || 0) > 0 && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
-                              <img 
-                                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
-                                alt="IK"
-                                className="w-4 h-4 object-contain"
-                              />
-                              <span className="text-sm font-bold text-[#E3C567]">{ikDeals.get(agent.id)}</span>
-                              <span className="text-[10px] uppercase tracking-wider text-[#808080]">IK Deals</span>
                             </div>
                           )}
                         </div>
