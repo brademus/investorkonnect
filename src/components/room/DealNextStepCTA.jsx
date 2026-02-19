@@ -176,8 +176,6 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   if (stage === 'connected_deals') {
     if (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED') {
       completedMilestones.push({ icon: Calendar, label: 'Walkthrough Scheduled' });
-    } else if (wtStatus === 'PROPOSED' || hasWalkthrough) {
-      completedMilestones.push({ icon: Clock, label: 'Walkthrough Proposed', pending: true });
     }
     if (hasCma) {
       completedMilestones.push({ icon: FileCheck, label: 'CMA Uploaded' });
