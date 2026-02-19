@@ -169,8 +169,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
     }
   };
 
-  const statusColor = status === "SCHEDULED" ? "text-[#10B981]" : status === "CANCELED" ? "text-red-400" : status === "COMPLETED" ? "text-[#60A5FA]" : "text-[#F59E0B]";
-  const statusLabel = status === "SCHEDULED" ? "Confirmed" : status === "CANCELED" ? "Declined" : status === "COMPLETED" ? "Completed" : "Proposed — Awaiting Confirmation";
+  const statusColor = status === "SCHEDULED" ? "text-[#10B981]" : status === "COMPLETED" ? "text-[#60A5FA]" : "text-[#F59E0B]";
+  const statusLabel = status === "SCHEDULED" ? "Confirmed" : status === "COMPLETED" ? "Completed" : "Proposed — Awaiting Confirmation";
 
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
