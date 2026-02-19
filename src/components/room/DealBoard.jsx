@@ -17,6 +17,51 @@ import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 
+function WalkthroughStatusLine({ dealId }) {
+  const [status, setStatus] = useState(null);
+  const [confirmedDate, setConfirmedDate] = useState(null);
+
+  useEffect(() => {
+    if (!dealId) return;
+    base44.entities.DealAppointments.filter({ dealId }).then(rows => {
+      const wt = rows?.[0]?.walkthrough;
+      if (wt) {
+        setStatus(wt.status);
+        if ((wt.status === 'SCHEDULED' || wt.status === 'COMPLETED') && wt.datetime) {
+          setConfirmedDate(wt.datetime);
+        }
+      }
+    }).catch(() => {});
+
+    const unsub = base44.entities.DealAppointments.subscribe(e => {
+      if (e?.data?.dealId === dealId && e.data.walkthrough) {
+        const wt = e.data.walkthrough;
+        setStatus(wt.status);
+        if ((wt.status === 'SCHEDULED' || wt.status === 'COMPLETED') && wt.datetime) {
+          setConfirmedDate(wt.datetime);
+        }
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [dealId]);
+
+  const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED';
+  let label = 'To Be Determined';
+  if (isConfirmed && confirmedDate) {
+    try { label = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { label = confirmedDate; }
+  } else if (isConfirmed) {
+    label = 'Confirmed';
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-3">
+      <Calendar className={`w-4 h-4 ${isConfirmed ? 'text-[#34D399]' : 'text-[#808080]'}`} />
+      <span className="text-sm text-[#808080]">Walk-through:</span>
+      <span className={`text-sm font-medium ${isConfirmed ? 'text-[#34D399]' : 'text-[#F59E0B]'}`}>{label}</span>
+    </div>
+  );
+}
+
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
