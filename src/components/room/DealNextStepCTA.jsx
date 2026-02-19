@@ -138,7 +138,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         cta = { type: 'waiting', icon: Clock, label: 'Waiting for Walkthrough', description: 'The investor hasn\'t scheduled a walkthrough yet.' };
       }
     } else if (wtStatus === 'PROPOSED') {
-      cta = { type: 'waiting', icon: Clock, label: 'Walkthrough Proposed', description: 'Awaiting agent confirmation of the walkthrough.' };
+      // No CTA here — the InlineWalkthroughStatus panel handles confirmation
+      cta = null;
     } else if (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED') {
       if (!hasCma) {
         if (isAgent) {
