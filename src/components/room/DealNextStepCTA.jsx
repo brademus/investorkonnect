@@ -138,11 +138,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         cta = { type: 'waiting', icon: Clock, label: 'Waiting for Walkthrough', description: 'The investor hasn\'t scheduled a walkthrough yet.' };
       }
     } else if (wtStatus === 'PROPOSED') {
-      if (isAgent) {
-        cta = { type: 'action', icon: Calendar, label: 'Confirm Walkthrough', description: 'Review and confirm the proposed walkthrough dates.', onClick: () => { const el = document.querySelector('[data-walkthrough-panel]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
-      } else {
-        cta = { type: 'waiting', icon: Clock, label: 'Walkthrough Proposed', description: 'Awaiting agent confirmation of the walkthrough.' };
-      }
+      cta = { type: 'waiting', icon: Clock, label: 'Walkthrough Proposed', description: 'Awaiting agent confirmation of the walkthrough.' };
     } else if (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED') {
       if (!hasCma) {
         if (isAgent) {
