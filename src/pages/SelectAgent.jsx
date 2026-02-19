@@ -37,7 +37,7 @@ export default function SelectAgent() {
   // Load agents using ranking algorithm
   useEffect(() => {
     const loadAgents = async () => {
-      if (!dealData?.state || !dealData?.city) {
+      if (!dealData?.state) {
         console.log('[SelectAgent] No deal state or city found, staying in loading');
         setLoading(false);
         return;
