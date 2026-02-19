@@ -17,7 +17,7 @@ const _wtCache = {};
 // Terminal/resolved statuses that must never revert to PROPOSED
 const RESOLVED_STATUSES = new Set(["SCHEDULED", "CANCELED", "COMPLETED"]);
 
-export default function WalkthroughPanel({ deal, room, profile, roomId }) {
+export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenReschedule }) {
   const dealId = deal?.id;
   const cached = dealId ? _wtCache[dealId] : null;
   const [apptStatus, setApptStatus] = useState(cached?.status || null);
