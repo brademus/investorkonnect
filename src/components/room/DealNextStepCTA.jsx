@@ -194,10 +194,6 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
           Yes, Closed
         </Button>
-        <Button onClick={() => updateStage('canceled')} disabled={updatingStage} size={inline ? 'sm' : 'default'} variant="outline" className={`flex-1 border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full ${inline ? 'text-xs' : 'font-semibold'}`}>
-          {updatingStage ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
-          No, Canceled
-        </Button>
       </div>
       <button onClick={() => setShowClosePrompt(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Go back</button>
     </div>
