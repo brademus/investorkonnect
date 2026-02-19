@@ -16,6 +16,18 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [apptConfirmed, setApptConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (!deal?.id) return;
+    if (deal.walkthrough_scheduled !== true || deal.walkthrough_confirmed === true) return;
+    try {
+      base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+        const s = rows?.[0]?.walkthrough?.status;
+        if (s === 'SCHEDULED' || s === 'COMPLETED') setApptConfirmed(true);
+      }).catch(() => {});
+    } catch (_) {}
+  }, [deal?.id]);
 
   // Extract current buyer commission terms - ALWAYS fetch fresh from agreement
   useEffect(() => {
@@ -202,8 +214,12 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       {deal?.walkthrough_scheduled === true && (
         <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
           <span className="text-sm text-[#808080]">Walk-through</span>
-          {deal.walkthrough_confirmed === true ? (
-            <span className="text-sm font-medium text-[#FAFAFA]">{deal.walkthrough_confirmed_date || ''} at {deal.walkthrough_confirmed_time || ''}</span>
+          {(deal.walkthrough_confirmed === true || apptConfirmed) ? (
+            <span className="text-sm font-medium text-[#FAFAFA]">
+              {(deal.walkthrough_confirmed_date || deal.walkthrough_date)
+                ? `${deal.walkthrough_confirmed_date || deal.walkthrough_date}${(deal.walkthrough_confirmed_time || deal.walkthrough_time) ? ` at ${deal.walkthrough_confirmed_time || deal.walkthrough_time}` : ''}`
+                : 'Confirmed'}
+            </span>
           ) : (
             <span className="text-sm italic text-[#808080]">To Be Determined</span>
           )}
