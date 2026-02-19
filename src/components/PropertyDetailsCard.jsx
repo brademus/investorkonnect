@@ -38,7 +38,11 @@ export default function PropertyDetailsCard({ deal, inline = false }) {
     else if (['no', 'false', 'n'].includes(s)) hasBasement = false;
   }
 
+  const dealType = deal?.deal_type;
+  const dealTypeLabel = dealType ? dealType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : null;
+
   const rows = [
+    { label: "Deal Type", value: dealTypeLabel },
     { label: "Property Type", value: propertyType },
     { label: "Bedrooms", value: beds != null ? String(beds) : null },
     { label: "Bathrooms", value: baths != null ? String(baths) : null },
