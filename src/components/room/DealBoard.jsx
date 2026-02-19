@@ -227,7 +227,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           </div>
           <div data-walkthrough-panel>
-            <WalkthroughPanel deal={localDeal} room={localRoom} profile={profile} roomId={roomId} />
+            <WalkthroughPanel deal={localDeal} room={localRoom} profile={profile} roomId={roomId} onOpenReschedule={() => setWtModalOpen(true)} />
           </div>
         </div>
       )}
