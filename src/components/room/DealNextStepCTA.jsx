@@ -119,7 +119,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
   if (stage === 'new_deals') {
     if (!isSigned) {
-      cta = { type: 'action', icon: FileSignature, label: 'Sign Agreement', description: 'Review and sign the agreement to move this deal forward.', onClick: () => { const el = document.querySelector('[data-agreement-panel]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } };
+      cta = { type: 'waiting', icon: FileSignature, label: 'Agreement Needs Signing', description: 'Review and sign the agreement below to move this deal forward.' };
     } else {
       cta = { type: 'waiting', icon: Clock, label: 'Waiting for Counterparty Signature', description: 'The other party needs to sign the agreement to proceed.' };
     }
