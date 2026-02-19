@@ -4,8 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, MapPin, Briefcase, DollarSign, Target, Building2, User, TrendingUp, Handshake, MessageSquare, Shield, Layers, Home, Banknote } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Briefcase, DollarSign, Target, Building2, User, TrendingUp, Handshake, MessageSquare, Shield, Layers, Home, Banknote, Star } from "lucide-react";
 import InvestorBusinessCard from "@/components/InvestorBusinessCard";
+import AgentRatingStars from "@/components/AgentRatingStars";
 
 // Label maps for onboarding values
 const INVESTOR_DESCRIPTION_LABELS = {
@@ -118,6 +119,7 @@ export default function InvestorProfile() {
   const [investorProfile, setInvestorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ikDealsCount, setIkDealsCount] = useState(null);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     if (!profileId) return;
@@ -127,10 +129,14 @@ export default function InvestorProfile() {
         const profiles = await base44.entities.Profile.filter({ id: profileId });
         setInvestorProfile(profiles?.[0] || null);
         try {
-          const deals = await base44.entities.Deal.filter({ investor_id: profileId });
+          const [deals, revs] = await Promise.all([
+            base44.entities.Deal.filter({ investor_id: profileId }),
+            base44.entities.Review.filter({ reviewee_profile_id: profileId })
+          ]);
           setIkDealsCount(deals?.length || 0);
+          setReviews(revs || []);
         } catch (e) {
-          console.log('[InvestorProfile] Could not count IK deals:', e);
+          console.log('[InvestorProfile] Could not load deals/reviews:', e);
           setIkDealsCount(0);
         }
       } catch (err) {
@@ -274,6 +280,43 @@ export default function InvestorProfile() {
             )}
           </InfoSection>
         )}
+
+        {/* Reviews */}
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="w-5 h-5 text-[#E3C567]" />
+            <h3 className="text-lg font-bold text-[#FAFAFA]">Reviews</h3>
+          </div>
+          {reviews.length === 0 ? (
+            <p className="text-sm text-[#808080] text-center py-4">No reviews yet</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <AgentRatingStars
+                  rating={reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length}
+                  reviewCount={reviews.length}
+                  size="md"
+                />
+              </div>
+              {reviews.map((r) => (
+                <div key={r.id} className="border-t border-[#1F1F1F] pt-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-[#FAFAFA]">{r.reviewer_name || "Anonymous"}</span>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star key={s} className={`w-3.5 h-3.5 ${s <= (r.rating || 0) ? "text-[#E3C567] fill-[#E3C567]" : "text-[#333]"}`} />
+                      ))}
+                    </div>
+                  </div>
+                  {r.body && <p className="text-sm text-[#808080] leading-relaxed">{r.body}</p>}
+                  {r.created_date && (
+                    <p className="text-xs text-[#666] mt-1">{new Date(r.created_date).toLocaleDateString()}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Holding & Additional Info */}
         {(ob.investment_holding_structures?.length > 0 || ob.background_links || ob.anything_else_for_agent) && (
