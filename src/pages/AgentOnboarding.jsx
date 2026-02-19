@@ -288,6 +288,20 @@ export default function AgentOnboarding() {
       const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
       console.log('[AgentOnboarding] Profile saved successfully:', result);
 
+      // Fire-and-forget: geocode agent's main county for matching
+      try {
+        const primaryState = Object.keys(formData.state_licenses)[0] || '';
+        if (formData.main_county && primaryState) {
+          getCountyCentroid(formData.main_county, primaryState).then(coords => {
+            if (coords) {
+              base44.entities.Profile.update(profileToUpdate.id, {
+                agent: { ...updateData.agent, lat: coords.lat, lng: coords.lng }
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+      } catch (_) {}
+
       toast.success("Profile saved! Let's verify your identity.");
       
       // Navigate to Identity Verification (next step for agents)

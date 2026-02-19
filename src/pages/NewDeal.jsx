@@ -523,6 +523,15 @@ export default function NewDeal() {
           walkthrough_time: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
         });
         
+        // Fire-and-forget: geocode deal ZIP for agent matching
+        if (zip) {
+          getZipCoords(zip).then(coords => {
+            if (coords) {
+              base44.entities.Deal.update(dealId, { deal_lat: coords.lat, deal_lng: coords.lng }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+
         // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
         try {
           const apptRows = await base44.entities.DealAppointments.filter({ dealId });
