@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered, FileText } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -31,6 +31,8 @@ function AdminContent() {
   const [adminEmail, setAdminEmail] = useState("");
   const [ndaUpdating, setNdaUpdating] = useState({});
   const [wipingData, setWipingData] = useState(false);
+  const [backfillingCoords, setBackfillingCoords] = useState(false);
+  const [backfillDone, setBackfillDone] = useState(false);
   const [docusignConnection, setDocusignConnection] = useState(null);
   const [checkingDocusign, setCheckingDocusign] = useState(true);
   const [connectingDocusign, setConnectingDocusign] = useState(false);
@@ -1169,6 +1171,42 @@ Type "WIPE" to confirm:`;
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Rebuild Investor Vectors
               </Button>
+              <Button
+                onClick={async () => {
+                  setBackfillingCoords(true);
+                  try {
+                    const response = await base44.functions.invoke('backfillAgentCoordinates', {});
+                    const data = response.data;
+                    toast.success(`Done — ${data.updated} updated, ${data.skipped} skipped, ${data.notFound} not found`);
+                    setBackfillDone(true);
+                  } catch (error) {
+                    toast.error("Backfill failed: " + error.message);
+                  } finally {
+                    setBackfillingCoords(false);
+                  }
+                }}
+                disabled={backfillingCoords || backfillDone}
+                variant="outline"
+                className="w-full justify-start border-purple-300 text-purple-700 hover:bg-purple-100"
+              >
+                {backfillingCoords ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Updating agent profiles…
+                  </>
+                ) : backfillDone ? (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Backfill Complete
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Backfill Agent Coordinates
+                  </>
+                )}
+              </Button>
+              <p className="text-[10px] text-purple-500 mt-1">Run once after deploying the new matching algorithm.</p>
               <div className="text-xs text-purple-700 mt-2">
                 Run after major profile updates
               </div>
