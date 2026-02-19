@@ -194,6 +194,7 @@ export default function MyAgreement() {
             agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
             contract_url: dealData.contractUrl || null,
             special_notes: dealData.specialNotes || null,
+            deal_type: dealData.dealType || null,
             closing_date: dealData.closingDate,
             contract_date: dealData.contractDate,
             selected_agent_ids: agentIds,

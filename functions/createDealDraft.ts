@@ -54,7 +54,8 @@ Deno.serve(async (req) => {
       walkthrough_scheduled,
       walkthrough_date,
       walkthrough_time,
-      walkthrough_slots
+      walkthrough_slots,
+      deal_type
     } = body;
 
     // Validation
@@ -98,6 +99,7 @@ Deno.serve(async (req) => {
       closing_date,
       contract_date,
       selected_agent_ids,
+      deal_type: deal_type || null,
       walkthrough_scheduled: walkthrough_scheduled === true ? true : false,
       walkthrough_date: (walkthrough_scheduled === true && walkthrough_date && String(walkthrough_date).length >= 8) ? walkthrough_date : null,
       walkthrough_time: (walkthrough_scheduled === true && walkthrough_time && String(walkthrough_time).length >= 3) ? walkthrough_time : null,

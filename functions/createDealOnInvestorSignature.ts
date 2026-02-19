@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
         dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
         dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
         dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
+        if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
         dealUpdate.proposed_terms = {
@@ -497,7 +498,8 @@ Deno.serve(async (req) => {
       walkthrough_scheduled: draftWalkthroughScheduled,
       walkthrough_date: draftWalkthroughDate,
       walkthrough_time: draftWalkthroughTime,
-      walkthrough_slots: draftWalkthroughSlots
+      walkthrough_slots: draftWalkthroughSlots,
+      deal_type: draft.deal_type || null
     });
     
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time, 'walkthrough_slots:', draftWalkthroughSlots.length);
