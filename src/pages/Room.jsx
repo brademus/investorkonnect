@@ -30,7 +30,7 @@ export default function Room() {
   const [drawer, setDrawer] = useState(false);
   const [search, setSearch] = useState("");
   // activeView: 'board' | 'messages' | 'pending_agents'
-  const [activeView, setActiveView] = useState('messages');
+  const [activeView, setActiveView] = useState('board');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function Room() {
   const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
   
   // Track which views have been mounted so they stay alive
-  const [mountedViews, setMountedViews] = useState(new Set(['messages']));
+  const [mountedViews, setMountedViews] = useState(new Set(['board']));
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
@@ -78,12 +78,10 @@ export default function Room() {
 
     // Pick the right default view BEFORE any async work
     let defaultView;
-    if (cachedIsSigned) {
-      defaultView = 'messages';
-    } else if (isAgent) {
-      defaultView = 'board';
-    } else {
+    if (isInvestor && !cachedIsSigned && pendingInvites.length > 0) {
       defaultView = 'pending_agents';
+    } else {
+      defaultView = 'board';
     }
     setActiveView(defaultView);
     setMountedViews(new Set([defaultView]));
@@ -147,11 +145,7 @@ export default function Room() {
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
         const resolvedIsSigned = dealData?.is_fully_signed || roomIsLocked;
 
-        // If signing status changed from cache, update view
-        if (resolvedIsSigned && defaultView !== 'messages') {
-          setActiveView('messages');
-          setMountedViews(prev => { const n = new Set(prev); n.add('messages'); return n; });
-        }
+        // No longer auto-switch to messages on signing — user stays on board
 
         setCurrentRoom({
           ...room,
