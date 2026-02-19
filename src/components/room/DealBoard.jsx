@@ -17,7 +17,7 @@ import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 
-function WalkthroughStatusLine({ dealId, roomId }) {
+function WalkthroughStatusLine({ dealId, roomId, deal }) {
   const [status, setStatus] = useState(null);
   const [confirmedDate, setConfirmedDate] = useState(null);
 
@@ -58,12 +58,22 @@ function WalkthroughStatusLine({ dealId, roomId }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
-  const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED';
+  // Derive confirmed status from deal fields as fallback
+  const dealConfirmed = deal?.walkthrough_confirmed === true;
+  const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED' || dealConfirmed;
+
+  // Build the display date from all available sources
   let label = 'To Be Determined';
-  if (isConfirmed && confirmedDate) {
-    try { label = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { label = confirmedDate; }
-  } else if (isConfirmed) {
-    label = 'Confirmed';
+  if (isConfirmed) {
+    if (confirmedDate) {
+      try { label = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { label = confirmedDate; }
+    } else if (deal?.walkthrough_confirmed_date) {
+      const d = deal.walkthrough_confirmed_date;
+      const t = deal.walkthrough_confirmed_time;
+      label = t ? `${d} at ${t}` : d;
+    } else {
+      label = 'Confirmed';
+    }
   }
 
   return (
