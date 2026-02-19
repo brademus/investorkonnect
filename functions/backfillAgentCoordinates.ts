@@ -19,11 +19,11 @@ async function loadCentroids() {
     const line = lines[i].trim();
     if (!line) continue;
     const parts = line.split(",");
-    if (parts.length < 4) continue;
+    if (parts.length < 5) continue;
     const fips = parts[0].trim();
     const rawName = parts[1].trim();
-    const lng = parseFloat(parts[2]);
     const lat = parseFloat(parts[3]);
+    const lng = parseFloat(parts[4]);
     if (isNaN(lat) || isNaN(lng)) continue;
     const stCode = FIPS_TO_STATE[fips.substring(0, 2)];
     if (!stCode) continue;
