@@ -96,6 +96,7 @@ function LayoutContent({ children }) {
   const noNavPages = [
     '/',
     '/role',
+    '/RoleLanding',
     '/onboarding/investor',
     '/onboarding/agent',
     '/onboarding',
