@@ -124,13 +124,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       cta = { type: 'waiting', icon: Clock, label: 'Waiting for Counterparty Signature', description: 'The other party needs to sign the agreement to proceed.' };
     }
   } else if (stage === 'connected_deals') {
-    if (wtStatus === 'CANCELED') {
-      if (isInvestor) {
-        cta = { type: 'action', icon: Calendar, label: 'Reschedule Walkthrough', description: 'The agent declined your proposed dates. Propose new walkthrough dates.', onClick: () => onOpenWalkthroughModal?.() };
-      } else {
-        cta = { type: 'waiting', icon: Clock, label: 'Walkthrough Declined', description: 'Waiting for the investor to propose new dates.' };
-      }
-    } else if ((!hasWalkthrough && wtStatus === 'NOT_SET') || !wtStatus) {
+    if ((!hasWalkthrough && wtStatus === 'NOT_SET') || !wtStatus || wtStatus === 'CANCELED') {
       if (isInvestor) {
         cta = { type: 'action', icon: Calendar, label: 'Schedule Walkthrough', description: 'Propose walkthrough dates for the agent.', onClick: () => onOpenWalkthroughModal?.() };
       } else {
