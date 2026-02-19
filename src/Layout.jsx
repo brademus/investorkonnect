@@ -102,8 +102,9 @@ function LayoutContent({ children }) {
     '/verify',
     '/nda',
     '/matches',
-    '/PostAuth'
-  ];
+    '/PostAuth',
+    '/RoleLanding'
+    ];
 
   // Full-bleed pages that handle their own layout completely
   const fullBleedPages = ['/Room', '/AgentHome', '/Dashboard', '/AgentDirectory'];
