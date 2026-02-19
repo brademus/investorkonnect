@@ -449,7 +449,7 @@ export default function Room() {
                   onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  Schedule Walk-through
+                  {walkthroughDeclined ? 'Reschedule Walk-through' : 'Schedule Walk-through'}
                 </button>
               )}
               <div className="flex flex-col items-center">
