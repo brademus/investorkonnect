@@ -92,9 +92,16 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
       if (newStage === 'completed') {
-        const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-        if (agentId && isInvestor) {
-          navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+        if (isAgent) {
+          const investorId = deal.investor_id || room?.investorId;
+          if (investorId) {
+            navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${investorId}&revieweeRole=investor&returnTo=Pipeline`);
+          }
+        } else if (isInvestor) {
+          const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
+          if (agentId) {
+            navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+          }
         }
       }
     } catch (_) {
@@ -227,6 +234,17 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
                 onClick={() => {
                   const agentId = deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
                   if (agentId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
+                }}
+                className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
+              >
+                <Star className="w-3 h-3" /> Leave a Review
+              </button>
+            )}
+            {isAgent && (
+              <button
+                onClick={() => {
+                  const investorId = deal?.investor_id || room?.investorId;
+                  if (investorId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${investorId}&revieweeRole=investor&returnTo=Pipeline`);
                 }}
                 className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
               >

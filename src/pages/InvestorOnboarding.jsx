@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useWizard } from "@/components/WizardContext";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, User, X, Camera } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -37,11 +37,13 @@ export default function InvestorOnboarding() {
   }, [step]);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     phone: '',
     company: '',
+    headshotUrl: '',
     primary_state: selectedState || '',
     primary_states: selectedState ? [selectedState] : [],
     nationwide: false,
@@ -109,6 +111,7 @@ export default function InvestorOnboarding() {
         last_name: existingLast,
         phone: profile.phone || '',
         company: profile.company || '',
+        headshotUrl: profile.headshotUrl || '',
         primary_state: existingPrimaryState,
         primary_states: isNationwide ? [] : (existingMarkets.length > 0 ? existingMarkets : (existingPrimaryState ? [existingPrimaryState] : [])),
         nationwide: isNationwide,
@@ -170,6 +173,7 @@ export default function InvestorOnboarding() {
         onboarding_last_name: formData.last_name.trim(),
         phone: formData.phone,
         company: formData.company,
+        headshotUrl: formData.headshotUrl,
         goals: formData.goals,
         user_role: 'investor',
         user_type: 'investor',
@@ -208,12 +212,66 @@ export default function InvestorOnboarding() {
     );
   }
 
+  const handleHeadshotUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp,image/gif';
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+      if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
+      setUploadingPhoto(true);
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        updateField('headshotUrl', file_url);
+        toast.success('Photo uploaded');
+      } catch (_) {
+        toast.error('Upload failed');
+      } finally {
+        setUploadingPhoto(false);
+      }
+    };
+    input.click();
+  };
+
   const renderStep1 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
       <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
       
       <div className="space-y-7">
+        {/* Headshot Upload */}
+        <div className="flex flex-col items-center mb-2">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-[#141414] border-2 border-[#1F1F1F] flex items-center justify-center">
+              {formData.headshotUrl ? (
+                <img src={formData.headshotUrl} alt="Headshot" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-12 h-12 text-[#444]" />
+              )}
+            </div>
+            {formData.headshotUrl && (
+              <button
+                type="button"
+                onClick={() => updateField('headshotUrl', '')}
+                className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-400 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleHeadshotUpload}
+            disabled={uploadingPhoto}
+            className="mt-3 text-sm text-[#E3C567] hover:text-[#EDD89F] font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+            {uploadingPhoto ? 'Uploading...' : formData.headshotUrl ? 'Change Photo' : 'Upload a Headshot'}
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="first_name" className="text-[#FAFAFA] text-[19px] font-medium">First Name *</Label>

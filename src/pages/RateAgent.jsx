@@ -14,8 +14,10 @@ export default function RateAgent() {
   const [params] = useSearchParams();
   const dealId = params.get("dealId");
   const agentProfileId = params.get("agentProfileId");
+  const revieweeRole = params.get("revieweeRole"); // 'investor' or null (defaults to agent)
   const returnTo = params.get("returnTo") || "Pipeline";
   const { profile } = useCurrentProfile();
+  const isRatingInvestor = revieweeRole === 'investor';
 
   const [agentProfile, setAgentProfile] = useState(null);
   const [deal, setDeal] = useState(null);
@@ -133,10 +135,12 @@ export default function RateAgent() {
 
         <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-[#E3C567] mb-2">Rate Your Agent</h1>
+            <h1 className="text-2xl font-bold text-[#E3C567] mb-2">
+              {isRatingInvestor ? "Rate Your Investor" : "Rate Your Agent"}
+            </h1>
             <p className="text-sm text-[#808080]">
               How was your experience working with{" "}
-              <span className="text-[#FAFAFA] font-medium">{agentProfile?.full_name || "this agent"}</span>?
+              <span className="text-[#FAFAFA] font-medium">{agentProfile?.full_name || (isRatingInvestor ? "this investor" : "this agent")}</span>?
             </p>
             {deal?.property_address && (
               <p className="text-xs text-[#808080] mt-1">{deal.property_address}</p>
@@ -182,7 +186,7 @@ export default function RateAgent() {
             <Textarea
               value={reviewBody}
               onChange={(e) => setReviewBody(e.target.value)}
-              placeholder="Share your experience working with this agent..."
+              placeholder={isRatingInvestor ? "Share your experience working with this investor..." : "Share your experience working with this agent..."}
               className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#555] rounded-xl min-h-[120px] focus:border-[#E3C567]"
             />
           </div>
