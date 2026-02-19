@@ -78,8 +78,10 @@ function LayoutContent({ children }) {
   useEffect(() => {
     if (error) {
       console.error('[Layout] Profile error:', error);
-      // #2 — Manual error capture for async profile errors
-      Sentry.captureException(new Error(`Profile load error: ${error}`), { tags: { source: "useCurrentProfile" } });
+      const isAuthError = typeof error === 'string' && (error.includes('Authentication required') || error.includes('401') || error.includes('Unauthorized'));
+      if (!isAuthError) {
+        Sentry.captureException(new Error(`Profile load error: ${error}`), { tags: { source: "useCurrentProfile" } });
+      }
     }
   }, [error]);
 
