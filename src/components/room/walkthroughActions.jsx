@@ -51,6 +51,19 @@ export async function respondToWalkthrough({ action, dealId, roomId, profileId, 
     }
   }
 
+  // 1b. If confirmed, update the Deal entity with confirmed walkthrough info
+  if (isConfirm && dealId) {
+    try {
+      await base44.entities.Deal.update(dealId, {
+        walkthrough_confirmed: true,
+        walkthrough_confirmed_date: wtDate,
+        walkthrough_confirmed_time: wtTime,
+      });
+    } catch (e) {
+      console.warn('[walkthroughActions] Failed to update Deal with confirmed walkthrough:', e);
+    }
+  }
+
   // 2. Update ALL pending walkthrough_request messages in the room
   if (roomId) {
     const msgs = await base44.entities.Message.filter({ room_id: roomId });

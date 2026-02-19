@@ -199,10 +199,14 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           </div>
         </div>
       )}
-      {deal?.walkthrough_scheduled === true && deal?.walkthrough_date && deal.walkthrough_date.length >= 8 && (
+      {deal?.walkthrough_scheduled === true && (
         <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
           <span className="text-sm text-[#808080]">Walk-through</span>
-          <span className="text-sm font-medium text-[#FAFAFA]">{deal.walkthrough_date || 'TBD'} at {deal.walkthrough_time || 'TBD'}</span>
+          {deal.walkthrough_confirmed === true ? (
+            <span className="text-sm font-medium text-[#FAFAFA]">{deal.walkthrough_confirmed_date || ''} at {deal.walkthrough_confirmed_time || ''}</span>
+          ) : (
+            <span className="text-sm italic text-[#808080]">To Be Determined</span>
+          )}
         </div>
       )}
     </>
