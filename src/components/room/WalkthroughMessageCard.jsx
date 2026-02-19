@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Calendar, Check, X, Loader2 } from "lucide-react";
+import { Calendar, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
 
@@ -115,8 +115,8 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         <span className="text-sm font-semibold text-[#E3C567]">Walk-through Request</span>
       </div>
 
-      {/* Show all proposed slots if multiple were sent */}
-      {hasMultipleSlots ? (
+      {/* Show all proposed slots */}
+      {wtSlots.length > 0 ? (
         <div className="space-y-2 mb-2">
           <p className="text-xs text-[#808080]">
             {canRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
@@ -143,7 +143,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#FAFAFA]">
-                    Option {idx + 1}: {slot.date}
+                    {wtSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
                   </p>
                   {timeLabel && (
                     <p className="text-xs text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</p>
@@ -173,16 +173,12 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
             className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs"
           >
             {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-            {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date" : "Confirm"}
-          </Button>
-          <Button onClick={() => respond('deny')} disabled={responding} size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs">
-            {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
-            Decline
+            {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
           </Button>
         </div>
       )}
       {status === 'pending' && isRecipient && !isSigned && (
-        <div className="mt-2 text-xs text-[#F59E0B]">Sign the agreement to accept or decline</div>
+        <div className="mt-2 text-xs text-[#F59E0B]">Sign the agreement to confirm</div>
       )}
 
       {status === 'confirmed' && (
@@ -190,11 +186,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
           <Check className="w-3 h-3" /> Confirmed
         </div>
       )}
-      {status === 'denied' && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-red-400">
-          <X className="w-3 h-3" /> Declined
-        </div>
-      )}
+      
       {status === 'pending' && !isRecipient && (
         <div className="mt-2 text-xs text-[#F59E0B]">{isSigned ? 'Awaiting agent response' : 'Proposed — agents can respond after signing'}</div>
       )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, CheckCircle2, Loader2, Check, X, CalendarX } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -131,20 +131,20 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
 
   // Only fall back to PROPOSED once we've actually loaded from DB (or cache)
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
+  const hasSlots = wtSlots.length > 0;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
   const displayText = formatWalkthrough(wtDate, wtTime);
 
-  const handleRespond = async (action) => {
+  const handleRespond = async () => {
     if (!deal?.id) return;
     setResponding(true);
-    const optimistic = action === "confirm" ? "SCHEDULED" : "CANCELED";
-    safeSetStatus(optimistic);
-    _wtCache[dealId] = { status: optimistic, userActionAt: Date.now() };
+    safeSetStatus("SCHEDULED");
+    _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() };
 
     // Determine which slot is being confirmed
     let chosenDate = wtDate;
     let chosenTime = wtTime;
-    if (action === "confirm" && hasMultipleSlots && selectedSlotIdx != null && wtSlots[selectedSlotIdx]) {
+    if (hasSlots && selectedSlotIdx != null && wtSlots[selectedSlotIdx]) {
       const slot = wtSlots[selectedSlotIdx];
       chosenDate = slot.date;
       chosenTime = slot.timeStart || null;
@@ -152,14 +152,14 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
 
     try {
       await respondToWalkthrough({
-        action,
+        action: "confirm",
         dealId: deal.id,
         roomId,
         profileId: profile?.id,
         wtDate: chosenDate,
         wtTime: chosenTime,
       });
-      toast.success(`Walk-through ${action === "confirm" ? "confirmed" : "declined"}`);
+      toast.success("Walk-through confirmed");
     } catch (e) {
       safeSetStatus("PROPOSED");
       delete _wtCache[dealId];
@@ -197,8 +197,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
             <span className={`text-xs font-medium ${statusColor}`}>{statusLabel}</span>
           </div>
 
-          {/* Multi-slot display: show all proposed slots */}
-          {hasMultipleSlots && status === "PROPOSED" ? (
+          {/* Always show all proposed slots */}
+          {wtSlots.length > 0 && status === "PROPOSED" ? (
             <div className="space-y-2">
               <p className="text-xs text-[#808080]">
                 {canAgentRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
@@ -225,7 +225,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#FAFAFA]">
-                        Option {idx + 1}: {slot.date}
+                        {wtSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
                       </p>
                       {timeLabel && (
                         <p className="text-xs text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</p>
@@ -240,7 +240,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                 );
               })}
             </div>
-          ) : (
+          ) : wtSlots.length === 0 ? (
             <>
               <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
                 <div className="w-10 h-10 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0">
@@ -261,44 +261,24 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                 </div>
               </div>
             </>
-          )}
+          ) : null}
 
           {canAgentRespond && (
             <div className="flex gap-2 pt-2">
               <Button
-                onClick={() => handleRespond("confirm")}
-                disabled={responding || (hasMultipleSlots && selectedSlotIdx == null)}
+                onClick={handleRespond}
+                disabled={responding || (hasSlots && selectedSlotIdx == null)}
                 size="sm"
                 className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs flex-1"
               >
                 {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-                {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date" : "Confirm"}
-              </Button>
-              <Button onClick={() => handleRespond("deny")} disabled={responding} size="sm" variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full text-xs flex-1">
-                {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
-                Decline
+                {hasSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
               </Button>
             </div>
           )}
 
           {isAgent && !isSigned && status === "PROPOSED" && (
-            <p className="text-xs text-[#F59E0B] pt-2">Sign the agreement to accept or decline this walk-through.</p>
-          )}
-
-          {isInvestor && status === "CANCELED" && (
-            <div className="pt-3 border-t border-[#1F1F1F] mt-3">
-              <p className="text-xs text-[#808080] mb-3">
-                The agent declined your proposed dates.
-              </p>
-              <Button
-                onClick={() => onOpenReschedule?.()}
-                size="sm"
-                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs font-semibold"
-              >
-                <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                Reschedule Walk-through
-              </Button>
-            </div>
+            <p className="text-xs text-[#F59E0B] pt-2">Sign the agreement to confirm this walk-through.</p>
           )}
         </div>
       )}
