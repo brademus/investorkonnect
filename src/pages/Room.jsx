@@ -38,6 +38,7 @@ export default function Room() {
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
   const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
+  const [walkthroughDeclined, setWalkthroughDeclined] = useState(false);
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set(['messages']));
 
