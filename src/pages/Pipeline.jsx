@@ -319,6 +319,10 @@ function PipelineContent() {
                                         return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
                                       })()}
                                       {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                      {(() => {
+                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
+                                        return step ? <div className={`text-[10px] font-medium ${step.color} flex items-center gap-1`}><Circle className="w-2.5 h-2.5" />{step.label}</div> : null;
+                                      })()}
                                     </div>
                                     <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
