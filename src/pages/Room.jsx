@@ -443,7 +443,7 @@ export default function Room() {
               />
             )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
-              {isInvestor && isSigned && deal?.id && !hasWalkthroughAppt && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
+              {isInvestor && isSigned && deal?.id && (!hasWalkthroughAppt || walkthroughDeclined) && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
                 <button
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
                   onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
