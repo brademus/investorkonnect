@@ -287,9 +287,17 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
 
           {isInvestor && status === "CANCELED" && (
             <div className="pt-3 border-t border-[#1F1F1F] mt-3">
-              <p className="text-xs text-[#808080] mb-2">
+              <p className="text-xs text-[#808080] mb-3">
                 The agent declined your proposed dates.
               </p>
+              <Button
+                onClick={() => onOpenReschedule?.()}
+                size="sm"
+                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs font-semibold"
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                Reschedule Walk-through
+              </Button>
             </div>
           )}
         </div>
