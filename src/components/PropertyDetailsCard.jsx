@@ -38,16 +38,6 @@ export default function PropertyDetailsCard({ deal, inline = false }) {
     else if (['no', 'false', 'n'].includes(s)) hasBasement = false;
   }
 
-  // Walkthrough — use raw date/time strings from deal (single source of truth)
-  const wtDate = deal?.walkthrough_date || null;
-  const wtTime = deal?.walkthrough_time || null;
-  const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime);
-  let walkthroughLabel = null;
-  if (hasWalkthrough) {
-    const parts = [wtDate, wtTime].filter(Boolean);
-    walkthroughLabel = parts.length > 0 ? parts.join(' at ') : 'Scheduled (date TBD)';
-  }
-
   const rows = [
     { label: "Property Type", value: propertyType },
     { label: "Bedrooms", value: beds != null ? String(beds) : null },
@@ -56,7 +46,6 @@ export default function PropertyDetailsCard({ deal, inline = false }) {
     { label: "Year Built", value: yearBuilt != null ? String(yearBuilt) : null },
     { label: "Stories", value: stories || null },
     { label: "Basement", value: (hasBasement === true ? 'Yes' : (hasBasement === false ? 'No' : null)) },
-    { label: "Walk-through", value: walkthroughLabel },
   ].filter(r => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
 
   const content = (
