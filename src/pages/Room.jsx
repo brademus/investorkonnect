@@ -297,12 +297,18 @@ export default function Room() {
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // Check if walkthrough is scheduled from deal fields
+  // Check walkthrough status from DealAppointments and deal fields
   useEffect(() => {
     if (!deal?.id) return;
     if (deal?.walkthrough_scheduled && (deal?.walkthrough_date || deal?.walkthrough_time)) {
       setHasWalkthroughAppt(true);
     }
+    // Check DealAppointments for declined status
+    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+      const status = rows?.[0]?.walkthrough?.status;
+      if (status === 'CANCELED') setWalkthroughDeclined(true);
+      else if (status === 'SCHEDULED' || status === 'COMPLETED') { setWalkthroughDeclined(false); setHasWalkthroughAppt(true); }
+    }).catch(() => {});
   }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_date, deal?.walkthrough_time]);
 
   const counterpartName = useMemo(() => {
