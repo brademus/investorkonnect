@@ -9,7 +9,7 @@ import { createPageUrl } from "@/components/utils";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
-import WalkthroughPanel from "@/components/room/WalkthroughPanel.jsx";
+import InlineWalkthroughStatus from "@/components/room/InlineWalkthroughStatus.jsx";
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
 import FilesTab from "@/components/room/FilesTab.jsx";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
@@ -198,7 +198,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                       <div><p className={`text-sm font-medium ${isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666]'}`}>{stage.label}</p>{isActive && <p className="text-xs text-[#E3C567]">Current</p>}</div>
                     </button>
                     {isActive && (
-                      <div className="ml-[52px] mt-2 mb-1">
+                      <div className="ml-[52px] mt-2 mb-1 space-y-3">
                         <DealNextStepCTA
                           deal={localDeal}
                           room={localRoom}
@@ -219,6 +219,12 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           }}
                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
                         />
+                        {stage.id === 'connected_deals' && (
+                          <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3">
+                            <p className="text-xs font-semibold text-[#FAFAFA] mb-2">Walk-through</p>
+                            <InlineWalkthroughStatus deal={localDeal} room={localRoom} profile={profile} roomId={roomId} />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -226,9 +232,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               })}
             </div>
           </div>
-          <div data-walkthrough-panel>
-            <WalkthroughPanel deal={localDeal} room={localRoom} profile={profile} roomId={roomId} onOpenReschedule={() => setWtModalOpen(true)} />
-          </div>
+
         </div>
       )}
 
