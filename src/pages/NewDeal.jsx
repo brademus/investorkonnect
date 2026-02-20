@@ -126,9 +126,17 @@ export default function NewDeal() {
     } catch (_) {}
   }, [dealId, fromVerify]);
 
-  // Auto-save draft
+  // Auto-save draft — ONLY after hydration to avoid overwriting valid data with empty initial state
   useEffect(() => {
-    const validSlots = walkthroughEnabled ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [];
+    // CRITICAL: Don't auto-save until the form is hydrated (populated from sessionStorage or DB).
+    // Otherwise the initial empty state overwrites the real data in sessionStorage.
+    if (!hydrated && !dealId) {
+      // For new deals, only start auto-saving once user has meaningfully interacted
+      const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
+      if (!hasUserInput) return;
+    }
+    if (dealId && !hydrated) return; // Wait for DB hydration when editing
+
     const draft = {
       dealId: dealId || null,
       propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
@@ -137,13 +145,9 @@ export default function NewDeal() {
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       dealType,
-      walkthroughSlots: walkthroughEnabled ? walkthroughSlots : [], // keep raw for form
+      walkthroughSlots: walkthroughEnabled ? walkthroughSlots : [],
     };
-    const isEditing = !!dealId;
-    const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
-    if (isEditing ? hydrated : hasUserInput) {
-      sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
-    }
+    sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
   }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughEnabled, walkthroughSlots]);
 
   // Load existing deal data if editing
