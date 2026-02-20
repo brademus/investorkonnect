@@ -246,7 +246,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
                   dealId={deal?.id} 
                   agentProfileId={room?.locked_agent_id || deal?.locked_agent_id}
                   reviewerProfileId={profile?.id}
-                  onSubmitted={() => {}}
+                  onSubmitted={() => { if (onReviewSubmitted) onReviewSubmitted(); }}
                   compact={inline}
                 />
               </div>
@@ -257,7 +257,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
                   dealId={deal?.id}
                   investorProfileId={room?.investorId || room?.investor_id || deal?.investor_id}
                   reviewerProfileId={profile?.id}
-                  onSubmitted={() => {}}
+                  onSubmitted={() => { if (onReviewSubmitted) onReviewSubmitted(); }}
                   compact={inline}
                 />
               </div>
