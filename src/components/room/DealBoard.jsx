@@ -94,7 +94,33 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned }) {
     );
   }
 
-  // After signing — show "To Be Determined" (agent picks in deal progress panel)
+  // After signing — show proposed dates (agent confirms in deal progress panel)
+  if (isSigned && allSlots.length > 0) {
+    return (
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-[#F59E0B]" />
+          <span className="text-sm text-[#808080]">Walk-through:</span>
+          <span className="text-sm font-medium text-[#F59E0B]">Awaiting Confirmation</span>
+        </div>
+        <div className="space-y-1.5 ml-6">
+          {allSlots.map((slot, idx) => {
+            const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+            return (
+              <div key={idx} className="flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
+                <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
+                <span className="text-[#FAFAFA] font-medium">
+                  {allSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
+                </span>
+                {timeLabel && <span className="text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   if (isSigned) {
     return (
       <div className="flex items-center gap-2 mt-3">
