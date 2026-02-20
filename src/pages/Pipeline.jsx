@@ -185,7 +185,10 @@ function PipelineContent() {
         agreement: room?.agreement || null,
         agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
         investor_signed_at: room?.agreement?.investor_signed_at || null,
-        pending_counter_offer: room?.pending_counter_offer || null
+        pending_counter_offer: room?.pending_counter_offer || null,
+        walkthrough_slots: deal.walkthrough_slots || [],
+        walkthrough_confirmed_slot: deal.walkthrough_confirmed_slot || null,
+        documents: deal.documents || null
       };
     }).filter(d => {
       if (!isAgent) return true;
