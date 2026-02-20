@@ -45,7 +45,6 @@ function WalkthroughStatusLine({ dealId, roomId, deal }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [dealId]);
 
-  // Also listen for walkthrough confirmation via messages
   useEffect(() => {
     if (!roomId) return;
     const unsub = base44.entities.Message.subscribe(e => {
@@ -58,29 +57,68 @@ function WalkthroughStatusLine({ dealId, roomId, deal }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
-  // Derive confirmed status from deal fields as fallback
   const dealConfirmed = deal?.walkthrough_confirmed === true;
   const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED' || dealConfirmed;
 
-  // Build the display date from all available sources
-  let label = 'To Be Determined';
+  const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+  const wtDate = deal?.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
+  const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtSlots.length > 0);
+
+  // Build confirmed label
+  let confirmedLabel = 'Confirmed';
   if (isConfirmed) {
     if (confirmedDate) {
-      try { label = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { label = confirmedDate; }
+      try { confirmedLabel = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { confirmedLabel = confirmedDate; }
     } else if (deal?.walkthrough_confirmed_date) {
       const d = deal.walkthrough_confirmed_date;
       const t = deal.walkthrough_confirmed_time;
-      label = t ? `${d} at ${t}` : d;
-    } else {
-      label = 'Confirmed';
+      confirmedLabel = t ? `${d} at ${t}` : d;
     }
   }
 
+  if (!hasWalkthrough) return null;
+
+  // If confirmed, show single line
+  if (isConfirmed) {
+    return (
+      <div className="flex items-center gap-2 mt-3">
+        <Calendar className="w-4 h-4 text-[#34D399]" />
+        <span className="text-sm text-[#808080]">Walk-through:</span>
+        <span className="text-sm font-medium text-[#34D399]">{confirmedLabel}</span>
+      </div>
+    );
+  }
+
+  // Not confirmed — show all proposed slots
   return (
-    <div className="flex items-center gap-2 mt-3">
-      <Calendar className={`w-4 h-4 ${isConfirmed ? 'text-[#34D399]' : 'text-[#808080]'}`} />
-      <span className="text-sm text-[#808080]">Walk-through:</span>
-      <span className={`text-sm font-medium ${isConfirmed ? 'text-[#34D399]' : 'text-[#F59E0B]'}`}>{label}</span>
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Calendar className="w-4 h-4 text-[#F59E0B]" />
+        <span className="text-sm text-[#808080]">Walk-through</span>
+        <span className="text-xs font-medium text-[#F59E0B]">Proposed</span>
+      </div>
+      {wtSlots.length > 0 ? (
+        <div className="space-y-1.5 ml-6">
+          <p className="text-xs text-[#808080]">Available times:</p>
+          {wtSlots.map((slot, idx) => {
+            const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+            return (
+              <div key={idx} className="flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
+                <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
+                <span className="text-[#FAFAFA] font-medium">
+                  {wtSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
+                </span>
+                {timeLabel && <span className="text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</span>}
+              </div>
+            );
+          })}
+        </div>
+      ) : wtDate ? (
+        <div className="ml-6 flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
+          <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
+          <span className="text-[#FAFAFA] font-medium">{wtDate}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
