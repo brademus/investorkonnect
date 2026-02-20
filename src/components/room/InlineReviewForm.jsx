@@ -56,6 +56,29 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
     }
   };
 
+  if (existingReview) {
+    return (
+      <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
+        <p className="text-sm font-semibold text-[#FAFAFA] mb-3">Your Review</p>
+        <div className="flex gap-1 mb-2">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${
+                i <= existingReview.rating
+                  ? "fill-[#E3C567] text-[#E3C567]"
+                  : "text-[#333]"
+              }`}
+            />
+          ))}
+        </div>
+        {existingReview.body && (
+          <p className="text-sm text-[#FAFAFA]">{existingReview.body}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
       <div className="mb-3">
