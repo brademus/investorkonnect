@@ -509,7 +509,7 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time, 'walkthrough_slots:', draftWalkthroughSlots.length);
 
     // Create DealAppointments record if walkthrough was scheduled
-    if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
+    if (shouldMarkWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
       try {
         await base44.asServiceRole.entities.DealAppointments.create({
           dealId: newDeal.id,
