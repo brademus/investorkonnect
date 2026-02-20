@@ -233,7 +233,8 @@ async function ensureDealCreated(base44, agreement) {
   const draftWtScheduled = draft.walkthrough_scheduled === true;
   const draftWtDate = (draftWtScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
   const draftWtTime = (draftWtScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
-  console.log('[pollAndFinalize] Walkthrough from draft:', { draftWtScheduled, draftWtDate, draftWtTime });
+  const draftWtSlots = (draftWtScheduled && Array.isArray(draft.walkthrough_slots) && draft.walkthrough_slots.length > 0) ? draft.walkthrough_slots : [];
+  console.log('[pollAndFinalize] Walkthrough from draft:', { draftWtScheduled, draftWtDate, draftWtTime, draftWtSlotsLength: draftWtSlots.length });
 
   // Resolve commission terms — prefer agreement exhibit_a_terms (source of truth), fall back to draft
   const exhibitTerms = agreement.exhibit_a_terms || {};
