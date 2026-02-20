@@ -247,7 +247,16 @@ export default function InvestorOnboarding() {
           <div className="relative group">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-[#141414] border-2 border-[#1F1F1F] flex items-center justify-center">
               {formData.headshotUrl ? (
-                <img src={formData.headshotUrl} alt="Headshot" className="w-full h-full object-cover" />
+                <img 
+                  src={formData.headshotUrl} 
+                  alt="Headshot" 
+                  className="w-full h-full object-cover" 
+                  onError={(e) => {
+                    console.error('Headshot image failed to load:', formData.headshotUrl);
+                    e.target.style.display = 'none';
+                  }}
+                  onLoad={() => console.log('Headshot loaded:', formData.headshotUrl)}
+                />
               ) : (
                 <User className="w-12 h-12 text-[#444]" />
               )}
