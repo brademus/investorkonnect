@@ -198,7 +198,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const maskAddr = isAgent && !isSigned;
 
   const tabs = isSigned
-    ? [{ id: 'details', label: 'Details', icon: Info }, { id: 'agreement', label: 'Agreement', icon: Shield }, { id: 'files', label: 'Files', icon: FileText }, { id: 'photos', label: 'Photos', icon: Image }, { id: 'activity', label: 'Activity', icon: Activity }]
+    ? [{ id: 'details', label: 'Details', icon: Info }, { id: 'files', label: 'Files', icon: FileText }, { id: 'photos', label: 'Photos', icon: Image }, { id: 'activity', label: 'Activity', icon: Activity }]
     : [{ id: 'details', label: 'Details', icon: Info }];
 
   // Open agreement tab if URL param (only if signed, otherwise stay on details)
