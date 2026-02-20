@@ -296,7 +296,7 @@ async function ensureDealCreated(base44, agreement) {
     walkthrough_slots: draftWtSlots
   });
 
-  console.log('[pollAndFinalize] Created Deal:', newDeal.id, 'walkthrough:', draftWtScheduled, draftWtDate, draftWtTime);
+  console.log('[pollAndFinalize] Created Deal:', newDeal.id, 'walkthrough:', draftWtScheduled, draftWtDate, draftWtTime, 'slotsLength:', draftWtSlots.length);
 
   // Update agreement to point to real Deal
   await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
