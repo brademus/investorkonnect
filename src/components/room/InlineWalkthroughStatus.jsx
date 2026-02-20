@@ -3,6 +3,7 @@ import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX } from "lucide
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { reportError } from "@/components/utils/reportError";
 import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
 
 const _wtCache = {};
@@ -108,10 +109,10 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
     try {
       await respondToWalkthrough({ action: "confirm", dealId: deal.id, roomId, profileId: profile?.id, wtDate: chosenDate, wtTime: chosenTime });
       toast.success("Walk-through confirmed");
-    } catch (_) {
+    } catch (err) {
       safeSetStatus("PROPOSED");
       delete _wtCache[dealId];
-      toast.error("Failed to respond");
+      reportError("Failed to confirm walkthrough", { cause: err, extra: { dealId: deal?.id, roomId } });
     } finally {
       setResponding(false);
     }

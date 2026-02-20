@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { normalizeStage } from "@/components/pipelineStages";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { toast } from "sonner";
+import { reportError } from "@/components/utils/reportError";
 import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
   Clock, Loader2, XCircle, Star, FileCheck
@@ -77,7 +78,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
         toast.success('Document uploaded');
       } catch (err) {
-        toast.error('Upload failed — please try again');
+        reportError('Upload failed — please try again', { cause: err, extra: { dealId: deal?.id, docKey } });
       } finally {
         setUploading(false);
       }
@@ -93,8 +94,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
       // Review is now inline in the completed section, no navigation needed
-    } catch (_) {
-      toast.error('Failed to update');
+    } catch (err) {
+      reportError('Failed to update deal stage', { cause: err, extra: { dealId: deal?.id, newStage } });
     } finally {
       setUpdatingStage(false);
       setShowClosePrompt(false);

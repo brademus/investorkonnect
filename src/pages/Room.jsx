@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { reportError, reportDataIssue } from "@/components/utils/reportError";
 
 import { PIPELINE_STAGES, normalizeStage } from "@/components/pipelineStages";
 import { getSellerCompLabel } from "@/components/utils/dealCompDisplay";
@@ -142,7 +143,11 @@ export default function Room() {
         }
 
         const [room, dealData] = await Promise.all([roomPromise, dealPromise]);
-        if (!room) { setRoomLoading(false); return; }
+        if (!room) {
+          if (roomId) reportDataIssue('Room not found by ID', { roomId, userId: profile?.id });
+          setRoomLoading(false);
+          return;
+        }
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
         const resolvedIsSigned = dealData?.is_fully_signed || roomIsLocked;
@@ -481,7 +486,7 @@ export default function Room() {
                       toast.success('Moved to Active Listings');
                     } catch (err) {
                       setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
-                      toast.error("Failed to update stage");
+                      reportError("Failed to update stage", { extra: { dealId: deal?.id } });
                     }
                   }}
                 >

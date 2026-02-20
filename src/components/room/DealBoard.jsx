@@ -4,6 +4,7 @@ import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { Button } from "@/components/ui/button";
 import { Info, Shield, FileText, Image, User, Plus, Download, Activity, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { reportError } from "@/components/utils/reportError";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
@@ -216,7 +217,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
         await base44.entities.Room.update(roomId, { [key]: merged });
         setLocalRoom(prev => prev ? { ...prev, [key]: merged } : prev);
         toast.success(`Uploaded ${files.length} file(s)`);
-      } catch (_) { toast.error('Upload failed'); }
+      } catch (err) { reportError('Upload failed', { cause: err, extra: { roomId, type } }); }
     };
     input.click();
   };
