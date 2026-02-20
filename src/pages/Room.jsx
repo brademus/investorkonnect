@@ -389,10 +389,10 @@ export default function Room() {
             {roomId && (
               <>
                 <Button
-                  onClick={() => { if (isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite) return; setActiveView('board'); }}
-                  disabled={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite}
-                  title={isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite ? "Select an agent first" : ""}
-                  className={`rounded-full font-semibold ${activeView === 'board' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}
+                  onClick={() => { if (investorNeedsAgentSelection) return; setActiveView('board'); }}
+                  disabled={investorNeedsAgentSelection}
+                  title={investorNeedsAgentSelection ? "Select an agent first" : ""}
+                  className={`rounded-full font-semibold ${activeView === 'board' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"} ${investorNeedsAgentSelection ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
