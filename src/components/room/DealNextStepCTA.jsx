@@ -10,6 +10,7 @@ import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
   Clock, Loader2, XCircle, Star, FileCheck
 } from "lucide-react";
+import InlineReviewForm from "@/components/room/InlineReviewForm";
 
 export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
   const navigate = useNavigate();
@@ -91,19 +92,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, pipeline_stage: newStage });
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
-      if (newStage === 'completed') {
-        if (isAgent) {
-          const investorId = deal.investor_id || room?.investorId;
-          if (investorId) {
-            navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${investorId}&revieweeRole=investor&returnTo=Pipeline`);
-          }
-        } else if (isInvestor) {
-          const agentId = deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-          if (agentId) {
-            navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-          }
-        }
-      }
+      // Review is now inline in the completed section, no navigation needed
     } catch (_) {
       toast.error('Failed to update');
     } finally {
@@ -216,33 +205,12 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
 
     if (cta.type === 'complete') {
       return (
-        <div className="flex items-center gap-3">
-          <CheckCircle2 className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#10B981] flex-shrink-0`} />
-          <div className="flex-1">
+        <div>
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#10B981] flex-shrink-0`} />
             <p className={`font-medium text-[#10B981] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
-            {isInvestor && (
-              <button
-                onClick={() => {
-                  const agentId = deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0];
-                  if (agentId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-                }}
-                className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
-              >
-                <Star className="w-3 h-3" /> Leave a Review
-              </button>
-            )}
-            {isAgent && (
-              <button
-                onClick={() => {
-                  const investorId = deal?.investor_id || room?.investorId;
-                  if (investorId) navigate(`${createPageUrl("RateAgent")}?dealId=${deal.id}&agentProfileId=${investorId}&revieweeRole=investor&returnTo=Pipeline`);
-                }}
-                className="text-xs text-[#E3C567] hover:text-[#EDD89F] mt-1 inline-flex items-center gap-1"
-              >
-                <Star className="w-3 h-3" /> Leave a Review
-              </button>
-            )}
           </div>
+          <InlineReviewForm deal={deal} room={room} profile={profile} />
         </div>
       );
     }
