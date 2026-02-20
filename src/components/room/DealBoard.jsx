@@ -308,6 +308,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const isPast = stage.order < stageOrder(norm);
                 const handleStageClick = async () => {
                   if (!localDeal?.id) return;
+                  // Block moving back to new_deals once the deal has left that stage
+                  if (stage.id === 'new_deals' && norm !== 'new_deals') {
+                    toast.error("Deals cannot be moved back to New Deals.");
+                    return;
+                  }
                   // Block moving to connected_deals or beyond unless agreement is fully signed
                   if (!isSigned && stageOrder(stage.id) >= stageOrder('connected_deals')) {
                     toast.error("Agreement must be fully signed before moving this deal forward.");

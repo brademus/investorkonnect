@@ -220,6 +220,11 @@ function PipelineContent() {
       reportError("Agreement must be fully signed before moving this deal forward.", { level: 'warning', extra: { dealId: result.draggableId, newStage } });
       return;
     }
+    // Block moving back to new_deals once a deal has left that stage
+    if (newStage === 'new_deals' && currentStage !== 'new_deals') {
+      toast.error("Deals cannot be moved back to New Deals.");
+      return;
+    }
     // Skip if dropped in same stage
     if (currentStage === newStage) return;
     
@@ -349,7 +354,7 @@ function PipelineContent() {
                                     </div>
                                     <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
-                                      {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
+                                      {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
                                     </div>
                                     {(deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled') && (
                                       <DealCardReview
