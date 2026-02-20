@@ -187,6 +187,15 @@ export default function Room() {
               };
             });
             setPendingInvites(enriched);
+            // Auto-navigate investor to pending agents when invites load and no agent selected yet
+            if (enriched.length > 0 && !selectedInvite) {
+              setActiveView('pending_agents');
+              setMountedViews(prev => {
+                const next = new Set(prev);
+                next.add('pending_agents');
+                return next;
+              });
+            }
           }).catch(() => {});
         }
       } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
