@@ -273,14 +273,8 @@ export default function NewDeal() {
     if (buyerCommissionType === "flat" && !buyerFlatFee.trim()) { toast.error("Please enter the buyer's agent flat fee"); return; }
     if (!agreementLength.trim()) { toast.error("Please enter the agreement length"); return; }
 
-    // Validate walkthrough
-    const validSlots = walkthroughEnabled ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [];
-    if (walkthroughEnabled && validSlots.length === 0) {
-      toast.error("Please enter a complete walk-through date (MM/DD/YYYY) for at least the first option");
-      return;
-    }
-
-    console.log('[NewDeal] handleContinue — walkthroughEnabled:', walkthroughEnabled, 'validSlots:', JSON.stringify(validSlots), 'raw walkthroughSlots:', JSON.stringify(walkthroughSlots));
+    // Collect valid walkthrough slots (only those with dates)
+    const validSlots = walkthroughSlots.filter(s => s.date && s.date.length >= 8);
 
     setSubmitting(true);
     try {
