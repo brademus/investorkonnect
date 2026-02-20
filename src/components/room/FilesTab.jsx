@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download, Upload, Lock, CheckCircle2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
+import { reportError } from "@/components/utils/reportError";
 
 function DocRow({ label, url, filename, verified, available, onUpload }) {
   const hasFile = !!url;
