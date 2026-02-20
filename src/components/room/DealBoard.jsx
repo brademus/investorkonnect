@@ -262,7 +262,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           {/* Property Details (left) + Key Terms (right) side by side */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <PropertyDetailsCard deal={localDeal || {}} />
-            <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
+            <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} isSigned={isSigned} />
           </div>
 
           {/* Agreement actions (below, full width) */}
