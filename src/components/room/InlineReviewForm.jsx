@@ -10,6 +10,7 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
   const [submitting, setSubmitting] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [existingReview, setExistingReview] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentProfile).catch(() => {});
