@@ -205,7 +205,11 @@ export default function Room() {
             }
           }).catch(() => {});
         }
-      } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
+      } catch (e) {
+          console.error('[Room] Load error:', e);
+          reportError('Failed to load deal room', { cause: e, silent: true, extra: { roomId } });
+          setRoomLoading(false);
+        }
     };
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -514,7 +518,7 @@ export default function Room() {
                   try {
                     await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
                     queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                  } catch (e) { console.error('[Room] Invite creation failed:', e); }
+                  } catch (e) { reportError('Invite creation failed', { cause: e, silent: true, extra: { dealId: currentRoom?.deal_id } }); }
                 }}
               />
             </div>
