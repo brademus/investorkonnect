@@ -109,7 +109,16 @@ Deno.serve(async (req) => {
       
       await base44.asServiceRole.entities.Profile.update(profile.id, { stripe_customer_id: customerId });
     } else {
-      console.log('✅ Using existing Stripe customer:', customerId);
+      // Update existing Stripe customer with current email/name to keep in sync
+      try {
+        await stripeApi(`/customers/${customerId}`, {
+          'email': user.email,
+          'name': profile.full_name || '',
+        });
+        console.log('✅ Updated existing Stripe customer with email:', customerId);
+      } catch (updateErr) {
+        console.warn('⚠️ Could not update Stripe customer email:', updateErr.message);
+      }
     }
 
     // Create checkout session via fetch
