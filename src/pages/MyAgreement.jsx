@@ -172,7 +172,6 @@ export default function MyAgreement() {
           }
 
           const draftPayload = {
-            investor_profile_id: profile.id,
             property_address: dealData.propertyAddress,
             city: dealData.city,
             state: dealData.state,
@@ -205,8 +204,10 @@ export default function MyAgreement() {
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
             walkthrough_slots: wtSlots
           };
-          const draftCreated = await base44.entities.DealDraft.create(draftPayload);
-          console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
+          // Route through server function (asServiceRole) to guarantee walkthrough_slots is persisted
+          const result = await base44.functions.invoke('createDealDraft', draftPayload);
+          const draftCreated = { id: result?.data?.draft_id };
+          console.log('[MyAgreement] DealDraft created via server:', draftCreated.id, 'wtSlots sent:', wtSlots.length);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 

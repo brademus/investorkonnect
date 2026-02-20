@@ -305,6 +305,22 @@ export default function Room() {
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
+  // One-time delayed refresh to catch async webhook completing after initial load
+  useEffect(() => {
+    if (!deal?.id) return;
+    if ((deal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8).length > 0) return;
+    const timer = setTimeout(() => {
+      base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
+        .then(res => {
+          if (res?.data?.walkthrough_slots?.length > 0) {
+            setDeal(prev => prev ? { ...prev, ...res.data } : res.data);
+          }
+        })
+        .catch(() => {});
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [deal?.id]);
+
   // Walkthrough state is now purely on Deal.walkthrough_slots — no DealAppointments needed
   const hasWalkthroughSlots = (deal?.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8).length > 0;
 
