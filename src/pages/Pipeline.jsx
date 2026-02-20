@@ -355,6 +355,7 @@ function PipelineContent() {
                                       <DealCardReview
                                         agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
                                         reviewerProfileId={profile?.id}
+                                        dealId={deal.deal_id}
                                       />
                                     )}
                                   </div>
