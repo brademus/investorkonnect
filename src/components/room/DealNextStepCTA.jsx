@@ -117,6 +117,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const wtStatus = apptStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
 
   const hasCma = !!(deal?.documents?.cma?.url);
+  const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
   const hasBuyerContract = !!(deal?.documents?.buyer_contract?.url);
 
   let cta = null;
@@ -144,8 +145,14 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         } else {
           cta = { type: 'waiting', icon: Clock, label: 'Waiting for CMA', description: 'The agent is preparing the Comparative Market Analysis.' };
         }
+      } else if (!hasListingAgreement) {
+        if (isAgent) {
+          cta = { type: 'action', icon: Upload, label: 'Upload Listing Agreement', description: 'Upload the signed listing agreement to proceed.', onClick: () => triggerUpload('listing_agreement') };
+        } else {
+          cta = { type: 'waiting', icon: Clock, label: 'Waiting for Listing Agreement', description: 'The agent is preparing the listing agreement.' };
+        }
       } else {
-        cta = { type: 'action', icon: CheckCircle2, label: 'Has this property been listed?', description: 'CMA is uploaded. Confirm when the property has been listed to move forward.', onClick: () => updateStage('active_listings') };
+        cta = { type: 'action', icon: CheckCircle2, label: 'Has this property been listed?', description: 'Listing agreement is uploaded. Confirm when the property has been listed to move forward.', onClick: () => updateStage('active_listings') };
       }
     }
   } else if (stage === 'active_listings') {
@@ -176,6 +183,9 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
     if (hasCma) {
       completedMilestones.push({ icon: FileCheck, label: 'CMA Uploaded' });
+    }
+    if (hasListingAgreement) {
+      completedMilestones.push({ icon: FileSignature, label: 'Listing Agreement Uploaded' });
     }
   }
 
