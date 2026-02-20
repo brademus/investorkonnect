@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { reportError } from "@/components/utils/reportError";
 
 export default function Pricing() {
   const { user, profile, loading, refresh } = useCurrentProfile();
