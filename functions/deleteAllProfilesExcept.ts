@@ -30,8 +30,9 @@ Deno.serve(async (req) => {
     let deletedCount = 0;
     const errors = [];
 
-    // Delete each profile and related data
-    for (const profile of profilesToDelete) {
+    // Delete each profile and related data with rate limit handling
+    for (let i = 0; i < profilesToDelete.length; i++) {
+      const profile = profilesToDelete[i];
       try {
         const profileId = profile.id;
         
@@ -39,71 +40,87 @@ Deno.serve(async (req) => {
         const investorDeals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profileId });
         for (const deal of investorDeals) {
           await base44.asServiceRole.entities.Deal.delete(deal.id);
+          await new Promise(r => setTimeout(r, 50)); // Small delay between deletes
         }
 
         // Delete deals where this profile is agent
         const agentDeals = await base44.asServiceRole.entities.Deal.filter({ locked_agent_id: profileId });
         for (const deal of agentDeals) {
           await base44.asServiceRole.entities.Deal.delete(deal.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete rooms
         const rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profileId });
         for (const room of rooms) {
           await base44.asServiceRole.entities.Room.delete(room.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete reviews as reviewer
         const reviewsAsReviewer = await base44.asServiceRole.entities.Review.filter({ reviewer_profile_id: profileId });
         for (const review of reviewsAsReviewer) {
           await base44.asServiceRole.entities.Review.delete(review.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete reviews as reviewee
         const reviewsAsReviewee = await base44.asServiceRole.entities.Review.filter({ reviewee_profile_id: profileId });
         for (const review of reviewsAsReviewee) {
           await base44.asServiceRole.entities.Review.delete(review.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete messages
         const messages = await base44.asServiceRole.entities.Message.filter({ sender_profile_id: profileId });
         for (const msg of messages) {
           await base44.asServiceRole.entities.Message.delete(msg.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete legal agreements
         const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ investor_profile_id: profileId });
         for (const agreement of agreements) {
           await base44.asServiceRole.entities.LegalAgreement.delete(agreement.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         const agentAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ agent_profile_id: profileId });
         for (const agreement of agentAgreements) {
           await base44.asServiceRole.entities.LegalAgreement.delete(agreement.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete deal invites
         const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profileId });
         for (const invite of invites) {
           await base44.asServiceRole.entities.DealInvite.delete(invite.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete deal drafts
         const drafts = await base44.asServiceRole.entities.DealDraft.filter({ investor_profile_id: profileId });
         for (const draft of drafts) {
           await base44.asServiceRole.entities.DealDraft.delete(draft.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Delete activity records
         const activities = await base44.asServiceRole.entities.Activity.filter({ actor_id: profileId });
         for (const activity of activities) {
           await base44.asServiceRole.entities.Activity.delete(activity.id);
+          await new Promise(r => setTimeout(r, 50));
         }
 
         // Finally, delete the profile itself
         await base44.asServiceRole.entities.Profile.delete(profileId);
         deletedCount++;
         console.log(`[deleteAllProfilesExcept] Deleted profile: ${profile.email}`);
+
+        // Add delay between profile deletions to avoid rate limit
+        if (i < profilesToDelete.length - 1) {
+          await new Promise(r => setTimeout(r, 200));
+        }
 
       } catch (err) {
         console.error(`[deleteAllProfilesExcept] Error deleting profile ${profile.email}:`, err.message);
