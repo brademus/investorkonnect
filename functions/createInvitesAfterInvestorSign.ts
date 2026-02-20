@@ -195,7 +195,14 @@ Deno.serve(async (req) => {
     const wtScheduled = deal.walkthrough_scheduled === true;
     const wtDate = deal.walkthrough_date || null;
     const wtTime = deal.walkthrough_time || null;
-    const wtSlots = (Array.isArray(deal.walkthrough_slots) ? deal.walkthrough_slots : []).filter(s => s.date && s.date.length >= 8);
+    let wtSlots = (Array.isArray(deal.walkthrough_slots) ? deal.walkthrough_slots : []).filter(s => s.date && s.date.length >= 8);
+    // CRITICAL: Synthesize a slot from legacy fields if walkthrough_slots is empty
+    if (wtScheduled && wtSlots.length === 0 && wtDate) {
+      wtSlots = [{ date: wtDate, timeStart: wtTime || '', timeEnd: '' }];
+      console.log('[createInvites] Synthesized walkthrough slot from legacy fields:', wtSlots);
+      // Also backfill walkthrough_slots on the deal so downstream components see them
+      await base44.asServiceRole.entities.Deal.update(deal_id, { walkthrough_slots: wtSlots });
+    }
     const hasWalkthroughData = wtDate || wtTime || wtSlots.length > 0;
     if (wtScheduled && hasWalkthroughData) {
       console.log('[createInvites] Walkthrough scheduled — creating DealAppointments and chat message, slots:', wtSlots.length);
