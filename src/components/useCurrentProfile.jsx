@@ -37,6 +37,11 @@ export function useCurrentProfile() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const loadingRef = useRef(false);
 
+  // Safety reset: if a previous mount left loadingRef stuck, clear it on fresh mount
+  useEffect(() => {
+    loadingRef.current = false;
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     
