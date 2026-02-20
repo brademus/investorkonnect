@@ -79,7 +79,10 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
         toast.success('Document uploaded');
       } catch (err) {
-        toast.error('Upload failed — please try again');
+        reportError('Document upload from next step CTA failed', {
+          cause: err,
+          extra: { doc_key: docKey, deal_id: deal.id },
+        });
       } finally {
         setUploading(false);
       }
