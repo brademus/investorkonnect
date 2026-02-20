@@ -502,6 +502,93 @@ export default function InvestorOnboarding() {
           />
         </div>
 
+        {/* Next Steps Message Section */}
+        <div className="border-t border-[#1F1F1F] pt-7 mt-7">
+          <h4 className="text-[22px] font-bold text-[#E3C567] mb-2">Your Next Steps Message</h4>
+          <p className="text-[14px] text-[#808080] mb-6">This message will be sent to agents after you sign an agreement. It outlines the walkthrough process and what you expect from them.</p>
+          
+          <div className="space-y-4">
+            {/* Option 1: Default Template */}
+            <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
+              style={{
+                borderColor: formData.next_steps_template_type === 'default' ? '#E3C567' : '#1F1F1F',
+                backgroundColor: formData.next_steps_template_type === 'default' ? 'rgba(227,197,103,0.1)' : '#141414'
+              }}
+            >
+              <input
+                type="radio"
+                name="template_type"
+                checked={formData.next_steps_template_type === 'default'}
+                onChange={() => updateField('next_steps_template_type', 'default')}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5 ${formData.next_steps_template_type === 'default' ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+                {formData.next_steps_template_type === 'default' && <div className="w-2 h-2 rounded-full bg-black" />}
+              </div>
+              <div className="flex-1">
+                <div className="text-[#FAFAFA] text-[16px] font-semibold mb-2">Use Investor Konnect Template (Recommended)</div>
+                <div className="space-y-1 mb-3">
+                  <div className="flex items-center gap-2 text-sm text-[#E3C567]">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Automatically includes property details</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#E3C567]">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Professional and comprehensive</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#E3C567]">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Adapts based on walkthrough schedule</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplatePreview(true)}
+                  className="text-sm text-[#E3C567] hover:text-[#EDD89F] font-medium underline transition-colors"
+                >
+                  Preview Template →
+                </button>
+              </div>
+            </label>
+
+            {/* Option 2: Custom Template */}
+            <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
+              style={{
+                borderColor: formData.next_steps_template_type === 'custom' ? '#E3C567' : '#1F1F1F',
+                backgroundColor: formData.next_steps_template_type === 'custom' ? 'rgba(227,197,103,0.1)' : '#141414'
+              }}
+            >
+              <input
+                type="radio"
+                name="template_type"
+                checked={formData.next_steps_template_type === 'custom'}
+                onChange={() => updateField('next_steps_template_type', 'custom')}
+                className="sr-only"
+              />
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5 ${formData.next_steps_template_type === 'custom' ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+                {formData.next_steps_template_type === 'custom' && <div className="w-2 h-2 rounded-full bg-black" />}
+              </div>
+              <div className="text-[#FAFAFA] text-[16px] font-semibold">Write My Own Custom Message</div>
+            </label>
+
+            {/* Custom Message Textarea */}
+            {formData.next_steps_template_type === 'custom' && (
+              <div className="pl-8 space-y-3">
+                <Textarea 
+                  value={formData.custom_next_steps_template} 
+                  onChange={(e) => updateField('custom_next_steps_template', e.target.value)} 
+                  placeholder="Write your message to agents here... You can use placeholders like {{PROPERTY_ADDRESS}}, {{AGENT_FIRST_NAME}}, {{INVESTOR_FULL_NAME}}"
+                  rows={6}
+                  className="text-[15px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed"
+                />
+                <p className="text-sm text-[#808080]">
+                  <strong className="text-[#E3C567]">Available placeholders:</strong> {{PROPERTY_ADDRESS}}, {{AGENT_FIRST_NAME}}, {{INVESTOR_FULL_NAME}}, {{INVESTOR_EMAIL}}, {{INVESTOR_PHONE_NUMBER}}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
@@ -509,6 +596,26 @@ export default function InvestorOnboarding() {
           </p>
         </div>
       </div>
+
+      {/* Template Preview Modal */}
+      <Dialog open={showTemplatePreview} onOpenChange={setShowTemplatePreview}>
+        <DialogContent className="max-w-2xl bg-[#0D0D0D] border-[#1F1F1F]">
+          <DialogHeader>
+            <DialogTitle className="text-[#E3C567]">Next Steps Message Template Preview</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[500px] overflow-y-auto bg-[#141414] rounded-lg p-5 text-[#FAFAFA] text-sm whitespace-pre-wrap leading-relaxed border border-[#1F1F1F]">
+            {DEFAULT_NEXT_STEPS_TEMPLATE
+              .replace(/{{PROPERTY_ADDRESS}}/g, '123 Main St, Tampa, FL 33602')
+              .replace(/{{AGENT_FIRST_NAME}}/g, 'John')
+              .replace(/{{PARTNER_NAME}}/g, 'me')
+              .replace(/{{INVESTOR_FULL_NAME}}/g, 'Sarah Johnson')
+              .replace(/{{INVESTOR_EMAIL}}/g, 'sarah@example.com')
+              .replace(/{{INVESTOR_PHONE_NUMBER}}/g, '(555) 123-4567')
+              .replace(/{{WALKTHROUGH_SECTION}}/g, 'Walkthrough scheduled for Monday, March 10th at 2:00 PM on-site. Please arrive 15 minutes early.')
+            }
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
