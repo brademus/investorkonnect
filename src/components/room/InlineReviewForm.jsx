@@ -72,10 +72,19 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
     }
   };
 
-  if (existingReview) {
+  if (existingReview && !isEditing) {
     return (
       <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
-        <p className="text-sm font-semibold text-[#FAFAFA] mb-3">Your Review</p>
+        <div className="flex items-start justify-between mb-3">
+          <p className="text-sm font-semibold text-[#FAFAFA]">Your Review</p>
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1 text-xs text-[#E3C567] hover:text-[#EDD89F] transition-colors"
+          >
+            <Edit2 className="w-3 h-3" />
+            Edit
+          </button>
+        </div>
         <div className="flex gap-1 mb-2">
           {[1, 2, 3, 4, 5].map(i => (
             <Star
