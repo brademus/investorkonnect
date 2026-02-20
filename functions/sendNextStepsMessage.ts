@@ -59,13 +59,6 @@ Deno.serve(async (req) => {
       agent = agProfiles?.[0];
     }
 
-    // Resolve walkthrough date/time from Deal entity (single source of truth)
-    const walkthroughDate = deal.walkthrough_date || null;
-    const walkthroughTime = deal.walkthrough_time || null;
-    const walkthroughScheduled = deal.walkthrough_scheduled === true && (walkthroughDate || walkthroughTime);
-    const hasFullWalkthrough = walkthroughScheduled && walkthroughDate;
-    console.log("[sendNextSteps] Walkthrough:", { walkthroughDate, walkthroughTime, walkthroughScheduled });
-
     // Resolve placeholders
     const propertyAddress = deal.property_address || "";
     const agentFullName = agent?.full_name || "";
@@ -76,18 +69,29 @@ Deno.serve(async (req) => {
     const investorPhone = investor.phone || "";
     const investorEmail = investor.email || "";
 
-    // Build walkthrough section conditionally
-    let walkthroughSection;
-    if (hasFullWalkthrough && walkthroughTime) {
-      walkthroughSection = `We are planning to schedule the walkthrough for:\n\n${walkthroughDate} at ${walkthroughTime}\n\nPlease let me know if that works for you, or feel free to suggest another time.`;
-    } else if (hasFullWalkthrough) {
-      walkthroughSection = `We are planning to schedule the walkthrough for:\n\n${walkthroughDate}\n\nPlease let me know if that works for you and what time is best, or feel free to suggest another date.`;
-    } else {
-      walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
-    }
+    // Check if investor has a custom next steps template
+    const customTemplate = investor.next_steps_template || null;
 
-    // Render the full message — no raw placeholders
-    const body = `Next Steps for ${propertyAddress}
+    // Build message body
+    let body;
+    if (customTemplate) {
+      // Use custom template if set, always without walkthrough times
+      // Just ask for availability, never include specific dates/times
+      const walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
+      
+      body = customTemplate
+        .replace(/{{PROPERTY_ADDRESS}}/g, propertyAddress)
+        .replace(/{{AGENT_FIRST_NAME}}/g, agentFirstName)
+        .replace(/{{PARTNER_NAME}}/g, partnerName)
+        .replace(/{{INVESTOR_FULL_NAME}}/g, investorFullName)
+        .replace(/{{INVESTOR_PHONE_NUMBER}}/g, investorPhone)
+        .replace(/{{INVESTOR_EMAIL}}/g, investorEmail)
+        .replace(/{{WALKTHROUGH_SECTION}}/g, walkthroughSection);
+    } else {
+      // Use default template — always without walkthrough times
+      const walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
+      
+      body = `Next Steps for ${propertyAddress}
 
 Hi ${agentFirstName},
 
@@ -127,6 +131,7 @@ Best,
 ${investorFullName}
 ${investorPhone}
 ${investorEmail}`;
+    }
 
     await base44.asServiceRole.entities.Message.create({
       room_id: room.id,
