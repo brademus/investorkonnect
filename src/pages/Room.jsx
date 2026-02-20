@@ -305,17 +305,8 @@ export default function Room() {
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // Check walkthrough status from DealAppointments and deal fields
-  useEffect(() => {
-    if (!deal?.id) return;
-    if (deal?.walkthrough_scheduled && (deal?.walkthrough_date || deal?.walkthrough_time)) {
-      setHasWalkthroughAppt(true);
-    }
-    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
-      const status = rows?.[0]?.walkthrough?.status;
-      if (status === 'SCHEDULED' || status === 'COMPLETED') { setHasWalkthroughAppt(true); }
-    }).catch(() => {});
-  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_date, deal?.walkthrough_time]);
+  // Walkthrough state is now purely on Deal.walkthrough_slots — no DealAppointments needed
+  const hasWalkthroughSlots = (deal?.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8).length > 0;
 
   const counterpartName = useMemo(() => {
     if (isAgent) return deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor';
