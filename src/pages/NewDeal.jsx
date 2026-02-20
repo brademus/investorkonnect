@@ -628,6 +628,10 @@ export default function NewDeal() {
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
     console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughSlots });
     
+    // CRITICAL: Filter walkthrough slots to only include ones with valid dates before saving
+    const validSlots = walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [];
+    console.log('[NewDeal] Saving to sessionStorage — raw slots:', walkthroughSlots.length, 'valid slots:', validSlots.length, validSlots);
+    
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
@@ -637,10 +641,10 @@ export default function NewDeal() {
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       dealType,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [],
-      // Legacy
-      walkthroughDate: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
-      walkthroughTime: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
+      walkthroughSlots: validSlots,
+      // Legacy — use first VALID slot
+      walkthroughDate: validSlots.length > 0 ? (validSlots[0].date || null) : null,
+      walkthroughTime: validSlots.length > 0 ? (validSlots[0].timeStart || null) : null,
     }));
 
     // Navigate with dealId if editing
