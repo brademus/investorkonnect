@@ -131,6 +131,8 @@ export default function NewDeal() {
 
   // Auto-save draft on every change so nothing is lost
   useEffect(() => {
+    // Filter to only valid slots (with complete dates) for persistence — keep raw slots in state for the form
+    const validAutoSlots = walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [];
     const draft = {
       dealId: dealId || null,
       propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
@@ -140,11 +142,11 @@ export default function NewDeal() {
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       dealType,
       walkthroughScheduled: walkthroughScheduled === true,
-      walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [],
-      // Legacy fields for backward compat
-      walkthroughDate: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
-      walkthroughTime: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
-      walkthroughTimeEnd: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeEnd || null) : null,
+      walkthroughSlots: walkthroughScheduled === true ? walkthroughSlots : [], // Keep ALL slots so the form UI can render them
+      // Legacy fields — only use valid slots
+      walkthroughDate: validAutoSlots.length > 0 ? (validAutoSlots[0].date || null) : null,
+      walkthroughTime: validAutoSlots.length > 0 ? (validAutoSlots[0].timeStart || null) : null,
+      walkthroughTimeEnd: validAutoSlots.length > 0 ? (validAutoSlots[0].timeEnd || null) : null,
     };
     const isEditing = !!dealId;
     const hasUserInput = [propertyAddress, city, state, zip, purchasePrice, closingDate, sellerName, earnestMoney].some(v => (v ?? '').toString().trim().length > 0);
