@@ -58,8 +58,8 @@ export default function Room() {
   const isInvestor = profile?.user_role === 'investor';
   const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
-  // Investor must select an agent before accessing the deal board
-  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
+  // Investor must select an agent before accessing the deal board (only when multiple agents)
+  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 1 && !selectedInvite;
 
   // Keep views mounted once activated
   useEffect(() => {
@@ -194,8 +194,8 @@ export default function Room() {
               };
             });
             setPendingInvites(enriched);
-            // Auto-navigate investor to pending agents when invites load and no agent selected yet
-            if (enriched.length > 0 && !selectedInvite) {
+            // Auto-navigate investor to pending agents only when multiple agents need selection
+            if (enriched.length > 1 && !selectedInvite) {
               setActiveView('pending_agents');
               setMountedViews(prev => {
                 const next = new Set(prev);
@@ -407,7 +407,7 @@ export default function Room() {
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                {isInvestor && pendingInvites.length > 0 && !isSigned && (
+                {isInvestor && pendingInvites.length > 1 && !isSigned && (
                   <Button onClick={() => setActiveView('pending_agents')} className={`rounded-full font-semibold ${activeView === 'pending_agents' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
