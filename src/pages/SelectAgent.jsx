@@ -208,6 +208,13 @@ export default function SelectAgent() {
                   }`}
                 >
                   <div className="flex items-start justify-between mb-4">
+                    <div className="w-14 h-14 rounded-full bg-[#1F1F1F] flex items-center justify-center flex-shrink-0 mr-4 overflow-hidden">
+                      {agent.headshotUrl ? (
+                        <img src={agent.headshotUrl} alt={agent.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Users className="w-7 h-7 text-[#E3C567]" />
+                      )}
+                    </div>
                     <div className="flex-1">
                       {/* Badges */}
                       {badges.length > 0 && (
