@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       walkthrough_slots: (Array.isArray(walkthrough_slots) ? walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8)
     });
 
-    console.log('[createDealDraft] Created draft:', draft.id);
+    console.log('[createDealDraft] Created draft:', draft.id, 'walkthrough_slots saved:', JSON.stringify(draft.walkthrough_slots));
 
     return Response.json({
       success: true,
