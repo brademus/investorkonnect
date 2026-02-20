@@ -71,7 +71,6 @@ import PipelineStage from './pages/PipelineStage';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
-import RateAgent from './pages/RateAgent';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
@@ -105,7 +104,6 @@ export const PAGES = {
     "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
-    "RateAgent": RateAgent,
     "RoleLanding": RoleLanding,
     "Room": Room,
     "SelectAgent": SelectAgent,

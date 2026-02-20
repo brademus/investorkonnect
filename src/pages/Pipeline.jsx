@@ -92,17 +92,7 @@ function PipelineContent() {
     unsubs.push(base44.entities.Room.subscribe(() => { refetchDeals(); refetchRooms(); }));
     unsubs.push(base44.entities.Deal.subscribe((event) => {
       refetchDeals();
-      // Detect deal moved to completed/canceled and redirect investor to rate agent
-      if (isInvestor && event?.type === 'update' && event?.data) {
-        const newStage = normalizeStage(event.data.pipeline_stage);
-        const prevStage = prevStagesRef.current.get(event.id);
-        if ((newStage === 'completed' || newStage === 'canceled') && prevStage && prevStage !== 'completed' && prevStage !== 'canceled') {
-          const agentId = event.data.locked_agent_id || event.data.agent_id;
-          if (agentId) {
-            navigate(`${createPageUrl("RateAgent")}?dealId=${event.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-          }
-        }
-      }
+      // Just refetch on stage change; inline review form in pipeline card will handle rating
     }));
     if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => { refetchDeals(); refetchRooms(); }));
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
