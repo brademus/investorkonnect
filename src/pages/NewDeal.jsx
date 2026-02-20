@@ -465,9 +465,9 @@ export default function NewDeal() {
 
     // Validate walkthrough dates if scheduled
     if (walkthroughScheduled === true) {
-      const firstSlot = walkthroughSlots[0];
-      if (!firstSlot?.date || firstSlot.date.length < 10) {
-        toast.error("Please enter a complete walk-through date (MM/DD/YYYY) for at least the first option");
+      const completedSlots = walkthroughSlots.filter(s => s.date && s.date.length >= 10 && s.timeStart && s.timeEnd);
+      if (completedSlots.length === 0) {
+        toast.error("Please enter at least one complete walk-through with date and time window (start and end time)");
         return;
       }
     }

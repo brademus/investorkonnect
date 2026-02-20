@@ -62,21 +62,21 @@ import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorProfile from './pages/InvestorProfile';
 import Logout from './pages/Logout';
+import MyAgreement from './pages/MyAgreement';
 import NDA from './pages/NDA';
+import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
+import Pipeline from './pages/Pipeline';
 import PipelineStage from './pages/PipelineStage';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import RateAgent from './pages/RateAgent';
 import RoleLanding from './pages/RoleLanding';
+import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import NewDeal from './pages/NewDeal';
-import MyAgreement from './pages/MyAgreement';
-import Room from './pages/Room';
-import Pipeline from './pages/Pipeline';
 import __Layout from './Layout.jsx';
 
 
@@ -96,21 +96,21 @@ export const PAGES = {
     "InvestorOnboarding": InvestorOnboarding,
     "InvestorProfile": InvestorProfile,
     "Logout": Logout,
+    "MyAgreement": MyAgreement,
     "NDA": NDA,
+    "NewDeal": NewDeal,
     "NotFound": NotFound,
+    "Pipeline": Pipeline,
     "PipelineStage": PipelineStage,
     "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
     "RateAgent": RateAgent,
     "RoleLanding": RoleLanding,
+    "Room": Room,
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "NewDeal": NewDeal,
-    "MyAgreement": MyAgreement,
-    "Room": Room,
-    "Pipeline": Pipeline,
 }
 
 export const pagesConfig = {
