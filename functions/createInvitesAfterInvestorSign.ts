@@ -142,10 +142,18 @@ Deno.serve(async (req) => {
     }
     console.log('[createInvites] Base agreement:', baseAgreement.id, 'status:', baseAgreement.status);
 
-    // Link room to agreement
+    // Link room to agreement (both directions)
     await base44.asServiceRole.entities.Room.update(room.id, {
       current_legal_agreement_id: baseAgreement.id
     });
+
+    // CRITICAL: Also link agreement back to room so Room-page subscriptions can find it
+    if (!baseAgreement.room_id || baseAgreement.room_id !== room.id) {
+      await base44.asServiceRole.entities.LegalAgreement.update(baseAgreement.id, {
+        room_id: room.id
+      });
+      console.log('[createInvites] Linked agreement', baseAgreement.id, 'to room', room.id);
+    }
 
     // Ensure deal is active and visible — ONLY update status fields
     // ALSO: backfill proposed_terms from exhibit_a_terms if missing on the deal
