@@ -46,29 +46,11 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
     }
     setSaving(true);
     try {
-      // 1. Save slots on Deal
-      await base44.entities.Deal.update(deal.id, {
-        walkthrough_slots: validSlots,
-        walkthrough_confirmed_slot: null,
-      });
-
-      // 2. Send chat message
-      const displayText = validSlots.map((s, i) => {
-        let text = s.date;
-        if (s.timeStart) text += ` ${s.timeStart.replace(/(AM|PM)/, ' $1')}`;
-        if (s.timeEnd) text += ` – ${s.timeEnd.replace(/(AM|PM)/, ' $1')}`;
-        return `Option ${i + 1}: ${text}`;
-      }).join('\n');
-
-      await base44.entities.Message.create({
-        room_id: roomId,
-        sender_profile_id: profile?.id,
-        body: `📅 Walk-through Requested\n\n${displayText}\n\nPlease confirm or suggest a different time.`,
-        metadata: {
-          type: 'walkthrough_request',
-          walkthrough_slots: validSlots,
-          status: 'pending'
-        }
+      await base44.functions.invoke('scheduleWalkthrough', {
+        dealId: deal.id,
+        roomId,
+        slots: validSlots,
+        profileId: profile?.id
       });
 
       toast.success("Walk-through request sent!");
