@@ -80,6 +80,7 @@ export default function NewDeal() {
 
   const [hydrated, setHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const navigatingAwayRef = React.useRef(false);
 
   // Load draft from sessionStorage when returning from verification
   useEffect(() => {
