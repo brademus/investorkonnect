@@ -170,36 +170,39 @@ export default function Room() {
         setRoomLoading(false);
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
-        if (isInvestor && room.deal_id && !roomIsLocked) {
-          base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
-            const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-            if (activeInvites.length === 0) return;
-            // Batch-fetch all agent profiles at once instead of one-by-one
-            const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
-            const agentProfiles = agentIds.length > 0
-              ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
-              : [];
-            const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
-            const enriched = activeInvites.map(inv => {
-              const agent = profileMap.get(inv.agent_profile_id);
-              return {
-                ...inv,
-                agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
-                agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
-              };
-            });
-            setPendingInvites(enriched);
-            // Auto-navigate investor to pending agents when invites load and no agent selected yet
-            if (enriched.length > 0 && !selectedInvite) {
-              setActiveView('pending_agents');
-              setMountedViews(prev => {
-                const next = new Set(prev);
-                next.add('pending_agents');
-                return next;
-              });
-            }
-          }).catch(() => {});
-        }
+         if (isInvestor && room.deal_id && !roomIsLocked) {
+           base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
+             const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
+             if (activeInvites.length === 0) return;
+             // Batch-fetch all agent profiles at once instead of one-by-one
+             const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
+             const agentProfiles = agentIds.length > 0
+               ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
+               : [];
+             const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
+             const enriched = activeInvites.map(inv => {
+               const agent = profileMap.get(inv.agent_profile_id);
+               return {
+                 ...inv,
+                 agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                 agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
+               };
+             });
+             setPendingInvites(enriched);
+             // If only 1 agent, auto-select them and show board. If multiple, show selection list
+             if (enriched.length === 1 && !selectedInvite) {
+               setSelectedInvite(enriched[0]);
+               setActiveView('board');
+             } else if (enriched.length > 1 && !selectedInvite) {
+               setActiveView('pending_agents');
+               setMountedViews(prev => {
+                 const next = new Set(prev);
+                 next.add('pending_agents');
+                 return next;
+               });
+             }
+           }).catch(() => {});
+         }
       } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
     };
     load();
