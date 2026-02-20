@@ -142,10 +142,10 @@ export default function NewDeal() {
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
       beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
       dealType,
-      walkthroughSlots: walkthroughEnabled ? walkthroughSlots : [],
+      walkthroughSlots: walkthroughSlots.filter(s => s.date && s.date.length >= 8),
     };
     sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
-  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughEnabled, walkthroughSlots]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughSlots]);
 
   // Load existing deal data if editing
   useEffect(() => {
