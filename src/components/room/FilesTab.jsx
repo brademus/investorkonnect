@@ -159,7 +159,12 @@ export default function FilesTab({ deal, room, roomId, profile }) {
         await base44.entities.Room.update(roomId, { files: roomFiles });
         setLocalRoom(prev => prev ? { ...prev, files: roomFiles } : prev);
         toast.success('File uploaded');
-      } catch (_) { toast.error('Upload failed'); }
+      } catch (err) { 
+        reportError('Generic file upload failed', {
+          cause: err,
+          extra: { room_id: roomId },
+        });
+      }
     };
     input.click();
   };
