@@ -149,11 +149,7 @@ export default function AgentProfile() {
           <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} />
         </div>
 
-        {/* Rating Summary */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 mb-6">
-          <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">Agent Rating</h3>
-          <AgentRatingStars rating={averageRating} reviewCount={validReviews.length} size="lg" />
-        </div>
+
 
         {/* Uploaded Business Card */}
         {agentProfile.businessCardUrl && (
