@@ -299,7 +299,7 @@ export default function Room() {
               return merged;
             });
           });
-        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); }
+        // walkthrough state refreshed via deal subscription
       }
     });
     return () => { try { unsub(); } catch (_) {} };
