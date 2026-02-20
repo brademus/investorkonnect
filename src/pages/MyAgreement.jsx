@@ -165,6 +165,12 @@ export default function MyAgreement() {
           const wtSlots = rawSlots.filter(s => s.date && String(s.date).length >= 8);
           console.log('[MyAgreement] Walkthrough raw slots:', rawSlots.length, 'valid:', wtSlots.length, 'raw:', JSON.stringify(rawSlots));
 
+          // SAFETY: If sessionStorage somehow lost walkthroughSlots, also try the raw form data
+          if (wtSlots.length === 0 && dealData.walkthroughEnabled !== false) {
+            // Check if raw walkthroughSlots had items with incomplete dates
+            console.log('[MyAgreement] WARNING: No valid walkthrough slots found. walkthroughEnabled:', dealData.walkthroughEnabled, 'rawSlots:', JSON.stringify(rawSlots));
+          }
+
           const draftPayload = {
             investor_profile_id: profile.id,
             property_address: dealData.propertyAddress,
