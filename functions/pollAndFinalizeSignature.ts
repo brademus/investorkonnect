@@ -305,7 +305,7 @@ async function ensureDealCreated(base44, agreement) {
   });
 
   // Create DealAppointments if walkthrough was scheduled
-  if (draftWtScheduled && (draftWtDate || draftWtTime)) {
+  if (draftWtScheduled && (draftWtDate || draftWtTime || draftWtSlots.length > 0)) {
     try {
       await base44.asServiceRole.entities.DealAppointments.create({
         dealId: newDeal.id,
