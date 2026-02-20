@@ -42,21 +42,31 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
     }
     setSubmitting(true);
     try {
-      await base44.entities.Review.create({
-        reviewee_profile_id: investorProfileId,
-        reviewer_profile_id: currentProfile.id,
-        reviewer_name: currentProfile.full_name || currentProfile.email,
-        rating,
-        body: review,
-        verified: true,
-        moderation_status: "approved"
-      });
-      toast.success("Review submitted!");
-      setRating(0);
-      setReview("");
-      if (onSubmitted) onSubmitted();
+      if (existingReview && isEditing) {
+        await base44.entities.Review.update(existingReview.id, {
+          rating,
+          body: review
+        });
+        toast.success("Review updated!");
+        setExistingReview({ ...existingReview, rating, body: review });
+        setIsEditing(false);
+      } else {
+        await base44.entities.Review.create({
+          reviewee_profile_id: investorProfileId,
+          reviewer_profile_id: currentProfile.id,
+          reviewer_name: currentProfile.full_name || currentProfile.email,
+          rating,
+          body: review,
+          verified: true,
+          moderation_status: "approved"
+        });
+        toast.success("Review submitted!");
+        setRating(0);
+        setReview("");
+        if (onSubmitted) onSubmitted();
+      }
     } catch (e) {
-      toast.error("Failed to submit review");
+      toast.error(isEditing ? "Failed to update review" : "Failed to submit review");
     } finally {
       setSubmitting(false);
     }
