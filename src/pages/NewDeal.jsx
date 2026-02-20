@@ -360,8 +360,8 @@ export default function NewDeal() {
         }
       }
 
-      // Save to sessionStorage — include walkthroughEnabled flag for downstream debugging
-      const sessionPayload = {
+      // Save to sessionStorage
+      sessionStorage.setItem('newDealDraft', JSON.stringify({
         dealId: dealId || null,
         propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
         sellerName, earnestMoney, numberOfSigners, secondSignerName,
@@ -369,11 +369,8 @@ export default function NewDeal() {
         buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
         beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement,
         dealType,
-        walkthroughEnabled,
         walkthroughSlots: validSlots,
-      };
-      console.log('[NewDeal] Saving to sessionStorage — walkthroughSlots:', JSON.stringify(validSlots));
-      sessionStorage.setItem('newDealDraft', JSON.stringify(sessionPayload));
+      }));
 
       if (dealId) {
         navigate(`${createPageUrl("ContractVerify")}?dealId=${dealId}`);
