@@ -98,8 +98,11 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
       // Review is now inline in the completed section, no navigation needed
-    } catch (_) {
-      toast.error('Failed to update');
+    } catch (err) {
+      reportError('Deal stage update failed', {
+        cause: err,
+        extra: { new_stage: newStage, deal_id: deal.id },
+      });
     } finally {
       setUpdatingStage(false);
       setShowClosePrompt(false);
