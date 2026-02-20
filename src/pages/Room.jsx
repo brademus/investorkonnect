@@ -80,8 +80,9 @@ export default function Room() {
     const cachedIsSigned = enrichedRoom?.is_fully_signed || false;
 
     // Pick the right default view BEFORE any async work
+    // Only show pending_agents by default when multiple agents need selection
     let defaultView;
-    if (isInvestor && !cachedIsSigned && pendingInvites.length > 0) {
+    if (isInvestor && !cachedIsSigned && pendingInvites.length > 1) {
       defaultView = 'pending_agents';
     } else {
       defaultView = 'board';
