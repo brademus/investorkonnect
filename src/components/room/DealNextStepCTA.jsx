@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { normalizeStage } from "@/components/pipelineStages";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { toast } from "sonner";
+import { reportError } from "@/components/utils/reportError";
 import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
   Clock, Loader2, XCircle, Star, FileCheck
