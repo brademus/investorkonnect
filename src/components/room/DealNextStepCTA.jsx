@@ -11,6 +11,7 @@ import {
   Clock, Loader2, XCircle, Star, FileCheck
 } from "lucide-react";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
+import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 
 export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
   const navigate = useNavigate();
@@ -204,16 +205,29 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
 
     if (cta.type === 'complete') {
-      return (
-        <div>
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#10B981] flex-shrink-0`} />
-            <p className={`font-medium text-[#10B981] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
-          </div>
-          <InlineReviewForm deal={deal} room={room} profile={profile} />
-        </div>
-      );
-    }
+       return (
+         <div>
+           <div className="flex items-center gap-3">
+             <CheckCircle2 className={`${inline ? 'w-4 h-4' : 'w-6 h-6'} text-[#10B981] flex-shrink-0`} />
+             <p className={`font-medium text-[#10B981] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
+           </div>
+           {isInvestor && (
+             <InlineReviewForm 
+               dealId={deal?.id} 
+               agentProfileId={room?.locked_agent_id || deal?.locked_agent_id}
+               onSubmitted={() => {}}
+             />
+           )}
+           {isAgent && (
+             <InlineAgentReviewForm 
+               dealId={deal?.id}
+               investorProfileId={room?.investorId}
+               onSubmitted={() => {}}
+             />
+           )}
+         </div>
+       );
+     }
 
     if (cta.type === 'canceled') {
       return (
