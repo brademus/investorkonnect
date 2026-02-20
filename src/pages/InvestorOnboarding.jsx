@@ -40,6 +40,7 @@ export default function InvestorOnboarding() {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -51,7 +52,9 @@ export default function InvestorOnboarding() {
     nationwide: false,
     investment_experience: '',
     deal_types: [],
-    goals: ''
+    goals: '',
+    next_steps_template_type: 'default',
+    custom_next_steps_template: ''
   });
 
   const TOTAL_STEPS = 3;
