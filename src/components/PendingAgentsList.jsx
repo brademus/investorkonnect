@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Star, CheckCircle, Clock, Shield, FileText } from 'lucide-react';
@@ -10,6 +11,7 @@ import { fetchAgentRatings } from '@/components/useAgentRating';
 export default function PendingAgentsList({ invites, onSelectAgent, selectedInviteId }) {
   const navigate = useNavigate();
   const [ratings, setRatings] = useState(new Map());
+  const [headshots, setHeadshots] = useState({});
 
   useEffect(() => {
     const agentIds = invites.map(i => i.agent?.id).filter(Boolean);
