@@ -96,7 +96,9 @@ Deno.serve(async (req) => {
         investor_id: deal.investor_id, agent_id: deal.agent_id,
         locked_room_id: deal.locked_room_id, locked_agent_id: deal.locked_agent_id,
         selected_agent_ids: deal.selected_agent_ids, is_fully_signed: isSigned,
-        proposed_terms: finalProposedTerms
+        proposed_terms: finalProposedTerms,
+        walkthrough_slots: deal.walkthrough_slots || [],
+        walkthrough_confirmed_slot: deal.walkthrough_confirmed_slot || null
       };
 
       if (isAdmin || isInvestor || isSigned) {
