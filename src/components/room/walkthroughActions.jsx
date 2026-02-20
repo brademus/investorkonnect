@@ -1,45 +1,87 @@
 import { base44 } from "@/api/base44Client";
 
 /**
- * Confirm a walkthrough slot.
- * Agent picks a slot → saved on Deal.walkthrough_confirmed_slot + chat message sent.
+ * Shared walkthrough helpers — single source of truth for confirm/decline logic.
+ * Both WalkthroughPanel and WalkthroughMessageCard call these.
  */
-export async function confirmWalkthrough({ dealId, roomId, profileId, slot }) {
-  const now = new Date().toISOString();
 
-  // 1. Save confirmed slot on Deal
-  await base44.entities.Deal.update(dealId, {
-    walkthrough_confirmed_slot: slot,
-  });
-
-  // 2. Update any pending walkthrough_request messages in the room
-  if (roomId) {
-    const msgs = await base44.entities.Message.filter({ room_id: roomId });
-    const pending = msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
-    for (const m of pending) {
-      await base44.entities.Message.update(m.id, {
-        metadata: { ...m.metadata, status: 'confirmed', responded_by: profileId, responded_at: now },
-      });
-    }
-
-    // 3. Send confirmation message
-    const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ');
-    await base44.entities.Message.create({
-      room_id: roomId,
-      sender_profile_id: profileId,
-      body: `✅ Walk-through Confirmed\n\n${slot.date}${timeLabel ? ` (${timeLabel})` : ''}`,
-      metadata: { type: 'walkthrough_response', status: 'confirmed', slot },
-    });
-  }
+/** Build display string from raw date + time */
+export function formatWalkthrough(wtDate, wtTime) {
+  const parts = [wtDate, wtTime].filter(Boolean);
+  return parts.length > 0 ? parts.join(' at ') : 'TBD';
 }
 
 /**
- * Format a slot for display: "05/14/2026 09:00 AM – 11:00 AM"
+ * Confirm or decline a walkthrough.
+ * Updates: DealAppointments status, all pending walkthrough_request messages, sends reply message.
  */
-export function formatSlot(slot) {
-  if (!slot?.date) return 'TBD';
-  let text = slot.date;
-  const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ');
-  if (timeLabel) text += ` (${timeLabel.replace(/(AM|PM)/g, ' $1').trim()})`;
-  return text;
+export async function respondToWalkthrough({ action, dealId, roomId, profileId, wtDate, wtTime }) {
+  const isConfirm = action === 'confirm';
+  const apptStatus = isConfirm ? 'SCHEDULED' : 'CANCELED';
+  const msgStatus = isConfirm ? 'confirmed' : 'denied';
+  const now = new Date().toISOString();
+  const displayText = formatWalkthrough(wtDate, wtTime);
+
+  // 1. Update DealAppointments (create if missing)
+  if (dealId) {
+    const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+    if (apptRows?.[0]) {
+      await base44.entities.DealAppointments.update(apptRows[0].id, {
+        walkthrough: {
+          ...apptRows[0].walkthrough,
+          status: apptStatus,
+          updatedByUserId: profileId,
+          updatedAt: now,
+        },
+      });
+    } else {
+      // No DealAppointments record exists yet — create one
+      await base44.entities.DealAppointments.create({
+        dealId,
+        walkthrough: {
+          status: apptStatus,
+          datetime: null,
+          timezone: null,
+          locationType: 'ON_SITE',
+          notes: null,
+          updatedByUserId: profileId,
+          updatedAt: now,
+        },
+      });
+    }
+  }
+
+  // 1b. If confirmed, update the Deal entity with confirmed walkthrough info
+  if (isConfirm && dealId) {
+    try {
+      await base44.entities.Deal.update(dealId, {
+        walkthrough_confirmed: true,
+        walkthrough_confirmed_date: wtDate,
+        walkthrough_confirmed_time: wtTime,
+      });
+    } catch (e) {
+      console.warn('[walkthroughActions] Failed to update Deal with confirmed walkthrough:', e);
+    }
+  }
+
+  // 2. Update ALL pending walkthrough_request messages in the room
+  if (roomId) {
+    const msgs = await base44.entities.Message.filter({ room_id: roomId });
+    const pendingWt = msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
+    for (const m of pendingWt) {
+      await base44.entities.Message.update(m.id, {
+        metadata: { ...m.metadata, status: msgStatus, responded_by: profileId, responded_at: now },
+      });
+    }
+
+    // 3. Send one reply message
+    const emoji = isConfirm ? '✅' : '❌';
+    const label = isConfirm ? 'Confirmed' : 'Declined';
+    await base44.entities.Message.create({
+      room_id: roomId,
+      sender_profile_id: profileId,
+      body: `${emoji} Walk-through ${label}\n\n${isConfirm ? `See you on ${displayText}` : 'Please propose a different time.'}`,
+      metadata: { type: 'walkthrough_response', walkthrough_date: wtDate, walkthrough_time: wtTime, status: msgStatus },
+    });
+  }
 }

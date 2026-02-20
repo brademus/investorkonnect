@@ -8,7 +8,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { reportError, reportDataIssue } from "@/components/utils/reportError";
 
 import { PIPELINE_STAGES, normalizeStage } from "@/components/pipelineStages";
 import { getSellerCompLabel } from "@/components/utils/dealCompDisplay";
@@ -38,6 +37,7 @@ export default function Room() {
   const [pendingInvites, setPendingInvites] = useState([]);
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
+  const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
   
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set(['board']));
@@ -57,8 +57,8 @@ export default function Room() {
   const isInvestor = profile?.user_role === 'investor';
   const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
-  // Investor must select an agent before accessing the deal board (only when multiple agents)
-  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 1 && !selectedInvite;
+  // Investor must select an agent before accessing the deal board
+  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
   // Keep views mounted once activated
   useEffect(() => {
@@ -78,10 +78,15 @@ export default function Room() {
     const enrichedRoom = rooms?.find(r => r.id === roomId);
     const cachedIsSigned = enrichedRoom?.is_fully_signed || false;
 
-    // Always start on board — pending_agents view is only activated after async invite fetch
-    // (pendingInvites here is stale from the previous room, so don't use it for the default)
-    setActiveView('board');
-    setMountedViews(new Set(['board']));
+    // Pick the right default view BEFORE any async work
+    let defaultView;
+    if (isInvestor && !cachedIsSigned && pendingInvites.length > 0) {
+      defaultView = 'pending_agents';
+    } else {
+      defaultView = 'board';
+    }
+    setActiveView(defaultView);
+    setMountedViews(new Set([defaultView]));
     setPendingInvites([]);
     setSelectedInvite(null);
 
@@ -137,11 +142,7 @@ export default function Room() {
         }
 
         const [room, dealData] = await Promise.all([roomPromise, dealPromise]);
-        if (!room) {
-          if (roomId) reportDataIssue('Room not found by ID', { roomId, userId: profile?.id });
-          setRoomLoading(false);
-          return;
-        }
+        if (!room) { setRoomLoading(false); return; }
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
         const resolvedIsSigned = dealData?.is_fully_signed || roomIsLocked;
@@ -188,8 +189,8 @@ export default function Room() {
               };
             });
             setPendingInvites(enriched);
-            // Auto-navigate investor to pending agents only when multiple agents need selection
-            if (enriched.length > 1 && !selectedInvite) {
+            // Auto-navigate investor to pending agents when invites load and no agent selected yet
+            if (enriched.length > 0 && !selectedInvite) {
               setActiveView('pending_agents');
               setMountedViews(prev => {
                 const next = new Set(prev);
@@ -199,11 +200,7 @@ export default function Room() {
             }
           }).catch(() => {});
         }
-      } catch (e) {
-          console.error('[Room] Load error:', e);
-          reportError('Failed to load deal room', { cause: e, silent: true, extra: { roomId } });
-          setRoomLoading(false);
-        }
+      } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
     };
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -299,30 +296,23 @@ export default function Room() {
               return merged;
             });
           });
-        // walkthrough state refreshed via deal subscription
+        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // One-time delayed refresh to catch async webhook completing after initial load
+  // Check walkthrough status from DealAppointments and deal fields
   useEffect(() => {
     if (!deal?.id) return;
-    if ((deal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8).length > 0) return;
-    const timer = setTimeout(() => {
-      base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
-        .then(res => {
-          if (res?.data?.walkthrough_slots?.length > 0) {
-            setDeal(prev => prev ? { ...prev, ...res.data } : res.data);
-          }
-        })
-        .catch(() => {});
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [deal?.id]);
-
-  // Walkthrough state is now purely on Deal.walkthrough_slots — no DealAppointments needed
-  const hasWalkthroughSlots = (deal?.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8).length > 0;
+    if (deal?.walkthrough_scheduled && (deal?.walkthrough_date || deal?.walkthrough_time)) {
+      setHasWalkthroughAppt(true);
+    }
+    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+      const status = rows?.[0]?.walkthrough?.status;
+      if (status === 'SCHEDULED' || status === 'COMPLETED') { setHasWalkthroughAppt(true); }
+    }).catch(() => {});
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_date, deal?.walkthrough_time]);
 
   const counterpartName = useMemo(() => {
     if (isAgent) return deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor';
@@ -408,7 +398,7 @@ export default function Room() {
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                {isInvestor && pendingInvites.length > 1 && !isSigned && (
+                {isInvestor && pendingInvites.length > 0 && !isSigned && (
                   <Button onClick={() => setActiveView('pending_agents')} className={`rounded-full font-semibold ${activeView === 'pending_agents' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
@@ -456,7 +446,7 @@ export default function Room() {
               />
             )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
-              {isInvestor && isSigned && deal?.id && !hasWalkthroughSlots && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
+              {isInvestor && isSigned && deal?.id && !hasWalkthroughAppt && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
                 <button
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
                   onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
@@ -491,7 +481,7 @@ export default function Room() {
                       toast.success('Moved to Active Listings');
                     } catch (err) {
                       setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
-                      reportError("Failed to update stage", { extra: { dealId: deal?.id } });
+                      toast.error("Failed to update stage");
                     }
                   }}
                 >
@@ -519,7 +509,7 @@ export default function Room() {
                   try {
                     await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
                     queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                  } catch (e) { reportError('Invite creation failed', { cause: e, silent: true, extra: { dealId: currentRoom?.deal_id } }); }
+                  } catch (e) { console.error('[Room] Invite creation failed:', e); }
                 }}
               />
             </div>
@@ -561,7 +551,7 @@ export default function Room() {
                 deal={deal}
                 roomId={roomId}
                 profile={profile}
-                onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); }}
+                onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); setHasWalkthroughAppt(true); }}
               />
             </div>
           )}

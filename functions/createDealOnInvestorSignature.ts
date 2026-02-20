@@ -116,9 +116,11 @@ Deno.serve(async (req) => {
       const exhibitTerms = agreementData.exhibit_a_terms || {};
 
       if (draftForUpdate) {
-        const draftSlots = (Array.isArray(draftForUpdate.walkthrough_slots) ? draftForUpdate.walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8);
-        dealUpdate.walkthrough_slots = draftSlots;
-        dealUpdate.walkthrough_confirmed_slot = null;
+        const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
+        dealUpdate.walkthrough_scheduled = draftWtScheduled;
+        dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
+        dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
+        dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
         if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
@@ -131,30 +133,67 @@ Deno.serve(async (req) => {
           buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
           agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
         };
-        console.log('[createDealOnInvestorSignature] Updated deal from DealDraft — walkthrough_slots:', dealUpdate.walkthrough_slots?.length);
-      } else {
-        // No DealDraft found — preserve existing deal's walkthrough_slots (already correct on the deal)
-        console.log('[createDealOnInvestorSignature] No DealDraft found — preserving deal walkthrough_slots:', existingDeal.walkthrough_slots?.length);
-        
-        if (Object.keys(exhibitTerms).length > 0) {
-          if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
-            dealUpdate.proposed_terms = {
-              seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
-              seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
-              seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
-              buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
-              buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
-              buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
-              agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
-            };
-          }
+      } else if (Object.keys(exhibitTerms).length > 0) {
+        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+          dealUpdate.proposed_terms = {
+            seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
+            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
+            seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
+            buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
+            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
+            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
+            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+          };
         }
       }
 
       // Update Deal
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
-      // No DealAppointments sync needed — walkthrough is on Deal.walkthrough_slots
+      // Sync DealAppointments — reset to NOT_SET when walkthrough is not scheduled
+      try {
+        const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
+        if (dealUpdate.walkthrough_scheduled && (dealUpdate.walkthrough_date || dealUpdate.walkthrough_time || (dealUpdate.walkthrough_slots && dealUpdate.walkthrough_slots.length > 0))) {
+          const apptPatch = {
+            walkthrough: {
+              status: 'PROPOSED',
+              datetime: null,
+              timezone: null,
+              locationType: 'ON_SITE',
+              notes: null,
+              updatedByUserId: agreementData.investor_profile_id || null,
+              updatedAt: new Date().toISOString()
+            }
+          };
+          if (apptRows?.[0]) {
+            await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+          } else {
+            await base44.asServiceRole.entities.DealAppointments.create({
+              dealId: existingDeal.id,
+              ...apptPatch,
+              inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+              rescheduleRequests: []
+            });
+          }
+          console.log('[createDealOnInvestorSignature] Synced DealAppointments (PROPOSED) for existing deal');
+        } else if (apptRows?.[0]) {
+          // Walkthrough not scheduled — reset existing appointment to NOT_SET
+          await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, {
+            walkthrough: {
+              status: 'NOT_SET',
+              datetime: null,
+              timezone: null,
+              locationType: null,
+              notes: null,
+              updatedByUserId: agreementData.investor_profile_id || null,
+              updatedAt: new Date().toISOString()
+            }
+          });
+          console.log('[createDealOnInvestorSignature] Reset DealAppointments to NOT_SET for existing deal');
+        }
+      } catch (apptErr) {
+        console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
+      }
 
       // Update existing Room agreement pointer and status
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
@@ -262,10 +301,11 @@ Deno.serve(async (req) => {
     const selectedAgents = draft.selected_agent_ids || [];
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
-    // Walkthrough: just use walkthrough_slots array — no legacy fields
-    const rawDraftSlots = draft.walkthrough_slots;
-    const draftWalkthroughSlots = (Array.isArray(rawDraftSlots) ? rawDraftSlots : []).filter(s => s.date && String(s.date).length >= 8);
-    console.log('[createDealOnInvestorSignature] Walkthrough raw:', JSON.stringify(rawDraftSlots), 'valid:', draftWalkthroughSlots.length);
+    const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
+    const draftWalkthroughDate = (draftWalkthroughScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
+    const draftWalkthroughTime = (draftWalkthroughScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
+    const draftWalkthroughSlots = (draftWalkthroughScheduled && draft.walkthrough_slots?.length > 0) ? draft.walkthrough_slots : [];
+    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime, 'slots:', draftWalkthroughSlots.length);
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
@@ -297,8 +337,10 @@ Deno.serve(async (req) => {
         const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
         const dupeUpdate = {
           current_legal_agreement_id: agreementData.id,
+          walkthrough_scheduled: draftWalkthroughScheduled,
+          walkthrough_date: draftWalkthroughDate,
+          walkthrough_time: draftWalkthroughTime,
           walkthrough_slots: draftWalkthroughSlots,
-          walkthrough_confirmed_slot: null,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
             seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
@@ -309,7 +351,7 @@ Deno.serve(async (req) => {
             agreement_length: dupeExhibitTerms.agreement_length_days || dupeExhibitTerms.agreement_length || draft.agreement_length || null,
           }
         };
-        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { slots: dupeUpdate.walkthrough_slots?.length, terms: dupeUpdate.proposed_terms });
+        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { walkthrough: dupeUpdate.walkthrough_scheduled, terms: dupeUpdate.proposed_terms });
         await base44.asServiceRole.entities.Deal.update(activeDupe.id, dupeUpdate);
         await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
           deal_id: activeDupe.id
@@ -326,7 +368,47 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: dupeRooms[0].id });
           }
         }
-        // No DealAppointments sync needed — walkthrough is on Deal.walkthrough_slots
+        // Sync DealAppointments for the duplicate deal — reset to NOT_SET if not scheduled
+        try {
+          const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
+          if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
+            const apptPatch = {
+              walkthrough: {
+                status: 'PROPOSED',
+                datetime: null,
+                timezone: null,
+                locationType: 'ON_SITE',
+                notes: null,
+                updatedByUserId: draft.investor_profile_id || null,
+                updatedAt: new Date().toISOString()
+              }
+            };
+            if (apptRows?.[0]) {
+              await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+            } else {
+              await base44.asServiceRole.entities.DealAppointments.create({
+                dealId: activeDupe.id,
+                ...apptPatch,
+                inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+                rescheduleRequests: []
+              });
+            }
+          } else if (apptRows?.[0]) {
+            await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, {
+              walkthrough: {
+                status: 'NOT_SET',
+                datetime: null,
+                timezone: null,
+                locationType: null,
+                notes: null,
+                updatedByUserId: draft.investor_profile_id || null,
+                updatedAt: new Date().toISOString()
+              }
+            });
+          }
+        } catch (apptErr) {
+          console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments for dupe:', apptErr.message);
+        }
         // Clean up the draft
         try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (e) { console.warn('Failed to delete draft:', e.message); }
         // Create invites if needed
@@ -413,14 +495,37 @@ Deno.serve(async (req) => {
       selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id,
+      walkthrough_scheduled: draftWalkthroughScheduled,
+      walkthrough_date: draftWalkthroughDate,
+      walkthrough_time: draftWalkthroughTime,
       walkthrough_slots: draftWalkthroughSlots,
-      walkthrough_confirmed_slot: null,
       deal_type: draft.deal_type || null
     });
     
-    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_slots:', draftWalkthroughSlots.length);
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time, 'walkthrough_slots:', draftWalkthroughSlots.length);
 
-    // No DealAppointments needed — walkthrough is purely driven by Deal.walkthrough_slots
+    // Create DealAppointments record if walkthrough was scheduled
+    if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
+      try {
+        await base44.asServiceRole.entities.DealAppointments.create({
+          dealId: newDeal.id,
+          walkthrough: {
+            status: 'PROPOSED',
+            datetime: null,
+            timezone: null,
+            locationType: 'ON_SITE',
+            notes: null,
+            updatedByUserId: draft.investor_profile_id || null,
+            updatedAt: new Date().toISOString()
+          },
+          inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+          rescheduleRequests: []
+        });
+        console.log('[createDealOnInvestorSignature] Created DealAppointments for walkthrough');
+      } catch (apptErr) {
+        console.warn('[createDealOnInvestorSignature] Failed to create DealAppointments (non-fatal):', apptErr.message);
+      }
+    }
 
     // Update the LegalAgreement with the NEW deal_id
     await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {

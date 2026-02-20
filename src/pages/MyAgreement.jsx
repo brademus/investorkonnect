@@ -83,7 +83,9 @@ export default function MyAgreement() {
             contractUrl: dbDeal.contract_document?.url,
             specialNotes: dbDeal.special_notes,
             selectedAgentIds: dbDeal.selected_agent_ids || [],
-            walkthroughSlots: (dbDeal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8)
+            walkthroughScheduled: dbDeal.walkthrough_scheduled === true,
+            walkthroughDate: dbDeal.walkthrough_date || null,
+            walkthroughTime: dbDeal.walkthrough_time || null
           };
           agentIds = dealData.selectedAgentIds;
           console.log('[MyAgreement] Loaded deal data:', { buyerCommissionPercentage: dealData.buyerCommissionPercentage, agreementLength: dealData.agreementLength });
@@ -116,15 +118,17 @@ export default function MyAgreement() {
           }
 
         } else {
-         // New deal - load from sessionStorage
-         const draftData = sessionStorage.getItem('newDealDraft');
-         if (!draftData) {
-           toast.error('No deal data found. Please start over.');
-           navigate(createPageUrl('Pipeline'), { replace: true });
-           return;
-         }
-         dealData = JSON.parse(draftData);
-         agentIds = dealData.selectedAgentIds || [];
+          // New deal - load from sessionStorage
+          const draftData = sessionStorage.getItem('newDealDraft');
+          if (!draftData) {
+            toast.error('No deal data found. Please start over.');
+            navigate(createPageUrl('Pipeline'), { replace: true });
+            return;
+          }
+          dealData = JSON.parse(draftData);
+          agentIds = dealData.selectedAgentIds || [];
+
+
         }
 
         if (agentIds.length === 0) {
@@ -156,44 +160,54 @@ export default function MyAgreement() {
             draft_id: dealId
           });
         } else {
-          // NEW DEAL: Create DealDraft with all data including walkthrough slots
+          // NEW DEAL: Create DealDraft so automation can find it after investor signs
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-          const wtSlots = (Array.isArray(dealData.walkthroughSlots) ? dealData.walkthroughSlots : []).filter(s => s.date && String(s.date).length >= 8);
+          
+          const wtScheduled = dealData.walkthroughScheduled === true;
+          const wtDate = dealData.walkthroughDate || (dealData.walkthroughSlots?.[0]?.date) || null;
+          const wtTime = dealData.walkthroughTime || (dealData.walkthroughSlots?.[0]?.timeStart) || null;
+          const wtSlots = (wtScheduled && Array.isArray(dealData.walkthroughSlots) && dealData.walkthroughSlots.length > 0) ? dealData.walkthroughSlots : [];
+          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, slots: wtSlots.length });
 
-          const result = await base44.functions.invoke('saveDealAndCreateDraft', {
-            propertyAddress: dealData.propertyAddress,
+          const draftPayload = {
+            investor_profile_id: profile.id,
+            property_address: dealData.propertyAddress,
             city: dealData.city,
             state: dealData.state,
             zip: dealData.zip,
             county: dealData.county,
-            purchasePrice: Number(cleanedPrice),
-            propertyType: dealData.propertyType || null,
+            purchase_price: Number(cleanedPrice),
+            property_type: dealData.propertyType || null,
             beds: dealData.beds ? Number(dealData.beds) : null,
             baths: dealData.baths ? Number(dealData.baths) : null,
             sqft: dealData.sqft ? Number(dealData.sqft) : null,
-            yearBuilt: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-            numberOfStories: dealData.numberOfStories || null,
-            hasBasement: dealData.hasBasement || null,
-            sellerName: dealData.sellerName,
-            earnestMoney: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-            numberOfSigners: dealData.numberOfSigners,
-            secondSignerName: dealData.secondSignerName,
-            buyerCommissionType: buyerCommType,
-            buyerCommissionPercentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-            buyerFlatFee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
-            agreementLength: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-            contractUrl: dealData.contractUrl || null,
-            specialNotes: dealData.specialNotes || null,
-            dealType: dealData.dealType || null,
-            closingDate: dealData.closingDate,
-            contractDate: dealData.contractDate,
-            selectedAgentIds: agentIds,
-            sellerCommissionType: sellerCommType,
-            sellerCommissionPercentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-            sellerFlatFee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthroughSlots: wtSlots
-          });
-          const draftCreated = { id: result?.data?.draft_id };
+            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+            number_of_stories: dealData.numberOfStories || null,
+            has_basement: dealData.hasBasement || null,
+            seller_name: dealData.sellerName,
+            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+            number_of_signers: dealData.numberOfSigners,
+            second_signer_name: dealData.secondSignerName,
+            buyer_commission_type: buyerCommType,
+            buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+            buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
+            agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+            contract_url: dealData.contractUrl || null,
+            special_notes: dealData.specialNotes || null,
+            deal_type: dealData.dealType || null,
+            closing_date: dealData.closingDate,
+            contract_date: dealData.contractDate,
+            selected_agent_ids: agentIds,
+            seller_commission_type: sellerCommType,
+            seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+            seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
+            walkthrough_scheduled: wtScheduled,
+            walkthrough_date: wtDate,
+            walkthrough_time: wtTime,
+            walkthrough_slots: wtSlots
+          };
+          const draftCreated = await base44.entities.DealDraft.create(draftPayload);
+          console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
@@ -460,25 +474,29 @@ export default function MyAgreement() {
                  </p>
                </div>
                <div className="col-span-2">
-                 <p className="text-[#808080]">Walkthrough Slots</p>
+                 <p className="text-[#808080]">Walk-through</p>
                  {(() => {
-                   const slots = (deal.walkthroughSlots || []).filter(s => s.date && s.date.length >= 8);
-                   if (slots.length === 0) return <p className="text-[#FAFAFA] font-semibold">—</p>;
+                   if (deal.walkthroughScheduled !== true) return <p className="text-[#FAFAFA] font-semibold">Not scheduled</p>;
+                   const slots = deal.walkthroughSlots?.filter(s => s.date && s.date.length >= 8) || deal.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+                   const wtDate = deal.walkthrough_date || deal.walkthroughDate;
+                   const wtTime = deal.walkthrough_time || deal.walkthroughTime;
+                   const allSlots = slots.length > 0 ? slots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
+                   if (allSlots.length === 0) return <p className="text-[#FAFAFA] font-semibold">Proposed (date TBD)</p>;
                    return (
-                     <div className="space-y-1">
-                       {slots.map((slot, idx) => {
-                         const time = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ');
+                     <div className="space-y-1 mt-1">
+                       {allSlots.map((slot, idx) => {
+                         const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
                          return (
-                           <p key={idx} className="text-[#FAFAFA] font-semibold text-sm">
-                             {slot.date}
-                             {time && <span className="text-[#808080] ml-2">{time}</span>}
+                           <p key={idx} className="text-[#FAFAFA] font-semibold">
+                             {allSlots.length > 1 ? `Option ${idx + 1}: ` : 'Proposed: '}{slot.date}
+                             {timeLabel && <span className="text-[#808080] font-normal ml-1.5">{timeLabel}</span>}
                            </p>
                          );
                        })}
                      </div>
                    );
                  })()}
-               </div>
+                </div>
              </div>
            </div>
          )}

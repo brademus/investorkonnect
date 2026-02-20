@@ -11,7 +11,6 @@ import { FileText, Calendar, TrendingUp, CheckCircle, Plus, Home, Clock, XCircle
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
-import { reportError, reportDataIssue } from "@/components/utils/reportError";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
@@ -19,7 +18,6 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp, getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
-import DealCardReview from "@/components/pipeline/DealCardReview";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -185,10 +183,7 @@ function PipelineContent() {
         agreement: room?.agreement || null,
         agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
         investor_signed_at: room?.agreement?.investor_signed_at || null,
-        pending_counter_offer: room?.pending_counter_offer || null,
-        walkthrough_slots: deal.walkthrough_slots || [],
-        walkthrough_confirmed_slot: deal.walkthrough_confirmed_slot || null,
-        documents: deal.documents || null
+        pending_counter_offer: room?.pending_counter_offer || null
       };
     }).filter(d => {
       if (!isAgent) return true;
@@ -204,7 +199,7 @@ function PipelineContent() {
     } else {
       const roomArr = await base44.entities.Room.filter({ deal_id: deal.deal_id });
       if (roomArr?.length) navigate(`${createPageUrl("Room")}?roomId=${roomArr[0].id}`);
-      else reportError('Room not ready yet. Please try again in a moment.', { extra: { dealId: deal.deal_id, dealTitle: deal.title } });
+      else toast.error('Room not ready yet. Please try again in a moment.');
     }
   };
 
@@ -216,16 +211,11 @@ function PipelineContent() {
     // Block moving to connected_deals or beyond unless agreement is fully signed
     const currentStage = normalizeStage(draggedDeal.pipeline_stage);
     if (currentStage === 'new_deals' && !draggedDeal.is_fully_signed) {
-      reportError("Agreement must be fully signed before moving this deal forward.", { level: 'warning', extra: { dealId: result.draggableId, currentStage, newStage } });
+      toast.error("Agreement must be fully signed before moving this deal forward.");
       return;
     }
     if (!draggedDeal.is_fully_signed && stageOrder(newStage) >= stageOrder('connected_deals')) {
-      reportError("Agreement must be fully signed before moving this deal forward.", { level: 'warning', extra: { dealId: result.draggableId, newStage } });
-      return;
-    }
-    // Block moving back to new_deals once a deal has left that stage
-    if (newStage === 'new_deals' && currentStage !== 'new_deals') {
-      toast.error("Deals cannot be moved back to New Deals.");
+      toast.error("Agreement must be fully signed before moving this deal forward.");
       return;
     }
     // Skip if dropped in same stage
@@ -256,8 +246,20 @@ function PipelineContent() {
     return m;
   }, [deals]);
 
-  // No DealAppointments needed — walkthrough status derived from Deal.walkthrough_slots
-  const wtStatusMap = {};
+  // Load walkthrough statuses for all deals
+  const dealIds = useMemo(() => deals.map(d => d.deal_id).filter(Boolean), [deals]);
+  const { data: wtStatusMap = {} } = useQuery({
+    queryKey: ['wtStatuses', dealIds.join(',')],
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!dealIds.length) return {};
+      const appts = await base44.entities.DealAppointments.filter({});
+      const map = {};
+      appts.forEach(a => { if (a.dealId && a.walkthrough?.status) map[a.dealId] = a.walkthrough.status; });
+      return map;
+    },
+    enabled: dealIds.length > 0,
+  });
 
   const getDaysInPipeline = (d) => { if (!d) return 'N/A'; return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`; };
 
@@ -302,52 +304,51 @@ function PipelineContent() {
                               <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
                                 {(provided, snapshot) => (
                                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567]' : ''}`}>
-                                    <div>
-                                      <div className="flex justify-between items-start mb-2">
-                                        <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
-                                        <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0">{getDaysInPipeline(deal.created_date)}</span>
+                                    <div className="flex gap-3">
+                                      {/* Left: deal info */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
+                                          <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0">{getDaysInPipeline(deal.created_date)}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-2 mb-3">
+                                          <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
+                                          {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
+                                          {(() => {
+                                            const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
+                                            const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
+                                            return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
+                                          })()}
+                                          {(() => {
+                                            const badge = getAgreementStatusLabel({
+                                              room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
+                                              agreement: deal.agreement || undefined,
+                                              negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
+                                              role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
+                                            });
+                                            return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
+                                          })()}
+                                          {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                        </div>
                                       </div>
-                                      <div className="flex flex-col gap-2 mb-3">
-                                        <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
-                                        {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
-                                        {(() => {
-                                          const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
-                                          const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
-                                          return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
-                                        })()}
-                                        {(() => {
-                                          const badge = getAgreementStatusLabel({
-                                            room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
-                                            agreement: deal.agreement || undefined,
-                                            negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
-                                            role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
-                                          });
-                                          return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
-                                        })()}
-                                        {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
-                                      </div>
+                                      {/* Right: next step */}
                                       {(() => {
-                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor });
+                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
                                         if (!step) return null;
                                         return (
-                                          <p className={`text-[11px] leading-snug ${step.color}`}>
-                                            <span className="text-[#808080] font-medium">Next: </span>
-                                            <span className="font-semibold">{step.label}</span>
-                                          </p>
+                                          <div className="flex-shrink-0 w-[110px] flex items-center">
+                                            <div className={`w-full rounded-xl border px-3 py-2.5 text-center ${step.color.includes('E3C567') ? 'bg-[#E3C567]/10 border-[#E3C567]/30' : step.color.includes('10B981') || step.color.includes('34D399') ? 'bg-[#10B981]/10 border-[#10B981]/30' : step.color.includes('F59E0B') ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30' : step.color.includes('60A5FA') ? 'bg-[#60A5FA]/10 border-[#60A5FA]/30' : 'bg-[#1F1F1F] border-[#1F1F1F]'}`}>
+                                              <Circle className={`w-3.5 h-3.5 mx-auto mb-1 ${step.color}`} />
+                                              <p className={`text-[11px] font-semibold leading-tight ${step.color}`}>{step.label}</p>
+                                            </div>
+                                          </div>
                                         );
                                       })()}
                                     </div>
                                     <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
-                                      {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
+                                      {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
                                     </div>
-                                    {(deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled') && (
-                                      <DealCardReview
-                                        agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
-                                        reviewerProfileId={profile?.id}
-                                        dealId={deal.deal_id}
-                                      />
-                                    )}
                                   </div>
                                 )}
                               </Draggable>

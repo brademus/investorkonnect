@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { normalizeStage } from "@/components/pipelineStages";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { toast } from "sonner";
-import { reportError } from "@/components/utils/reportError";
 import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
   Clock, Loader2, XCircle, Star, FileCheck
@@ -17,11 +17,41 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const [uploading, setUploading] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [showClosePrompt, setShowClosePrompt] = useState(false);
+  const [apptStatus, setApptStatus] = useState(null);
+
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
   const isAgent = !isAdmin && profile?.user_role === 'agent';
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
+
+  // Load walkthrough appointment status
+  useEffect(() => {
+    if (!deal?.id) return;
+    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
+      setApptStatus(rows?.[0]?.walkthrough?.status || null);
+    }).catch(() => {});
+
+    const unsub = base44.entities.DealAppointments.subscribe(e => {
+      if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
+        setApptStatus(e.data.walkthrough.status);
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [deal?.id]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    const unsub = base44.entities.Message.subscribe(e => {
+      const d = e?.data;
+      if (!d || d.room_id !== roomId) return;
+      if (d.metadata?.type === "walkthrough_request" || d.metadata?.type === "walkthrough_response") {
+        if (d.metadata.status === "confirmed") setApptStatus("SCHEDULED");
+        else if (d.metadata.status === "denied") setApptStatus("CANCELED");
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [roomId]);
 
   const triggerUpload = (docKey) => {
     const input = document.createElement('input');
@@ -47,7 +77,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
         toast.success('Document uploaded');
       } catch (err) {
-        reportError('Upload failed — please try again', { cause: err, extra: { dealId: deal?.id, docKey } });
+        toast.error('Upload failed — please try again');
       } finally {
         setUploading(false);
       }
@@ -63,19 +93,20 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
       // Review is now inline in the completed section, no navigation needed
-    } catch (err) {
-      reportError('Failed to update deal stage', { cause: err, extra: { dealId: deal?.id, newStage } });
+    } catch (_) {
+      toast.error('Failed to update');
     } finally {
       setUpdatingStage(false);
       setShowClosePrompt(false);
     }
   };
 
-  // Determine CTA — walkthrough state is purely on Deal.walkthrough_slots / walkthrough_confirmed_slot
-  const wtSlots = (deal?.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
-  const hasWalkthrough = wtSlots.length > 0;
-  const wtConfirmed = !!deal?.walkthrough_confirmed_slot;
-  const wtStatus = wtConfirmed ? 'SCHEDULED' : (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
+  // Determine CTA
+  const wtScheduled = deal?.walkthrough_scheduled === true;
+  const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+  const wtDate = deal?.walkthrough_date;
+  const hasWalkthrough = wtScheduled && (wtDate || wtSlots.length > 0);
+  const wtStatus = apptStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
 
   const hasCma = !!(deal?.documents?.cma?.url);
   const hasBuyerContract = !!(deal?.documents?.buyer_contract?.url);
