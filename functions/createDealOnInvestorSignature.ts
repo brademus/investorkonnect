@@ -263,8 +263,9 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
     // Walkthrough: just use walkthrough_slots array — no legacy fields
-    const draftWalkthroughSlots = (Array.isArray(draft.walkthrough_slots) ? draft.walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8);
-    console.log('[createDealOnInvestorSignature] Walkthrough slots:', draftWalkthroughSlots.length);
+    const rawDraftSlots = draft.walkthrough_slots;
+    const draftWalkthroughSlots = (Array.isArray(rawDraftSlots) ? rawDraftSlots : []).filter(s => s.date && String(s.date).length >= 8);
+    console.log('[createDealOnInvestorSignature] Walkthrough raw:', JSON.stringify(rawDraftSlots), 'valid:', draftWalkthroughSlots.length);
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
