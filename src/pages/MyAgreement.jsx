@@ -462,25 +462,25 @@ export default function MyAgreement() {
                  </p>
                </div>
                <div className="col-span-2">
-                 <p className="text-[#808080]">Walk-through</p>
+                 <p className="text-[#808080]">Walkthrough Slots</p>
                  {(() => {
-                    const slots = (deal.walkthroughSlots || deal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
-                    if (slots.length === 0) return <p className="text-[#FAFAFA] font-semibold">Not scheduled</p>;
-                    return (
-                      <div className="space-y-1 mt-1">
-                        {slots.map((slot, idx) => {
-                          const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
-                          return (
-                            <p key={idx} className="text-[#FAFAFA] font-semibold">
-                              {slots.length > 1 ? `Option ${idx + 1}: ` : 'Proposed: '}{slot.date}
-                              {timeLabel && <span className="text-[#808080] font-normal ml-1.5">{timeLabel}</span>}
-                            </p>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
+                   const slots = (deal.walkthroughSlots || []).filter(s => s.date && s.date.length >= 8);
+                   if (slots.length === 0) return <p className="text-[#FAFAFA] font-semibold">—</p>;
+                   return (
+                     <div className="space-y-1">
+                       {slots.map((slot, idx) => {
+                         const time = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ');
+                         return (
+                           <p key={idx} className="text-[#FAFAFA] font-semibold text-sm">
+                             {slot.date}
+                             {time && <span className="text-[#808080] ml-2">{time}</span>}
+                           </p>
+                         );
+                       })}
+                     </div>
+                   );
+                 })()}
+               </div>
              </div>
            </div>
          )}
