@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
@@ -85,8 +85,8 @@ function LayoutContent({ children }) {
     }
   }, [error]);
 
-  const [showAppLoader, setShowAppLoader] = React.useState(true);
-  React.useEffect(() => {
+  const [showAppLoader, setShowAppLoader] = useState(true);
+  useEffect(() => {
     if (loading) {
       setShowAppLoader(true);
     } else {
