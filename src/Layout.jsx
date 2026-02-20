@@ -59,6 +59,19 @@ function LayoutContent({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, user, role, hasRoom, onboarded, profile, error } = useCurrentProfile();
+
+  // Debounced navigation logging — prevents burst requests when navigating
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (user && location.pathname) {
+        base44.analytics.track({
+          eventName: 'page_view',
+          properties: { page: location.pathname }
+        }).catch(() => {});
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [location.pathname, user]);
   
   // #3 — Identify user in Sentry for better debugging
   useEffect(() => {
