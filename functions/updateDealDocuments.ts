@@ -51,8 +51,13 @@ Deno.serve(async (req) => {
       updatePayload.documents = { ...(deal.documents || {}), ...documents };
     }
     if (pipeline_stage) {
-      // Block moving to connected_deals or beyond unless agreement is fully signed
+      // Block moving back to new_deals once a deal has left that stage
       const STAGE_ORDER = { new_deals: 1, connected_deals: 2, active_listings: 3, in_closing: 4, completed: 5, canceled: 6 };
+      const currentOrder = STAGE_ORDER[deal.pipeline_stage] || 1;
+      if (pipeline_stage === 'new_deals' && currentOrder > 1) {
+        return Response.json({ error: 'Deals cannot be moved back to New Deals.' }, { status: 400 });
+      }
+      // Block moving to connected_deals or beyond unless agreement is fully signed
       const targetOrder = STAGE_ORDER[pipeline_stage] || 0;
       if (targetOrder >= 2) {
         const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
