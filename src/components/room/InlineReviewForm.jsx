@@ -22,7 +22,12 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
       reviewee_profile_id: agentProfileId, 
       reviewer_profile_id: currentProfile.id 
     }).then(reviews => {
-      if (reviews.length > 0) setExistingReview(reviews[0]);
+      if (reviews.length > 0) {
+        const rev = reviews[0];
+        setExistingReview(rev);
+        setRating(rev.rating || 0);
+        setReview(rev.body || "");
+      }
     }).catch(() => {});
   }, [currentProfile?.id, agentProfileId]);
 
