@@ -473,18 +473,30 @@ export default function MyAgreement() {
                    })()}
                  </p>
                </div>
-               <div>
+               <div className="col-span-2">
                  <p className="text-[#808080]">Walk-through</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {(() => {
-                      if (deal.walkthroughScheduled !== true) return 'Not scheduled';
-                      const wtDate = deal.walkthrough_date || deal.walkthroughDate;
-                      const wtTime = deal.walkthrough_time || deal.walkthroughTime;
-                      if (!wtDate && !wtTime) return 'Proposed (date TBD)';
-                      return `Proposed: ${wtDate || 'TBD'} at ${wtTime || 'TBD'}`;
-                    })()}
-                 </p>
-               </div>
+                 {(() => {
+                   if (deal.walkthroughScheduled !== true) return <p className="text-[#FAFAFA] font-semibold">Not scheduled</p>;
+                   const slots = deal.walkthroughSlots?.filter(s => s.date && s.date.length >= 8) || deal.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+                   const wtDate = deal.walkthrough_date || deal.walkthroughDate;
+                   const wtTime = deal.walkthrough_time || deal.walkthroughTime;
+                   const allSlots = slots.length > 0 ? slots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
+                   if (allSlots.length === 0) return <p className="text-[#FAFAFA] font-semibold">Proposed (date TBD)</p>;
+                   return (
+                     <div className="space-y-1 mt-1">
+                       {allSlots.map((slot, idx) => {
+                         const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+                         return (
+                           <p key={idx} className="text-[#FAFAFA] font-semibold">
+                             {allSlots.length > 1 ? `Option ${idx + 1}: ` : 'Proposed: '}{slot.date}
+                             {timeLabel && <span className="text-[#808080] font-normal ml-1.5">{timeLabel}</span>}
+                           </p>
+                         );
+                       })}
+                     </div>
+                   );
+                 })()}
+                </div>
              </div>
            </div>
          )}
