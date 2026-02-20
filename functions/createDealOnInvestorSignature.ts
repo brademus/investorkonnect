@@ -336,15 +336,15 @@ Deno.serve(async (req) => {
         console.log('[createDealOnInvestorSignature] DUPLICATE detected! Existing deal:', activeDupe.id, 'for address:', draft.property_address);
         // Update existing deal's agreement pointer instead of creating a new one
         // Build update for the duplicate deal - include walkthrough and terms from draft
-        const dupeExhibitTerms = agreementData.exhibit_a_terms || {};
-        const dupeBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
-        const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
-        const dupeUpdate = {
-          current_legal_agreement_id: agreementData.id,
-          walkthrough_scheduled: draftWalkthroughScheduled,
-          walkthrough_date: draftWalkthroughDate,
-          walkthrough_time: draftWalkthroughTime,
-          walkthrough_slots: draftWalkthroughSlots,
+           const dupeExhibitTerms = agreementData.exhibit_a_terms || {};
+           const dupeBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
+           const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
+           const dupeUpdate = {
+             current_legal_agreement_id: agreementData.id,
+             walkthrough_scheduled: shouldMarkWalkthroughScheduled,
+             walkthrough_date: draftWalkthroughDate,
+             walkthrough_time: draftWalkthroughTime,
+             walkthrough_slots: draftWalkthroughSlots,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
             seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
