@@ -4,26 +4,20 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-export default function InlineAgentReviewForm({ dealId, investorProfileId, onSubmitted, compact = false }) {
+export default function InlineAgentReviewForm({ dealId, investorProfileId, reviewerProfileId, onSubmitted, compact = false }) {
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [currentProfile, setCurrentProfile] = useState(null);
   const [existingReview, setExistingReview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    base44.auth.me().then(setCurrentProfile).catch(() => {});
-  }, []);
 
   // Fetch existing review
   useEffect(() => {
-    if (!currentProfile?.id || !investorProfileId || !dealId) return;
+    if (!reviewerProfileId || !investorProfileId || !dealId) return;
     base44.entities.Review.filter({ 
       deal_id: dealId,
       reviewee_profile_id: investorProfileId, 
-      reviewer_profile_id: currentProfile.id 
+      reviewer_profile_id: reviewerProfileId
     }).then(reviews => {
       if (reviews.length > 0) {
         const rev = reviews[0];
@@ -31,21 +25,17 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
         setRating(rev.rating || 0);
         setReview(rev.body || "");
         setIsEditing(false);
-      } else {
-        setExistingReview(null);
-        setRating(0);
-        setReview("");
       }
     }).catch(() => {});
-  }, [currentProfile?.id, investorProfileId, dealId, refreshKey]);
+  }, [reviewerProfileId, investorProfileId, dealId]);
 
   // Subscribe to review updates in real-time
   useEffect(() => {
-    if (!currentProfile?.id || !dealId || !investorProfileId) return;
+    if (!reviewerProfileId || !dealId || !investorProfileId) return;
     const unsub = base44.entities.Review.subscribe((event) => {
       if (event.data?.deal_id === dealId && 
           event.data?.reviewee_profile_id === investorProfileId &&
-          event.data?.reviewer_profile_id === currentProfile.id) {
+          event.data?.reviewer_profile_id === reviewerProfileId) {
         if (event.type === 'create' || event.type === 'update') {
           setExistingReview(event.data);
           setRating(event.data.rating || 0);
@@ -59,43 +49,31 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
       }
     });
     return () => { try { unsub(); } catch (_) {} };
-  }, [currentProfile?.id, dealId, investorProfileId]);
+  }, [reviewerProfileId, dealId, investorProfileId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
       toast.error("Please select a rating");
       return;
     }
-    if (!currentProfile?.id) {
-      toast.error("Unable to submit review");
-      return;
-    }
     setSubmitting(true);
     try {
       if (existingReview && isEditing) {
-        await base44.entities.Review.update(existingReview.id, {
+        await base44.entities.Review.update(existingReview.id, { rating, body: review });
+        toast.success("Review updated!");
+        setIsEditing(false);
+      } else {
+        await base44.entities.Review.create({
+          deal_id: dealId,
+          reviewee_profile_id: investorProfileId,
+          reviewer_profile_id: reviewerProfileId,
           rating,
           body: review
         });
-        toast.success("Review updated!");
-        setExistingReview({ ...existingReview, rating, body: review });
-        setIsEditing(false);
-        setRefreshKey(k => k + 1);
-      } else {
-       await base44.entities.Review.create({
-         deal_id: dealId,
-         reviewee_profile_id: investorProfileId,
-         reviewer_profile_id: currentProfile.id,
-         reviewer_name: currentProfile.full_name || currentProfile.email,
-         rating,
-         body: review,
-         verified: true,
-         moderation_status: "approved"
-       });
-       toast.success("Review submitted!");
-       setRating(0);
-       setReview("");
-       if (onSubmitted) onSubmitted();
+        toast.success("Review submitted!");
+        setRating(0);
+        setReview("");
+        if (onSubmitted) onSubmitted();
       }
     } catch (e) {
       toast.error(isEditing ? "Failed to update review" : "Failed to submit review");
