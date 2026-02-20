@@ -164,10 +164,12 @@ export default function MyAgreement() {
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           
           const wtScheduled = dealData.walkthroughScheduled === true;
-          const wtDate = dealData.walkthroughDate || (dealData.walkthroughSlots?.[0]?.date) || null;
-          const wtTime = dealData.walkthroughTime || (dealData.walkthroughSlots?.[0]?.timeStart) || null;
-          const wtSlots = (wtScheduled && Array.isArray(dealData.walkthroughSlots) && dealData.walkthroughSlots.length > 0) ? dealData.walkthroughSlots : [];
-          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, slots: wtSlots.length });
+          // CRITICAL: Filter walkthrough slots to only include ones with valid dates (>= 8 chars = MM/DD/YYYY)
+          const rawSlots = Array.isArray(dealData.walkthroughSlots) ? dealData.walkthroughSlots : [];
+          const wtSlots = wtScheduled ? rawSlots.filter(s => s.date && String(s.date).length >= 8) : [];
+          const wtDate = dealData.walkthroughDate || (wtSlots[0]?.date) || null;
+          const wtTime = dealData.walkthroughTime || (wtSlots[0]?.timeStart) || null;
+          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, rawSlots: rawSlots.length, filteredSlots: wtSlots.length, slots: wtSlots });
 
           const draftPayload = {
             investor_profile_id: profile.id,
