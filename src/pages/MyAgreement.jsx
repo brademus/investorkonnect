@@ -158,20 +158,7 @@ export default function MyAgreement() {
         } else {
           // NEW DEAL: Create DealDraft so automation can find it after investor signs
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-          
-          const rawSlots = Array.isArray(dealData.walkthroughSlots) ? dealData.walkthroughSlots : [];
-          const wtSlots = rawSlots.filter(s => s.date && String(s.date).length >= 8);
-          console.log('[MyAgreement] Walkthrough raw slots:', rawSlots.length, 'valid:', wtSlots.length, 'raw:', JSON.stringify(rawSlots));
-
-          // SAFETY: If sessionStorage somehow lost walkthroughSlots, also try the raw form data
-          if (wtSlots.length === 0 && dealData.walkthroughEnabled !== false) {
-            console.log('[MyAgreement] WARNING: No valid walkthrough slots found. walkthroughEnabled:', dealData.walkthroughEnabled, 'rawSlots:', JSON.stringify(rawSlots));
-            console.log('[MyAgreement] Full sessionStorage keys for walkthrough debug:', JSON.stringify({
-              walkthroughSlots: dealData.walkthroughSlots,
-              walkthrough_slots: dealData.walkthrough_slots,
-              walkthroughEnabled: dealData.walkthroughEnabled,
-            }));
-          }
+          const wtSlots = (Array.isArray(dealData.walkthroughSlots) ? dealData.walkthroughSlots : []).filter(s => s.date && String(s.date).length >= 8);
 
           const draftPayload = {
             property_address: dealData.propertyAddress,
