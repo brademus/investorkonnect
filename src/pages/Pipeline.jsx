@@ -18,6 +18,7 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp, getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
+import InlineReviewForm from "@/components/room/InlineReviewForm";
 
 function PipelineContent() {
   const navigate = useNavigate();
