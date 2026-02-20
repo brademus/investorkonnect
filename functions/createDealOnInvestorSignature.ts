@@ -505,7 +505,7 @@ Deno.serve(async (req) => {
       deal_type: draft.deal_type || null
     });
     
-    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time, 'walkthrough_slots:', draftWalkthroughSlots.length);
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_slots:', draftWalkthroughSlots.length);
 
     // Create DealAppointments record if walkthrough was scheduled
     if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
