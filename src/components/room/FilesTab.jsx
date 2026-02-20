@@ -135,7 +135,10 @@ export default function FilesTab({ deal, room, roomId, profile }) {
         setLocalRoom(prev => prev ? { ...prev, files: roomFiles } : prev);
       } catch (err) {
         console.error('[FilesTab] Upload failed:', err);
-        toast.error('Upload failed');
+        reportError('Document upload to deal failed', {
+          cause: err,
+          extra: { doc_key: docKey, deal_id: deal.id, room_id: roomId },
+        });
       }
     };
     input.click();
