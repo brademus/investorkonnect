@@ -326,6 +326,12 @@ export default function NewDeal() {
           walkthrough_slots: validSlots,
           walkthrough_confirmed_slot: null,
         });
+
+        // Save walkthrough slots via service role to bypass field-level permissions
+        await base44.functions.invoke('updateDealWalkthrough', {
+          dealId,
+          walkthrough_slots: validSlots
+        });
         
         if (zip) {
           getZipCoords(zip).then(coords => {
