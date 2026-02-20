@@ -385,7 +385,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                           }}
                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
                         />
-                        {stage.id === 'connected_deals' && (
+                        {(stage.id === 'new_deals' || stage.id === 'connected_deals') && localDeal?.walkthrough_scheduled === true && (
                           <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3">
                             <p className="text-xs font-semibold text-[#FAFAFA] mb-2">Walk-through</p>
                             <InlineWalkthroughStatus deal={localDeal} room={localRoom} profile={profile} roomId={roomId} />
