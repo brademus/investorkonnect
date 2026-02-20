@@ -79,16 +79,10 @@ export default function Room() {
     const enrichedRoom = rooms?.find(r => r.id === roomId);
     const cachedIsSigned = enrichedRoom?.is_fully_signed || false;
 
-    // Pick the right default view BEFORE any async work
-    // Only show pending_agents by default when multiple agents need selection
-    let defaultView;
-    if (isInvestor && !cachedIsSigned && pendingInvites.length > 1) {
-      defaultView = 'pending_agents';
-    } else {
-      defaultView = 'board';
-    }
-    setActiveView(defaultView);
-    setMountedViews(new Set([defaultView]));
+    // Always start on board — pending_agents view is only activated after async invite fetch
+    // (pendingInvites here is stale from the previous room, so don't use it for the default)
+    setActiveView('board');
+    setMountedViews(new Set(['board']));
     setPendingInvites([]);
     setSelectedInvite(null);
 
