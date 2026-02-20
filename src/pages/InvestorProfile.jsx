@@ -121,32 +121,56 @@ export default function InvestorProfile() {
   const [ikDealsCount, setIkDealsCount] = useState(null);
   const [reviews, setReviews] = useState([]);
 
-  useEffect(() => {
+  // Fetch reviews with subscription support
+  const fetchReviews = async () => {
     if (!profileId) return;
-    setLoading(true);
-    const load = async () => {
-      try {
-        const profiles = await base44.entities.Profile.filter({ id: profileId });
-        setInvestorProfile(profiles?.[0] || null);
-        try {
-          const [deals, revs] = await Promise.all([
-            base44.entities.Deal.filter({ investor_id: profileId }),
-            base44.entities.Review.filter({ reviewee_profile_id: profileId })
-          ]);
-          setIkDealsCount(deals?.length || 0);
-          setReviews(revs || []);
-        } catch (e) {
-          console.log('[InvestorProfile] Could not load deals/reviews:', e);
-          setIkDealsCount(0);
-        }
-      } catch (err) {
-        console.error("[InvestorProfile] Load failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [profileId]);
+    try {
+      const revs = await base44.entities.Review.filter({ reviewee_profile_id: profileId });
+      setReviews(revs || []);
+    } catch (e) {
+      console.log('[InvestorProfile] Could not load reviews:', e);
+    }
+  };
+
+  useEffect(() => {
+     if (!profileId) return;
+     setLoading(true);
+     const load = async () => {
+       try {
+         const profiles = await base44.entities.Profile.filter({ id: profileId });
+         setInvestorProfile(profiles?.[0] || null);
+         try {
+           const deals = await base44.entities.Deal.filter({ investor_id: profileId });
+           setIkDealsCount(deals?.length || 0);
+         } catch (e) {
+           console.log('[InvestorProfile] Could not load deals:', e);
+           setIkDealsCount(0);
+         }
+         await fetchReviews();
+       } catch (err) {
+         console.error("[InvestorProfile] Load failed:", err);
+       } finally {
+         setLoading(false);
+       }
+     };
+     load();
+   }, [profileId]);
+
+   // Real-time: refetch reviews when Review entity changes
+   useEffect(() => {
+     if (!profileId) return;
+     const unsub = base44.entities.Review.subscribe(() => {
+       fetchReviews();
+     });
+     return () => { try { unsub(); } catch (_) {} };
+   }, [profileId]);
+
+   // Also refetch on window focus
+   useEffect(() => {
+     const onFocus = () => { fetchReviews(); };
+     window.addEventListener('focus', onFocus);
+     return () => window.removeEventListener('focus', onFocus);
+   }, [profileId]);
 
   if (loading) {
     return (
