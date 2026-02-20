@@ -152,7 +152,11 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           cta = { type: 'waiting', icon: Clock, label: 'Waiting for Listing Agreement', description: 'The agent is preparing the listing agreement.' };
         }
       } else {
-        cta = { type: 'action', icon: CheckCircle2, label: 'Has this property been listed?', description: 'Listing agreement is uploaded. Confirm when the property has been listed to move forward.', onClick: () => updateStage('active_listings') };
+        if (isAgent) {
+          cta = { type: 'waiting', icon: Clock, label: 'Waiting for Investor to Confirm Property Has Been Listed', description: 'Investor needs to confirm the property is listed.' };
+        } else {
+          cta = { type: 'action', icon: CheckCircle2, label: 'Has this property been listed?', description: 'Listing agreement is uploaded. Confirm when the property has been listed to move forward.', onClick: () => updateStage('active_listings') };
+        }
       }
     }
   } else if (stage === 'active_listings') {
