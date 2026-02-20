@@ -293,6 +293,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             roomId={roomId}
             profile={profile}
             onScheduled={(updated) => {
+              walkthroughRef.current = updated;
               setLocalDeal(prev => prev ? { ...prev, ...updated } : prev);
             }}
           />
