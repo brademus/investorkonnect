@@ -112,6 +112,46 @@ Deno.serve(async (req) => {
           await new Promise(r => setTimeout(r, 50));
         }
 
+        // Delete counter offers
+        const counters = await base44.asServiceRole.entities.CounterOffer.filter({ from_profile_id: profileId });
+        for (const counter of counters) {
+          await base44.asServiceRole.entities.CounterOffer.delete(counter.id);
+          await new Promise(r => setTimeout(r, 50));
+        }
+
+        // Delete payment schedules & milestones
+        const schedules = await base44.asServiceRole.entities.PaymentSchedule.filter({ owner_profile_id: profileId });
+        for (const schedule of schedules) {
+          const milestones = await base44.asServiceRole.entities.PaymentMilestone.filter({ schedule_id: schedule.id });
+          for (const milestone of milestones) {
+            await base44.asServiceRole.entities.PaymentMilestone.delete(milestone.id);
+            await new Promise(r => setTimeout(r, 30));
+          }
+          await base44.asServiceRole.entities.PaymentSchedule.delete(schedule.id);
+          await new Promise(r => setTimeout(r, 50));
+        }
+
+        // Delete deal appointments
+        const appointments = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: profileId });
+        for (const appt of appointments) {
+          await base44.asServiceRole.entities.DealAppointments.delete(appt.id);
+          await new Promise(r => setTimeout(r, 50));
+        }
+
+        // Delete NDAs
+        const ndas = await base44.asServiceRole.entities.NDA.filter({ user_id: profileId });
+        for (const nda of ndas) {
+          await base44.asServiceRole.entities.NDA.delete(nda.id);
+          await new Promise(r => setTimeout(r, 50));
+        }
+
+        // Delete audit logs
+        const auditLogs = await base44.asServiceRole.entities.AuditLog.filter({ actor_id: profileId });
+        for (const log of auditLogs) {
+          await base44.asServiceRole.entities.AuditLog.delete(log.id);
+          await new Promise(r => setTimeout(r, 50));
+        }
+
         // Finally, delete the profile itself
         await base44.asServiceRole.entities.Profile.delete(profileId);
         deletedCount++;
