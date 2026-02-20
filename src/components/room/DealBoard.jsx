@@ -346,25 +346,29 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                     {isActive && (
                       <div className="ml-[52px] mt-2 mb-1 space-y-3">
                         <DealNextStepCTA
-                          deal={localDeal}
-                          room={localRoom}
-                          profile={profile}
-                          roomId={roomId}
-                          inline
-                          onDealUpdate={(patch) => {
-                            if (!patch) return;
-                            if (patch.documents) {
-                              localDocsRef.current = { ...localDocsRef.current, ...patch.documents };
-                            }
-                            setLocalDeal(prev => {
-                              if (!prev) return prev;
-                              const updated = { ...prev, ...patch };
-                              updated.documents = { ...(updated.documents || {}), ...localDocsRef.current };
-                              return updated;
-                            });
-                          }}
-                          onOpenWalkthroughModal={() => setWtModalOpen(true)}
-                        />
+                           deal={localDeal}
+                           room={localRoom}
+                           profile={profile}
+                           roomId={roomId}
+                           inline
+                           onDealUpdate={(patch) => {
+                             if (!patch) return;
+                             if (patch.documents) {
+                               localDocsRef.current = { ...localDocsRef.current, ...patch.documents };
+                             }
+                             setLocalDeal(prev => {
+                               if (!prev) return prev;
+                               const updated = { ...prev, ...patch };
+                               updated.documents = { ...(updated.documents || {}), ...localDocsRef.current };
+                               return updated;
+                             });
+                           }}
+                           onOpenWalkthroughModal={() => setWtModalOpen(true)}
+                           onReviewSubmitted={() => {
+                             // Refresh the local deal to pick up any changes
+                             setLocalDeal(prev => ({ ...prev }));
+                           }}
+                         />
                         {stage.id === 'connected_deals' && (
                           <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3">
                             <p className="text-xs font-semibold text-[#FAFAFA] mb-2">Walk-through</p>
