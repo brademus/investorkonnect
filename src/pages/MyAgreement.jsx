@@ -167,8 +167,12 @@ export default function MyAgreement() {
 
           // SAFETY: If sessionStorage somehow lost walkthroughSlots, also try the raw form data
           if (wtSlots.length === 0 && dealData.walkthroughEnabled !== false) {
-            // Check if raw walkthroughSlots had items with incomplete dates
             console.log('[MyAgreement] WARNING: No valid walkthrough slots found. walkthroughEnabled:', dealData.walkthroughEnabled, 'rawSlots:', JSON.stringify(rawSlots));
+            console.log('[MyAgreement] Full sessionStorage keys for walkthrough debug:', JSON.stringify({
+              walkthroughSlots: dealData.walkthroughSlots,
+              walkthrough_slots: dealData.walkthrough_slots,
+              walkthroughEnabled: dealData.walkthroughEnabled,
+            }));
           }
 
           const draftPayload = {
