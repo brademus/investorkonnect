@@ -576,15 +576,12 @@ export default function InvestorOnboarding() {
             {formData.next_steps_template_type === 'custom' && (
               <div className="pl-8 space-y-3">
                 <Textarea 
-                  value={formData.custom_next_steps_template} 
-                  onChange={(e) => updateField('custom_next_steps_template', e.target.value)} 
-                  placeholder="Write your message to agents here (minimum 50 characters)..."
-                  rows={6}
-                  className="text-[15px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed"
-                />
-                <p className="text-sm text-[#808080]">
-                  <strong className="text-[#E3C567]">Available placeholders:</strong> {{PROPERTY_ADDRESS}}, {{AGENT_FIRST_NAME}}, {{INVESTOR_FULL_NAME}}, {{INVESTOR_EMAIL}}, {{INVESTOR_PHONE_NUMBER}}
-                </p>
+                   value={formData.custom_next_steps_template} 
+                   onChange={(e) => updateField('custom_next_steps_template', e.target.value)} 
+                   placeholder="Write your message to agents here (minimum 50 characters)..."
+                   rows={6}
+                   className="text-[15px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed"
+                 />
               </div>
             )}
           </div>
