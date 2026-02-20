@@ -219,10 +219,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           }
         }
         if (!gotAgreement) {
-          toast.error('Agreement generation timed out. Please try again.');
+          reportError('Agreement generation timed out. Please try again.', { extra: { dealId: effectiveId, roomId, draftId } });
         }
       }
-    } catch (e) { toast.error(e?.response?.data?.error || 'Generation failed'); }
+    } catch (e) { reportError(e?.response?.data?.error || 'Generation failed', { cause: e, extra: { dealId, roomId, draftId } }); }
     finally { setBusy(false); }
   };
 
@@ -304,8 +304,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
         if (role === 'investor' && onInvestorSigned) onInvestorSigned();
       }
-      else toast.error(res.data?.error || 'Failed to start signing');
-    } catch (e) { toast.error(e?.response?.data?.error || 'Signing failed'); }
+      else reportError(res.data?.error || 'Failed to start signing', { extra: { dealId, roomId, role: 'unknown' } });
+    } catch (e) { reportError(e?.response?.data?.error || 'Signing failed', { cause: e, extra: { dealId, roomId } }); }
     finally { setBusy(false); }
   };
 
@@ -333,7 +333,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         }
         toast.error(signRes.data?.error || 'Failed to start signing');
       }
-    } catch (e) { toast.error(e?.response?.data?.error || 'Failed'); }
+    } catch (e) { reportError(e?.response?.data?.error || 'Regenerate & sign failed', { cause: e, extra: { dealId, roomId } }); }
     finally { setBusy(false); }
   };
 
@@ -348,7 +348,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         setPendingCounters(prev => prev.filter(c => c.id !== counterId));
         if (action === 'accept') setRoom(prev => ({ ...prev, requires_regenerate: true }));
       } else toast.error(res.data?.error || 'Failed');
-    } catch (e) { toast.error('Failed to respond'); }
+    } catch (e) { reportError('Failed to respond to counter offer', { cause: e, extra: { dealId, roomId, counterId } }); }
     finally { setRespondingCounterId(null); }
   };
 
