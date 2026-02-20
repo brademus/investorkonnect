@@ -8,10 +8,9 @@ import { normalizeStage } from "@/components/pipelineStages";
  * @param {object} opts.deal - merged deal object from pipeline
  * @param {boolean} opts.isAgent
  * @param {boolean} opts.isInvestor
- * @param {string|null} opts.wtStatus - walkthrough appointment status (from DealAppointments)
  * @returns {{ label: string, color: string } | null}
  */
-export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus }) {
+export function getDealNextStepLabel({ deal, isAgent, isInvestor }) {
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = deal?.is_fully_signed;
 
@@ -21,11 +20,9 @@ export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus }) {
   }
 
   if (stage === 'connected_deals') {
-    const wtScheduled = deal?.walkthrough_scheduled === true;
-    const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
-    const wtDate = deal?.walkthrough_date;
-    const hasWalkthrough = wtScheduled && (wtDate || wtSlots.length > 0);
-    const effectiveWtStatus = wtStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
+    const wtSlots = (deal?.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
+    const wtConfirmed = !!deal?.walkthrough_confirmed_slot;
+    const effectiveWtStatus = wtConfirmed ? 'SCHEDULED' : (wtSlots.length > 0 ? 'PROPOSED' : 'NOT_SET');
 
     if (effectiveWtStatus === 'NOT_SET' || effectiveWtStatus === 'CANCELED' || !effectiveWtStatus) {
       if (isInvestor) return { label: 'Schedule walkthrough', color: 'text-[#E3C567]' };
