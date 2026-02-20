@@ -167,7 +167,11 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         cta = { type: 'waiting', icon: Clock, label: "Waiting for Buyer's Contract", description: 'The agent will upload the buyer\'s contract when ready.' };
       }
     } else {
-      cta = { type: 'action', icon: ArrowRight, label: 'Move to Closing', description: 'Buyer\'s contract is in. Move this deal to closing.', onClick: () => updateStage('in_closing') };
+      if (isAgent) {
+        cta = { type: 'waiting', icon: Clock, label: 'Waiting for Investor to Confirm This Deal is in Closing', description: 'Investor needs to confirm the deal is moving to closing.' };
+      } else {
+        cta = { type: 'action', icon: ArrowRight, label: 'Move to Closing', description: 'Buyer\'s contract is in. Move this deal to closing.', onClick: () => updateStage('in_closing') };
+      }
     }
   } else if (stage === 'in_closing') {
     if (!showClosePrompt) {
