@@ -133,13 +133,24 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
         onChange={(e) => setReview(e.target.value)}
         className="w-full bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg px-3 py-2 text-sm text-[#FAFAFA] placeholder-[#666] focus:outline-none focus:border-[#E3C567]"
       />
-      <Button
-        onClick={handleSubmit}
-        disabled={submitting || rating === 0}
-        className="w-full mt-2 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-sm h-8"
-      >
-        {submitting ? "Submitting..." : "Submit Review"}
-      </Button>
+      <div className="flex gap-2 mt-3">
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting || rating === 0}
+          className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-sm h-8"
+        >
+          {submitting ? "Saving..." : isEditing ? "Save Changes" : "Submit Review"}
+        </Button>
+        {isEditing && (
+          <Button
+            onClick={() => setIsEditing(false)}
+            variant="outline"
+            className="flex-1 rounded-full text-sm h-8"
+          >
+            Cancel
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
