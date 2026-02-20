@@ -138,6 +138,8 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   // localDocsRef is the single source of truth for documents uploaded in this session.
   // It NEVER gets cleared — it only grows. This ensures no real-time event or prop change can erase uploads.
   const localDocsRef = useRef({});
+  // walkthroughRef preserves walkthrough data set via modal so prop refreshes don't overwrite with stale data
+  const walkthroughRef = useRef(null);
   const [localDeal, setLocalDeal] = useState(() => {
     if (!deal) return deal;
     return { ...deal, documents: { ...(deal?.documents || {}), ...localDocsRef.current } };
@@ -148,7 +150,18 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
     setLocalDeal(() => {
       // Always merge: incoming deal + anything we've uploaded locally
       const mergedDocs = { ...(deal.documents || {}), ...localDocsRef.current };
-      return { ...deal, documents: mergedDocs };
+      const updated = { ...deal, documents: mergedDocs };
+      // If we have locally-set walkthrough data and the incoming deal doesn't have slots yet, preserve ours
+      if (walkthroughRef.current) {
+        const incomingSlots = deal.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+        if (incomingSlots.length < (walkthroughRef.current.walkthrough_slots?.length || 0)) {
+          Object.assign(updated, walkthroughRef.current);
+        } else {
+          // DB caught up — clear the override
+          walkthroughRef.current = null;
+        }
+      }
+      return updated;
     });
   }, [deal]);
 
