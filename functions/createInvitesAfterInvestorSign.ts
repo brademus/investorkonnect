@@ -195,8 +195,10 @@ Deno.serve(async (req) => {
     const wtScheduled = deal.walkthrough_scheduled === true;
     const wtDate = deal.walkthrough_date || null;
     const wtTime = deal.walkthrough_time || null;
-    if (wtScheduled && (wtDate || wtTime)) {
-      console.log('[createInvites] Walkthrough scheduled — creating DealAppointments and chat message');
+    const wtSlots = (Array.isArray(deal.walkthrough_slots) ? deal.walkthrough_slots : []).filter(s => s.date && s.date.length >= 8);
+    const hasWalkthroughData = wtDate || wtTime || wtSlots.length > 0;
+    if (wtScheduled && hasWalkthroughData) {
+      console.log('[createInvites] Walkthrough scheduled — creating DealAppointments and chat message, slots:', wtSlots.length);
       try {
         // Create or update DealAppointments
         const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: deal_id });
@@ -228,21 +230,33 @@ Deno.serve(async (req) => {
         const alreadyHasWtMessage = existingMessages.some(m => m?.metadata?.type === 'walkthrough_request');
 
         if (!alreadyHasWtMessage) {
-          const displayParts = [wtDate, wtTime].filter(Boolean);
-          const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
+          // Build display text from slots (preferred) or legacy single date
+          let displayStr;
+          if (wtSlots.length > 0) {
+            displayStr = wtSlots.map((s, i) => {
+              let text = s.date;
+              if (s.timeStart) text += ` ${s.timeStart}`;
+              if (s.timeEnd) text += ` – ${s.timeEnd}`;
+              return `Option ${i + 1}: ${text}`;
+            }).join('\n');
+          } else {
+            const displayParts = [wtDate, wtTime].filter(Boolean);
+            displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
+          }
 
           await base44.asServiceRole.entities.Message.create({
             room_id: room.id,
             sender_profile_id: investorProfile.id,
-            body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time after signing.`,
+            body: `📅 Walk-through Requested\n\n${displayStr}\n\nPlease confirm or suggest a different time after signing.`,
             metadata: {
               type: 'walkthrough_request',
               walkthrough_date: wtDate,
               walkthrough_time: wtTime,
+              walkthrough_slots: wtSlots,
               status: 'pending'
             }
           });
-          console.log('[createInvites] Sent walkthrough message to room:', room.id);
+          console.log('[createInvites] Sent walkthrough message to room:', room.id, 'with', wtSlots.length, 'slots');
         } else {
           console.log('[createInvites] Walkthrough message already exists — skipping duplicate');
         }
