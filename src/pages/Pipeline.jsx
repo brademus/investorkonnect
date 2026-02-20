@@ -130,53 +130,54 @@ function PipelineContent() {
     });
 
     return (dealsData || []).map(deal => {
-      const room = roomMap.get(deal.id);
-      const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || deal.is_fully_signed;
-      const hasAgent = room?.request_status === 'accepted' || room?.request_status === 'signed' || room?.request_status === 'locked';
+       const room = roomMap.get(deal.id);
+       const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || deal.is_fully_signed;
+       const hasAgent = room?.request_status === 'accepted' || room?.request_status === 'signed' || room?.request_status === 'locked';
 
-      let counterparty = 'Not Assigned';
-      if (isSigned) counterparty = room?.counterparty_name || (isAgent ? 'Investor' : 'Agent');
-      else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : 'Pending Agent Signature';
-      // For investor: if deal has a locked agent, always show that agent's name
-      if (isInvestor && deal.locked_agent_id && room?.counterparty_name && room?.counterparty_id === deal.locked_agent_id) {
-        counterparty = room.counterparty_name;
-      }
+       let counterparty = 'Not Assigned';
+       if (isSigned) counterparty = room?.counterparty_name || (isAgent ? 'Investor' : 'Agent');
+       else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : 'Pending Agent Signature';
+       // For investor: if deal has a locked agent, always show that agent's name
+       if (isInvestor && deal.locked_agent_id && room?.counterparty_name && room?.counterparty_id === deal.locked_agent_id) {
+         counterparty = room.counterparty_name;
+       }
 
-      return {
-        id: deal.id, deal_id: deal.id, room_id: room?.id || null,
-        title: deal.title, property_address: deal.property_address,
-        city: deal.city, state: deal.state, budget: deal.purchase_price,
-        pipeline_stage: isSigned ? normalizeStage(deal.pipeline_stage || 'connected_deals') : normalizeStage(deal.pipeline_stage || 'new_deals'),
-        customer_name: counterparty,
-        agent_request_status: room?.request_status,
-        agreement_status: room?.agreement_status,
-        created_date: deal.created_date, updated_date: deal.updated_date,
-        closing_date: deal.key_dates?.closing_date,
-        is_fully_signed: isSigned, is_orphan: !hasAgent,
-        locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
-        seller_name: deal.seller_info?.seller_name,
-        selected_agent_ids: deal.selected_agent_ids,
-        proposed_terms: (() => {
-          // Only merge agent-specific counter terms after an agent has signed the agreement
-          const base = room?.proposed_terms || deal.proposed_terms || {};
-          const agentHasSigned = room?.agreement_status === 'agent_signed' || room?.agreement_status === 'fully_signed' || isSigned;
-          if (!agentHasSigned) return base;
-          if (isAgent && room?.agent_terms?.[profile?.id]) {
-            return { ...base, ...room.agent_terms[profile.id] };
-          }
-          if (isInvestor && room?.agent_terms) {
-            const ids = Object.keys(room.agent_terms);
-            if (ids.length === 1) return { ...base, ...room.agent_terms[ids[0]] };
-          }
-          return base;
-        })(),
-        room_agent_terms: room?.agent_terms || null,
-        room_agent_ids: room?.agent_ids || [],
-        agreement: room?.agreement || null,
-        agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
-        investor_signed_at: room?.agreement?.investor_signed_at || null,
-        pending_counter_offer: room?.pending_counter_offer || null
-      };
+       return {
+         id: deal.id, deal_id: deal.id, room_id: room?.id || null,
+         title: deal.title, property_address: deal.property_address,
+         city: deal.city, state: deal.state, budget: deal.purchase_price,
+         pipeline_stage: isSigned ? normalizeStage(deal.pipeline_stage || 'connected_deals') : normalizeStage(deal.pipeline_stage || 'new_deals'),
+         customer_name: counterparty,
+         agent_request_status: room?.request_status,
+         agreement_status: room?.agreement_status,
+         created_date: deal.created_date, updated_date: deal.updated_date,
+         closing_date: deal.key_dates?.closing_date,
+         is_fully_signed: isSigned, is_orphan: !hasAgent,
+         locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
+         investor_id: room?.investorId || deal.investor_id,
+         seller_name: deal.seller_info?.seller_name,
+         selected_agent_ids: deal.selected_agent_ids,
+         proposed_terms: (() => {
+           // Only merge agent-specific counter terms after an agent has signed the agreement
+           const base = room?.proposed_terms || deal.proposed_terms || {};
+           const agentHasSigned = room?.agreement_status === 'agent_signed' || room?.agreement_status === 'fully_signed' || isSigned;
+           if (!agentHasSigned) return base;
+           if (isAgent && room?.agent_terms?.[profile?.id]) {
+             return { ...base, ...room.agent_terms[profile.id] };
+           }
+           if (isInvestor && room?.agent_terms) {
+             const ids = Object.keys(room.agent_terms);
+             if (ids.length === 1) return { ...base, ...room.agent_terms[ids[0]] };
+           }
+           return base;
+         })(),
+         room_agent_terms: room?.agent_terms || null,
+         room_agent_ids: room?.agent_ids || [],
+         agreement: room?.agreement || null,
+         agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
+         investor_signed_at: room?.agreement?.investor_signed_at || null,
+         pending_counter_offer: room?.pending_counter_offer || null
+       };
     }).filter(d => {
       if (!isAgent) return true;
       if (d.locked_agent_id && d.locked_agent_id !== profile.id) return false;
@@ -345,10 +346,10 @@ function PipelineContent() {
                                          onSubmitted={() => {}}
                                        />
                                      )}
-                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.room_id && (
+                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.investor_id && (
                                        <InlineAgentReviewForm 
                                          dealId={deal.deal_id}
-                                         investorProfileId={deals.find(d => d.id === deal.id)?.investor_id || null}
+                                         investorProfileId={deal.investor_id}
                                          onSubmitted={() => {}}
                                        />
                                      )}
