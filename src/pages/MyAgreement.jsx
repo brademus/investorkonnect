@@ -156,45 +156,43 @@ export default function MyAgreement() {
             draft_id: dealId
           });
         } else {
-          // NEW DEAL: Create DealDraft so automation can find it after investor signs
+          // NEW DEAL: Create DealDraft with all data including walkthrough slots
           const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
           const wtSlots = (Array.isArray(dealData.walkthroughSlots) ? dealData.walkthroughSlots : []).filter(s => s.date && String(s.date).length >= 8);
 
-          const draftPayload = {
-            property_address: dealData.propertyAddress,
+          const result = await base44.functions.invoke('saveDealAndCreateDraft', {
+            propertyAddress: dealData.propertyAddress,
             city: dealData.city,
             state: dealData.state,
             zip: dealData.zip,
             county: dealData.county,
-            purchase_price: Number(cleanedPrice),
-            property_type: dealData.propertyType || null,
+            purchasePrice: Number(cleanedPrice),
+            propertyType: dealData.propertyType || null,
             beds: dealData.beds ? Number(dealData.beds) : null,
             baths: dealData.baths ? Number(dealData.baths) : null,
             sqft: dealData.sqft ? Number(dealData.sqft) : null,
-            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-            number_of_stories: dealData.numberOfStories || null,
-            has_basement: dealData.hasBasement || null,
-            seller_name: dealData.sellerName,
-            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-            number_of_signers: dealData.numberOfSigners,
-            second_signer_name: dealData.secondSignerName,
-            buyer_commission_type: buyerCommType,
-            buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-            buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
-            agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-            contract_url: dealData.contractUrl || null,
-            special_notes: dealData.specialNotes || null,
-            deal_type: dealData.dealType || null,
-            closing_date: dealData.closingDate,
-            contract_date: dealData.contractDate,
-            selected_agent_ids: agentIds,
-            seller_commission_type: sellerCommType,
-            seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-            seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_slots: wtSlots
-          };
-          // Create DealDraft with walkthrough slots
-          const result = await base44.functions.invoke('createDealDraft', draftPayload);
+            yearBuilt: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+            numberOfStories: dealData.numberOfStories || null,
+            hasBasement: dealData.hasBasement || null,
+            sellerName: dealData.sellerName,
+            earnestMoney: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+            numberOfSigners: dealData.numberOfSigners,
+            secondSignerName: dealData.secondSignerName,
+            buyerCommissionType: buyerCommType,
+            buyerCommissionPercentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+            buyerFlatFee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
+            agreementLength: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+            contractUrl: dealData.contractUrl || null,
+            specialNotes: dealData.specialNotes || null,
+            dealType: dealData.dealType || null,
+            closingDate: dealData.closingDate,
+            contractDate: dealData.contractDate,
+            selectedAgentIds: agentIds,
+            sellerCommissionType: sellerCommType,
+            sellerCommissionPercentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+            sellerFlatFee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
+            walkthroughSlots: wtSlots
+          });
           const draftCreated = { id: result?.data?.draft_id };
           setDraft(draftCreated);
           setDeal({ 
