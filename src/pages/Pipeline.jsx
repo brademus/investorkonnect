@@ -343,6 +343,7 @@ function PipelineContent() {
                                        <InlineReviewForm 
                                          dealId={deal.deal_id} 
                                          agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
+                                         reviewerProfileId={profile?.id}
                                          onSubmitted={() => {}}
                                          compact={true}
                                        />
@@ -351,6 +352,7 @@ function PipelineContent() {
                                        <InlineAgentReviewForm 
                                          dealId={deal.deal_id}
                                          investorProfileId={deal.investor_id}
+                                         reviewerProfileId={profile?.id}
                                          onSubmitted={() => {}}
                                          compact={true}
                                        />
