@@ -500,10 +500,8 @@ Deno.serve(async (req) => {
       selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id,
-      walkthrough_scheduled: draftWalkthroughScheduled,
-      walkthrough_date: draftWalkthroughDate,
-      walkthrough_time: draftWalkthroughTime,
       walkthrough_slots: draftWalkthroughSlots,
+      walkthrough_confirmed_slot: null,
       deal_type: draft.deal_type || null
     });
     
