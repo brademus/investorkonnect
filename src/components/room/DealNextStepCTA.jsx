@@ -241,19 +241,25 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
              <p className={`font-medium text-[#10B981] ${inline ? 'text-sm' : 'text-base'}`}>{cta.label}</p>
            </div>
            {isInvestor && (
-             <InlineReviewForm 
-               dealId={deal?.id} 
-               agentProfileId={room?.locked_agent_id || deal?.locked_agent_id}
-               onSubmitted={() => {}}
-             />
-           )}
-           {isAgent && (
-             <InlineAgentReviewForm 
-               dealId={deal?.id}
-               investorProfileId={room?.investorId || room?.investor_id || deal?.investor_id}
-               onSubmitted={() => {}}
-             />
-           )}
+              <div className="mt-4">
+                <InlineReviewForm 
+                  dealId={deal?.id} 
+                  agentProfileId={room?.locked_agent_id || deal?.locked_agent_id}
+                  onSubmitted={() => {}}
+                  compact={inline}
+                />
+              </div>
+            )}
+            {isAgent && (
+              <div className="mt-4">
+                <InlineAgentReviewForm 
+                  dealId={deal?.id}
+                  investorProfileId={room?.investorId || room?.investor_id || deal?.investor_id}
+                  onSubmitted={() => {}}
+                  compact={inline}
+                />
+              </div>
+            )}
          </div>
        );
      }

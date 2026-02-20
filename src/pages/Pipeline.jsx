@@ -344,6 +344,7 @@ function PipelineContent() {
                                          dealId={deal.deal_id} 
                                          agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
                                          onSubmitted={() => {}}
+                                         compact={true}
                                        />
                                      )}
                                      {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.investor_id && (
@@ -351,6 +352,7 @@ function PipelineContent() {
                                          dealId={deal.deal_id}
                                          investorProfileId={deal.investor_id}
                                          onSubmitted={() => {}}
+                                         compact={true}
                                        />
                                      )}
                                    </div>
