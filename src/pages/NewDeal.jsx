@@ -517,7 +517,7 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true,
-          walkthrough_slots: walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [],
+          walkthrough_slots: walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8 && s.timeStart && s.timeEnd) : [],
           // Legacy fields — first slot
           walkthrough_date: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
           walkthrough_time: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
