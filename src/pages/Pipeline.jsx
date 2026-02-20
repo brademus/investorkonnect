@@ -350,6 +350,12 @@ function PipelineContent() {
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
                                       {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
                                     </div>
+                                    {(deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled') && (
+                                      <DealCardReview
+                                        agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
+                                        reviewerProfileId={profile?.id}
+                                      />
+                                    )}
                                   </div>
                                 )}
                               </Draggable>
