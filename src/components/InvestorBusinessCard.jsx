@@ -39,31 +39,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
       <div className="h-1.5 bg-gradient-to-r from-[#E3C567] via-[#D4AF37] to-[#E3C567]" />
 
       <div className="p-8">
-        {/* Rating badge - top right */}
-        <div className="flex justify-end mb-4">
-          <div className="bg-[#0A0A0A] border border-[#E3C567]/30 rounded-xl px-4 py-3 flex flex-col items-center">
-            <div className="flex items-center gap-1 mb-1">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star
-                  key={i}
-                  className={`w-5 h-5 ${
-                    i <= Math.round(rating || 0)
-                      ? "text-[#E3C567] fill-[#E3C567]"
-                      : "text-[#333]"
-                  }`}
-                />
-              ))}
-            </div>
-            <p className="text-lg font-bold text-[#FAFAFA]">
-              {rating ? Number(rating).toFixed(1) : "—"}
-            </p>
-            <p className="text-[10px] uppercase tracking-wider text-[#808080]">
-              {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
-            </p>
-          </div>
-        </div>
-
-        {/* Top row: Photo + Name */}
+        {/* Top row: Photo + Name + Rating (side-by-side) */}
         <div className="flex items-start gap-6 mb-8">
           <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 border-[#E3C567]/40 shadow-lg shadow-[#E3C567]/10">
             {headshot ? (
@@ -75,7 +51,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
             )}
           </div>
 
-          <div className="flex-1 pt-1">
+          <div className="flex-1">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Investor</p>
             <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
             {experienceLabel && (
@@ -92,6 +68,30 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
                 {name}
               </p>
               <div className="h-px bg-gradient-to-r from-[#E3C567]/60 to-transparent mt-1 w-full" />
+            </div>
+          </div>
+
+          {/* Rating badge - top right */}
+          <div className="flex-shrink-0">
+            <div className="bg-[#0A0A0A] border border-[#E3C567]/30 rounded-xl px-4 py-3 flex flex-col items-center">
+              <div className="flex items-center gap-1 mb-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className={`w-5 h-5 ${
+                      i <= Math.round(rating || 0)
+                        ? "text-[#E3C567] fill-[#E3C567]"
+                        : "text-[#333]"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-lg font-bold text-[#FAFAFA]">
+                {rating ? Number(rating).toFixed(1) : "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-wider text-[#808080]">
+                {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
+              </p>
             </div>
           </div>
         </div>
