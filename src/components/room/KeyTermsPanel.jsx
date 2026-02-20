@@ -16,18 +16,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [apptConfirmed, setApptConfirmed] = useState(false);
-
-  useEffect(() => {
-    if (!deal?.id) return;
-    if (deal.walkthrough_scheduled !== true || deal.walkthrough_confirmed === true) return;
-    try {
-      base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
-        const s = rows?.[0]?.walkthrough?.status;
-        if (s === 'SCHEDULED' || s === 'COMPLETED') setApptConfirmed(true);
-      }).catch(() => {});
-    } catch (_) {}
-  }, [deal?.id]);
+  // No DealAppointments needed — walkthrough state lives on Deal entity
 
   // Extract current buyer commission terms - ALWAYS fetch fresh from agreement
   useEffect(() => {
