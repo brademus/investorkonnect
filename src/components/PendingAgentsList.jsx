@@ -52,8 +52,8 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
               {/* Agent Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-[#1F1F1F] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {headshots[agent.id] ? (
-                    <img src={headshots[agent.id]} alt={agent.full_name} className="w-full h-full object-cover" />
+                  {(agent.headshotUrl || headshots[agent.id]) ? (
+                    <img src={agent.headshotUrl || headshots[agent.id]} alt={agent.full_name} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-6 h-6 text-[#E3C567]" />
                   )}
