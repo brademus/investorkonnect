@@ -197,9 +197,6 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: wtScheduled,
-            walkthrough_date: wtDate,
-            walkthrough_time: wtTime,
             walkthrough_slots: wtSlots
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
