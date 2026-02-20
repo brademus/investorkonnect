@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2, Clock, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { reportError } from '@/components/utils/reportError';
+import { reportError, reportDataIssue } from '@/components/utils/reportError';
 
 /**
  * Simplified Agreement Panel v2
@@ -60,6 +60,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       if (roomRes?.[0]) setRoom(roomRes[0]);
       setPendingCounters(counterRes || []);
       setLoaded(true);
+
+      // Data integrity check: room exists but no agreement found
+      if (roomId && roomRes?.[0] && !agResult) {
+        reportDataIssue('Room exists but no agreement found for deal room', {
+          dealId, roomId, selectedAgentProfileId,
+          roomAgreementStatus: roomRes[0].agreement_status,
+          roomCurrentAgreementId: roomRes[0].current_legal_agreement_id,
+        });
+      }
     };
     load();
     return () => { cancelled = true; };
@@ -175,7 +184,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           state: dealData?.state, zip: dealData?.zip, county: dealData?.county
         });
         if (res.data?.agreement) { setAgreement(res.data.agreement); toast.success('Agreement ready'); gotAgreement = true; }
-        else if (res.data?.error) toast.error(res.data.error);
+        else if (res.data?.error) reportError(res.data.error, { extra: { dealId, roomId, draftId, step: 'generate' } });
       } catch (invokeErr) {
         // The function may have succeeded but timed out returning the response (502).
         // Wait a moment then check if the agreement was created.
@@ -248,7 +257,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         }
 
         if (!investorSignedAg) {
-          toast.error('Investor must sign first');
+          reportError('Investor must sign first', { extra: { dealId, roomId, step: 'agent_sign' } });
           setBusy(false);
           return;
         }
@@ -268,14 +277,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             const regenRes = await base44.functions.invoke('regenerateActiveAgreement', {
               deal_id: dealId, room_id: roomId
             });
-            if (regenRes.data?.error) { toast.error(regenRes.data.error); setBusy(false); return; }
+            if (regenRes.data?.error) { reportError(regenRes.data.error, { extra: { dealId, roomId, step: 'regen_for_agent' } }); setBusy(false); return; }
             if (regenRes.data?.agreement) {
               targetId = regenRes.data.agreement.id;
               setAgreement(regenRes.data.agreement);
               await new Promise(r => setTimeout(r, 2000));
             }
           } else if (prepRes.data?.error) {
-            toast.error(prepRes.data.error);
+            reportError(prepRes.data.error, { extra: { dealId, roomId, step: 'addAgentToEnvelope' } });
             setBusy(false);
             return;
           } else if (prepRes.data?.agreement) {
@@ -315,7 +324,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     try {
       const targetAgent = selectedAgentProfileId || null;
       const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId, target_agent_id: targetAgent });
-      if (res.data?.error) { toast.error(res.data.error); setBusy(false); return; }
+      if (res.data?.error) { reportError(res.data.error, { extra: { dealId, roomId, step: 'regen_and_sign' } }); setBusy(false); return; }
       if (res.data?.agreement) {
         setAgreement(res.data.agreement);
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }); if (r?.[0]) setRoom(r[0]); }
@@ -331,7 +340,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           setBusy(false);
           return;
         }
-        toast.error(signRes.data?.error || 'Failed to start signing');
+        reportError(signRes.data?.error || 'Failed to start signing', { extra: { dealId, roomId, step: 'regen_sign_session' } });
       }
     } catch (e) { reportError(e?.response?.data?.error || 'Regenerate & sign failed', { cause: e, extra: { dealId, roomId } }); }
     finally { setBusy(false); }
@@ -347,7 +356,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         toast.success(`Counter ${action}ed`);
         setPendingCounters(prev => prev.filter(c => c.id !== counterId));
         if (action === 'accept') setRoom(prev => ({ ...prev, requires_regenerate: true }));
-      } else toast.error(res.data?.error || 'Failed');
+      } else reportError(res.data?.error || 'Counter offer response failed', { extra: { dealId, roomId, counterId, action } });
     } catch (e) { reportError('Failed to respond to counter offer', { cause: e, extra: { dealId, roomId, counterId } }); }
     finally { setRespondingCounterId(null); }
   };
