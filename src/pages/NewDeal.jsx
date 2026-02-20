@@ -652,7 +652,18 @@ export default function NewDeal() {
     }
     } catch (e) {
       console.error('[NewDeal] handleContinue error:', e);
-      toast.error(e?.message || "Something went wrong. Please try again.");
+      
+      reportError("Deal creation failed", {
+        cause: e,
+        extra: {
+          property_address: propertyAddress,
+          investor_id: profile?.id,
+          deal_id: dealId,
+          city,
+          state,
+          zip,
+        },
+      });
     } finally {
       setSubmitting(false);
     }
