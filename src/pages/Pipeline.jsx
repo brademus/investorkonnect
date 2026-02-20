@@ -328,7 +328,7 @@ function PipelineContent() {
                                       </div>
                                       {/* Right: next step */}
                                       {(() => {
-                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
+                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor });
                                         if (!step) return null;
                                         return (
                                           <div className="flex-shrink-0 w-[110px] flex items-center">
