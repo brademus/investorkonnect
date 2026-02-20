@@ -30,7 +30,7 @@ export default function Room() {
   const [drawer, setDrawer] = useState(false);
   const [search, setSearch] = useState("");
   // activeView: 'board' | 'messages' | 'pending_agents'
-  const [activeView, setActiveView] = useState('board');
+  const [activeView, setActiveView] = useState(null);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
