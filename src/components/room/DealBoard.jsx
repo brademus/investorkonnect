@@ -6,6 +6,7 @@ import { Info, Shield, FileText, Image, User, Plus, Download, Activity, Calendar
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
+import { reportError } from "@/components/utils/reportError";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
