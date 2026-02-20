@@ -17,7 +17,7 @@ import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 
-function WalkthroughStatusLine({ dealId, roomId, deal }) {
+function WalkthroughStatusLine({ dealId, roomId, deal, room }) {
   const [status, setStatus] = useState(null);
   const [confirmedDate, setConfirmedDate] = useState(null);
 
