@@ -184,7 +184,7 @@ export default function Room() {
               const agent = profileMap.get(inv.agent_profile_id);
               return {
                 ...inv,
-                agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
                 agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
               };
             });
