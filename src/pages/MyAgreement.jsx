@@ -125,8 +125,8 @@ export default function MyAgreement() {
           }
           dealData = JSON.parse(draftData);
           agentIds = dealData.selectedAgentIds || [];
-
-
+          console.log('[MyAgreement] SessionStorage deal data keys:', Object.keys(dealData));
+          console.log('[MyAgreement] SessionStorage walkthroughSlots:', JSON.stringify(dealData.walkthroughSlots));
         }
 
         if (agentIds.length === 0) {
