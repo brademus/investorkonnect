@@ -223,12 +223,23 @@ export default function InvestorOnboarding() {
       if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
       setUploadingPhoto(true);
       try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        updateField('headshotUrl', file_url);
-        toast.success('Photo uploaded');
-      } catch (_) {
-        toast.error('Upload failed');
-      } finally {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          try {
+            const { file_url } = await base44.integrations.Core.UploadFile({ file: event.target.result });
+            updateField('headshotUrl', file_url);
+            toast.success('Photo uploaded');
+          } catch (err) {
+            console.error('Upload error:', err);
+            toast.error('Upload failed');
+          } finally {
+            setUploadingPhoto(false);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (err) {
+        console.error('File read error:', err);
+        toast.error('Failed to read file');
         setUploadingPhoto(false);
       }
     };
