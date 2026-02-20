@@ -14,7 +14,7 @@ import {
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 
-export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, inline = false }) {
+export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, onReviewSubmitted, inline = false }) {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
