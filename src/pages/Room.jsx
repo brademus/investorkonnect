@@ -214,12 +214,15 @@ export default function Room() {
     if (new URLSearchParams(window.location.search).get('tab') === 'agreement') setActiveView('board');
   }, [roomId, location.search]);
 
-  // Post-signing refresh
+  // Post-signing refresh — instant for agent, delayed for investor
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('signed') === '1' && roomId) {
       const refresh = async () => {
-        await new Promise(r => setTimeout(r, 1500));
+        // For agents: minimal delay; for investors: standard delay
+        const delayMs = isAgent ? 300 : 1500;
+        await new Promise(r => setTimeout(r, delayMs));
+        
         const [roomArr, dealRes] = await Promise.all([
           base44.entities.Room.filter({ id: roomId }).catch(() => []),
           currentRoom?.deal_id ? base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id }).catch(() => ({})) : Promise.resolve({})
@@ -231,7 +234,7 @@ export default function Room() {
       };
       refresh();
     }
-  }, [location.search, roomId]);
+  }, [location.search, roomId, isAgent]);
 
   // Sync counterparty data from enriched rooms cache (covers late-loading headshots)
   const enrichedRoomForSync = useMemo(() => rooms?.find(r => r.id === roomId), [rooms, roomId]);
@@ -261,15 +264,23 @@ export default function Room() {
           }
           return merged;
         });
-        // If room just became locked, clear pending agents
+        // If room just became locked, refresh deal and pending agents
         if (updated.request_status === 'locked' || updated.agreement_status === 'fully_signed') {
+          // Refetch deal to get updated stage and signing status
+          if (currentRoom?.deal_id) {
+            base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id })
+              .then(res => {
+                if (res?.data) setDeal(res.data);
+              })
+              .catch(() => {});
+          }
           setPendingInvites([]);
-          if (activeView === 'pending_agents') setActiveView('messages');
+          if (activeView === 'pending_agents') setActiveView('board');
         }
       }
     });
     return () => { try { unsub(); } catch (_) {} };
-  }, [roomId]);
+  }, [roomId, currentRoom?.deal_id]);
 
   // Real-time deal updates (e.g. walkthrough confirmed in chat)
   useEffect(() => {
