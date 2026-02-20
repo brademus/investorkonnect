@@ -175,7 +175,11 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   } else if (stage === 'in_closing') {
     if (!showClosePrompt) {
-      cta = { type: 'action', icon: CheckCircle2, label: 'Did This Deal Close?', description: 'Confirm whether this transaction closed successfully.', onClick: () => setShowClosePrompt(true) };
+      if (isAgent) {
+        cta = { type: 'waiting', icon: Clock, label: 'Waiting for Investor to Confirm the Deal is Closed', description: 'Investor needs to confirm whether this transaction closed successfully.' };
+      } else {
+        cta = { type: 'action', icon: CheckCircle2, label: 'Did This Deal Close?', description: 'Confirm whether this transaction closed successfully.', onClick: () => setShowClosePrompt(true) };
+      }
     }
   } else if (stage === 'completed') {
     cta = { type: 'complete', icon: CheckCircle2, label: 'Deal Complete ✓', description: 'This deal has been successfully closed.' };
