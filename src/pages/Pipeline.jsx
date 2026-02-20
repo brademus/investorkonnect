@@ -308,60 +308,60 @@ function PipelineContent() {
                               <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
                                 {(provided, snapshot) => (
                                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567]' : ''}`}>
-                                    <div className="space-y-3">
-                                      {/* Top: deal info with next steps in top right */}
-                                      <div className="flex gap-3">
+                                   <div className="space-y-3">
+                                     {/* Top: deal info with next steps in top right */}
+                                     <div className="flex gap-3">
                                        {/* Left: deal info */}
                                        <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start mb-2">
-                                          <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
-                                          <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0">{getDaysInPipeline(deal.created_date)}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-2 mb-3">
-                                          <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
-                                          {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
-                                          {(() => {
-                                            const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
-                                            const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
-                                            return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
-                                          })()}
-                                          {(() => {
-                                            const badge = getAgreementStatusLabel({
-                                              room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
-                                              agreement: deal.agreement || undefined,
-                                              negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
-                                              role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
-                                            });
-                                            return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
-                                          })()}
-                                          {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
-                                        </div>
-                                      </div>
-                                      {/* Right: next step */}
-                                      {(() => {
-                                        const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
-                                        if (!step) return null;
-                                        return (
-                                          <div className="flex-shrink-0 flex flex-col items-end justify-start gap-1">
-                                            <span className="text-[10px] text-[#808080] font-medium">Next Steps</span>
-                                            <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
-                                          </div>
-                                        );
-                                        })()}
-                                        </div>
-                                        {/* Inline review form for completed/canceled deals */}
-                                        {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isInvestor && (
-                                        <InlineReviewForm 
+                                         <div className="flex justify-between items-start mb-2">
+                                           <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
+                                           <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0">{getDaysInPipeline(deal.created_date)}</span>
+                                         </div>
+                                         <div className="flex flex-col gap-2 mb-3">
+                                           <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
+                                           {deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>}
+                                           {(() => {
+                                             const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
+                                             const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
+                                             return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
+                                           })()}
+                                           {(() => {
+                                             const badge = getAgreementStatusLabel({
+                                               room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
+                                               agreement: deal.agreement || undefined,
+                                               negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
+                                               role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
+                                             });
+                                             return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
+                                           })()}
+                                           {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                         </div>
+                                       </div>
+                                       {/* Right: next step */}
+                                       {(() => {
+                                         const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
+                                         if (!step) return null;
+                                         return (
+                                           <div className="flex-shrink-0 flex flex-col items-end justify-start gap-1">
+                                             <span className="text-[10px] text-[#808080] font-medium">Next Steps</span>
+                                             <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
+                                           </div>
+                                         );
+                                       })()}
+                                     </div>
+                                     {/* Inline review form for completed/canceled deals */}
+                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isInvestor && (
+                                       <InlineReviewForm 
                                          dealId={deal.deal_id} 
                                          agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
                                          onSubmitted={() => {}}
-                                        />
-                                        )}
-                                        </div>
-                                        <div className="flex gap-2 pt-3 border-t border-[#1F1F1F]">
-                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
-                                      {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
-                                    </div>
+                                       />
+                                     )}
+                                   </div>
+                                   <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
+                                     <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
+                                     {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
+                                   </div>
                                   </div>
                                 )}
                               </Draggable>
