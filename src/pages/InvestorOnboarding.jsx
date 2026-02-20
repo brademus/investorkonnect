@@ -240,6 +240,7 @@ export default function InvestorOnboarding() {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         updateField('headshotUrl', file_url);
         toast.success('Photo uploaded');
+        input.value = '';
       } catch (err) {
         console.error('Headshot upload error:', err?.message || err);
         toast.error('Upload failed — please try again');
