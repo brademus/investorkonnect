@@ -147,7 +147,18 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
     setLocalDeal(() => {
       // Always merge: incoming deal + anything we've uploaded locally
       const mergedDocs = { ...(deal.documents || {}), ...localDocsRef.current };
-      return { ...deal, documents: mergedDocs };
+      const merged = { ...deal, documents: mergedDocs };
+      // Ensure walkthrough_slots is always an array (never accidentally converted to string)
+      if (merged.walkthrough_slots && !Array.isArray(merged.walkthrough_slots)) {
+        try {
+          merged.walkthrough_slots = typeof merged.walkthrough_slots === 'string' 
+            ? JSON.parse(merged.walkthrough_slots) 
+            : [];
+        } catch (_) {
+          merged.walkthrough_slots = [];
+        }
+      }
+      return merged;
     });
   }, [deal]);
 
