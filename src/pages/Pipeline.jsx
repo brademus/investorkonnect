@@ -209,29 +209,32 @@ function PipelineContent() {
     const newStage = normalizeStage(result.destination.droppableId);
     const draggedDeal = deals.find(d => d.id === result.draggableId);
     if (!draggedDeal) return;
-    // Block moving to connected_deals or beyond unless agreement is fully signed
+    
     const currentStage = normalizeStage(draggedDeal.pipeline_stage);
+    
+    // Block moving back to new_deals from connected_deals or beyond
+    if (currentStage !== 'new_deals' && newStage === 'new_deals') {
+      toast.error("Cannot move deal back to New Deals");
+      return;
+    }
+    
+    // Block moving out of new_deals unless agreement is fully signed
     if (currentStage === 'new_deals' && !draggedDeal.is_fully_signed) {
       toast.error("Agreement must be fully signed before moving this deal forward.");
       return;
     }
+    
+    // Block moving to connected_deals or beyond unless agreement is fully signed
     if (!draggedDeal.is_fully_signed && stageOrder(newStage) >= stageOrder('connected_deals')) {
       toast.error("Agreement must be fully signed before moving this deal forward.");
       return;
     }
+    
     // Skip if dropped in same stage
     if (currentStage === newStage) return;
     
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();
-
-    // Only investors get prompted to rate the agent
-    if (isInvestor && !isAgent && (newStage === 'completed' || newStage === 'canceled')) {
-      const agentId = draggedDeal.locked_agent_id || draggedDeal.room_agent_ids?.[0];
-      if (agentId) {
-        navigate(`${createPageUrl("RateAgent")}?dealId=${draggedDeal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-      }
-    }
   };
 
   const pipelineStages = useMemo(() => PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(s => ({
