@@ -96,8 +96,15 @@ export default function Pricing() {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error("Checkout Failed", {
-        description: error.message || "There was an error starting the checkout process.",
+      
+      reportError("Checkout Failed", {
+        cause: error,
+        extra: {
+          user_id: user?.id,
+          profile_id: profile?.id,
+          plan: 'membership',
+          subscription_status: subscriptionStatus,
+        },
       });
     } finally {
       setCheckoutLoading(false);
