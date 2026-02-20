@@ -17,6 +17,7 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted, 
     base44.auth.me().then(setCurrentProfile).catch(() => {});
   }, []);
 
+  // Fetch existing review
   useEffect(() => {
     if (!currentProfile?.id || !agentProfileId || !dealId) return;
     base44.entities.Review.filter({ 
@@ -37,6 +38,28 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted, 
       }
     }).catch(() => {});
   }, [currentProfile?.id, agentProfileId, dealId, refreshKey]);
+
+  // Subscribe to review updates in real-time
+  useEffect(() => {
+    if (!currentProfile?.id || !dealId || !agentProfileId) return;
+    const unsub = base44.entities.Review.subscribe((event) => {
+      if (event.data?.deal_id === dealId && 
+          event.data?.reviewee_profile_id === agentProfileId &&
+          event.data?.reviewer_profile_id === currentProfile.id) {
+        if (event.type === 'create' || event.type === 'update') {
+          setExistingReview(event.data);
+          setRating(event.data.rating || 0);
+          setReview(event.data.body || "");
+          setIsEditing(false);
+        } else if (event.type === 'delete') {
+          setExistingReview(null);
+          setRating(0);
+          setReview("");
+        }
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [currentProfile?.id, dealId, agentProfileId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
