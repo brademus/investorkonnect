@@ -57,6 +57,7 @@ function WalkthroughStatusLine({ dealId, roomId, deal, room }) {
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
+  const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
   const dealConfirmed = deal?.walkthrough_confirmed === true;
   const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED' || dealConfirmed;
 
@@ -89,13 +90,23 @@ function WalkthroughStatusLine({ dealId, roomId, deal, room }) {
     );
   }
 
-  // Not confirmed — show all proposed slots
+  // After signing — show "To Be Determined" (agent picks in deal progress panel)
+  if (isSigned) {
+    return (
+      <div className="flex items-center gap-2 mt-3">
+        <Calendar className="w-4 h-4 text-[#F59E0B]" />
+        <span className="text-sm text-[#808080]">Walk-through:</span>
+        <span className="text-sm font-medium text-[#F59E0B]">To Be Determined</span>
+      </div>
+    );
+  }
+
+  // Before signing — show all proposed available times
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2">
-        <Calendar className="w-4 h-4 text-[#F59E0B]" />
+        <Calendar className="w-4 h-4 text-[#E3C567]" />
         <span className="text-sm text-[#808080]">Walk-through</span>
-        <span className="text-xs font-medium text-[#F59E0B]">Proposed</span>
       </div>
       {wtSlots.length > 0 ? (
         <div className="space-y-1.5 ml-6">
