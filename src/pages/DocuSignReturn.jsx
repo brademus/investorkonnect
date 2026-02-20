@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 export default function DocuSignReturn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState("processing");
   const [message, setMessage] = useState("Processing your signature...");
 
@@ -18,8 +20,14 @@ export default function DocuSignReturn() {
       if (redirected) return;
       redirected = true;
       clearTimeout(safetyTimeout);
+      // Immediately invalidate queries to clear any stale data
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
       toast.success(msg || 'Signature processed!');
-      navigate(url, { replace: true });
+      // Small delay to ensure query cache is cleared before navigation
+      setTimeout(() => {
+        navigate(url, { replace: true });
+      }, 100);
     };
 
     // Safety net: if we're still on this page after 12s, force redirect
@@ -121,9 +129,9 @@ export default function DocuSignReturn() {
             return;
           }
 
-          // Agent flow: go straight to Room agreement tab
+          // Agent flow: go straight to Room agreement tab with signed=1 flag for instant refresh
           if (signingRole === 'agent' && roomId) {
-            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, 'Agreement signed successfully!');
+            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, 'Agreement signed successfully!');
             return;
           }
         } catch (pollError) {
