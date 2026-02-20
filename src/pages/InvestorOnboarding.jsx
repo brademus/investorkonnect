@@ -142,7 +142,14 @@ export default function InvestorOnboarding() {
   };
 
   const handleNext = async () => {
-    if (step === TOTAL_STEPS) {
+    if (step === 3) {
+      // Validate Step 3
+      if (formData.next_steps_template_type === 'custom') {
+        if (!formData.custom_next_steps_template || formData.custom_next_steps_template.trim().length < 50) {
+          toast.error('Please write a message for agents (minimum 50 characters)');
+          return;
+        }
+      }
       await handleSubmit();
     } else {
       setStep(step + 1);
