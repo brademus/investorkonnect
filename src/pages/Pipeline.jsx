@@ -208,10 +208,18 @@ function PipelineContent() {
     const newStage = normalizeStage(result.destination.droppableId);
     const draggedDeal = deals.find(d => d.id === result.draggableId);
     if (!draggedDeal) return;
-    // Block dragging out of new_deals — deal can only move once an agent signs
-    if (normalizeStage(draggedDeal.pipeline_stage) === 'new_deals' && !draggedDeal.is_fully_signed) return;
+    // Block moving to connected_deals or beyond unless agreement is fully signed
+    const currentStage = normalizeStage(draggedDeal.pipeline_stage);
+    if (currentStage === 'new_deals' && !draggedDeal.is_fully_signed) {
+      toast.error("Agreement must be fully signed before moving this deal forward.");
+      return;
+    }
+    if (!draggedDeal.is_fully_signed && stageOrder(newStage) >= stageOrder('connected_deals')) {
+      toast.error("Agreement must be fully signed before moving this deal forward.");
+      return;
+    }
     // Skip if dropped in same stage
-    if (normalizeStage(draggedDeal.pipeline_stage) === newStage) return;
+    if (currentStage === newStage) return;
     
     await base44.entities.Deal.update(result.draggableId, { pipeline_stage: newStage });
     refetchDeals();

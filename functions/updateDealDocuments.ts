@@ -51,6 +51,16 @@ Deno.serve(async (req) => {
       updatePayload.documents = { ...(deal.documents || {}), ...documents };
     }
     if (pipeline_stage) {
+      // Block moving to connected_deals or beyond unless agreement is fully signed
+      const STAGE_ORDER = { new_deals: 1, connected_deals: 2, active_listings: 3, in_closing: 4, completed: 5, canceled: 6 };
+      const targetOrder = STAGE_ORDER[pipeline_stage] || 0;
+      if (targetOrder >= 2) {
+        const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
+        const hasFulySigned = rooms.some(r => r.agreement_status === 'fully_signed' || r.request_status === 'locked');
+        if (!hasFulySigned && !deal.locked_agent_id) {
+          return Response.json({ error: 'Agreement must be fully signed before moving this deal forward.' }, { status: 400 });
+        }
+      }
       updatePayload.pipeline_stage = pipeline_stage;
     }
 

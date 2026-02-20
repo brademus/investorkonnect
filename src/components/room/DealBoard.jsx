@@ -294,6 +294,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const isPast = stage.order < stageOrder(norm);
                 const handleStageClick = async () => {
                   if (!localDeal?.id) return;
+                  // Block moving to connected_deals or beyond unless agreement is fully signed
+                  if (!isSigned && stageOrder(stage.id) >= stageOrder('connected_deals')) {
+                    toast.error("Agreement must be fully signed before moving this deal forward.");
+                    return;
+                  }
                   await base44.functions.invoke('updateDealDocuments', { dealId: localDeal.id, pipeline_stage: stage.id });
                   toast.success(`Moved to ${stage.label}`);
                   if (stage.id === 'completed' || stage.id === 'canceled') {
