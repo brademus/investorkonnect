@@ -340,11 +340,9 @@ function PipelineContent() {
                                         const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
                                         if (!step) return null;
                                         return (
-                                          <div className="flex-shrink-0 w-[110px] flex items-center">
-                                            <div className={`w-full rounded-xl border px-3 py-2.5 text-center ${step.color.includes('E3C567') ? 'bg-[#E3C567]/10 border-[#E3C567]/30' : step.color.includes('10B981') || step.color.includes('34D399') ? 'bg-[#10B981]/10 border-[#10B981]/30' : step.color.includes('F59E0B') ? 'bg-[#F59E0B]/10 border-[#F59E0B]/30' : step.color.includes('60A5FA') ? 'bg-[#60A5FA]/10 border-[#60A5FA]/30' : 'bg-[#1F1F1F] border-[#1F1F1F]'}`}>
-                                              <Circle className={`w-3.5 h-3.5 mx-auto mb-1 ${step.color}`} />
-                                              <p className={`text-[11px] font-semibold leading-tight ${step.color}`}>{step.label}</p>
-                                            </div>
+                                          <div className="flex-shrink-0 flex flex-col items-end justify-start gap-1">
+                                            <span className="text-[10px] text-[#808080] font-medium">Next Steps</span>
+                                            <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
                                           </div>
                                         );
                                       })()}
