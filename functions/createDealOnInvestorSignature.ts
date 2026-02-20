@@ -155,50 +155,7 @@ Deno.serve(async (req) => {
       // Update Deal
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
-      // Sync DealAppointments — reset to NOT_SET when walkthrough is not scheduled
-      try {
-        const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
-        if (dealUpdate.walkthrough_scheduled && (dealUpdate.walkthrough_date || dealUpdate.walkthrough_time || (dealUpdate.walkthrough_slots && dealUpdate.walkthrough_slots.length > 0))) {
-          const apptPatch = {
-            walkthrough: {
-              status: 'PROPOSED',
-              datetime: null,
-              timezone: null,
-              locationType: 'ON_SITE',
-              notes: null,
-              updatedByUserId: agreementData.investor_profile_id || null,
-              updatedAt: new Date().toISOString()
-            }
-          };
-          if (apptRows?.[0]) {
-            await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
-          } else {
-            await base44.asServiceRole.entities.DealAppointments.create({
-              dealId: existingDeal.id,
-              ...apptPatch,
-              inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
-              rescheduleRequests: []
-            });
-          }
-          console.log('[createDealOnInvestorSignature] Synced DealAppointments (PROPOSED) for existing deal');
-        } else if (apptRows?.[0]) {
-          // Walkthrough not scheduled — reset existing appointment to NOT_SET
-          await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, {
-            walkthrough: {
-              status: 'NOT_SET',
-              datetime: null,
-              timezone: null,
-              locationType: null,
-              notes: null,
-              updatedByUserId: agreementData.investor_profile_id || null,
-              updatedAt: new Date().toISOString()
-            }
-          });
-          console.log('[createDealOnInvestorSignature] Reset DealAppointments to NOT_SET for existing deal');
-        }
-      } catch (apptErr) {
-        console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
-      }
+      // No DealAppointments sync needed — walkthrough is on Deal.walkthrough_slots
 
       // Update existing Room agreement pointer and status
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
