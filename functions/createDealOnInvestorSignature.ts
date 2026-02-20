@@ -116,11 +116,9 @@ Deno.serve(async (req) => {
       const exhibitTerms = agreementData.exhibit_a_terms || {};
 
       if (draftForUpdate) {
-        const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
-        dealUpdate.walkthrough_scheduled = draftWtScheduled;
-        dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
-        dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
-        dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
+        const draftSlots = (Array.isArray(draftForUpdate.walkthrough_slots) ? draftForUpdate.walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8);
+        dealUpdate.walkthrough_slots = draftSlots;
+        dealUpdate.walkthrough_confirmed_slot = null;
         if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
         const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
