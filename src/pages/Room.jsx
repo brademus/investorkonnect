@@ -411,17 +411,17 @@ export default function Room() {
                     <Send className="w-4 h-4 mr-2" />Messages
                   </Button>
                 )}
-                {isInvestor && isSigned && (currentRoom?.locked_agent_id || currentRoom?.agent_ids?.length > 0) && (
-                  <Button
-                    onClick={() => {
-                      const agentId = currentRoom.locked_agent_id || currentRoom.agent_ids?.[0];
-                      if (agentId) navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
-                    }}
-                    className="rounded-full font-semibold bg-[#1F1F1F] text-[#FAFAFA]"
-                  >
-                    <User className="w-4 h-4 mr-2" />Agent Profile
-                  </Button>
-                )}
+                {isInvestor && (isSigned || pendingInvites.length === 1) && (currentRoom?.locked_agent_id || currentRoom?.agent_ids?.length > 0 || selectedInvite?.agent_profile_id) && (
+                   <Button
+                     onClick={() => {
+                       const agentId = currentRoom.locked_agent_id || currentRoom.agent_ids?.[0] || selectedInvite?.agent_profile_id;
+                       if (agentId) navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
+                     }}
+                     className="rounded-full font-semibold bg-[#1F1F1F] text-[#FAFAFA]"
+                   >
+                     <User className="w-4 h-4 mr-2" />Agent Profile
+                   </Button>
+                 )}
                 {isAgent && currentRoom?.investorId && (
                   <Button
                     onClick={() => navigate(`${createPageUrl("InvestorProfile")}?profileId=${currentRoom.investorId}`)}
