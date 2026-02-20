@@ -74,8 +74,7 @@ export default function NewDeal() {
   const [county, setCounty] = useState("");
   const [dealType, setDealType] = useState("");
 
-  // Walkthrough — simple: yes/no toggle + array of slots
-  const [walkthroughEnabled, setWalkthroughEnabled] = useState(false);
+  // Walkthrough — up to 3 proposed slots
   const [walkthroughSlots, setWalkthroughSlots] = useState([{ date: "", timeStart: "", timeEnd: "" }]);
 
   const [hydrated, setHydrated] = useState(false);
