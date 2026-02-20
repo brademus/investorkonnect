@@ -297,10 +297,8 @@ Deno.serve(async (req) => {
         const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
         const dupeUpdate = {
           current_legal_agreement_id: agreementData.id,
-          walkthrough_scheduled: draftWalkthroughScheduled,
-          walkthrough_date: draftWalkthroughDate,
-          walkthrough_time: draftWalkthroughTime,
           walkthrough_slots: draftWalkthroughSlots,
+          walkthrough_confirmed_slot: null,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
             seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
