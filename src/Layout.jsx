@@ -16,6 +16,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Patch toast.error globally so every error toast is also reported to Sentry
+if (!window.__TOAST_PATCHED__) {
+  const _origToastError = toast.error.bind(toast);
+  toast.error = (message, ...args) => {
+    _origToastError(message, ...args);
+    try {
+      Sentry.captureMessage(typeof message === 'string' ? message : 'Toast error', {
+        level: 'error',
+        tags: { source: 'toast.error' },
+        extra: { rawMessage: String(message) },
+      });
+    } catch (_) {}
+  };
+  window.__TOAST_PATCHED__ = true;
+}
+
+// Also capture unhandled promise rejections as Sentry errors
+if (!window.__UNHANDLED_PATCHED__) {
+  window.addEventListener('unhandledrejection', (event) => {
+    const error = event.reason;
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      tags: { source: 'unhandledrejection' },
+    });
+  });
+  window.__UNHANDLED_PATCHED__ = true;
+}
+
 if (!window.__SENTRY_INITIALIZED__) {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   Sentry.init({
