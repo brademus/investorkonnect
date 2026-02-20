@@ -88,7 +88,8 @@ Deno.serve(async (req) => {
       pipeline_stage: 'new_deals',
       walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
       walkthrough_date: (draft.walkthrough_scheduled === true && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null,
-      walkthrough_time: (draft.walkthrough_scheduled === true && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null
+      walkthrough_time: (draft.walkthrough_scheduled === true && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null,
+      walkthrough_slots: (draft.walkthrough_scheduled === true && Array.isArray(draft.walkthrough_slots) && draft.walkthrough_slots.length > 0) ? draft.walkthrough_slots : []
     });
 
     console.log('[convertDraftToDeal] Created deal:', deal.id);
