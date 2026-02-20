@@ -86,17 +86,8 @@ Deno.serve(async (req) => {
       selected_agent_ids: draft.selected_agent_ids,
       status: 'active',
       pipeline_stage: 'new_deals',
-      walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
-      walkthrough_date: (draft.walkthrough_scheduled === true && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null,
-      walkthrough_time: (draft.walkthrough_scheduled === true && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null,
-      walkthrough_slots: (() => {
-        if (!draft.walkthrough_scheduled) return [];
-        if (Array.isArray(draft.walkthrough_slots) && draft.walkthrough_slots.length > 0) return draft.walkthrough_slots;
-        // Synthesize from legacy fields if slots array is empty
-        const legacyDate = (draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
-        if (legacyDate) return [{ date: legacyDate, timeStart: (draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : '', timeEnd: '' }];
-        return [];
-      })()
+      walkthrough_slots: (Array.isArray(draft.walkthrough_slots) ? draft.walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8),
+      walkthrough_confirmed_slot: null
     });
 
     console.log('[convertDraftToDeal] Created deal:', deal.id);
