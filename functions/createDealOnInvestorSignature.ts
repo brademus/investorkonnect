@@ -304,8 +304,12 @@ Deno.serve(async (req) => {
     const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
     const draftWalkthroughDate = (draftWalkthroughScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
     const draftWalkthroughTime = (draftWalkthroughScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
-    const draftWalkthroughSlots = (draftWalkthroughScheduled && draft.walkthrough_slots?.length > 0) ? draft.walkthrough_slots : [];
-    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime, 'slots:', draftWalkthroughSlots.length);
+    // CRITICAL: Preserve walkthrough_slots array if it exists, even if walkthrough_scheduled is not explicitly true
+    // The slots themselves are the source of truth for whether walkthrough is scheduled
+    const draftWalkthroughSlots = (Array.isArray(draft.walkthrough_slots) && draft.walkthrough_slots.length > 0) ? draft.walkthrough_slots : [];
+    const hasWalkthroughSlots = draftWalkthroughSlots.length > 0;
+    const shouldMarkWalkthroughScheduled = draftWalkthroughScheduled || hasWalkthroughSlots;
+    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime, 'slots:', draftWalkthroughSlots.length, 'should_mark_scheduled:', shouldMarkWalkthroughScheduled);
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
