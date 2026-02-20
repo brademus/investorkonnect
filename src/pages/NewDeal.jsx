@@ -12,6 +12,7 @@ import { base44 } from "@/api/base44Client";
 import AddressAutocomplete from "@/components/AddressAutocomplete";
 import WalkthroughTimeInput from "@/components/WalkthroughTimeInput";
 import { getZipCoords } from "@/components/utils/agentScoring";
+import { reportError } from "@/components/utils/reportError";
 
 
 export default function NewDeal() {
