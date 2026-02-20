@@ -520,9 +520,9 @@ export default function NewDeal() {
           },
           walkthrough_scheduled: walkthroughScheduled === true,
           walkthrough_slots: walkthroughScheduled === true ? walkthroughSlots.filter(s => s.date && s.date.length >= 8) : [],
-          // Legacy fields — first slot
-          walkthrough_date: walkthroughScheduled === true ? (walkthroughSlots[0]?.date || null) : null,
-          walkthrough_time: walkthroughScheduled === true ? (walkthroughSlots[0]?.timeStart || null) : null,
+          // Legacy fields — first VALID slot
+          walkthrough_date: walkthroughScheduled === true ? (walkthroughSlots.filter(s => s.date && s.date.length >= 8)[0]?.date || null) : null,
+          walkthrough_time: walkthroughScheduled === true ? (walkthroughSlots.filter(s => s.date && s.date.length >= 8)[0]?.timeStart || null) : null,
         });
         
         // Fire-and-forget: geocode deal ZIP for agent matching
