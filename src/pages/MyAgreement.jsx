@@ -469,26 +469,22 @@ export default function MyAgreement() {
                <div className="col-span-2">
                  <p className="text-[#808080]">Walk-through</p>
                  {(() => {
-                   if (deal.walkthroughScheduled !== true) return <p className="text-[#FAFAFA] font-semibold">Not scheduled</p>;
-                   const slots = deal.walkthroughSlots?.filter(s => s.date && s.date.length >= 8) || deal.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
-                   const wtDate = deal.walkthrough_date || deal.walkthroughDate;
-                   const wtTime = deal.walkthrough_time || deal.walkthroughTime;
-                   const allSlots = slots.length > 0 ? slots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
-                   if (allSlots.length === 0) return <p className="text-[#FAFAFA] font-semibold">Proposed (date TBD)</p>;
-                   return (
-                     <div className="space-y-1 mt-1">
-                       {allSlots.map((slot, idx) => {
-                         const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
-                         return (
-                           <p key={idx} className="text-[#FAFAFA] font-semibold">
-                             {allSlots.length > 1 ? `Option ${idx + 1}: ` : 'Proposed: '}{slot.date}
-                             {timeLabel && <span className="text-[#808080] font-normal ml-1.5">{timeLabel}</span>}
-                           </p>
-                         );
-                       })}
-                     </div>
-                   );
-                 })()}
+                    const slots = (deal.walkthroughSlots || deal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
+                    if (slots.length === 0) return <p className="text-[#FAFAFA] font-semibold">Not scheduled</p>;
+                    return (
+                      <div className="space-y-1 mt-1">
+                        {slots.map((slot, idx) => {
+                          const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+                          return (
+                            <p key={idx} className="text-[#FAFAFA] font-semibold">
+                              {slots.length > 1 ? `Option ${idx + 1}: ` : 'Proposed: '}{slot.date}
+                              {timeLabel && <span className="text-[#808080] font-normal ml-1.5">{timeLabel}</span>}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
              </div>
            </div>
