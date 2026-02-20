@@ -238,12 +238,22 @@ export default function InvestorOnboarding() {
       setUploadingPhoto(true);
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        updateField('headshotUrl', file_url);
-        toast.success('Photo uploaded');
+        // Verify image loads before confirming upload
+        const img = new Image();
+        img.onload = () => {
+          updateField('headshotUrl', file_url);
+          toast.success('Photo uploaded');
+          setUploadingPhoto(false);
+        };
+        img.onerror = () => {
+          console.error('Image failed to load after upload');
+          toast.error('Image upload failed — please try again');
+          setUploadingPhoto(false);
+        };
+        img.src = file_url;
       } catch (err) {
         console.error('Headshot upload error:', err?.message || err);
         toast.error('Upload failed — please try again');
-      } finally {
         setUploadingPhoto(false);
       }
     };
