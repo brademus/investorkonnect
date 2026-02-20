@@ -253,20 +253,8 @@ function PipelineContent() {
     return m;
   }, [deals]);
 
-  // Load walkthrough statuses for all deals
-  const dealIds = useMemo(() => deals.map(d => d.deal_id).filter(Boolean), [deals]);
-  const { data: wtStatusMap = {} } = useQuery({
-    queryKey: ['wtStatuses', dealIds.join(',')],
-    staleTime: 30_000,
-    queryFn: async () => {
-      if (!dealIds.length) return {};
-      const appts = await base44.entities.DealAppointments.filter({});
-      const map = {};
-      appts.forEach(a => { if (a.dealId && a.walkthrough?.status) map[a.dealId] = a.walkthrough.status; });
-      return map;
-    },
-    enabled: dealIds.length > 0,
-  });
+  // No DealAppointments needed — walkthrough status derived from Deal.walkthrough_slots
+  const wtStatusMap = {};
 
   const getDaysInPipeline = (d) => { if (!d) return 'N/A'; return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`; };
 
