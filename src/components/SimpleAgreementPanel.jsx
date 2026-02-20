@@ -184,19 +184,38 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       // If we didn't get the agreement from the response (timeout/502), poll for it
       if (!gotAgreement && effectiveId) {
         toast.info('Agreement is being generated, please wait...');
-        // Poll up to 3 times with increasing delay
-        for (let attempt = 0; attempt < 3; attempt++) {
-          await new Promise(r => setTimeout(r, 3000 + attempt * 2000));
+        // Poll up to 6 times with increasing delay (total ~45s wait)
+        for (let attempt = 0; attempt < 6; attempt++) {
+          await new Promise(r => setTimeout(r, 4000 + attempt * 2000));
           try {
-            const checkRes = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveId, room_id: roomId });
-            const ag = checkRes?.data?.agreement;
-            if (ag && ag.docusign_envelope_id && ag.status !== 'voided' && ag.status !== 'superseded') {
+            // Try direct entity query first (faster than function call)
+            const agreements = await base44.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 5);
+            const ag = agreements.find(a => a.status !== 'voided' && a.status !== 'superseded' && a.docusign_envelope_id);
+            if (ag) {
               setAgreement(ag);
               toast.success('Agreement ready');
               gotAgreement = true;
               break;
             }
-          } catch (_) {}
+            // Also check for agreement that's still being processed (no envelope yet but recently created)
+            const pending = agreements.find(a => a.status !== 'voided' && a.status !== 'superseded');
+            if (pending && attempt < 5) {
+              // Agreement exists but envelope not ready yet — keep polling
+              continue;
+            }
+          } catch (_) {
+            // Fallback to function call
+            try {
+              const checkRes = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveId, room_id: roomId });
+              const ag = checkRes?.data?.agreement;
+              if (ag && ag.docusign_envelope_id && ag.status !== 'voided' && ag.status !== 'superseded') {
+                setAgreement(ag);
+                toast.success('Agreement ready');
+                gotAgreement = true;
+                break;
+              }
+            } catch (__) {}
+          }
         }
         if (!gotAgreement) {
           toast.error('Agreement generation timed out. Please try again.');
