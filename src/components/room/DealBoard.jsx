@@ -62,7 +62,11 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned }) {
 
   const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
   const wtDate = deal?.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
+  const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtSlots.length > 0);
+
+  // Build all display items (slots or legacy single date)
+  const allSlots = wtSlots.length > 0 ? wtSlots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
 
   // Build confirmed label
   let confirmedLabel = 'Confirmed';
@@ -107,28 +111,21 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned }) {
         <Calendar className="w-4 h-4 text-[#E3C567]" />
         <span className="text-sm text-[#808080]">Walk-through</span>
       </div>
-      {wtSlots.length > 0 ? (
-        <div className="space-y-1.5 ml-6">
-          <p className="text-xs text-[#808080]">Available times:</p>
-          {wtSlots.map((slot, idx) => {
-            const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
-            return (
-              <div key={idx} className="flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
-                <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
-                <span className="text-[#FAFAFA] font-medium">
-                  {wtSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
-                </span>
-                {timeLabel && <span className="text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</span>}
-              </div>
-            );
-          })}
-        </div>
-      ) : wtDate ? (
-        <div className="ml-6 flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
-          <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
-          <span className="text-[#FAFAFA] font-medium">{wtDate}</span>
-        </div>
-      ) : null}
+      <div className="space-y-1.5 ml-6">
+        <p className="text-xs text-[#808080]">Available times:</p>
+        {allSlots.map((slot, idx) => {
+          const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+          return (
+            <div key={idx} className="flex items-center gap-2.5 p-2.5 bg-[#141414] rounded-lg border border-[#1F1F1F] text-xs">
+              <Calendar className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
+              <span className="text-[#FAFAFA] font-medium">
+                {allSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}
+              </span>
+              {timeLabel && <span className="text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</span>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
