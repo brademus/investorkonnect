@@ -81,6 +81,9 @@ export default function InlineReviewForm({ deal, room, profile }) {
             <Star key={s} className={`w-3.5 h-3.5 ${s <= rating ? 'text-[#E3C567] fill-[#E3C567]' : 'text-[#333]'}`} />
           ))}
         </div>
+        {reviewBody && (
+          <p className="text-xs text-[#FAFAFA]/70 mt-1.5 leading-relaxed">{reviewBody}</p>
+        )}
         <button onClick={() => setSubmitted(false)} className="text-xs text-[#808080] hover:text-[#E3C567] mt-1">
           Edit Review
         </button>
