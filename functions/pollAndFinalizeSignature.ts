@@ -292,7 +292,8 @@ async function ensureDealCreated(base44, agreement) {
     current_legal_agreement_id: agreement.id,
     walkthrough_scheduled: draftWtScheduled,
     walkthrough_date: draftWtDate,
-    walkthrough_time: draftWtTime
+    walkthrough_time: draftWtTime,
+    walkthrough_slots: draftWtSlots
   });
 
   console.log('[pollAndFinalize] Created Deal:', newDeal.id, 'walkthrough:', draftWtScheduled, draftWtDate, draftWtTime);
