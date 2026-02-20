@@ -1,64 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from "react";
+import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Star, Loader2, CheckCircle2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { invalidateRatingCache } from "@/components/useAgentRating";
 
-export default function InlineReviewForm({ deal, room, profile }) {
+export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }) {
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [reviewBody, setReviewBody] = useState("");
+  const [review, setReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [existingReview, setExistingReview] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const isAgent = profile?.user_role === 'agent' && profile?.role !== 'admin';
-  const revieweeId = isAgent
-    ? (deal?.investor_id || room?.investorId)
-    : (deal?.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0]);
-
-  useEffect(() => {
-    if (!profile?.id || !revieweeId) { setLoading(false); return; }
-    base44.entities.Review.filter({ reviewee_profile_id: revieweeId, reviewer_profile_id: profile.id })
-      .then(reviews => {
-        const existing = reviews?.[0];
-        if (existing) {
-          setExistingReview(existing);
-          setRating(existing.rating);
-          setReviewBody(existing.body || "");
-          setSubmitted(true);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [profile?.id, revieweeId]);
 
   const handleSubmit = async () => {
-    if (rating === 0) { toast.error("Please select a star rating"); return; }
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
     setSubmitting(true);
     try {
-      const body = reviewBody.trim() || `${rating}-star rating`;
-      const data = {
-        reviewee_profile_id: revieweeId,
-        reviewer_profile_id: profile.id,
-        reviewer_name: profile.full_name || profile.email,
+      await base44.entities.Review.create({
+        reviewee_profile_id: agentProfileId,
         rating,
-        body,
+        body: review,
         verified: true,
-        market: deal?.state || "",
-        deal_type: deal?.property_type || "",
-      };
-      if (existingReview) {
-        await base44.entities.Review.update(existingReview.id, data);
-      } else {
-        await base44.entities.Review.create(data);
-      }
-      invalidateRatingCache(revieweeId);
-      setSubmitted(true);
+        moderation_status: "approved"
+      });
       toast.success("Review submitted!");
+      setRating(0);
+      setReview("");
+      if (onSubmitted) onSubmitted();
     } catch (e) {
       toast.error("Failed to submit review");
     } finally {
@@ -66,65 +34,41 @@ export default function InlineReviewForm({ deal, room, profile }) {
     }
   };
 
-  if (loading) return null;
-  if (!revieweeId) return null;
-
-  if (submitted) {
-    return (
-      <div className="mt-3 pt-3 border-t border-[#1F1F1F]">
-        <div className="flex items-center gap-2 mb-1">
-          <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
-          <span className="text-xs font-medium text-[#10B981]">Review Submitted</span>
-        </div>
-        <div className="flex gap-0.5 mt-1">
-          {[1, 2, 3, 4, 5].map(s => (
-            <Star key={s} className={`w-3.5 h-3.5 ${s <= rating ? 'text-[#E3C567] fill-[#E3C567]' : 'text-[#333]'}`} />
+  return (
+    <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
+      <div className="mb-3">
+        <p className="text-sm font-semibold text-[#FAFAFA] mb-2">Rate this agent</p>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map(i => (
+            <button
+              key={i}
+              onClick={() => setRating(i)}
+              className="p-1 transition-colors"
+            >
+              <Star
+                className={`w-5 h-5 ${
+                  i <= rating
+                    ? "fill-[#E3C567] text-[#E3C567]"
+                    : "text-[#333]"
+                }`}
+              />
+            </button>
           ))}
         </div>
-        {reviewBody && (
-          <p className="text-xs text-[#FAFAFA]/70 mt-1.5 leading-relaxed">{reviewBody}</p>
-        )}
-        <button onClick={() => setSubmitted(false)} className="text-xs text-[#808080] hover:text-[#E3C567] mt-1">
-          Edit Review
-        </button>
       </div>
-    );
-  }
-
-  return (
-    <div className="mt-3 pt-3 border-t border-[#1F1F1F] space-y-3">
-      <p className="text-xs font-medium text-[#FAFAFA]">
-        {isAgent ? "Rate your investor" : "Rate your agent"}
-      </p>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(star => (
-          <button
-            key={star}
-            onClick={() => setRating(star)}
-            onMouseEnter={() => setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(0)}
-            className="transition-transform hover:scale-110"
-          >
-            <Star className={`w-7 h-7 transition-colors ${
-              star <= (hoverRating || rating) ? 'text-[#E3C567] fill-[#E3C567]' : 'text-[#333] hover:text-[#555]'
-            }`} />
-          </button>
-        ))}
-      </div>
-      <Textarea
-        value={reviewBody}
-        onChange={e => setReviewBody(e.target.value)}
-        placeholder="Write your review here (optional)..."
-        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#555] rounded-xl min-h-[80px] text-sm focus:border-[#E3C567]"
+      <input
+        type="text"
+        placeholder="Write a brief review..."
+        value={review}
+        onChange={(e) => setReview(e.target.value)}
+        className="w-full bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg px-3 py-2 text-sm text-[#FAFAFA] placeholder-[#666] focus:outline-none focus:border-[#E3C567]"
       />
       <Button
         onClick={handleSubmit}
         disabled={submitting || rating === 0}
-        size="sm"
-        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-xs h-9 disabled:opacity-40"
+        className="w-full mt-2 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-sm h-8"
       >
-        {submitting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-        {existingReview ? "Update Review" : "Submit Review"}
+        {submitting ? "Submitting..." : "Submit Review"}
       </Button>
     </div>
   );
