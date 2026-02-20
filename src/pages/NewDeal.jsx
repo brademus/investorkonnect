@@ -515,59 +515,97 @@ export default function NewDeal() {
               <p className="text-xs text-[#808080] mt-2">How long will this agreement remain active?</p>
             </div>
 
-            {/* Walk-through */}
+            {/* Walk-through — Simplified */}
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Would you like to schedule a walk-through?</label>
-              <p className="text-xs text-[#808080] mb-3">This will send proposed times to the agent after they sign.</p>
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setWalkthroughEnabled(true)} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${walkthroughEnabled ? "bg-[#10B981] text-black" : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#10B981]/50"}`}>Yes</button>
-                <button type="button" onClick={() => { setWalkthroughEnabled(false); setWalkthroughSlots([{ date: "", timeStart: "", timeEnd: "" }]); }} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${!walkthroughEnabled ? "bg-[#F59E0B] text-black" : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#F59E0B]/50"}`}>Not Now</button>
-              </div>
-              {walkthroughEnabled && (
-                <div className="mt-4 space-y-4">
-                  {walkthroughSlots.map((slot, idx) => {
-                    const updateSlot = (field, value) => {
-                      const updated = [...walkthroughSlots];
-                      updated[idx] = { ...updated[idx], [field]: value };
-                      setWalkthroughSlots(updated);
-                    };
-                    return (
-                      <div key={idx} className="relative">
-                        {walkthroughSlots.length > 1 && (
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-[#E3C567]">Option {idx + 1}</span>
-                            <button type="button" onClick={() => setWalkthroughSlots(walkthroughSlots.filter((_, i) => i !== idx))} className="text-[#808080] hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-3 gap-4 max-w-lg">
-                          <div>
-                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">{walkthroughSlots.length === 1 ? "Proposed Date" : "Date"}</label>
-                            <Input type="text" value={slot.date} onChange={(e) => updateSlot("date", autoFormatDate(e.target.value))} placeholder="MM/DD/YYYY" maxLength={10} className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]" />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Start Time</label>
-                            <Select value={slot.timeStart} onValueChange={(v) => updateSlot("timeStart", v)}>
-                              <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="Start" /></SelectTrigger>
-                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F]">{TIME_OPTIONS.map(t => <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-[#FAFAFA] mb-2">End Time</label>
-                            <Select value={slot.timeEnd} onValueChange={(v) => updateSlot("timeEnd", v)}>
-                              <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="End" /></SelectTrigger>
-                              <SelectContent className="max-h-60 bg-[#141414] border-[#1F1F1F]">{TIME_OPTIONS.map(t => <SelectItem className="text-[#FAFAFA] focus:bg-[#E3C567] focus:text-black" key={t} value={t}>{t.replace(/(AM|PM)/, ' $1')}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </div>
-                        </div>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Schedule Walk-through Dates</label>
+              <p className="text-xs text-[#808080] mb-4">Add up to 3 proposed times (optional).</p>
+              <div className="space-y-3">
+                {walkthroughSlots.map((slot, idx) => (
+                  <div key={idx} className="border border-[#1F1F1F] rounded-lg p-4 bg-[#141414]">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-medium text-[#E3C567]">Slot {idx + 1}</span>
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setWalkthroughSlots(walkthroughSlots.filter((_, i) => i !== idx))}
+                          className="text-[#808080] hover:text-red-400 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs text-[#808080] mb-1">Date (MM/DD/YYYY)</label>
+                        <Input
+                          type="text"
+                          value={slot.date}
+                          onChange={(e) => {
+                            const updated = [...walkthroughSlots];
+                            updated[idx].date = autoFormatDate(e.target.value);
+                            setWalkthroughSlots(updated);
+                          }}
+                          placeholder="01/15/2025"
+                          maxLength={10}
+                          className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
+                        />
                       </div>
-                    );
-                  })}
-                  {walkthroughSlots.length < 3 && (
-                    <button type="button" onClick={() => setWalkthroughSlots([...walkthroughSlots, { date: "", timeStart: "", timeEnd: "" }])} className="flex items-center gap-2 text-sm text-[#E3C567] hover:text-[#EDD89F]">
-                      <Plus className="w-4 h-4" /> Add another date option ({3 - walkthroughSlots.length} remaining)
-                    </button>
-                  )}
-                </div>
+                      <div>
+                        <label className="block text-xs text-[#808080] mb-1">Start Time</label>
+                        <Select
+                          value={slot.timeStart}
+                          onValueChange={(v) => {
+                            const updated = [...walkthroughSlots];
+                            updated[idx].timeStart = v;
+                            setWalkthroughSlots(updated);
+                          }}
+                        >
+                          <SelectTrigger className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-48 bg-[#141414] border-[#1F1F1F]">
+                            {TIME_OPTIONS.map(t => (
+                              <SelectItem key={t} value={t} className="text-[#FAFAFA]">
+                                {t.replace(/(AM|PM)/, ' $1')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-[#808080] mb-1">End Time</label>
+                        <Select
+                          value={slot.timeEnd}
+                          onValueChange={(v) => {
+                            const updated = [...walkthroughSlots];
+                            updated[idx].timeEnd = v;
+                            setWalkthroughSlots(updated);
+                          }}
+                        >
+                          <SelectTrigger className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-48 bg-[#141414] border-[#1F1F1F]">
+                            {TIME_OPTIONS.map(t => (
+                              <SelectItem key={t} value={t} className="text-[#FAFAFA]">
+                                {t.replace(/(AM|PM)/, ' $1')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {walkthroughSlots.length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => setWalkthroughSlots([...walkthroughSlots, { date: "", timeStart: "", timeEnd: "" }])}
+                  className="mt-3 text-sm text-[#E3C567] hover:text-[#EDD89F] flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" /> Add another slot
+                </button>
               )}
             </div>
           </div>
