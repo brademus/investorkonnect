@@ -103,7 +103,13 @@ Deno.serve(async (req) => {
       walkthrough_scheduled: walkthrough_scheduled === true ? true : false,
       walkthrough_date: (walkthrough_scheduled === true && walkthrough_date && String(walkthrough_date).length >= 8) ? walkthrough_date : null,
       walkthrough_time: (walkthrough_scheduled === true && walkthrough_time && String(walkthrough_time).length >= 3) ? walkthrough_time : null,
-      walkthrough_slots: (walkthrough_scheduled === true && Array.isArray(walkthrough_slots) && walkthrough_slots.length > 0) ? walkthrough_slots : []
+      walkthrough_slots: (() => {
+        if (!walkthrough_scheduled) return [];
+        // CRITICAL: Filter to only slots with valid dates (>= 8 chars = MM/DD/YYYY)
+        const validSlots = (Array.isArray(walkthrough_slots) ? walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8);
+        console.log('[createDealDraft] Walkthrough slots received:', walkthrough_slots?.length, 'valid:', validSlots.length, validSlots);
+        return validSlots;
+      })()
     });
 
     console.log('[createDealDraft] Created draft:', draft.id);
