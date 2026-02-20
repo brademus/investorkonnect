@@ -1,3 +1,4 @@
+
 /**
  * Default next-steps message template — smart conditional version.
  * The walkthrough section is handled automatically at render time:
@@ -6,46 +7,22 @@
  * The template editor only controls the static portions.
  */
 
-export const DEFAULT_NEXT_STEPS_TEMPLATE = `Next Steps for {{PROPERTY_ADDRESS}}
+export const DEFAULT_NEXT_STEPS_TEMPLATE = `Hi {{AGENT_FIRST_NAME}},
 
-Hi {{AGENT_FIRST_NAME}},
+Thank you for signing the agreement on the {{PROPERTY_ADDRESS}} deal. We're excited to move forward together.
 
-Thank you for partnering with {{PARTNER_NAME}} on the property at {{PROPERTY_ADDRESS}}. I'm looking forward to working together.
-
-Below is a clear outline of the next steps so we're aligned from the start.
-
-Step 1: Initial Walkthrough
+Here's what happens next:
 
 {{WALKTHROUGH_SECTION}}
 
-During the walkthrough, please:
+Once the walkthrough is complete, we'll send you the inspection report and any additional details needed for closing.
 
-- Take clear, detailed photos of the entire property (interior and exterior)
-- Make note of any visible defects, damages, or repair items that could impact financing
-- Provide your professional feedback on condition and marketability
-- Prepare and send your CMA (Comparative Market Analysis)
-- Include:
-  - Estimated As-Is Listing Price
-  - Estimated ARV (After Repair Value)
+Please feel free to reach out if you have any questions:
+• Email: {{INVESTOR_EMAIL}}
+• Phone: {{INVESTOR_PHONE_NUMBER}}
 
-Step 2: Submission & Review
-
-After the walkthrough, please upload the following directly to the Deal Room under the Documents tab (or send to {{INVESTOR_EMAIL}}):
-
-- All photos
-- Your written notes
-- CMA report
-- As-Is Listing Price
-- ARV
-
-Once reviewed, we'll confirm alignment and move forward with next steps.
-
-Looking forward to working together.
-
-Best,
-{{INVESTOR_FULL_NAME}}
-{{INVESTOR_PHONE_NUMBER}}
-{{INVESTOR_EMAIL}}`;
+Best regards,
+{{INVESTOR_FULL_NAME}}`;
 
 /**
  * List of available placeholders for the template editor help text
