@@ -289,6 +289,8 @@ export default function NewDeal() {
       return;
     }
 
+    console.log('[NewDeal] handleContinue — walkthroughEnabled:', walkthroughEnabled, 'validSlots:', JSON.stringify(validSlots), 'raw walkthroughSlots:', JSON.stringify(walkthroughSlots));
+
     setSubmitting(true);
     try {
       // If editing existing deal, save to Deal entity
