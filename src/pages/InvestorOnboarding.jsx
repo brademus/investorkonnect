@@ -194,6 +194,8 @@ export default function InvestorOnboarding() {
         onboarding_step: 'basic_complete',
         onboarding_completed_at: new Date().toISOString(),
         onboarding_version: 'investor-v1',
+        next_steps_template_type: formData.next_steps_template_type,
+        custom_next_steps_template: formData.next_steps_template_type === 'custom' ? formData.custom_next_steps_template : null,
         metadata: {
           ...(currentProfile.metadata || {}),
           basicProfile: {
