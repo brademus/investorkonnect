@@ -250,7 +250,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
            {isAgent && (
              <InlineAgentReviewForm 
                dealId={deal?.id}
-               investorProfileId={room?.investorId}
+               investorProfileId={room?.investorId || room?.investor_id || deal?.investor_id}
                onSubmitted={() => {}}
              />
            )}
