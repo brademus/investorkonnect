@@ -604,15 +604,22 @@ export default function InvestorOnboarding() {
             <DialogTitle className="text-[#E3C567]">Next Steps Message Template Preview</DialogTitle>
           </DialogHeader>
           <div className="max-h-[500px] overflow-y-auto bg-[#141414] rounded-lg p-5 text-[#FAFAFA] text-sm whitespace-pre-wrap leading-relaxed border border-[#1F1F1F]">
-            {DEFAULT_NEXT_STEPS_TEMPLATE
-              .replace(/{{PROPERTY_ADDRESS}}/g, '123 Main St, Tampa, FL 33602')
-              .replace(/{{AGENT_FIRST_NAME}}/g, 'John')
-              .replace(/{{PARTNER_NAME}}/g, 'me')
-              .replace(/{{INVESTOR_FULL_NAME}}/g, 'Sarah Johnson')
-              .replace(/{{INVESTOR_EMAIL}}/g, 'sarah@example.com')
-              .replace(/{{INVESTOR_PHONE_NUMBER}}/g, '(555) 123-4567')
-              .replace(/{{WALKTHROUGH_SECTION}}/g, 'Walkthrough scheduled for Monday, March 10th at 2:00 PM on-site. Please arrive 15 minutes early.')
-            }
+            Hi John,
+
+      Thank you for signing the agreement on the 123 Main St, Tampa, FL 33602 deal. We're excited to move forward together.
+
+      Here's what happens next:
+
+      Walkthrough scheduled for Monday, March 10th at 2:00 PM on-site. Please arrive 15 minutes early.
+
+      Once the walkthrough is complete, we'll send you the inspection report and any additional details needed for closing.
+
+      Please feel free to reach out if you have any questions:
+      • Email: sarah@example.com
+      • Phone: (555) 123-4567
+
+      Best regards,
+      Sarah Johnson
           </div>
         </DialogContent>
       </Dialog>
