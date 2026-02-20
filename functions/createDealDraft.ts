@@ -55,6 +55,8 @@ Deno.serve(async (req) => {
       deal_type
     } = body;
 
+    console.log('[createDealDraft] Received walkthrough_slots:', JSON.stringify(walkthrough_slots));
+
     // Validation
     if (!property_address || !city || !state || !zip || !purchase_price) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
