@@ -376,13 +376,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
         </div>
       )}
 
-      {/* Agreement Tab (only shown after signing) — keep mounted once visited */}
-      {visitedTabs.has('agreement') && (
-        <div className="space-y-6" style={{ display: activeTab === 'agreement' ? 'flex' : 'none', flexDirection: 'column', gap: '1.5rem' }}>
-          <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
-          <KeyTermsPanel deal={localDeal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} isSigned={isSigned} />
-        </div>
-      )}
+
 
       {/* Files Tab — keep mounted once visited */}
       {visitedTabs.has('files') && (
