@@ -17,8 +17,9 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
   }, []);
 
   useEffect(() => {
-    if (!currentProfile?.id || !agentProfileId) return;
+    if (!currentProfile?.id || !agentProfileId || !dealId) return;
     base44.entities.Review.filter({ 
+      deal_id: dealId,
       reviewee_profile_id: agentProfileId, 
       reviewer_profile_id: currentProfile.id 
     }).then(reviews => {
@@ -29,7 +30,7 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
         setReview(rev.body || "");
       }
     }).catch(() => {});
-  }, [currentProfile?.id, agentProfileId]);
+  }, [currentProfile?.id, agentProfileId, dealId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -51,19 +52,20 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
         setExistingReview({ ...existingReview, rating, body: review });
         setIsEditing(false);
       } else {
-        await base44.entities.Review.create({
-          reviewee_profile_id: agentProfileId,
-          reviewer_profile_id: currentProfile.id,
-          reviewer_name: currentProfile.full_name || currentProfile.email,
-          rating,
-          body: review,
-          verified: true,
-          moderation_status: "approved"
-        });
-        toast.success("Review submitted!");
-        setRating(0);
-        setReview("");
-        if (onSubmitted) onSubmitted();
+       await base44.entities.Review.create({
+         deal_id: dealId,
+         reviewee_profile_id: agentProfileId,
+         reviewer_profile_id: currentProfile.id,
+         reviewer_name: currentProfile.full_name || currentProfile.email,
+         rating,
+         body: review,
+         verified: true,
+         moderation_status: "approved"
+       });
+       toast.success("Review submitted!");
+       setRating(0);
+       setReview("");
+       if (onSubmitted) onSubmitted();
       }
     } catch (e) {
       toast.error(isEditing ? "Failed to update review" : "Failed to submit review");

@@ -17,8 +17,9 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
   }, []);
 
   useEffect(() => {
-    if (!currentProfile?.id || !investorProfileId) return;
+    if (!currentProfile?.id || !investorProfileId || !dealId) return;
     base44.entities.Review.filter({ 
+      deal_id: dealId,
       reviewee_profile_id: investorProfileId, 
       reviewer_profile_id: currentProfile.id 
     }).then(reviews => {
@@ -29,7 +30,7 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
         setReview(rev.body || "");
       }
     }).catch(() => {});
-  }, [currentProfile?.id, investorProfileId]);
+  }, [currentProfile?.id, investorProfileId, dealId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -51,19 +52,20 @@ export default function InlineAgentReviewForm({ dealId, investorProfileId, onSub
         setExistingReview({ ...existingReview, rating, body: review });
         setIsEditing(false);
       } else {
-        await base44.entities.Review.create({
-          reviewee_profile_id: investorProfileId,
-          reviewer_profile_id: currentProfile.id,
-          reviewer_name: currentProfile.full_name || currentProfile.email,
-          rating,
-          body: review,
-          verified: true,
-          moderation_status: "approved"
-        });
-        toast.success("Review submitted!");
-        setRating(0);
-        setReview("");
-        if (onSubmitted) onSubmitted();
+       await base44.entities.Review.create({
+         deal_id: dealId,
+         reviewee_profile_id: investorProfileId,
+         reviewer_profile_id: currentProfile.id,
+         reviewer_name: currentProfile.full_name || currentProfile.email,
+         rating,
+         body: review,
+         verified: true,
+         moderation_status: "approved"
+       });
+       toast.success("Review submitted!");
+       setRating(0);
+       setReview("");
+       if (onSubmitted) onSubmitted();
       }
     } catch (e) {
       toast.error(isEditing ? "Failed to update review" : "Failed to submit review");
