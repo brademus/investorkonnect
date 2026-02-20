@@ -211,20 +211,55 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           </div>
         </div>
       )}
-      {deal?.walkthrough_scheduled === true && (
-        <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
-          <span className="text-sm text-[#808080]">Walk-through</span>
-          {(deal.walkthrough_confirmed === true || apptConfirmed) ? (
-            <span className="text-sm font-medium text-[#FAFAFA]">
-              {(deal.walkthrough_confirmed_date || deal.walkthrough_date)
-                ? `${deal.walkthrough_confirmed_date || deal.walkthrough_date}${(deal.walkthrough_confirmed_time || deal.walkthrough_time) ? ` at ${deal.walkthrough_confirmed_time || deal.walkthrough_time}` : ''}`
-                : 'Confirmed'}
-            </span>
-          ) : (
-            <span className="text-sm italic text-[#808080]">To Be Determined</span>
-          )}
-        </div>
-      )}
+      {deal?.walkthrough_scheduled === true && (() => {
+        const fullySigned = isSignedProp || room?.is_fully_signed || room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || deal?.is_fully_signed;
+        const wtSlots = deal.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
+        const wtDate = deal.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
+        const wtTime = deal.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
+        const allSlots = wtSlots.length > 0 ? wtSlots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
+
+        if (deal.walkthrough_confirmed === true || apptConfirmed) {
+          return (
+            <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
+              <span className="text-sm text-[#808080]">Walk-through</span>
+              <span className="text-sm font-medium text-[#34D399]">
+                {(deal.walkthrough_confirmed_date || deal.walkthrough_date)
+                  ? `${deal.walkthrough_confirmed_date || deal.walkthrough_date}${(deal.walkthrough_confirmed_time || deal.walkthrough_time) ? ` at ${deal.walkthrough_confirmed_time || deal.walkthrough_time}` : ''}`
+                  : 'Confirmed'}
+              </span>
+            </div>
+          );
+        }
+
+        if (fullySigned) {
+          return (
+            <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4">
+              <span className="text-sm text-[#808080]">Walk-through</span>
+              <span className="text-sm italic text-[#F59E0B]">To Be Determined</span>
+            </div>
+          );
+        }
+
+        // Before signing — show available times
+        if (allSlots.length > 0) {
+          return (
+            <div className="py-1.5 border-b border-[#1F1F1F] last:border-0 mt-4 space-y-2">
+              <span className="text-sm text-[#808080]">Walk-through — Available times:</span>
+              {allSlots.map((slot, idx) => {
+                const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
+                return (
+                  <div key={idx} className="flex items-center gap-2 text-sm text-[#FAFAFA]">
+                    <span className="font-medium">{allSlots.length > 1 ? `Option ${idx + 1}: ` : ''}{slot.date}</span>
+                    {timeLabel && <span className="text-[#808080]">{timeLabel}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        }
+
+        return null;
+      })()}
     </>
   );
 
