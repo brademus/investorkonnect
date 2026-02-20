@@ -1,6 +1,5 @@
 import React from "react";
-import { Mail, Phone, Building2, Briefcase } from "lucide-react";
-import AgentRatingStars from "@/components/AgentRatingStars";
+import { Mail, Phone, Building2, Briefcase, Star } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
 export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
@@ -27,6 +26,30 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
       <div className="h-1.5 bg-gradient-to-r from-[#E3C567] via-[#D4AF37] to-[#E3C567]" />
 
       <div className="p-8">
+        {/* Rating badge - top right */}
+        <div className="flex justify-end mb-4">
+          <div className="bg-[#0A0A0A] border border-[#E3C567]/30 rounded-xl px-4 py-3 flex flex-col items-center">
+            <div className="flex items-center gap-1 mb-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`w-5 h-5 ${
+                    i <= Math.round(rating || 0)
+                      ? "text-[#E3C567] fill-[#E3C567]"
+                      : "text-[#333]"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="text-lg font-bold text-[#FAFAFA]">
+              {rating ? Number(rating).toFixed(1) : "—"}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-[#808080]">
+              {reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}
+            </p>
+          </div>
+        </div>
+
         {/* Top row: Photo + Name/Signature */}
         <div className="flex items-start gap-6 mb-8">
           {/* Profile photo */}
@@ -44,9 +67,6 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
           <div className="flex-1 pt-1">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Professional</p>
             <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
-            <div className="mb-2">
-              <AgentRatingStars rating={rating} reviewCount={reviewCount} size="sm" />
-            </div>
             {/* Generated signature */}
             <div className="inline-block">
               <p
