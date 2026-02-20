@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
@@ -8,16 +8,27 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [currentProfile, setCurrentProfile] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentProfile).catch(() => {});
+  }, []);
 
   const handleSubmit = async () => {
     if (rating === 0) {
       toast.error("Please select a rating");
       return;
     }
+    if (!currentProfile?.id) {
+      toast.error("Unable to submit review");
+      return;
+    }
     setSubmitting(true);
     try {
       await base44.entities.Review.create({
         reviewee_profile_id: agentProfileId,
+        reviewer_profile_id: currentProfile.id,
+        reviewer_name: currentProfile.full_name || currentProfile.email,
         rating,
         body: review,
         verified: true,
