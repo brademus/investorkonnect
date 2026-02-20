@@ -293,21 +293,31 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 const isActive = norm === stage.id;
                 const isPast = stage.order < stageOrder(norm);
                 const handleStageClick = async () => {
-                  if (!localDeal?.id) return;
-                  // Block moving to connected_deals or beyond unless agreement is fully signed
-                  if (!isSigned && stageOrder(stage.id) >= stageOrder('connected_deals')) {
-                    toast.error("Agreement must be fully signed before moving this deal forward.");
-                    return;
-                  }
-                  await base44.functions.invoke('updateDealDocuments', { dealId: localDeal.id, pipeline_stage: stage.id });
-                  toast.success(`Moved to ${stage.label}`);
-                  if (stage.id === 'completed' || stage.id === 'canceled') {
-                    const agentId = localDeal.locked_agent_id || localRoom?.locked_agent_id || localRoom?.agent_ids?.[0];
-                    if (agentId) {
-                      navigate(`${createPageUrl("RateAgent")}?dealId=${localDeal.id}&agentProfileId=${agentId}&returnTo=Pipeline`);
-                    }
-                  }
-                };
+                   if (!localDeal?.id) return;
+
+                   const currentStage = normalizeStage(localDeal.pipeline_stage);
+
+                   // Block moving back to new_deals from connected_deals or beyond
+                   if (currentStage !== 'new_deals' && stage.id === 'new_deals') {
+                     toast.error("Cannot move deal back to New Deals");
+                     return;
+                   }
+
+                   // Block moving out of new_deals unless agreement is fully signed
+                   if (currentStage === 'new_deals' && !isSigned) {
+                     toast.error("Agreement must be fully signed before moving this deal forward.");
+                     return;
+                   }
+
+                   // Block moving to connected_deals or beyond unless agreement is fully signed
+                   if (!isSigned && stageOrder(stage.id) >= stageOrder('connected_deals')) {
+                     toast.error("Agreement must be fully signed before moving this deal forward.");
+                     return;
+                   }
+
+                   await base44.functions.invoke('updateDealDocuments', { dealId: localDeal.id, pipeline_stage: stage.id });
+                   toast.success(`Moved to ${stage.label}`);
+                 };
                 return (
                   <div key={stage.id}>
                     <button onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
