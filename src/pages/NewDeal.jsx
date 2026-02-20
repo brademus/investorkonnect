@@ -118,9 +118,7 @@ export default function NewDeal() {
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
       setDealType(d.dealType || "");
-      const hasSlots = d.walkthroughSlots?.length > 0 && d.walkthroughSlots.some(s => s.date);
-      setWalkthroughEnabled(hasSlots);
-      setWalkthroughSlots(hasSlots ? d.walkthroughSlots : [{ date: "", timeStart: "", timeEnd: "" }]);
+      setWalkthroughSlots(d.walkthroughSlots?.length > 0 ? d.walkthroughSlots : [{ date: "", timeStart: "", timeEnd: "" }]);
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
