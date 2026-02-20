@@ -308,16 +308,9 @@ Deno.serve(async (req) => {
     const selectedAgents = draft.selected_agent_ids || [];
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
     
-    const draftWalkthroughScheduled = draft.walkthrough_scheduled === true;
-    const draftWalkthroughDate = (draftWalkthroughScheduled && draft.walkthrough_date && String(draft.walkthrough_date).length >= 8) ? draft.walkthrough_date : null;
-    const draftWalkthroughTime = (draftWalkthroughScheduled && draft.walkthrough_time && String(draft.walkthrough_time).length >= 3) ? draft.walkthrough_time : null;
-    // CRITICAL: If walkthrough_slots is empty but legacy date/time exist, synthesize a slot
-    let draftWalkthroughSlots = (draftWalkthroughScheduled && draft.walkthrough_slots?.length > 0) ? draft.walkthrough_slots : [];
-    if (draftWalkthroughScheduled && draftWalkthroughSlots.length === 0 && draftWalkthroughDate) {
-      draftWalkthroughSlots = [{ date: draftWalkthroughDate, timeStart: draftWalkthroughTime || '', timeEnd: '' }];
-      console.log('[createDealOnInvestorSignature] Synthesized walkthrough slot from legacy fields:', draftWalkthroughSlots);
-    }
-    console.log('[createDealOnInvestorSignature] Walkthrough:', draftWalkthroughScheduled, draftWalkthroughDate, draftWalkthroughTime, 'slots:', draftWalkthroughSlots.length);
+    // Walkthrough: just use walkthrough_slots array — no legacy fields
+    const draftWalkthroughSlots = (Array.isArray(draft.walkthrough_slots) ? draft.walkthrough_slots : []).filter(s => s.date && String(s.date).length >= 8);
+    console.log('[createDealOnInvestorSignature] Walkthrough slots:', draftWalkthroughSlots.length);
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
