@@ -111,25 +111,21 @@ export default function InlineReviewForm({ deal, room, profile }) {
           </button>
         ))}
       </div>
-      {rating > 0 && (
-        <Textarea
-          value={reviewBody}
-          onChange={e => setReviewBody(e.target.value)}
-          placeholder="Share your experience (optional)..."
-          className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#555] rounded-xl min-h-[80px] text-sm focus:border-[#E3C567]"
-        />
-      )}
-      {rating > 0 && (
-        <Button
-          onClick={handleSubmit}
-          disabled={submitting}
-          size="sm"
-          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-xs h-9"
-        >
-          {submitting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-          {existingReview ? "Update Review" : "Submit Review"}
-        </Button>
-      )}
+      <Textarea
+        value={reviewBody}
+        onChange={e => setReviewBody(e.target.value)}
+        placeholder="Write your review here (optional)..."
+        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#555] rounded-xl min-h-[80px] text-sm focus:border-[#E3C567]"
+      />
+      <Button
+        onClick={handleSubmit}
+        disabled={submitting || rating === 0}
+        size="sm"
+        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-xs h-9 disabled:opacity-40"
+      >
+        {submitting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+        {existingReview ? "Update Review" : "Submit Review"}
+      </Button>
     </div>
   );
 }
