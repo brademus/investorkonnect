@@ -107,7 +107,7 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
   return (
     <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
       <div className="mb-3">
-        <p className="text-sm font-semibold text-[#FAFAFA] mb-2">Rate this agent</p>
+        <p className="text-sm font-semibold text-[#FAFAFA] mb-2">{isEditing ? "Edit your review" : "Rate this agent"}</p>
         <div className="flex gap-1">
           {[1, 2, 3, 4, 5].map(i => (
             <button
