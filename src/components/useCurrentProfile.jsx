@@ -63,6 +63,10 @@ export function useCurrentProfile() {
       loadingRef.current = true;
 
       try {
+        // Small stagger to avoid competing with navigation logging
+        await new Promise(r => setTimeout(r, 150));
+        if (!mounted) return;
+
         const user = await base44.auth.me();
         if (!mounted) return;
         
