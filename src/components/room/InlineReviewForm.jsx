@@ -9,10 +9,21 @@ export default function InlineReviewForm({ dealId, agentProfileId, onSubmitted }
   const [review, setReview] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [currentProfile, setCurrentProfile] = useState(null);
+  const [existingReview, setExistingReview] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setCurrentProfile).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!currentProfile?.id || !agentProfileId) return;
+    base44.entities.Review.filter({ 
+      reviewee_profile_id: agentProfileId, 
+      reviewer_profile_id: currentProfile.id 
+    }).then(reviews => {
+      if (reviews.length > 0) setExistingReview(reviews[0]);
+    }).catch(() => {});
+  }, [currentProfile?.id, agentProfileId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
