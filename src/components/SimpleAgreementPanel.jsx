@@ -256,7 +256,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         targetId = investorSignedAg.id;
 
         // If agent isn't on this envelope yet, add them
-        if (!investorSignedAg.agent_recipient_id || !investorSignedAg.agent_client_user_id) {
+        const agentAlreadyOnEnvelope = !!(investorSignedAg.agent_recipient_id && investorSignedAg.agent_client_user_id);
+        if (!agentAlreadyOnEnvelope) {
           console.log('[SimpleAgreementPanel] Adding agent to envelope:', targetId);
           const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
             agreement_id: targetId, room_id: roomId
@@ -272,7 +273,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             if (regenRes.data?.agreement) {
               targetId = regenRes.data.agreement.id;
               setAgreement(regenRes.data.agreement);
-              await new Promise(r => setTimeout(r, 2000));
             }
           } else if (prepRes.data?.error) {
             toast.error(prepRes.data.error);
@@ -282,7 +282,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             targetId = prepRes.data.agreement.id;
             setAgreement(prepRes.data.agreement);
           }
-          await new Promise(r => setTimeout(r, 1500));
         } else {
           setAgreement(investorSignedAg);
         }
