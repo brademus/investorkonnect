@@ -308,9 +308,11 @@ function PipelineContent() {
                               <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
                                 {(provided, snapshot) => (
                                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567]' : ''}`}>
-                                    <div className="flex gap-3">
-                                      {/* Left: deal info */}
-                                      <div className="flex-1 min-w-0">
+                                    <div className="space-y-3">
+                                      {/* Top: deal info with next steps in top right */}
+                                      <div className="flex gap-3">
+                                       {/* Left: deal info */}
+                                       <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-2">
                                           <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
                                           <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0">{getDaysInPipeline(deal.created_date)}</span>
