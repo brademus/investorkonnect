@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2, Clock, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { reportError } from '@/components/utils/reportError';
 
 /**
  * Simplified Agreement Panel v2
