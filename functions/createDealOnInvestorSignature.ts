@@ -133,17 +133,24 @@ Deno.serve(async (req) => {
           buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
           agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
         };
-      } else if (Object.keys(exhibitTerms).length > 0) {
-        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
-          dealUpdate.proposed_terms = {
-            seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
-            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
-            seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
-            buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
-            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
-            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
-            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
-          };
+        console.log('[createDealOnInvestorSignature] Updated deal from DealDraft — walkthrough_slots:', dealUpdate.walkthrough_slots?.length);
+      } else {
+        // No DealDraft found — preserve existing deal's walkthrough data (it was saved directly on the Deal by NewDeal page)
+        // Only log, do NOT overwrite walkthrough fields — they're already correct on the deal
+        console.log('[createDealOnInvestorSignature] No DealDraft found — preserving deal walkthrough data. scheduled:', existingDeal.walkthrough_scheduled, 'slots:', existingDeal.walkthrough_slots?.length, 'date:', existingDeal.walkthrough_date);
+        
+        if (Object.keys(exhibitTerms).length > 0) {
+          if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+            dealUpdate.proposed_terms = {
+              seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
+              seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
+              seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
+              buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
+              buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
+              buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
+              agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+            };
+          }
         }
       }
 
