@@ -19,6 +19,7 @@ import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp, getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
+import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -341,6 +342,13 @@ function PipelineContent() {
                                        <InlineReviewForm 
                                          dealId={deal.deal_id} 
                                          agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
+                                         onSubmitted={() => {}}
+                                       />
+                                     )}
+                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.room_id && (
+                                       <InlineAgentReviewForm 
+                                         dealId={deal.deal_id}
+                                         investorProfileId={deals.find(d => d.id === deal.id)?.investor_id || null}
                                          onSubmitted={() => {}}
                                        />
                                      )}
