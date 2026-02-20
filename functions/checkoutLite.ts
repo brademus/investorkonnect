@@ -99,6 +99,8 @@ Deno.serve(async (req) => {
     if (!customerId) {
       // Create new Stripe customer via fetch
       const customer = await stripeApi('/customers', {
+        'email': user.email,
+        'name': profile.full_name || '',
         'metadata[user_id]': userId,
         'metadata[app]': 'agentvault',
       });
@@ -117,6 +119,7 @@ Deno.serve(async (req) => {
     const session = await stripeApi('/checkout/sessions', {
       'mode': 'subscription',
       'customer': customerId,
+      'customer_update[name]': 'auto',
       'line_items[0][price]': price,
       'line_items[0][quantity]': '1',
       'success_url': success,
