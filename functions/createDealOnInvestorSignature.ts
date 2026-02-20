@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
             agreement_length: dupeExhibitTerms.agreement_length_days || dupeExhibitTerms.agreement_length || draft.agreement_length || null,
           }
         };
-        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { walkthrough: dupeUpdate.walkthrough_scheduled, terms: dupeUpdate.proposed_terms });
+        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { slots: dupeUpdate.walkthrough_slots?.length, terms: dupeUpdate.proposed_terms });
         await base44.asServiceRole.entities.Deal.update(activeDupe.id, dupeUpdate);
         await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
           deal_id: activeDupe.id
