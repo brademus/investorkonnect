@@ -11,6 +11,7 @@ import { FileText, Calendar, TrendingUp, CheckCircle, Plus, Home, Clock, XCircle
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
+import { reportError, reportDataIssue } from "@/components/utils/reportError";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
@@ -200,7 +201,7 @@ function PipelineContent() {
     } else {
       const roomArr = await base44.entities.Room.filter({ deal_id: deal.deal_id });
       if (roomArr?.length) navigate(`${createPageUrl("Room")}?roomId=${roomArr[0].id}`);
-      else toast.error('Room not ready yet. Please try again in a moment.');
+      else reportError('Room not ready yet. Please try again in a moment.', { extra: { dealId: deal.deal_id, dealTitle: deal.title } });
     }
   };
 
@@ -212,11 +213,11 @@ function PipelineContent() {
     // Block moving to connected_deals or beyond unless agreement is fully signed
     const currentStage = normalizeStage(draggedDeal.pipeline_stage);
     if (currentStage === 'new_deals' && !draggedDeal.is_fully_signed) {
-      toast.error("Agreement must be fully signed before moving this deal forward.");
+      reportError("Agreement must be fully signed before moving this deal forward.", { level: 'warning', extra: { dealId: result.draggableId, currentStage, newStage } });
       return;
     }
     if (!draggedDeal.is_fully_signed && stageOrder(newStage) >= stageOrder('connected_deals')) {
-      toast.error("Agreement must be fully signed before moving this deal forward.");
+      reportError("Agreement must be fully signed before moving this deal forward.", { level: 'warning', extra: { dealId: result.draggableId, newStage } });
       return;
     }
     // Skip if dropped in same stage
