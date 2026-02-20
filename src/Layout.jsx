@@ -64,7 +64,7 @@ function LayoutContent({ children }) {
   // Debounced navigation logging — prevents burst requests when navigating
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      if (user && location.pathname) {
+      if (user && location.pathname && base44.analytics?.track) {
         base44.analytics.track({
           eventName: 'page_view',
           properties: { page: location.pathname }
