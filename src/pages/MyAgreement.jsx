@@ -116,17 +116,15 @@ export default function MyAgreement() {
           }
 
         } else {
-          // New deal - load from sessionStorage
-          const draftData = sessionStorage.getItem('newDealDraft');
-          if (!draftData) {
-            toast.error('No deal data found. Please start over.');
-            navigate(createPageUrl('Pipeline'), { replace: true });
-            return;
-          }
-          dealData = JSON.parse(draftData);
-          agentIds = dealData.selectedAgentIds || [];
-          console.log('[MyAgreement] SessionStorage deal data keys:', Object.keys(dealData));
-          console.log('[MyAgreement] SessionStorage walkthroughSlots:', JSON.stringify(dealData.walkthroughSlots));
+         // New deal - load from sessionStorage
+         const draftData = sessionStorage.getItem('newDealDraft');
+         if (!draftData) {
+           toast.error('No deal data found. Please start over.');
+           navigate(createPageUrl('Pipeline'), { replace: true });
+           return;
+         }
+         dealData = JSON.parse(draftData);
+         agentIds = dealData.selectedAgentIds || [];
         }
 
         if (agentIds.length === 0) {
