@@ -57,6 +57,8 @@ export default function Room() {
   const isInvestor = profile?.user_role === 'investor';
   const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
+  // Investor must select an agent before accessing the deal board
+  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
   // Keep views mounted once activated
   useEffect(() => {
