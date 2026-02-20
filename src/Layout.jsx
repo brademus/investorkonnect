@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react";
 import LoadingAnimation from "@/components/LoadingAnimation";
