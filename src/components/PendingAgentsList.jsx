@@ -15,6 +15,14 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
     const agentIds = invites.map(i => i.agent?.id).filter(Boolean);
     if (agentIds.length === 0) return;
     fetchAgentRatings(agentIds).then(setRatings);
+    // Fetch headshots for agents
+    if (agentIds.length > 0) {
+      base44.entities.Profile.filter({ id: { $in: agentIds } }).then(profiles => {
+        const map = {};
+        profiles.forEach(p => { if (p.headshotUrl) map[p.id] = p.headshotUrl; });
+        setHeadshots(map);
+      }).catch(() => {});
+    }
   }, [invites]);
 
   return (
