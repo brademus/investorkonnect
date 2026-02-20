@@ -193,10 +193,9 @@ export default function MyAgreement() {
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
             walkthrough_slots: wtSlots
           };
-          // Route through server function (asServiceRole) to guarantee walkthrough_slots is persisted
+          // Create DealDraft with walkthrough slots
           const result = await base44.functions.invoke('createDealDraft', draftPayload);
           const draftCreated = { id: result?.data?.draft_id };
-          console.log('[MyAgreement] DealDraft created via server:', draftCreated.id, 'wtSlots sent:', wtSlots.length);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
