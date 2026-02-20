@@ -12,7 +12,7 @@ import { AlertCircle, Loader2, CalendarCheck } from 'lucide-react';
  * CRITICAL: Each agent has THEIR OWN terms stored in room.agent_terms[agentId]
  * Counter offers and negotiations are agent-specific, not deal-wide
  */
-export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement, selectedAgentId, inline = false }) {
+export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement, selectedAgentId, inline = false, isSigned: isSignedProp }) {
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
   const [loading, setLoading] = useState(true);
