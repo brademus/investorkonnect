@@ -271,6 +271,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
               {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
             </span>
+            <WalkthroughStatusLine dealId={localDeal?.id} roomId={roomId} deal={localDeal} isSigned={isSigned} />
           </div>
 
           {/* Property Details (left) + Key Terms (right) side by side */}
