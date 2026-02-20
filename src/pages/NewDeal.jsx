@@ -240,15 +240,9 @@ export default function NewDeal() {
               if (terms.agreement_length != null) setAgreementLength(terms.agreement_length.toString());
             }
 
-            // Walkthrough — simple: just check if slots exist
+            // Load walkthrough slots from deal
             const slots = (deal.walkthrough_slots || []).filter(s => s.date && s.date.length >= 8);
-            if (slots.length > 0) {
-              setWalkthroughEnabled(true);
-              setWalkthroughSlots(slots);
-            } else {
-              setWalkthroughEnabled(false);
-              setWalkthroughSlots([{ date: "", timeStart: "", timeEnd: "" }]);
-            }
+            setWalkthroughSlots(slots.length > 0 ? slots : [{ date: "", timeStart: "", timeEnd: "" }]);
 
             setHydrated(true);
           }
