@@ -25,6 +25,7 @@ export default function MyAgreement() {
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [draft, setDraft] = useState(null);
+  const [initialMessage, setInitialMessage] = useState("");
   const loadedRef = useRef(false);
 
   // Load deal data from sessionStorage OR database (if editing)
