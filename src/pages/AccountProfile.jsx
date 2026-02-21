@@ -41,7 +41,9 @@ function AccountProfileContent() {
     goals: "",
     brokerage: "",
     license_number: "",
-    next_steps_template: ""
+    next_steps_template: "",
+    next_steps_template_type: "default",
+    custom_next_steps_template: ""
   });
 
   useEffect(() => {
