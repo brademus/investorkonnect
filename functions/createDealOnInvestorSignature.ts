@@ -503,8 +503,7 @@ Deno.serve(async (req) => {
       walkthrough_date: draftWalkthroughDate,
       walkthrough_time: draftWalkthroughTime,
       walkthrough_slots: draftWalkthroughSlots,
-      deal_type: draft.deal_type || null,
-      initial_message: draft.initial_message || null
+      deal_type: draft.deal_type || null
     });
     
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_date:', newDeal.walkthrough_date, 'walkthrough_time:', newDeal.walkthrough_time, 'walkthrough_slots:', draftWalkthroughSlots.length);

@@ -7,8 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import SimpleAgreementPanel from '@/components/SimpleAgreementPanel';
 import { Button } from '@/components/ui/button';
-import { Users, CheckCircle, MessageSquare } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
+import { Users, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MyAgreement() {
@@ -26,7 +25,6 @@ export default function MyAgreement() {
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [draft, setDraft] = useState(null);
-  const [initialMessage, setInitialMessage] = useState("");
   const loadedRef = useRef(false);
 
   // Load deal data from sessionStorage OR database (if editing)
@@ -206,8 +204,7 @@ export default function MyAgreement() {
             walkthrough_scheduled: wtScheduled,
             walkthrough_date: wtDate,
             walkthrough_time: wtTime,
-            walkthrough_slots: wtSlots,
-            initial_message: initialMessage.trim() || null
+            walkthrough_slots: wtSlots
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
           console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
@@ -239,15 +236,6 @@ export default function MyAgreement() {
       }
     })();
   }, [navigate, profile]);
-
-  // Persist initialMessage to DealDraft whenever it changes (so automation picks it up after DocuSign)
-  useEffect(() => {
-    if (!draft?.id || dealId) return; // only for new deals
-    const timeout = setTimeout(() => {
-      base44.entities.DealDraft.update(draft.id, { initial_message: initialMessage.trim() || null }).catch(() => {});
-    }, 600);
-    return () => clearTimeout(timeout);
-  }, [initialMessage, draft?.id, dealId]);
 
   // Subscribe to real-time agreement updates for this deal
   // Accept agreements with or without room_id — the automation links room_id after signing
@@ -409,26 +397,6 @@ export default function MyAgreement() {
                 ? 'After you sign, select which agent you want to work with.'
                 : 'After you sign, the deal will be sent to this agent.'}
             </p>
-          </div>
-        )}
-
-        {/* Initial Message to Agent - Before Signing */}
-        {!agreement?.investor_signed_at && !dealId && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-[#E3C567] mb-1 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Initial Message to Agent
-            </h2>
-            <p className="text-xs text-[#808080] mb-4">
-              This message will be sent to the agent once both parties have signed. Leave blank to use your saved template.
-            </p>
-            <Textarea
-              value={initialMessage}
-              onChange={(e) => setInitialMessage(e.target.value)}
-              placeholder="Hi [Agent], thank you for partnering with us on this deal..."
-              rows={6}
-              className="bg-[#141414] border-[#333] text-[#FAFAFA] placeholder-[#555] text-sm leading-relaxed"
-            />
           </div>
         )}
 
