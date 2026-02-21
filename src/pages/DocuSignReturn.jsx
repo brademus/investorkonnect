@@ -115,7 +115,7 @@ export default function DocuSignReturn() {
             const roomIdResult = result.data?.room_id;
             const dealIdResult = result.data?.deal_id;
             if (roomIdResult) {
-              doRedirect(`${createPageUrl("Room")}?roomId=${roomIdResult}&tab=agreement`, 'Deal created and sent to agents!');
+              doRedirect(`${createPageUrl("Room")}?roomId=${roomIdResult}`, 'Deal created and sent to agents!');
             } else {
               doRedirect(createPageUrl("Pipeline"), dealIdResult ? 'Deal created!' : 'Agreement signed!');
             }
@@ -123,15 +123,14 @@ export default function DocuSignReturn() {
           }
 
           // Investor flow for EXISTING deals (has roomId — e.g. regenerate after counter):
-          // Go straight to Room agreement tab
           if (signingRole === 'investor' && roomId) {
-            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, 'Agreement signed!');
+            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}`, 'Agreement signed!');
             return;
           }
 
-          // Agent flow: go straight to Room agreement tab with signed=1 flag for instant refresh
+          // Agent flow: go straight to deal board with signed=1 flag for instant refresh
           if (signingRole === 'agent' && roomId) {
-            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, 'Agreement signed successfully!');
+            doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&signed=1`, 'Agreement signed successfully!');
             return;
           }
         } catch (pollError) {
