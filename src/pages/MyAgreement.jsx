@@ -240,6 +240,15 @@ export default function MyAgreement() {
     })();
   }, [navigate, profile]);
 
+  // Persist initialMessage to DealDraft whenever it changes (so automation picks it up after DocuSign)
+  useEffect(() => {
+    if (!draft?.id || dealId) return; // only for new deals
+    const timeout = setTimeout(() => {
+      base44.entities.DealDraft.update(draft.id, { initial_message: initialMessage.trim() || null }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [initialMessage, draft?.id, dealId]);
+
   // Subscribe to real-time agreement updates for this deal
   // Accept agreements with or without room_id — the automation links room_id after signing
   useEffect(() => {
