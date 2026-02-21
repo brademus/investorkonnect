@@ -70,11 +70,12 @@ Deno.serve(async (req) => {
     const investorEmail = investor.email || "";
 
     // Check if investor has a custom next steps template
-    // Support both the onboarding custom_next_steps_template (with type flag) and legacy next_steps_template
+    // next_steps_template_type === 'custom' with custom_next_steps_template is the authoritative check
+    // Fall back to legacy next_steps_template field
     const customTemplate = 
-      (investor.next_steps_template_type === 'custom' && investor.custom_next_steps_template)
-      || investor.next_steps_template
-      || null;
+      (investor.next_steps_template_type === 'custom' && investor.custom_next_steps_template?.trim())
+      ? investor.custom_next_steps_template.trim()
+      : (investor.next_steps_template?.trim() && investor.next_steps_template !== '' ? investor.next_steps_template.trim() : null);
 
     // Build message body
     let body;
