@@ -7,7 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import SimpleAgreementPanel from '@/components/SimpleAgreementPanel';
 import { Button } from '@/components/ui/button';
-import { Users, CheckCircle } from 'lucide-react';
+import { Users, CheckCircle, MessageSquare } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 export default function MyAgreement() {
