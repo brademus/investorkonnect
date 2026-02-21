@@ -403,6 +403,26 @@ export default function MyAgreement() {
           </div>
         )}
 
+        {/* Initial Message to Agent - Before Signing */}
+        {!agreement?.investor_signed_at && !dealId && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-[#E3C567] mb-1 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              Initial Message to Agent
+            </h2>
+            <p className="text-xs text-[#808080] mb-4">
+              This message will be sent to the agent once both parties have signed. Leave blank to use your saved template.
+            </p>
+            <Textarea
+              value={initialMessage}
+              onChange={(e) => setInitialMessage(e.target.value)}
+              placeholder="Hi [Agent], thank you for partnering with us on this deal..."
+              rows={6}
+              className="bg-[#141414] border-[#333] text-[#FAFAFA] placeholder-[#555] text-sm leading-relaxed"
+            />
+          </div>
+        )}
+
 
 
         <SimpleAgreementPanel 
