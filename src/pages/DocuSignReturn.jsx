@@ -52,7 +52,7 @@ export default function DocuSignReturn() {
         toast.info("Signing cancelled");
         await new Promise(r => setTimeout(r, 1000));
         if (roomId) {
-          doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`);
+          doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}`);
         } else {
           doRedirect(dealId ? `${createPageUrl("MyAgreement")}?dealId=${dealId}` : createPageUrl("Pipeline"));
         }
