@@ -150,8 +150,8 @@ ${investorEmail}`;
       onboarding_message_sent: true,
     });
 
-    console.log("[sendNextSteps] Message sent successfully for room:", room.id, "walkthroughScheduled:", hasFullWalkthrough);
-    return Response.json({ ok: true, sent: true, walkthroughScheduled: hasFullWalkthrough });
+    console.log("[sendNextSteps] Message sent successfully for room:", room.id, "usedInitialMessage:", !!dealInitialMessage);
+    return Response.json({ ok: true, sent: true, usedInitialMessage: !!dealInitialMessage });
   } catch (error) {
     console.error("[sendNextSteps] Error:", error);
     return Response.json({ error: error.message }, { status: 500 });
