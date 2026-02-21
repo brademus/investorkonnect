@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X } from "lucide-react";
+import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
