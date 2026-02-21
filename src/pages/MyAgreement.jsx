@@ -204,7 +204,8 @@ export default function MyAgreement() {
             walkthrough_scheduled: wtScheduled,
             walkthrough_date: wtDate,
             walkthrough_time: wtTime,
-            walkthrough_slots: wtSlots
+            walkthrough_slots: wtSlots,
+            initial_message: dealData.initialMessage || null
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
           console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
