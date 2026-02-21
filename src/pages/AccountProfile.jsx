@@ -386,6 +386,19 @@ function AccountProfileContent() {
               />
             </div>
 
+            {/* Next Steps Template - Investors only */}
+            {formData.role === 'investor' && (
+              <div className="pt-4 border-t border-[#1F1F1F]">
+                <NextStepsTemplateEditor
+                  value={formData.custom_next_steps_template}
+                  templateType={formData.next_steps_template_type}
+                  onTypeChange={(type) => setFormData({...formData, next_steps_template_type: type})}
+                  onChange={(val) => setFormData({...formData, custom_next_steps_template: val})}
+                  disabled={saving}
+                />
+              </div>
+            )}
+
             {/* Agent-specific fields */}
             {formData.role === 'agent' && (
               <>
