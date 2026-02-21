@@ -63,7 +63,9 @@ function AccountProfileContent() {
         goals: profile.goals || "",
         brokerage: profile.agent?.brokerage || profile.broker || "",
         license_number: profile.agent?.license_number || profile.license_number || "",
-        next_steps_template: profile.next_steps_template || ""
+        next_steps_template: profile.next_steps_template || "",
+        next_steps_template_type: profile.next_steps_template_type || "default",
+        custom_next_steps_template: profile.custom_next_steps_template || ""
       });
       setLoading(false);
     }
