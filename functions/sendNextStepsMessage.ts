@@ -69,12 +69,18 @@ Deno.serve(async (req) => {
     const investorPhone = investor.phone || "";
     const investorEmail = investor.email || "";
 
-    // Check if investor has a custom next steps template
+    // Priority 1: investor typed a custom initial message during deal creation (stored on DealDraft → copied to deal)
+    const dealInitialMessage = deal.initial_message || null;
+
+    // Priority 2: investor's saved next_steps_template from their profile
     const customTemplate = investor.next_steps_template || null;
 
     // Build message body
     let body;
-    if (customTemplate) {
+    if (dealInitialMessage) {
+      // Use the investor's one-time message for this specific deal
+      body = dealInitialMessage;
+    } else if (customTemplate) {
       // Use custom template if set, always without walkthrough times
       // Just ask for availability, never include specific dates/times
       const walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
