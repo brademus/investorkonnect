@@ -95,7 +95,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2" style={{ scrollbarColor: '#2A2A2A #0D0D0D', scrollbarWidth: 'thin' }}>
         {messages.map(m => {
           const isMe = m._isMe || isFromMe(m, user, profile);
           const isPhoto = m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/');
