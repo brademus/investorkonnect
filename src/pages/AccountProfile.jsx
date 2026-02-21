@@ -95,7 +95,9 @@ function AccountProfileContent() {
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
         goals: formData.goals.trim(),
-        next_steps_template: formData.next_steps_template || null
+        next_steps_template: formData.next_steps_template || null,
+        next_steps_template_type: formData.next_steps_template_type || "default",
+        custom_next_steps_template: formData.next_steps_template_type === 'custom' ? formData.custom_next_steps_template : null
       };
       
       // Add agent-specific fields if user is an agent
