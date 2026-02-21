@@ -139,9 +139,9 @@ export default function DocuSignReturn() {
         }
       }
 
-      // Fallback redirect — always go to Room agreement tab if we have roomId
+      // Fallback redirect — always go to deal board if we have roomId
       if (roomId) {
-        doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, 'Agreement signed!');
+        doRedirect(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}`, 'Agreement signed!');
       } else {
         doRedirect(createPageUrl("Pipeline"), 'Agreement signed!');
       }
