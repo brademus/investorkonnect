@@ -12,7 +12,6 @@ import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X } from "lu
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
-import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 
 /**
  * ACCOUNT PROFILE EDITOR
