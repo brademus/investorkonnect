@@ -52,6 +52,7 @@ import Admin from './pages/Admin';
 import AgentLanding from './pages/AgentLanding';
 import AgentOnboarding from './pages/AgentOnboarding';
 import AgentProfile from './pages/AgentProfile';
+import AgentQualification from './pages/AgentQualification';
 import BillingSuccess from './pages/BillingSuccess';
 import ContractVerify from './pages/ContractVerify';
 import CounterOffer from './pages/CounterOffer';
@@ -76,7 +77,6 @@ import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import AgentQualification from './pages/AgentQualification';
 import __Layout from './Layout.jsx';
 
 
@@ -86,6 +86,7 @@ export const PAGES = {
     "AgentLanding": AgentLanding,
     "AgentOnboarding": AgentOnboarding,
     "AgentProfile": AgentProfile,
+    "AgentQualification": AgentQualification,
     "BillingSuccess": BillingSuccess,
     "ContractVerify": ContractVerify,
     "CounterOffer": CounterOffer,
@@ -110,7 +111,6 @@ export const PAGES = {
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "AgentQualification": AgentQualification,
 }
 
 export const pagesConfig = {

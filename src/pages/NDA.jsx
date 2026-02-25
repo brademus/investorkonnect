@@ -241,43 +241,125 @@ function NDAContent() {
               </>
             ) : (
               <>
-                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Terms & Conditions / NDA v1.0</h3>
+                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Platform Participation Agreement</h3>
                 <div className="prose prose-sm text-[#FAFAFA] space-y-4">
-                  <p className="text-[#F59E0B] font-semibold">
-                    [PLACEHOLDER - Michel will provide final NDA and Terms & Conditions text]
-                  </p>
                   <p>
-                    This Non-Disclosure Agreement and Terms & Conditions ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
+                    This Investor Platform Participation Agreement ("Agreement") is entered into by and between Investor Konnect, LLC ("Platform") and Registered Investor User ("Investor"). Effective upon digital execution.
                   </p>
-                  <h4 className="font-semibold text-[#E3C567]">1. Confidential Information</h4>
-                  <p>
-                    "Confidential Information" means all deal information, property details, investment strategies, financial information, 
-                    agent contact details, and any other information shared through the Platform that is marked as confidential or would 
-                    reasonably be considered confidential.
-                  </p>
-                  <h4 className="font-semibold text-[#E3C567]">2. Obligations</h4>
-                  <p>User agrees to:</p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Maintain confidentiality of all Confidential Information</li>
-                    <li>Use Confidential Information only for legitimate real estate investment purposes</li>
-                    <li>Not share, copy, or distribute Confidential Information without written consent</li>
-                    <li>Notify Platform immediately of any unauthorized disclosure</li>
-                    <li>Return or destroy Confidential Information upon request</li>
+
+                  <h4 className="font-semibold text-[#E3C567]">1. Purpose of the Platform</h4>
+                  <p>The Platform connects vetted real estate investors and wholesalers with licensed real estate agents for transaction support.</p>
+                  <p>The Platform:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Is NOT a licensed brokerage.</li>
+                    <li>Does NOT represent buyers or sellers.</li>
+                    <li>Does NOT negotiate contracts.</li>
+                    <li>Does NOT provide legal, financial, or tax advice.</li>
+                    <li>Does NOT guarantee deal flow or profits.</li>
                   </ul>
-                  <h4 className="font-semibold text-[#E3C567]">3. Term</h4>
-                  <p>
-                    This Agreement remains in effect for 5 years from the date of acceptance or until Confidential Information 
-                    becomes publicly available through no fault of User.
-                  </p>
-                  <h4 className="font-semibold text-[#E3C567]">4. Remedies</h4>
-                  <p>
-                    User acknowledges that breach of this Agreement may cause irreparable harm to Platform and other users. 
-                    Platform may seek injunctive relief, monetary damages, and attorney fees for any breach.
-                  </p>
-                  <h4 className="font-semibold text-[#E3C567]">5. Governing Law</h4>
-                  <p>
-                    This Agreement is governed by the laws of the State of Delaware, without regard to conflict of law principles.
-                  </p>
+                  <p>Platform is solely a matching and coordination system.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">2. Independent Status</h4>
+                  <p>Investor acknowledges:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Platform is not acting as agent, broker, partner, or fiduciary.</li>
+                    <li>Investor remains fully responsible for:
+                      <ul className="list-disc pl-6 mt-1 space-y-1">
+                        <li>All contracts entered into</li>
+                        <li>Compliance with local and federal laws</li>
+                        <li>Assignment legality</li>
+                        <li>Disclosure requirements</li>
+                        <li>Transaction execution</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  <p>Nothing in this Agreement creates a partnership, joint venture, or agency relationship.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">3. Non-Circumvention (Agent Protection Clause)</h4>
+                  <p>Investor agrees:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Not to bypass or attempt to bypass the Platform to work directly with Platform-introduced agents.</li>
+                    <li>Not to solicit agents introduced through the Platform for off-platform transactions.</li>
+                    <li>Not to remove agents from the Platform to avoid tracking or accountability.</li>
+                    <li>Not to form undisclosed side agreements with Platform-introduced agents.</li>
+                  </ul>
+                  <p>This restriction applies during participation and for <strong>24 months</strong> following termination.</p>
+                  <p>Violation may result in:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Immediate removal</li>
+                    <li>Permanent ban</li>
+                    <li>Legal action</li>
+                    <li>Liquidated damages to be determined by court</li>
+                  </ul>
+
+                  <h4 className="font-semibold text-[#E3C567]">4. Confidentiality & Non-Disclosure</h4>
+                  <p>Investor agrees to maintain confidentiality regarding:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Agent identities</li>
+                    <li>Agent contact information</li>
+                    <li>Platform systems</li>
+                    <li>Platform processes</li>
+                    <li>Platform scoring systems</li>
+                    <li>Internal ranking data</li>
+                    <li>Seller information introduced through Platform</li>
+                  </ul>
+                  <p>Confidential information may only be used for legitimate transaction purposes. Obligation survives termination for 3 years.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">5. Platform Use Requirement</h4>
+                  <p>Investor agrees that:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>All transactions involving Platform-introduced agents must be logged in the Platform.</li>
+                    <li>Status updates must be provided when requested.</li>
+                    <li>Investor will not process Platform-introduced transactions off-platform.</li>
+                  </ul>
+                  <p>Failure to comply may result in suspension.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">6. Ethical Conduct & Seller Protection</h4>
+                  <p>Investor agrees:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>To operate lawfully in all transactions.</li>
+                    <li>To provide required disclosures in wholesale, novation, or creative transactions.</li>
+                    <li>Not to misrepresent ownership interest, assignment rights, or financing structures.</li>
+                    <li>Not to exploit seller distress unlawfully.</li>
+                    <li>Not to engage in predatory conduct.</li>
+                  </ul>
+                  <p>Investor remains solely responsible for legal compliance in their state(s).</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">7. Respect for Licensed Activity</h4>
+                  <p>Investor acknowledges:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Agents must comply with brokerage rules.</li>
+                    <li>Agents cannot violate state licensing laws.</li>
+                    <li>Investor shall not pressure agents to conceal assignment structures, withhold required disclosures, violate brokerage policies, or breach fiduciary duties.</li>
+                  </ul>
+
+                  <h4 className="font-semibold text-[#E3C567]">8. No Guarantee of Results</h4>
+                  <p>Platform does not guarantee deal volume, agent performance, closing success, or profitability. Investor assumes full transactional risk.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">9. Limitation of Liability</h4>
+                  <p>Platform shall not be liable for failed transactions, contract disputes, commission disputes, seller claims, regulatory enforcement actions, agent misconduct, or investor losses. Maximum liability of Platform, if any, shall not exceed $1,000.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">10. Indemnification</h4>
+                  <p>Investor agrees to indemnify and hold harmless the Platform from any claims, damages, regulatory actions, or legal costs arising from investor's transactions, assignment disputes, seller disputes, financing disputes, regulatory violations, or misrepresentation.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">11. Monitoring & Removal</h4>
+                  <p>Platform reserves the right to monitor investor behavior, collect agent feedback, suspend or remove investor accounts, and deny future participation at its sole discretion.</p>
+                  <p>Grounds for removal include circumvention, repeated deal fallout, ethical complaints, misrepresentation, and legal violations. Platform is not required to provide prior notice before removal.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">12. Governing Law & Dispute Resolution</h4>
+                  <p>This Agreement shall be governed by the laws of the State of Texas. All disputes shall be resolved through binding arbitration. Prevailing party entitled to attorney fees.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">13. Term & Survival</h4>
+                  <p>This Agreement remains in effect until terminated. The following sections survive termination: Non-Circumvention, Confidentiality, Indemnification, and Limitation of Liability.</p>
+
+                  <h4 className="font-semibold text-[#E3C567]">14. Digital Acknowledgment</h4>
+                  <p>By signing electronically, Investor confirms:</p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>I understand Platform is not a brokerage.</li>
+                    <li>I agree to the Non-Circumvention clause.</li>
+                    <li>I accept full responsibility for my transactions.</li>
+                    <li>I agree to comply with Platform standards.</li>
+                  </ul>
                 </div>
               </>
             )}
