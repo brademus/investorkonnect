@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
         property_address: (isInvestor || isSigned) ? (deal?.property_address || room.property_address) : null,
         city: deal?.city || room.city, state: deal?.state || room.state,
         budget: deal?.purchase_price || room.budget || 0,
+        estimated_list_price: deal?.estimated_list_price || null,
         pipeline_stage: deal?.pipeline_stage,
         closing_date: deal?.key_dates?.closing_date,
         proposed_terms: (() => {
