@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import AgentParticipationAgreement from "@/components/AgentParticipationAgreement";
 
 
 
@@ -24,6 +25,7 @@ function NDAContent() {
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
+  const isAgent = profile?.user_role === 'agent';
 
   // ADMIN BYPASS: Auto-sign NDA for admin users
   useEffect(() => {
@@ -135,7 +137,7 @@ function NDAContent() {
       await base44.entities.Profile.update(currentProfile.id, {
         nda_accepted: true,
         nda_accepted_at: new Date().toISOString(),
-        nda_version: 'v1.0'
+        nda_version: isAgent ? 'agent-v1.0' : 'v1.0'
       });
       console.log('[NDA] Profile updated with NDA flags');
       
@@ -191,9 +193,13 @@ function NDAContent() {
           <div className="w-14 h-14 bg-[#E3C567] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-8 h-8 text-black" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">Non-Disclosure Agreement</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">
+            {isAgent ? "Investor Agent Platform Participation Agreement" : "Non-Disclosure Agreement"}
+          </h1>
           <p className="text-[#808080]">
-            Required to access agent profiles and deal rooms
+            {isAgent
+              ? "Required before accessing the agent dashboard. By signing, you confirm you have read and agree to the following."
+              : "Required to access agent profiles and deal rooms"}
           </p>
         </div>
 
@@ -228,51 +234,53 @@ function NDAContent() {
           )}
 
           <div className="bg-[#141414] rounded-xl p-5 max-h-64 overflow-y-auto border border-[#1F1F1F] mb-5">
-            <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Terms & Conditions / NDA v1.0</h3>
-            
-            <div className="prose prose-sm text-[#FAFAFA] space-y-4">
-              <p className="text-[#F59E0B] font-semibold">
-                [PLACEHOLDER - Michel will provide final NDA and Terms & Conditions text]
-              </p>
-              
-              <p>
-                This Non-Disclosure Agreement and Terms & Conditions ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
-              </p>
-              
-              <h4 className="font-semibold text-[#E3C567]">1. Confidential Information</h4>
-              <p>
-                "Confidential Information" means all deal information, property details, investment strategies, financial information, 
-                agent contact details, and any other information shared through the Platform that is marked as confidential or would 
-                reasonably be considered confidential.
-              </p>
-              
-              <h4 className="font-semibold text-[#E3C567]">2. Obligations</h4>
-              <p>User agrees to:</p>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Maintain confidentiality of all Confidential Information</li>
-                <li>Use Confidential Information only for legitimate real estate investment purposes</li>
-                <li>Not share, copy, or distribute Confidential Information without written consent</li>
-                <li>Notify Platform immediately of any unauthorized disclosure</li>
-                <li>Return or destroy Confidential Information upon request</li>
-              </ul>
-              
-              <h4 className="font-semibold text-[#E3C567]">3. Term</h4>
-              <p>
-                This Agreement remains in effect for 5 years from the date of acceptance or until Confidential Information 
-                becomes publicly available through no fault of User.
-              </p>
-              
-              <h4 className="font-semibold text-[#E3C567]">4. Remedies</h4>
-              <p>
-                User acknowledges that breach of this Agreement may cause irreparable harm to Platform and other users. 
-                Platform may seek injunctive relief, monetary damages, and attorney fees for any breach.
-              </p>
-              
-              <h4 className="font-semibold text-[#E3C567]">5. Governing Law</h4>
-              <p>
-                This Agreement is governed by the laws of the State of Delaware, without regard to conflict of law principles.
-              </p>
-            </div>
+            {isAgent ? (
+              <>
+                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Agent Platform Participation Agreement v1.0</h3>
+                <AgentParticipationAgreement />
+              </>
+            ) : (
+              <>
+                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Terms & Conditions / NDA v1.0</h3>
+                <div className="prose prose-sm text-[#FAFAFA] space-y-4">
+                  <p className="text-[#F59E0B] font-semibold">
+                    [PLACEHOLDER - Michel will provide final NDA and Terms & Conditions text]
+                  </p>
+                  <p>
+                    This Non-Disclosure Agreement and Terms & Conditions ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
+                  </p>
+                  <h4 className="font-semibold text-[#E3C567]">1. Confidential Information</h4>
+                  <p>
+                    "Confidential Information" means all deal information, property details, investment strategies, financial information, 
+                    agent contact details, and any other information shared through the Platform that is marked as confidential or would 
+                    reasonably be considered confidential.
+                  </p>
+                  <h4 className="font-semibold text-[#E3C567]">2. Obligations</h4>
+                  <p>User agrees to:</p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Maintain confidentiality of all Confidential Information</li>
+                    <li>Use Confidential Information only for legitimate real estate investment purposes</li>
+                    <li>Not share, copy, or distribute Confidential Information without written consent</li>
+                    <li>Notify Platform immediately of any unauthorized disclosure</li>
+                    <li>Return or destroy Confidential Information upon request</li>
+                  </ul>
+                  <h4 className="font-semibold text-[#E3C567]">3. Term</h4>
+                  <p>
+                    This Agreement remains in effect for 5 years from the date of acceptance or until Confidential Information 
+                    becomes publicly available through no fault of User.
+                  </p>
+                  <h4 className="font-semibold text-[#E3C567]">4. Remedies</h4>
+                  <p>
+                    User acknowledges that breach of this Agreement may cause irreparable harm to Platform and other users. 
+                    Platform may seek injunctive relief, monetary damages, and attorney fees for any breach.
+                  </p>
+                  <h4 className="font-semibold text-[#E3C567]">5. Governing Law</h4>
+                  <p>
+                    This Agreement is governed by the laws of the State of Delaware, without regard to conflict of law principles.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-start gap-3 mb-5 p-3 bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl">
@@ -284,7 +292,9 @@ function NDAContent() {
               disabled={accepting}
             />
             <Label htmlFor="nda-agree" className="text-sm text-[#FAFAFA] cursor-pointer leading-relaxed">
-              I have read and agree to the terms of this Non-Disclosure Agreement. I understand this is a legally binding contract.
+              {isAgent
+                ? "I have read and agree to the Investor Agent Platform Participation Agreement. I confirm broker approval for participation and understand this is a legally binding contract."
+                : "I have read and agree to the terms of this Non-Disclosure Agreement. I understand this is a legally binding contract."}
             </Label>
           </div>
 
