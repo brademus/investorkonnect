@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
       zip: draft.zip,
       county: draft.county,
       purchase_price: draft.purchase_price,
+      estimated_list_price: draft.estimated_list_price || null,
       property_type: draft.property_type,
       property_details: {
         beds: draft.beds,
