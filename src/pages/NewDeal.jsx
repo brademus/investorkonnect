@@ -634,7 +634,7 @@ export default function NewDeal() {
     
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
-      propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes,
+      propertyAddress, city, state, zip, county, purchasePrice, estimatedListPrice, closingDate, contractDate, specialNotes,
       sellerName, earnestMoney, numberOfSigners, secondSignerName,
       sellerCommissionType, sellerCommissionPercentage, sellerFlatFee,
       buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength,
