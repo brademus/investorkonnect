@@ -191,9 +191,23 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
+          {/* Show contract price to investors/admins only */}
+          {(profile?.user_role === 'investor' || profile?.role === 'admin') && (
+            <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+              <span className="text-sm text-[#808080]">Contract Price</span>
+              <span className="text-sm font-medium text-[#34D399]">${contractPrice}</span>
+            </div>
+          )}
+          {/* Estimated List Price visible to all */}
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
-            <span className="text-sm text-[#808080]">Contract Price</span>
-            <span className="text-sm font-medium text-[#34D399]">${contractPrice}</span>
+            <span className="text-sm text-[#808080]">Estimated List Price</span>
+            <span className="text-sm font-medium text-[#34D399]">
+              {deal?.estimated_list_price
+                ? `$${Number(deal.estimated_list_price).toLocaleString()}`
+                : (profile?.user_role === 'investor' || profile?.role === 'admin')
+                  ? `$${contractPrice}`
+                  : 'Not set'}
+            </span>
           </div>
           {dealTypeLabel && (
             <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
@@ -204,6 +218,10 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
             <span className="text-sm text-[#808080]">Seller's Agent Commission</span>
             <span className="text-sm font-medium text-[#FAFAFA]">{sellerComm}{displayTerms.seller_commission_type ? ` (${displayTerms.seller_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'})` : ''}</span>
+          </div>
+          <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+            <span className="text-sm text-[#808080]">Buyer's Agent Commission</span>
+            <span className="text-sm font-medium text-[#FAFAFA]">{buyerComm}{displayTerms.buyer_commission_type ? ` (${displayTerms.buyer_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'})` : ''}</span>
           </div>
           <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
             <span className="text-sm text-[#808080]">Agreement Length</span>
