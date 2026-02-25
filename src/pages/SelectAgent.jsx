@@ -242,7 +242,6 @@ export default function SelectAgent() {
                       {md.distanceMiles != null && (
                         <p className="text-xs text-[#808080] mb-1">~{md.distanceMiles} miles away</p>
                       )}
-                      <p className="text-sm text-[#808080] mb-3">{agent.email}</p>
                       {/* Rating */}
                       <div className="mb-3">
                         <AgentRatingStars

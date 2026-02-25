@@ -125,7 +125,7 @@ export default function Pricing() {
     {
       icon: <Sparkles className="w-5 h-5" />,
       title: "AI-Powered Tools",
-      description: "Contract summaries, risk analysis, and deal insights",
+      description: "Contract summaries, contract verification, and intelligent agent matching",
     },
   ];
 
@@ -193,7 +193,7 @@ export default function Pricing() {
               {[
                 "Access to all deal rooms",
                 "Unlimited agent matching",
-                "AI-powered contract tools",
+                "Contract summaries & verification",
                 "Secure document sharing",
                 "Deal analytics & insights",
                 "Priority support",

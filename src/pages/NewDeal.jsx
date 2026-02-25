@@ -29,6 +29,7 @@ export default function NewDeal() {
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
+  const [estimatedListPrice, setEstimatedListPrice] = useState("");
   const [closingDate, setClosingDate] = useState("");
   const [contractDate, setContractDate] = useState("");
   const [specialNotes, setSpecialNotes] = useState("");
