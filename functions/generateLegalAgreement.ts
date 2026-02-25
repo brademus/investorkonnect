@@ -4,6 +4,9 @@ import pdfParse from 'npm:pdf-parse@1.1.1';
 
 const VERSION = '4.0.0';
 
+const DOCUSIGN_INTEGRATION_KEY = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');
+const DOCUSIGN_CLIENT_SECRET = Deno.env.get('DOCUSIGN_CLIENT_SECRET');
+
 const STATE_TEMPLATES = {
   'AL': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alabama%20contract%20.pdf',
   'AK': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alaska.pdf',
@@ -216,7 +219,7 @@ async function getDocuSignConnection(base44) {
     const tokenUrl = conn.base_uri.includes('demo') ? 'https://account-d.docusign.com/oauth/token' : 'https://account.docusign.com/oauth/token';
     const resp = await fetch(tokenUrl, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: conn.refresh_token, client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'), client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET') })
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: conn.refresh_token, client_id: DOCUSIGN_INTEGRATION_KEY, client_secret: DOCUSIGN_CLIENT_SECRET })
     });
     if (!resp.ok) throw new Error('DocuSign token refresh failed');
     const tokens = await resp.json();
@@ -233,6 +236,10 @@ async function getDocuSignConnection(base44) {
 // ---- Main Handler ----
 
 Deno.serve(async (req) => {
+  if (!DOCUSIGN_INTEGRATION_KEY || !DOCUSIGN_CLIENT_SECRET) {
+    console.error('[generateLegalAgreement] CRITICAL: Missing DocuSign credentials. DOCUSIGN_INTEGRATION_KEY or DOCUSIGN_CLIENT_SECRET not set.');
+    return Response.json({ error: 'DocuSign configuration error. Please contact support.', code: 'DOCUSIGN_CONFIG_MISSING' }, { status: 500 });
+  }
   console.log(`[genAgreement ${VERSION}] START`);
   try {
     const base44 = createClientFromRequest(req);

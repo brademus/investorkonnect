@@ -1,5 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const DOCUSIGN_INTEGRATION_KEY = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');
+const DOCUSIGN_CLIENT_SECRET = Deno.env.get('DOCUSIGN_CLIENT_SECRET');
+
 /**
  * Called by DocuSignReturn after investor signs.
  * Polls DocuSign to confirm signature, updates LegalAgreement,
@@ -13,7 +16,7 @@ async function getDocuSignConnection(base44) {
     const tokenUrl = conn.base_uri.includes('demo') ? 'https://account-d.docusign.com/oauth/token' : 'https://account.docusign.com/oauth/token';
     const resp = await fetch(tokenUrl, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: conn.refresh_token, client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'), client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET') })
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: conn.refresh_token, client_id: DOCUSIGN_INTEGRATION_KEY, client_secret: DOCUSIGN_CLIENT_SECRET })
     });
     if (!resp.ok) throw new Error('Token refresh failed');
     const tokens = await resp.json();
@@ -25,6 +28,10 @@ async function getDocuSignConnection(base44) {
 }
 
 Deno.serve(async (req) => {
+  if (!DOCUSIGN_INTEGRATION_KEY || !DOCUSIGN_CLIENT_SECRET) {
+    console.error('[pollAndFinalizeSignature] CRITICAL: Missing DocuSign credentials. DOCUSIGN_INTEGRATION_KEY or DOCUSIGN_CLIENT_SECRET not set.');
+    return Response.json({ error: 'DocuSign configuration error. Please contact support.', code: 'DOCUSIGN_CONFIG_MISSING' }, { status: 500 });
+  }
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
