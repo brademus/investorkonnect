@@ -169,6 +169,13 @@ export default function Room() {
         if (dealData) setDeal(dealData);
         setRoomLoading(false);
 
+        // Mark room as read (fire-and-forget)
+        if (profile?.id && room?.id) {
+          base44.entities.Profile.update(profile.id, {
+            last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [room.id]: new Date().toISOString() }
+          }).catch(() => {});
+        }
+
         // --- Phase 2: Fetch invites in background (non-blocking) ---
          if (isInvestor && room.deal_id && !roomIsLocked) {
            base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {

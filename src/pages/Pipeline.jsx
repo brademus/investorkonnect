@@ -7,7 +7,7 @@ import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LegalFooterLinks from "@/components/LegalFooterLinks";
-import { FileText, Calendar, TrendingUp, CheckCircle, Plus, Home, Clock, XCircle, Circle, Loader2, MessageSquare } from "lucide-react";
+import { FileText, Calendar, TrendingUp, CheckCircle, Plus, Home, Clock, XCircle, Circle, Loader2, MessageSquare, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { getPriceAndComp, getSellerCompLabel } from "@/components/utils/dealComp
 import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
+import NotificationBell from "@/components/NotificationBell";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -277,6 +278,7 @@ function PipelineContent() {
             <div className="flex items-center justify-between mb-8">
               <div><h1 className="text-3xl font-bold text-[#E3C567]">Dashboard</h1><p className="text-sm text-[#808080] mt-1">Manage your deals</p></div>
               <div className="flex items-center gap-3">
+                <NotificationBell />
                 {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
                 <Button onClick={() => setHelpOpen(true)} className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full">Tutorials</Button>
               </div>
