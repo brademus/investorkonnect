@@ -441,6 +441,42 @@ function AccountProfileContent() {
               </>
             )}
 
+            {/* Notification Settings */}
+            <div className="pt-4 border-t border-[#1F1F1F]">
+              <div className="flex items-center gap-2 mb-4">
+                <Bell className="w-5 h-5 text-[#E3C567]" />
+                <h3 className="text-lg font-semibold text-[#FAFAFA]">Notification Settings</h3>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { key: "app", label: "In-App Notifications", desc: "Receive notifications within the platform" },
+                  { key: "email", label: "Email Notifications", desc: "Receive updates via email" },
+                  { key: "text", label: "Text Notifications", desc: "Receive SMS alerts for important updates" },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-[#FAFAFA]">{label}</p>
+                      <p className="text-xs text-[#808080]">{desc}</p>
+                    </div>
+                    <Switch
+                      checked={notifPrefs[key]}
+                      onCheckedChange={async (val) => {
+                        const updated = { ...notifPrefs, [key]: val };
+                        setNotifPrefs(updated);
+                        try {
+                          await base44.entities.Profile.update(profile.id, { notification_preferences: updated });
+                          toast.success("Saved");
+                        } catch (e) {
+                          toast.error("Failed to save");
+                          setNotifPrefs(notifPrefs);
+                        }
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Submit */}
             <div className="flex gap-3 pt-4">
               <Button
