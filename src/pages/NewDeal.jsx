@@ -92,6 +92,7 @@ export default function NewDeal() {
       setZip(d.zip || "");
       setCounty(d.county || "");
       setPurchasePrice(d.purchasePrice || "");
+      setEstimatedListPrice(d.estimatedListPrice || "");
       setClosingDate(d.closingDate || "");
       setContractDate(d.contractDate || "");
       setSpecialNotes(d.specialNotes || "");
