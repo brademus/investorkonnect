@@ -62,6 +62,7 @@ import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorProfile from './pages/InvestorProfile';
 import Logout from './pages/Logout';
+import MyAgreement from './pages/MyAgreement';
 import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
@@ -75,7 +76,7 @@ import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import MyAgreement from './pages/MyAgreement';
+import AgentQualification from './pages/AgentQualification';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +96,7 @@ export const PAGES = {
     "InvestorOnboarding": InvestorOnboarding,
     "InvestorProfile": InvestorProfile,
     "Logout": Logout,
+    "MyAgreement": MyAgreement,
     "NDA": NDA,
     "NewDeal": NewDeal,
     "NotFound": NotFound,
@@ -108,7 +110,7 @@ export const PAGES = {
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "MyAgreement": MyAgreement,
+    "AgentQualification": AgentQualification,
 }
 
 export const pagesConfig = {

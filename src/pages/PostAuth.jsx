@@ -137,18 +137,27 @@ export default function PostAuth() {
            if (selectedRole === 'investor') {
              navigate(createPageUrl("InvestorOnboarding"), { replace: true });
            } else if (selectedRole === 'agent') {
-             navigate(createPageUrl("AgentOnboarding"), { replace: true });
+             if (!profile?.qualification_status || profile.qualification_status !== 'completed') {
+               navigate(createPageUrl("AgentQualification"), { replace: true });
+             } else {
+               navigate(createPageUrl("AgentOnboarding"), { replace: true });
+             }
            } else {
              // No selectedRole: default to investor onboarding (never show role picker)
              navigate(createPageUrl("InvestorOnboarding"), { replace: true });
            }
          } else if (!isOnboarded) {
-           // Has role but not onboarded
-           if (role === 'investor') {
-             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-           } else if (role === 'agent') {
-             navigate(createPageUrl("AgentOnboarding"), { replace: true });
-           } else {
+          // Has role but not onboarded
+          if (role === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+          } else if (role === 'agent') {
+            // Check qualification first
+            if (!profile?.qualification_status || profile.qualification_status !== 'completed') {
+              navigate(createPageUrl("AgentQualification"), { replace: true });
+            } else {
+              navigate(createPageUrl("AgentOnboarding"), { replace: true });
+            }
+          } else {
              // Fallback: default to investor onboarding
              navigate(createPageUrl("InvestorOnboarding"), { replace: true });
            }
