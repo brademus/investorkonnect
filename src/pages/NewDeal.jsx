@@ -772,6 +772,21 @@ export default function NewDeal() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-1">Estimated List Price</label>
+                <p className="text-xs text-[#808080] mb-2">This is the price your agent will see. Do not show your contract price.</p>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+                  <Input
+                    type="text"
+                    value={estimatedListPrice}
+                    onChange={(e) => setEstimatedListPrice(e.target.value)}
+                    placeholder="280000"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Target Closing Date *</label>
                 <Input
                   type="text"
