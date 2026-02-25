@@ -1,4 +1,3 @@
-
 import { base44 } from '@/api/base44Client';
 
 // Admin functions
@@ -38,6 +37,7 @@ export const ndaAccept = base44.functions.ndaAccept;
 export const ndaStatus = base44.functions.ndaStatus;
 
 // Deals & Rooms
+export const updateRoomFiles = base44.functions.updateRoomFiles;
 export const createDealRoom = base44.functions.createDealRoom;
 export const demoSeed = base44.functions.demoSeed;
 export const health = base44.functions.health;

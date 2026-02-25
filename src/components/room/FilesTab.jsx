@@ -131,7 +131,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
         toast.success('Document uploaded');
         // Also add to room shared files
         const roomFiles = [...(localRoom?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name, uploaded_at: new Date().toISOString() }];
-        await base44.entities.Room.update(roomId, { files: roomFiles });
+        await base44.functions.invoke('updateRoomFiles', { roomId, files: roomFiles });
         setLocalRoom(prev => prev ? { ...prev, files: roomFiles } : prev);
       } catch (err) {
         console.error('[FilesTab] Upload failed:', err);
@@ -156,7 +156,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       try {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         const roomFiles = [...(localRoom?.files || []), { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name || profile?.email, uploaded_at: new Date().toISOString(), size: file.size, type: file.type }];
-        await base44.entities.Room.update(roomId, { files: roomFiles });
+        await base44.functions.invoke('updateRoomFiles', { roomId, files: roomFiles });
         setLocalRoom(prev => prev ? { ...prev, files: roomFiles } : prev);
         toast.success('File uploaded');
       } catch (err) { 
