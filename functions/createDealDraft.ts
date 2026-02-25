@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
       walkthrough_date,
       walkthrough_time,
       walkthrough_slots,
-      deal_type
+      deal_type,
+      estimated_list_price
     } = body;
 
     // Validation
@@ -76,6 +77,7 @@ Deno.serve(async (req) => {
       zip,
       county,
       purchase_price: Number(purchase_price),
+      estimated_list_price: estimated_list_price ? Number(estimated_list_price) : null,
       property_type,
       beds: beds ? Number(beds) : null,
       baths: baths ? Number(baths) : null,

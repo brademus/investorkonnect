@@ -258,6 +258,7 @@ async function ensureDealCreated(base44, agreement) {
     zip: draft.zip,
     county: draft.county,
     purchase_price: draft.purchase_price,
+    estimated_list_price: draft.estimated_list_price || null,
     key_dates: {
       closing_date: draft.closing_date,
       contract_date: draft.contract_date,
