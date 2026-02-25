@@ -154,7 +154,7 @@ export default function NewDeal() {
     if (isEditing ? hydrated : hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
-  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughScheduled, walkthroughSlots]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, estimatedListPrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, dealType, walkthroughScheduled, walkthroughSlots]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
@@ -489,6 +489,7 @@ export default function NewDeal() {
           zip: zip,
           county: county || null,
           purchase_price: Number(cleanedPrice),
+          estimated_list_price: estimatedListPrice ? Number(String(estimatedListPrice).replace(/[$,\s]/g, '')) : null,
           key_dates: {
             closing_date: closingDate,
             contract_date: contractDate
