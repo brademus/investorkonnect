@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X } from "lucide-react";
+import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ function AccountProfileContent() {
     next_steps_template_type: "default",
     custom_next_steps_template: ""
   });
+  const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
 
   useEffect(() => {
     document.title = "Edit Profile - Investor Konnect";
@@ -52,6 +54,11 @@ function AccountProfileContent() {
     if (!profileLoading && profile) {
       setHeadshotUrl(profile.headshotUrl || "");
       setBusinessCardUrl(profile.businessCardUrl || "");
+      setNotifPrefs({
+        app: profile.notification_preferences?.app !== false,
+        email: profile.notification_preferences?.email !== false,
+        text: profile.notification_preferences?.text === true,
+      });
       setFormData({
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
