@@ -36,11 +36,6 @@ export const upsertInvestorOnboarding = base44.functions.upsertInvestorOnboardin
 // NDA & Verification
 export const ndaAccept = base44.functions.ndaAccept;
 export const ndaStatus = base44.functions.ndaStatus;
-export const personaFinalize = base44.functions.personaFinalize;
-export const personaPoll = base44.functions.personaPoll;
-export const personaStart = base44.functions.personaStart;
-export const personaWebhook = base44.functions.personaWebhook;
-export const personaConfig = base44.functions.personaConfig; // Moved from 'Persona KYC functions'
 
 // Deals & Rooms
 export const createDealRoom = base44.functions.createDealRoom;
