@@ -269,16 +269,95 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
           ) : null}
 
           {canAgentRespond && (
-            <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleRespond}
-                disabled={responding || (hasSlots && selectedSlotIdx == null)}
-                size="sm"
-                className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs flex-1"
-              >
-                {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-                {hasSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
-              </Button>
+            <div className="space-y-2 pt-2">
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleRespond}
+                  disabled={responding || (hasSlots && selectedSlotIdx == null)}
+                  size="sm"
+                  className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs flex-1"
+                >
+                  {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+                  {hasSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
+                </Button>
+                <Button
+                  onClick={() => setShowProposeForm(v => !v)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-[#808080] hover:text-[#FAFAFA] rounded-full text-xs border border-[#1F1F1F]"
+                >
+                  <CalendarPlus className="w-3 h-3 mr-1" />
+                  Propose New Date
+                </Button>
+              </div>
+              {showProposeForm && (
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3 space-y-2">
+                  <p className="text-xs text-[#808080]">Propose a new date/time:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-[#808080] mb-1 block">Date</label>
+                      <Input
+                        type="date"
+                        value={proposeDate}
+                        onChange={e => setProposeDate(e.target.value)}
+                        className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA] h-8 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#808080] mb-1 block">Time</label>
+                      <Input
+                        type="time"
+                        value={proposeTime}
+                        onChange={e => setProposeTime(e.target.value)}
+                        className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA] h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      disabled={proposing || !proposeDate || !proposeTime}
+                      onClick={async () => {
+                        if (!proposeDate || !proposeTime) return;
+                        setProposing(true);
+                        try {
+                          const datetime = `${proposeDate}T${proposeTime}`;
+                          await base44.functions.invoke('upsertDealAppointment', {
+                            dealId: deal?.id,
+                            type: 'walkthrough',
+                            action: 'propose',
+                            datetime,
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                          });
+                          await base44.entities.Message.create({
+                            room_id: roomId,
+                            sender_profile_id: profile?.id,
+                            body: `📅 New walk-through date proposed: ${proposeDate} at ${proposeTime}`,
+                            metadata: {
+                              type: 'walkthrough_response',
+                              status: 'pending',
+                              walkthrough_datetime: datetime,
+                            }
+                          });
+                          toast.success("New date proposed");
+                          setShowProposeForm(false);
+                          setProposeDate("");
+                          setProposeTime("");
+                        } catch (e) {
+                          toast.error("Failed to propose date");
+                        } finally {
+                          setProposing(false);
+                        }
+                      }}
+                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs h-7"
+                    >
+                      {proposing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                      Send Proposal
+                    </Button>
+                    <button onClick={() => setShowProposeForm(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
