@@ -231,6 +231,7 @@ export default function NewDeal() {
             
             console.log('[NewDeal] Loaded county from deal:', deal.county);
             setPurchasePrice(deal.purchase_price?.toString() || "");
+            setEstimatedListPrice(deal.estimated_list_price?.toString() || "");
             setClosingDate(deal.key_dates?.closing_date || "");
             setContractDate(deal.key_dates?.contract_date || "");
             
