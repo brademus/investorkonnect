@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX, CalendarPlus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -42,6 +43,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   }, [dealId, apptStatus]);
 
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
+  const [showProposeForm, setShowProposeForm] = useState(false);
+  const [proposeDate, setProposeDate] = useState("");
+  const [proposeTime, setProposeTime] = useState("");
+  const [proposing, setProposing] = useState(false);
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
