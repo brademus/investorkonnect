@@ -194,7 +194,7 @@ function NDAContent() {
             <Shield className="w-8 h-8 text-black" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">
-            {isAgent ? "Investor Agent Platform Participation Agreement" : "Non-Disclosure Agreement"}
+            {isAgent ? "Agent Platform Participation Agreement" : "Investor Platform Participation Agreement"}
           </h1>
           <p className="text-[#808080]">
             {isAgent
@@ -375,8 +375,8 @@ function NDAContent() {
             />
             <Label htmlFor="nda-agree" className="text-sm text-[#FAFAFA] cursor-pointer leading-relaxed">
               {isAgent
-                ? "I have read and agree to the Investor Agent Platform Participation Agreement. I confirm broker approval for participation and understand this is a legally binding contract."
-                : "I have read and agree to the terms of this Non-Disclosure Agreement. I understand this is a legally binding contract."}
+                ? "I have read and agree to the Agent Platform Participation Agreement. I confirm broker approval for participation and understand this is a legally binding contract."
+                : "I have read and agree to the terms of this Investor Platform Participation Agreement. I understand this is a legally binding contract."}
             </Label>
           </div>
 
