@@ -368,7 +368,8 @@ export default function Room() {
             // Immediately populate from enriched room data — no blank screen
             setCurrentRoom({
               id: r.id, deal_id: r.deal_id, city: r.city, state: r.state,
-              budget: r.budget, is_fully_signed: r.is_fully_signed,
+              budget: r.budget, estimated_list_price: r.estimated_list_price || null,
+              is_fully_signed: r.is_fully_signed,
               title: r.title, property_address: r.property_address,
               counterparty_name: r.counterparty_name, counterparty_headshot: r.counterparty_headshot,
               request_status: r.request_status, agreement_status: r.agreement_status,

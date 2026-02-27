@@ -199,16 +199,19 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
             </div>
           )}
           {/* Estimated List Price - always visible to agents (replaces contract price), also shown to investors/admins when set */}
-          {(deal?.estimated_list_price || profile?.user_role === 'agent' || profile?.user_role === 'investor' || profile?.role === 'admin') && (
-            <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
-              <span className="text-sm text-[#808080]">Estimated List Price</span>
-              <span className="text-sm font-medium text-[#34D399]">
-                {deal?.estimated_list_price
-                  ? `$${Number(deal.estimated_list_price).toLocaleString()}`
-                  : (profile?.user_role === 'agent' ? 'Not set' : `$${contractPrice}`)}
-              </span>
-            </div>
-          )}
+          {(() => {
+            const elp = deal?.estimated_list_price || currentRoom?.estimated_list_price || null;
+            return (elp || profile?.user_role === 'agent' || profile?.user_role === 'investor' || profile?.role === 'admin') ? (
+              <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
+                <span className="text-sm text-[#808080]">Estimated List Price</span>
+                <span className="text-sm font-medium text-[#34D399]">
+                  {elp
+                    ? `$${Number(elp).toLocaleString()}`
+                    : (profile?.user_role === 'agent' ? 'Not set' : `$${contractPrice}`)}
+                </span>
+              </div>
+            ) : null;
+          })()}
           {dealTypeLabel && (
             <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
               <span className="text-sm text-[#808080]">Deal Type</span>

@@ -270,7 +270,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
             {isAgent ? (
               <>
-                <div className="text-3xl font-bold text-[#34D399] mb-1">{deal?.estimated_list_price ? `$${deal.estimated_list_price.toLocaleString()}` : 'Not set'}</div>
+                <div className="text-3xl font-bold text-[#34D399] mb-1">{(deal?.estimated_list_price || room?.estimated_list_price) ? `$${(deal?.estimated_list_price || room?.estimated_list_price).toLocaleString()}` : 'Not set'}</div>
                 <p className="text-xs text-[#808080] mb-3">Estimated List Price</p>
               </>
             ) : (
