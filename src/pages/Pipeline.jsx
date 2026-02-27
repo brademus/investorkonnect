@@ -34,12 +34,21 @@ function PipelineContent() {
   const isAgent = !isAdmin && profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
 
-  // Gating
+  // Gating — wait for auth to fully resolve before redirecting anywhere
   const gateRef = useRef(false);
+  const gateAttempts = useRef(0);
   useEffect(() => {
     if (loading || ready) return;
     if (gateRef.current) return;
-    if (!profile) { gateRef.current = true; navigate(createPageUrl("PostAuth"), { replace: true }); return; }
+    if (!profile) {
+      // On Safari refresh, profile can be null momentarily while auth resolves.
+      // Wait up to ~3 seconds (6 attempts * 500ms) before giving up and redirecting.
+      gateAttempts.current += 1;
+      if (gateAttempts.current < 6) return; // will re-run when loading/profile changes
+      gateRef.current = true;
+      navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
+    }
     if (profile.role === 'admin') { setReady(true); return; }
     if (!onboarded) {
       gateRef.current = true;
