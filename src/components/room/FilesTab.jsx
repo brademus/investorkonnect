@@ -235,6 +235,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={sellerContractName}
             available={!!sellerContractUrl}
             onView={() => setViewerFile({ url: sellerContractUrl, name: sellerContractName })}
+            onDownload={() => downloadFile(sellerContractUrl, sellerContractName)}
           />
           <DocRow
             label="Internal Agreement (IOA)"
@@ -243,6 +244,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             verified={true}
             available={!!internalAgreementUrl}
             onView={() => setViewerFile({ url: internalAgreementUrl, name: agreementLabel })}
+            onDownload={() => downloadFile(internalAgreementUrl, agreementLabel)}
           />
           <DocRow
             label="CMA"
@@ -251,6 +253,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             available={!!cmaUrl}
             onUpload={() => uploadDocToRoom('cma')}
             onView={() => setViewerFile({ url: cmaUrl, name: docs.cma?.name || 'CMA' })}
+            onDownload={() => downloadFile(cmaUrl, docs.cma?.name || 'CMA')}
           />
           <DocRow
             label="Listing Agreement"
@@ -260,6 +263,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             onUpload={localDeal?.list_price_confirmed ? () => uploadDocToRoom('listing_agreement') : undefined}
             blockedMessage={!listingAgreementUrl && cmaUrl && !localDeal?.list_price_confirmed ? 'Waiting for investor to confirm list price' : undefined}
             onView={() => setViewerFile({ url: listingAgreementUrl, name: docs.listing_agreement?.name || 'Listing Agreement' })}
+            onDownload={() => downloadFile(listingAgreementUrl, docs.listing_agreement?.name || 'Listing Agreement')}
           />
           <DocRow
             label="Buyer's Contract"
@@ -268,6 +272,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             available={!!buyerContractUrl}
             onUpload={() => uploadDocToRoom('buyer_contract')}
             onView={() => setViewerFile({ url: buyerContractUrl, name: docs.buyer_contract?.name || "Buyer's Contract" })}
+            onDownload={() => downloadFile(buyerContractUrl, docs.buyer_contract?.name || "Buyer's Contract")}
           />
         </div>
       </div>
@@ -295,7 +300,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
                      <button onClick={() => setViewerFile({ url: f.url, name: f.name })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
                        <Eye className="w-3 h-3" />View
                      </button>
-                     <button onClick={() => setViewerFile({ url: f.url, name: f.name })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+                     <button onClick={() => downloadFile(f.url, f.name)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
                        <Download className="w-3 h-3" />Download
                      </button>
                    </div>
