@@ -205,7 +205,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
           {wtSlots.length > 0 && status === "PROPOSED" ? (
             <div className="space-y-2">
               <p className="text-xs text-[#808080]">
-                {canAgentRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
+                {canRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
               </p>
               {wtSlots.map((slot, idx) => {
                 const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
@@ -214,13 +214,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => canAgentRespond && setSelectedSlotIdx(idx)}
-                    disabled={!canAgentRespond}
+                    onClick={() => canRespond && setSelectedSlotIdx(idx)}
+                    disabled={!canRespond}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                       isSelected
                         ? "bg-[#E3C567]/10 border-[#E3C567]"
                         : "bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]/40"
-                    } ${canAgentRespond ? "cursor-pointer" : "cursor-default"}`}
+                    } ${canRespond ? "cursor-pointer" : "cursor-default"}`}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isSelected ? "bg-[#E3C567]/20" : "bg-[#E3C567]/10"

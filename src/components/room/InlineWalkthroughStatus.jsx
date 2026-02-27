@@ -150,7 +150,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
       {wtSlots.length > 0 && status === "PROPOSED" ? (
         <div className="space-y-1.5">
           <p className="text-xs text-[#808080]">
-            {canAgentRespond ? "Select a date & time:" : "Proposed options:"}
+            {canRespond ? "Select a date & time:" : "Proposed options:"}
           </p>
           {wtSlots.map((slot, idx) => {
             const timeLabel = [slot.timeStart, slot.timeEnd].filter(Boolean).join(' – ') || null;
@@ -159,8 +159,8 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
               <button
                 key={idx}
                 type="button"
-                onClick={() => canAgentRespond && setSelectedSlotIdx(idx)}
-                disabled={!canAgentRespond}
+                onClick={() => canRespond && setSelectedSlotIdx(idx)}
+                disabled={!canRespond}
                 className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left text-xs ${
                   isSelected ? "bg-[#E3C567]/10 border-[#E3C567]" : "bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]/40"
                 } ${canAgentRespond ? "cursor-pointer" : "cursor-default"}`}
