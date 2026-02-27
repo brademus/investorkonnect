@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { reportError } from "@/components/utils/reportError";
 import {
   FileSignature, Calendar, Upload, ArrowRight, CheckCircle2,
-  Clock, Loader2, XCircle, Star, FileCheck
+  Clock, Loader2, XCircle, Star, FileCheck, Pencil
 } from "lucide-react";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
@@ -20,6 +20,9 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const [updatingStage, setUpdatingStage] = useState(false);
   const [showClosePrompt, setShowClosePrompt] = useState(false);
   const [apptStatus, setApptStatus] = useState(null);
+  const [editingListPrice, setEditingListPrice] = useState(false);
+  const [listPriceInput, setListPriceInput] = useState('');
+  const [savingListPrice, setSavingListPrice] = useState(false);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
@@ -106,6 +109,32 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     } finally {
       setUpdatingStage(false);
       setShowClosePrompt(false);
+    }
+  };
+
+  const saveListPrice = async () => {
+    const cleaned = Number(String(listPriceInput).replace(/[$,\s]/g, ''));
+    if (!cleaned || isNaN(cleaned)) { toast.error('Enter a valid price'); return; }
+    setSavingListPrice(true);
+    try {
+      await base44.functions.invoke('updateDealDocuments', {
+        dealId: deal.id,
+        estimated_list_price: cleaned
+      });
+      if (roomId) {
+        const formatted = `$${cleaned.toLocaleString()}`;
+        await base44.functions.invoke('postSystemMessage', {
+          roomId,
+          body: `📋 Investor updated the estimated list price to ${formatted}.`
+        }).catch(() => {});
+      }
+      onDealUpdate?.({ estimated_list_price: cleaned });
+      toast.success('List price updated');
+      setEditingListPrice(false);
+    } catch (err) {
+      toast.error('Failed to update price');
+    } finally {
+      setSavingListPrice(false);
     }
   };
 
@@ -201,7 +230,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   }
 
-  if (!cta && !showClosePrompt && completedMilestones.length === 0) return null;
+  const showEditListPrice = isInvestor && stage === 'connected_deals' && hasCma && !hasListingAgreement;
+  if (!cta && !showClosePrompt && completedMilestones.length === 0 && !showEditListPrice) return null;
 
   // Close prompt UI
   const closePromptUI = (
@@ -305,6 +335,58 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
               <span className={`text-xs font-medium ${m.pending ? 'text-[#F59E0B]' : 'text-[#10B981]'}`}>{m.label}</span>
             </div>
           ))}
+        </div>
+      )}
+      {showEditListPrice && (
+        <div className={`${(cta || showClosePrompt) ? 'mb-3 pb-3 border-b border-[#1F1F1F]' : ''}`}>
+          {!editingListPrice ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#808080]">Estimated List Price</p>
+                <p className="text-sm font-medium text-[#34D399]">
+                  {deal?.estimated_list_price
+                    ? `$${Number(deal.estimated_list_price).toLocaleString()}`
+                    : 'Not set'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setListPriceInput(deal?.estimated_list_price ? String(deal.estimated_list_price) : '');
+                  setEditingListPrice(true);
+                }}
+                className="flex items-center gap-1 text-xs text-[#E3C567] hover:text-[#EDD89F] border border-[#E3C567]/30 hover:border-[#E3C567]/60 rounded-lg px-2.5 py-1 transition-colors"
+              >
+                <Pencil className="w-3 h-3" />
+                Edit
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-[#808080]">Update Estimated List Price</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={listPriceInput}
+                  onChange={e => setListPriceInput(e.target.value)}
+                  placeholder="e.g. 95000"
+                  className="flex-1 bg-[#0A0A0A] border border-[#333] rounded-lg px-3 py-1.5 text-sm text-[#FAFAFA] focus:outline-none focus:border-[#E3C567]"
+                />
+                <button
+                  onClick={saveListPrice}
+                  disabled={savingListPrice}
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  {savingListPrice ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setEditingListPrice(false)}
+                  className="text-xs text-[#808080] hover:text-[#FAFAFA] px-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {(cta || showClosePrompt) && renderCta()}
