@@ -163,7 +163,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
                 disabled={!canRespond}
                 className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left text-xs ${
                   isSelected ? "bg-[#E3C567]/10 border-[#E3C567]" : "bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]/40"
-                } ${canAgentRespond ? "cursor-pointer" : "cursor-default"}`}
+                } ${canRespond ? "cursor-pointer" : "cursor-default"}`}
               >
                 <Calendar className={`w-4 h-4 flex-shrink-0 ${isSelected ? "text-[#E3C567]" : "text-[#E3C567]/70"}`} />
                 <div className="flex-1 min-w-0">
