@@ -23,6 +23,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   const cached = dealId ? _wtCache[dealId] : null;
   const [apptStatus, setApptStatus] = useState(cached?.status || null);
   const [apptLoaded, setApptLoaded] = useState(!!cached);
+  const [proposedByProfileId, setProposedByProfileId] = useState(cached?.proposedBy || null);
   const [responding, setResponding] = useState(false);
 
   // Safe setter: never allow a resolved status to revert to PROPOSED/NOT_SET

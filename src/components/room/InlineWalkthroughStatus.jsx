@@ -14,6 +14,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   const cached = dealId ? _wtCache[dealId] : null;
   const [apptStatus, setApptStatus] = useState(cached?.status || null);
   const [apptLoaded, setApptLoaded] = useState(!!cached);
+  const [proposedByProfileId, setProposedByProfileId] = useState(cached?.proposedBy || null);
   const [responding, setResponding] = useState(false);
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [showProposeForm, setShowProposeForm] = useState(false);
