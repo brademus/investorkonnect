@@ -86,7 +86,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
       if (d.metadata?.type === "walkthrough_request") {
         if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
         else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "pending") { setApptStatus("PROPOSED"); delete _wtCache[dealId]; }
+        else if (d.metadata.status === "pending") { setApptStatus("PROPOSED"); setProposedByProfileId(d.sender_profile_id || null); delete _wtCache[dealId]; }
       }
       if (d.metadata?.type === "walkthrough_response") {
         if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
