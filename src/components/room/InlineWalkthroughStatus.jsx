@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX, CalendarPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
+import ProposeNewDatesForm from "@/components/room/ProposeNewDatesForm";
 
 const _wtCache = {};
 const RESOLVED_STATUSES = new Set(["SCHEDULED", "CANCELED", "COMPLETED"]);
@@ -15,6 +16,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   const [apptLoaded, setApptLoaded] = useState(!!cached);
   const [responding, setResponding] = useState(false);
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
+  const [showProposeForm, setShowProposeForm] = useState(false);
 
   const safeSetStatus = (newStatus) => {
     setApptStatus(prev => {
@@ -88,7 +90,12 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   }, [roomId, dealId]);
 
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
+  // Either party can confirm proposed dates — the one who didn't propose them
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
+  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED";
+  // Only agents who haven't proposed the current dates should confirm; investors confirm agent-proposed dates
+  // We'll allow both to confirm for simplicity since the proposer wouldn't need to confirm their own dates
+  const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const hasSlots = wtSlots.length > 0;
 
   const handleRespond = async () => {
@@ -182,19 +189,43 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
         </div>
       ) : null}
 
-      {canAgentRespond && (
-        <Button
-          onClick={handleRespond}
-          disabled={responding || (hasSlots && selectedSlotIdx == null)}
-          size="sm"
-          className="w-full bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs h-8"
-        >
-          {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-          {hasSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
-        </Button>
+      {canRespond && (
+        <div className="space-y-2">
+          <Button
+            onClick={handleRespond}
+            disabled={responding || (hasSlots && selectedSlotIdx == null)}
+            size="sm"
+            className="w-full bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs h-8"
+          >
+            {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+            {hasSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
+          </Button>
+          {!showProposeForm ? (
+            <button
+              onClick={() => setShowProposeForm(true)}
+              className="w-full flex items-center justify-center gap-1 text-xs text-[#808080] hover:text-[#E3C567] py-1 transition-colors"
+            >
+              <CalendarPlus className="w-3 h-3" />
+              Propose Different Dates
+            </button>
+          ) : (
+            <ProposeNewDatesForm
+              dealId={dealId}
+              roomId={roomId}
+              profileId={profile?.id}
+              compact
+              onProposed={() => {
+                setShowProposeForm(false);
+                setSelectedSlotIdx(null);
+                safeSetStatus("PROPOSED");
+              }}
+              onCancel={() => setShowProposeForm(false)}
+            />
+          )}
+        </div>
       )}
 
-      {isAgent && !isSigned && status === "PROPOSED" && (
+      {(isAgent || isInvestor) && !isSigned && status === "PROPOSED" && (
         <p className="text-xs text-[#F59E0B]">Sign the agreement to confirm this walk-through.</p>
       )}
     </div>
