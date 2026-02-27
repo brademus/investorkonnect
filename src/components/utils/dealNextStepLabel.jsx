@@ -11,7 +11,7 @@ import { normalizeStage } from "@/components/pipelineStages";
  * @param {string|null} opts.wtStatus - walkthrough appointment status (from DealAppointments)
  * @returns {{ label: string, color: string } | null}
  */
-export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus }) {
+export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtProposedByProfileId, myProfileId }) {
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = deal?.is_fully_signed;
 
