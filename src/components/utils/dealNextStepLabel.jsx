@@ -33,8 +33,11 @@ export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtPr
     }
 
     if (effectiveWtStatus === 'PROPOSED') {
-      if (isAgent) return { label: 'Confirm walkthrough date & time', color: 'text-[#E3C567]' };
-      return { label: 'Waiting for agent to confirm date & time', color: 'text-[#808080]' };
+      const proposedBySelf = wtProposedByProfileId && myProfileId && wtProposedByProfileId === myProfileId;
+      if (proposedBySelf) {
+        return { label: isAgent ? 'Waiting for investor to confirm' : 'Waiting for agent to confirm', color: 'text-[#808080]' };
+      }
+      return { label: 'Confirm walkthrough date & time', color: 'text-[#E3C567]' };
     }
 
     if (effectiveWtStatus === 'SCHEDULED' || effectiveWtStatus === 'COMPLETED') {
