@@ -45,7 +45,7 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
-                    {userRole === 'agent' && (room.estimated_list_price || room.budget) > 0 ? `$${(room.estimated_list_price || room.budget).toLocaleString()} • ${[room.city, room.state].filter(Boolean).join(', ')}` : room.is_fully_signed ? (room.counterparty_name || 'Room') : userRole === 'investor' ? 'Agent' : 'Investor'}
+                    {userRole === 'agent' && room.estimated_list_price > 0 ? `$${room.estimated_list_price.toLocaleString()} • ${[room.city, room.state].filter(Boolean).join(', ')}` : room.is_fully_signed ? (room.counterparty_name || 'Room') : userRole === 'investor' ? 'Agent' : 'Investor'}
                   </p>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                     {badge && <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>}
@@ -57,8 +57,8 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
                   </p>
                 )}
                 {userRole === 'agent'
-                  ? (room.estimated_list_price || room.budget) > 0 && <div className="text-xs text-[#34D399] font-semibold">${(room.estimated_list_price || room.budget).toLocaleString()}</div>
-                  : room.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>
+                  ? (room.estimated_list_price > 0 && <div className="text-xs text-[#34D399] font-semibold">${room.estimated_list_price.toLocaleString()}</div>)
+                  : (room.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>)
                 }
                 {compLabel && <div className="text-xs text-[#E3C567]">Agent Comp: {compLabel}</div>}
               </div>

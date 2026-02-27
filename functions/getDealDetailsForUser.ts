@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
 
     const base = {
       id: deal.id, title: deal.title, city: deal.city, state: deal.state, county: deal.county, zip: deal.zip,
-      purchase_price: deal.purchase_price, estimated_list_price: deal.estimated_list_price || null,
+      purchase_price: isAgent ? null : deal.purchase_price,
+      estimated_list_price: deal.estimated_list_price || null,
       pipeline_stage: deal.pipeline_stage, status: deal.status,
       created_date: deal.created_date, updated_date: deal.updated_date, key_dates: deal.key_dates,
       investor_id: deal.investor_id, agent_id: deal.agent_id,
