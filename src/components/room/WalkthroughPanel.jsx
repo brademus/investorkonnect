@@ -178,8 +178,13 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
     }
   };
 
+  const proposedBySelf = proposedByProfileId === profile?.id;
   const statusColor = status === "SCHEDULED" ? "text-[#10B981]" : status === "COMPLETED" ? "text-[#60A5FA]" : "text-[#F59E0B]";
-  const statusLabel = status === "SCHEDULED" ? "Confirmed" : status === "COMPLETED" ? "Completed" : "Proposed — Awaiting Confirmation";
+  let statusLabel = "Proposed — Awaiting Confirmation";
+  if (status === "SCHEDULED") statusLabel = "Confirmed";
+  else if (status === "COMPLETED") statusLabel = "Completed";
+  else if (status === "PROPOSED" && proposedBySelf) statusLabel = "Waiting for Confirmation";
+  else if (status === "PROPOSED" && !proposedBySelf && proposedByProfileId) statusLabel = "New Dates Proposed — Please Confirm";
 
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">

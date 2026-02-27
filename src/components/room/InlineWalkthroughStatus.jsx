@@ -144,8 +144,13 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
     );
   }
 
+  const proposedBySelf = proposedByProfileId === profile?.id;
   const statusColor = status === "SCHEDULED" ? "text-[#10B981]" : status === "COMPLETED" ? "text-[#60A5FA]" : "text-[#F59E0B]";
-  const statusLabel = status === "SCHEDULED" ? "Confirmed" : status === "COMPLETED" ? "Completed" : "Proposed — Awaiting Confirmation";
+  let statusLabel = "Proposed — Awaiting Confirmation";
+  if (status === "SCHEDULED") statusLabel = "Confirmed";
+  else if (status === "COMPLETED") statusLabel = "Completed";
+  else if (status === "PROPOSED" && proposedBySelf) statusLabel = "Waiting for Confirmation";
+  else if (status === "PROPOSED" && !proposedBySelf && proposedByProfileId) statusLabel = "New Dates Proposed — Please Confirm";
 
   return (
     <div className="space-y-2" data-walkthrough-panel>
