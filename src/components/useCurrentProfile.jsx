@@ -209,9 +209,10 @@ export function useCurrentProfile() {
           error: null
         };
 
-        // Update global cache
+        // Update global cache + persist to sessionStorage for Safari refresh
         globalProfileCache = finalState;
         globalCacheTimestamp = Date.now();
+        persistCache(finalState);
 
         if (mounted) setState(finalState);
 
