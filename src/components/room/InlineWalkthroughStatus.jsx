@@ -81,7 +81,12 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
     const unsub = base44.entities.Message.subscribe(e => {
       const d = e?.data;
       if (!d || d.room_id !== roomId) return;
-      if (d.metadata?.type === "walkthrough_request" || d.metadata?.type === "walkthrough_response") {
+      if (d.metadata?.type === "walkthrough_request") {
+        if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
+        else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
+        else if (d.metadata.status === "pending") { setApptStatus("PROPOSED"); delete _wtCache[dealId]; }
+      }
+      if (d.metadata?.type === "walkthrough_response") {
         if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
         else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
       }
