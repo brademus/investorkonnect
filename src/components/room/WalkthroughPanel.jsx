@@ -308,6 +308,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                     setShowProposeForm(false);
                     setSelectedSlotIdx(null);
                     safeSetStatus("PROPOSED");
+                    setProposedByProfileId(profile?.id);
                   }}
                   onCancel={() => setShowProposeForm(false)}
                 />
