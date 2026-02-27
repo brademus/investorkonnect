@@ -39,9 +39,9 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   // Persist to cache whenever apptStatus changes
   useEffect(() => {
     if (dealId && apptStatus) {
-      _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus };
+      _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus, proposedBy: proposedByProfileId };
     }
-  }, [dealId, apptStatus]);
+  }, [dealId, apptStatus, proposedByProfileId]);
 
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [showProposeForm, setShowProposeForm] = useState(false);

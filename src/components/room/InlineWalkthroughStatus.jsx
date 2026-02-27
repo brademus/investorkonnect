@@ -27,8 +27,8 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   };
 
   useEffect(() => {
-    if (dealId && apptStatus) _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus };
-  }, [dealId, apptStatus]);
+    if (dealId && apptStatus) _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus, proposedBy: proposedByProfileId };
+  }, [dealId, apptStatus, proposedByProfileId]);
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
