@@ -8,7 +8,20 @@ import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { reportError } from "@/components/utils/reportError";
 import FileViewerModal from "@/components/room/FileViewerModal";
 
-function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage, onView }) {
+function downloadFile(url, name) {
+  fetch(url).then(res => res.blob()).then(blob => {
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = name || 'download';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(blobUrl);
+    a.remove();
+  }).catch(() => window.open(url, '_blank'));
+}
+
+function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage, onView, onDownload }) {
   const hasFile = !!url;
   return (
     <div className={`flex items-center gap-3 p-4 rounded-xl border transition-colors ${hasFile ? 'bg-[#141414] border-[#1F1F1F]' : 'bg-[#0A0A0A] border-[#1A1A1A] opacity-60'}`}>
@@ -30,7 +43,7 @@ function DocRow({ label, url, filename, verified, available, onUpload, blockedMe
           <button onClick={onView} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
             <Eye className="w-3 h-3" />View
           </button>
-          <button onClick={onView} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+          <button onClick={onDownload} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
             <Download className="w-3 h-3" />Download
           </button>
         </div>
