@@ -98,10 +98,9 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
 
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
   // Either party can confirm proposed dates — the one who didn't propose them
-  const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
-  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED";
-  // Only agents who haven't proposed the current dates should confirm; investors confirm agent-proposed dates
-  // We'll allow both to confirm for simplicity since the proposer wouldn't need to confirm their own dates
+  const proposedBySelf2 = proposedByProfileId === profile?.id;
+  const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const hasSlots = wtSlots.length > 0;
 

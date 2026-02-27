@@ -139,8 +139,9 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   // Only fall back to PROPOSED once we've actually loaded from DB (or cache)
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
   const hasSlots = wtSlots.length > 0;
-  const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
-  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED";
+  const proposedBySelf2 = proposedByProfileId === profile?.id;
+  const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const displayText = formatWalkthrough(wtDate, wtTime);
 
