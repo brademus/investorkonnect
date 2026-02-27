@@ -367,6 +367,72 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       );
     }
 
+    // List price review type (investor reviews after CMA)
+    if (cta.type === 'list_price_review') {
+      if (!editingListPrice) {
+        return (
+          <div className="space-y-3">
+            <p className={`font-medium text-[#FAFAFA] ${inline ? 'text-sm' : 'text-base'}`}>Review Estimated List Price</p>
+            <p className={`text-[#808080] ${inline ? 'text-xs' : 'text-sm'}`}>The agent has uploaded the CMA. Review the estimated list price and either keep it or update it.</p>
+            <div className="bg-[#0A0A0A] border border-[#333] rounded-xl p-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#808080]">Current Estimated List Price</p>
+                <p className="text-lg font-bold text-[#E3C567]">
+                  {deal?.estimated_list_price ? `$${Number(deal.estimated_list_price).toLocaleString()}` : 'Not set'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={keepListPrice}
+                disabled={confirmingKeep}
+                size={inline ? 'sm' : 'default'}
+                className={`flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full font-semibold ${inline ? 'text-xs h-9' : 'h-11'}`}
+              >
+                {confirmingKeep ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Keep Price
+              </Button>
+              <Button
+                onClick={() => {
+                  setListPriceInput(deal?.estimated_list_price ? String(deal.estimated_list_price) : '');
+                  setEditingListPrice(true);
+                }}
+                size={inline ? 'sm' : 'default'}
+                className={`flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold ${inline ? 'text-xs h-9' : 'h-11'}`}
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Edit Price
+              </Button>
+            </div>
+          </div>
+        );
+      } else {
+        return (
+          <div className="space-y-3">
+            <p className={`font-medium text-[#FAFAFA] ${inline ? 'text-sm' : 'text-base'}`}>Update Estimated List Price</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={listPriceInput}
+                onChange={e => setListPriceInput(e.target.value)}
+                placeholder="e.g. 450000"
+                className="flex-1 bg-[#0A0A0A] border border-[#333] rounded-lg px-3 py-2 text-sm text-[#FAFAFA] focus:outline-none focus:border-[#E3C567]"
+              />
+              <Button
+                onClick={saveListPriceAndConfirm}
+                disabled={savingListPrice}
+                size={inline ? 'sm' : 'default'}
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+              >
+                {savingListPrice ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+              </Button>
+            </div>
+            <button onClick={() => setEditingListPrice(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Cancel</button>
+          </div>
+        );
+      }
+    }
+
     // Action type
     return (
       <div className="space-y-3">
