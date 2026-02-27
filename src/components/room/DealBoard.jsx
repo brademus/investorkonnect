@@ -17,6 +17,7 @@ import { validateImage, validateSafeDocument } from "@/components/utils/fileVali
 import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
+import FileViewerModal from "@/components/room/FileViewerModal.jsx";
 
 function WalkthroughStatusLine({ dealId, roomId, deal, isSigned }) {
   const [status, setStatus] = useState(null);
@@ -135,6 +136,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [wtModalOpen, setWtModalOpen] = useState(false);
+  const [viewerFile, setViewerFile] = useState(null);
   // localDocsRef is the single source of truth for documents uploaded in this session.
   // It NEVER gets cleared — it only grows. This ensures no real-time event or prop change can erase uploads.
   const localDocsRef = useRef({});
@@ -426,7 +428,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                   <div key={i} className="group relative aspect-square rounded-lg overflow-hidden bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567]/30">
                     <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="bg-[#E3C567] text-black px-4 py-2 rounded-full text-sm font-medium">View</a>
+                      <button onClick={() => setViewerFile({ url: p.url, name: p.name })} className="bg-[#E3C567] text-black px-4 py-2 rounded-full text-sm font-medium">View</button>
                     </div>
                   </div>
                 ))}
@@ -437,6 +439,13 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
       )}
 
       {/* Activity Tab — keep mounted once visited */}
+      <FileViewerModal
+        open={!!viewerFile}
+        onOpenChange={(open) => { if (!open) setViewerFile(null); }}
+        fileUrl={viewerFile?.url}
+        fileName={viewerFile?.name}
+      />
+
       {visitedTabs.has('activity') && (
         <div style={{ display: activeTab === 'activity' ? 'block' : 'none' }}>
           <DealActivityTab dealId={deal?.id} roomId={roomId} />
