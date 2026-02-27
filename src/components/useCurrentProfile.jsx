@@ -7,6 +7,24 @@ let globalProfileCache = null;
 let globalCacheTimestamp = 0;
 const CACHE_DURATION = 10000; // 10 seconds
 
+// Safari BFCache fix: reset stale state when page is restored from cache
+if (typeof window !== 'undefined' && !window.__PROFILE_BFCACHE_LISTENER__) {
+  window.__PROFILE_BFCACHE_LISTENER__ = true;
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+      // Page was restored from BFCache — invalidate stale cache
+      globalProfileCache = null;
+      globalCacheTimestamp = 0;
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && (Date.now() - globalCacheTimestamp) > CACHE_DURATION) {
+      globalProfileCache = null;
+      globalCacheTimestamp = 0;
+    }
+  });
+}
+
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Aggressive Caching to Prevent Rate Limits
  * 
@@ -38,8 +56,14 @@ export function useCurrentProfile() {
   const loadingRef = useRef(false);
 
   // Safety reset: if a previous mount left loadingRef stuck, clear it on fresh mount
+  // Also handles Safari BFCache where module state persists across navigations
   useEffect(() => {
     loadingRef.current = false;
+    // If cache is stale on mount, clear it so we re-fetch
+    if (Date.now() - globalCacheTimestamp > CACHE_DURATION) {
+      globalProfileCache = null;
+      globalCacheTimestamp = 0;
+    }
   }, []);
 
   useEffect(() => {
@@ -63,10 +87,6 @@ export function useCurrentProfile() {
       loadingRef.current = true;
 
       try {
-        // Small stagger to avoid competing with navigation logging
-        await new Promise(r => setTimeout(r, 150));
-        if (!mounted) return;
-
         const user = await base44.auth.me();
         if (!mounted) return;
         
