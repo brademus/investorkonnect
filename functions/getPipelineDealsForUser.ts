@@ -101,10 +101,17 @@ Deno.serve(async (req) => {
         proposed_terms: finalProposedTerms
       };
 
+      // Always include walkthrough info + documents (for next-step logic)
+      base.walkthrough_scheduled = deal.walkthrough_scheduled;
+      base.walkthrough_date = deal.walkthrough_date;
+      base.walkthrough_time = deal.walkthrough_time;
+      base.walkthrough_slots = deal.walkthrough_slots;
+      base.documents = deal.documents || null;
+
       if (isAdmin || isInvestor || isSigned) {
-        return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, documents: deal.documents, special_notes: deal.special_notes };
+        return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };
       }
-      return { ...base, property_address: null, seller_info: null, property_details: null, documents: null, special_notes: null };
+      return { ...base, property_address: null, seller_info: null, property_details: null, special_notes: null };
     });
 
     // Attach agreement exhibit_a_terms for compensation display on pipeline cards
