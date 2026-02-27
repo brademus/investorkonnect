@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { dealId, documents, pipeline_stage } = body || {};
+    const { dealId, documents, pipeline_stage, estimated_list_price } = body || {};
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
-    if (!documents && !pipeline_stage) return Response.json({ error: 'Nothing to update' }, { status: 400 });
+    if (!documents && !pipeline_stage && estimated_list_price === undefined) return Response.json({ error: 'Nothing to update' }, { status: 400 });
 
     const profileArr = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profileArr?.[0];
@@ -62,6 +62,13 @@ Deno.serve(async (req) => {
         }
       }
       updatePayload.pipeline_stage = pipeline_stage;
+    }
+    if (estimated_list_price !== undefined) {
+      const parsed = Number(estimated_list_price);
+      if (isNaN(parsed) || parsed < 0) {
+        return Response.json({ error: 'Invalid estimated_list_price' }, { status: 400 });
+      }
+      updatePayload.estimated_list_price = parsed;
     }
 
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
