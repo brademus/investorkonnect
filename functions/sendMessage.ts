@@ -43,8 +43,13 @@ Deno.serve(async (req) => {
       const allParticipantIds = [room.investorId, ...(room.agent_ids || [])].filter(Boolean);
       const otherIds = allParticipantIds.filter(id => id !== profile.id);
       for (const pid of otherIds) {
-        const ps = await base44.asServiceRole.entities.Profile.filter({ id: pid });
-        const p = ps?.[0];
+        let p = null;
+        try {
+          p = await base44.asServiceRole.entities.Profile.get(pid);
+        } catch (_) {
+          console.warn('[sendMessage] Could not find profile', pid);
+          continue;
+        }
         if (!p) continue;
 
         const dealLabel = room.title || room.property_address || 'your deal';
