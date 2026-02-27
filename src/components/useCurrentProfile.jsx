@@ -31,60 +31,45 @@ if (typeof window !== 'undefined' && !window.__PROFILE_BFCACHE_LISTENER__) {
  * Single source of truth for current user + profile + onboarding + KYC + NDA state.
  */
 export function useCurrentProfile() {
-  const [state, setState] = useState({
-    loading: true,
-    user: null,
-    profile: null,
-    role: null,
-    onboarded: false,
-    needsOnboarding: false,
-    kycStatus: 'unverified',
-    kycVerified: false,
-    needsKyc: false,
-    hasNDA: false,
-    needsNda: false,
-    isInvestorReady: false,
-    hasRoom: false,
-    targetState: null,
-    subscriptionPlan: 'none',
-    subscriptionStatus: 'none',
-    isPaidSubscriber: false,
-    error: null
+  const [state, setState] = useState(() => {
+    // Initialize from cache if available to avoid flash
+    if (globalProfileCache && (Date.now() - globalCacheTimestamp) < CACHE_DURATION) {
+      return globalProfileCache;
+    }
+    return {
+      loading: true,
+      user: null,
+      profile: null,
+      role: null,
+      onboarded: false,
+      needsOnboarding: false,
+      kycStatus: 'unverified',
+      kycVerified: false,
+      needsKyc: false,
+      hasNDA: false,
+      needsNda: false,
+      isInvestorReady: false,
+      hasRoom: false,
+      targetState: null,
+      subscriptionPlan: 'none',
+      subscriptionStatus: 'none',
+      isPaidSubscriber: false,
+      error: null
+    };
   });
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const loadingRef = useRef(false);
-
-  // Safety reset: if a previous mount left loadingRef stuck, clear it on fresh mount
-  // Also handles Safari BFCache where module state persists across navigations
-  useEffect(() => {
-    loadingRef.current = false;
-    // If cache is stale on mount, clear it so we re-fetch
-    if (Date.now() - globalCacheTimestamp > CACHE_DURATION) {
-      globalProfileCache = null;
-      globalCacheTimestamp = 0;
-    }
-  }, []);
 
   useEffect(() => {
     let mounted = true;
     
     const loadProfile = async () => {
-      // Prevent concurrent calls
-      if (loadingRef.current) {
-        console.log('[useCurrentProfile] Already loading, skipping...');
-        return;
-      }
-
       // Use global cache if recent enough
       const now = Date.now();
       if (globalProfileCache && (now - globalCacheTimestamp) < CACHE_DURATION) {
-        console.log('[useCurrentProfile] Using cached profile');
         if (mounted) setState(globalProfileCache);
         return;
       }
-
-      loadingRef.current = true;
 
       try {
         const user = await base44.auth.me();
