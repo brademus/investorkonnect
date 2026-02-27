@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
         zip: draft.zip,
         budget: draft.purchase_price,
         closing_date: draft.closing_date,
+        deal_type: draft.deal_type || null,
         requested_at: new Date().toISOString(),
         proposed_terms: {
           seller_commission_type: draft.seller_commission_type,
