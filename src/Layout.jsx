@@ -101,19 +101,25 @@ function LayoutContent({ children }) {
     }
   }, [error]);
 
-  const [showAppLoader, setShowAppLoader] = useState(loading);
+  // If we already have cached profile data (e.g. from sessionStorage), skip the loader entirely
+  const [showAppLoader, setShowAppLoader] = useState(() => {
+    // If hook already resolved from cache, no loader needed
+    if (!loading) return false;
+    // If we have a user in the initial state (from sessionStorage cache), skip loader
+    if (user) return false;
+    return true;
+  });
   useEffect(() => {
     if (!loading) {
-      // Small delay to avoid flash
-      const t = setTimeout(() => setShowAppLoader(false), 100);
+      const t = setTimeout(() => setShowAppLoader(false), 50);
       return () => clearTimeout(t);
     }
   }, [loading]);
 
-  // Safety timeout: never block the UI for more than 4 seconds
+  // Safety timeout: never block the UI for more than 2.5 seconds
   useEffect(() => {
     if (!showAppLoader) return;
-    const t = setTimeout(() => setShowAppLoader(false), 4000);
+    const t = setTimeout(() => setShowAppLoader(false), 2500);
     return () => clearTimeout(t);
   }, []);
 
