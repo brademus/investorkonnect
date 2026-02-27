@@ -38,6 +38,23 @@ Deno.serve(async (req) => {
       room_id, sender_profile_id: profile.id, body: text
     });
 
+    // Send SMS to other participants who have text notifications enabled
+    try {
+      const allParticipantIds = [room.investorId, ...(room.agent_ids || [])].filter(Boolean);
+      const otherIds = allParticipantIds.filter(id => id !== profile.id);
+      for (const pid of otherIds) {
+        const ps = await base44.asServiceRole.entities.Profile.filter({ id: pid });
+        const p = ps?.[0];
+        const textEnabled = p?.notification_preferences?.text !== false;
+        if (textEnabled && p?.phone) {
+          const smsText = `Investor Konnect: New message from ${profile.full_name || 'a participant'} on ${room.title || 'your deal'}. Log in to view.`;
+          await base44.asServiceRole.functions.invoke('sendSms', { to: p.phone, message: smsText });
+        }
+      }
+    } catch (smsErr) {
+      console.warn('[sendMessage] SMS notification failed (non-fatal):', smsErr.message);
+    }
+
     return Response.json({ ok: true, message });
   } catch (error) {
     console.error('[sendMessage] Error:', error);
