@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { reportError } from "@/components/utils/reportError";
 
-function DocRow({ label, url, filename, verified, available, onUpload }) {
+function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage }) {
   const hasFile = !!url;
   return (
     <div className={`flex items-center gap-3 p-4 rounded-xl border transition-colors ${hasFile ? 'bg-[#141414] border-[#1F1F1F]' : 'bg-[#0A0A0A] border-[#1A1A1A] opacity-60'}`}>
@@ -20,16 +20,19 @@ function DocRow({ label, url, filename, verified, available, onUpload }) {
         {hasFile && verified && (
           <span className="inline-flex items-center gap-1 text-xs text-[#34D399] mt-0.5"><CheckCircle2 className="w-3 h-3" />Verified</span>
         )}
+        {!hasFile && blockedMessage && (
+          <p className="text-xs text-[#F59E0B] mt-0.5">{blockedMessage}</p>
+        )}
       </div>
       {hasFile ? (
         <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
           <Download className="w-3 h-3" />Download
         </a>
-      ) : (
+      ) : onUpload ? (
         <Button onClick={onUpload} variant="outline" size="sm" className="rounded-full border-[#1F1F1F] text-[#808080] hover:border-[#E3C567] hover:text-[#E3C567]">
           <Upload className="w-3 h-3 mr-1.5" />Upload
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }
