@@ -85,7 +85,7 @@ export default function AgentProfile() {
     };
 
     loadProfile();
-  }, [profileId]);
+  }, [profileId, currentProfile?.id]);
 
   // Real-time: refetch reviews when Review entity changes for this agent
   useEffect(() => {
