@@ -16,8 +16,14 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
   const ext = (fileName || fileUrl || '').split('.').pop()?.toLowerCase()?.split('?')[0] || '';
   const isPdf = ext === 'pdf' || (fileUrl || '').includes('.pdf');
   const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || (fileUrl || '').match(/\.(png|jpg|jpeg|gif|webp|svg)/i);
+  const isDoc = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
 
-  const canPreview = isPdf || isImage;
+  const canPreview = isPdf || isImage || isDoc;
+
+  // For PDFs and docs, use Google Docs Viewer which handles cross-origin files reliably
+  const googleViewerUrl = (isPdf || isDoc) && fileUrl
+    ? `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`
+    : null;
 
   const handleDownload = async () => {
     try {
@@ -32,7 +38,6 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
       URL.revokeObjectURL(url);
       a.remove();
     } catch {
-      // Fallback: open in new tab
       window.open(fileUrl, '_blank');
     }
   };
@@ -64,11 +69,11 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          {isPdf && (
+          {googleViewerUrl && (
             <iframe
-              src={fileUrl}
-              className="w-full h-full border-0"
-              title={fileName || 'PDF Viewer'}
+              src={googleViewerUrl}
+              className="w-full h-full border-0 bg-white"
+              title={fileName || 'Document Viewer'}
             />
           )}
           {isImage && !isPdf && (
