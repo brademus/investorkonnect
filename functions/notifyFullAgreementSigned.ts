@@ -95,7 +95,7 @@ Investor Konnect Team
     const smsText = `Investor Konnect: Agreement for ${dealTitle} (${propertyAddress}) is fully signed! Log in to view next steps.`;
     
     const sendSmsIfEnabled = async (profile) => {
-      const textEnabled = profile.notification_preferences?.text !== false;
+      const textEnabled = profile.notification_preferences?.text === true;
       if (textEnabled && profile.phone) {
         try {
           await base44.asServiceRole.functions.invoke('sendSms', { to: profile.phone, message: smsText });

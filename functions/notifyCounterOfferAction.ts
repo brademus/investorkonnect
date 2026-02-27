@@ -68,7 +68,7 @@ Investor Konnect Team
     });
 
     // Send SMS if sender has phone and text notifications enabled
-    const textEnabled = sender.notification_preferences?.text !== false;
+    const textEnabled = sender.notification_preferences?.text === true;
     if (textEnabled && sender.phone) {
       try {
         const smsText = `Investor Konnect: Your counter offer for ${dealTitle} has been ${action}. Log in for details.`;

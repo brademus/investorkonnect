@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       for (const pid of otherIds) {
         const ps = await base44.asServiceRole.entities.Profile.filter({ id: pid });
         const p = ps?.[0];
-        const textEnabled = p?.notification_preferences?.text !== false;
+        const textEnabled = p?.notification_preferences?.text === true;
         if (textEnabled && p?.phone) {
           const smsText = `Investor Konnect: New message from ${profile.full_name || 'a participant'} on ${room.title || 'your deal'}. Log in to view.`;
           await base44.asServiceRole.functions.invoke('sendSms', { to: p.phone, message: smsText });
