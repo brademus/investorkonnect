@@ -5,21 +5,41 @@ import * as Sentry from '@sentry/react';
 // Global cache to prevent redundant API calls across component instances
 let globalProfileCache = null;
 let globalCacheTimestamp = 0;
-const CACHE_DURATION = 10000; // 10 seconds
+const CACHE_DURATION = 30000; // 30 seconds — generous to survive Safari refresh
 
-// Safari BFCache fix: reset stale state when page is restored from cache
+// Persist cache to sessionStorage so Safari hard-refreshes start warm
+const SESSION_KEY = '__ik_profile_cache';
+function persistCache(state) {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ state, ts: Date.now() }));
+  } catch (_) {}
+}
+function loadPersistedCache() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const { state, ts } = JSON.parse(raw);
+    if (state && ts && (Date.now() - ts) < 120000) return { state, ts }; // 2 min TTL for persisted
+  } catch (_) {}
+  return null;
+}
+
+// On module init, hydrate in-memory cache from sessionStorage
+if (!globalProfileCache) {
+  const persisted = loadPersistedCache();
+  if (persisted) {
+    globalProfileCache = persisted.state;
+    globalCacheTimestamp = persisted.ts;
+  }
+}
+
+// Safari BFCache: on restore, trigger a background refresh but keep stale cache
+// so the UI doesn't flash loading state
 if (typeof window !== 'undefined' && !window.__PROFILE_BFCACHE_LISTENER__) {
   window.__PROFILE_BFCACHE_LISTENER__ = true;
   window.addEventListener('pageshow', (event) => {
     if (event.persisted) {
-      // Page was restored from BFCache — invalidate stale cache
-      globalProfileCache = null;
-      globalCacheTimestamp = 0;
-    }
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && (Date.now() - globalCacheTimestamp) > CACHE_DURATION) {
-      globalProfileCache = null;
+      // Mark cache as stale so next useEffect re-fetches, but DON'T null it out
       globalCacheTimestamp = 0;
     }
   });
