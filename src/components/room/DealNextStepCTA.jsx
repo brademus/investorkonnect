@@ -148,6 +148,59 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const hasCma = !!(deal?.documents?.cma?.url);
   const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
   const hasBuyerContract = !!(deal?.documents?.buyer_contract?.url);
+  const listPriceConfirmed = !!deal?.list_price_confirmed;
+
+  const [confirmingKeep, setConfirmingKeep] = useState(false);
+
+  const keepListPrice = async () => {
+    setConfirmingKeep(true);
+    try {
+      await base44.functions.invoke('updateDealDocuments', {
+        dealId: deal.id,
+        list_price_confirmed: true
+      });
+      if (roomId) {
+        const formatted = deal?.estimated_list_price ? `$${Number(deal.estimated_list_price).toLocaleString()}` : 'current price';
+        await base44.functions.invoke('postSystemMessage', {
+          roomId,
+          body: `📋 Investor confirmed the estimated list price remains at ${formatted}.`
+        }).catch(() => {});
+      }
+      onDealUpdate?.({ list_price_confirmed: true });
+      toast.success('List price confirmed');
+    } catch (err) {
+      toast.error('Failed to confirm price');
+    } finally {
+      setConfirmingKeep(false);
+    }
+  };
+
+  const saveListPriceAndConfirm = async () => {
+    const cleaned = Number(String(listPriceInput).replace(/[$,\s]/g, ''));
+    if (!cleaned || isNaN(cleaned)) { toast.error('Enter a valid price'); return; }
+    setSavingListPrice(true);
+    try {
+      await base44.functions.invoke('updateDealDocuments', {
+        dealId: deal.id,
+        estimated_list_price: cleaned,
+        list_price_confirmed: true
+      });
+      if (roomId) {
+        const formatted = `$${cleaned.toLocaleString()}`;
+        await base44.functions.invoke('postSystemMessage', {
+          roomId,
+          body: `📋 Investor updated the estimated list price to ${formatted}.`
+        }).catch(() => {});
+      }
+      onDealUpdate?.({ estimated_list_price: cleaned, list_price_confirmed: true });
+      toast.success('List price updated');
+      setEditingListPrice(false);
+    } catch (err) {
+      toast.error('Failed to update price');
+    } finally {
+      setSavingListPrice(false);
+    }
+  };
 
   let cta = null;
 
@@ -173,6 +226,13 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           cta = { type: 'action', icon: Upload, label: 'Upload CMA', description: 'Upload a Comparative Market Analysis for this property.', onClick: () => triggerUpload('cma') };
         } else {
           cta = { type: 'waiting', icon: Clock, label: 'Waiting for CMA', description: 'The agent is preparing the Comparative Market Analysis.' };
+        }
+      } else if (!listPriceConfirmed) {
+        // CMA uploaded but investor hasn't confirmed/updated list price yet
+        if (isInvestor) {
+          cta = { type: 'list_price_review' };
+        } else {
+          cta = { type: 'waiting', icon: Clock, label: 'Waiting for Investor to Review List Price', description: 'The investor is reviewing the CMA and confirming the estimated list price.' };
         }
       } else if (!hasListingAgreement) {
         if (isAgent) {
