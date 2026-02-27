@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     if (isAdmin) {
       deals = await base44.asServiceRole.entities.Deal.list('-updated_date', 100);
     } else if (isInvestor) {
-      deals = await base44.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } });
+      deals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } });
     } else if (isAgent) {
       // Only show deals where agent has an active invite (not VOIDED/EXPIRED)
       const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
