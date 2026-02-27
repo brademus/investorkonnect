@@ -12,6 +12,9 @@ import { normalizeStage } from "@/components/pipelineStages";
  * @returns {{ label: string, color: string } | null}
  */
 export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtProposedByProfileId, myProfileId }) {
+  const hasCma = !!(deal?.documents?.cma?.url);
+  const listPriceConfirmed = !!deal?.list_price_confirmed;
+  const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = deal?.is_fully_signed;
 
@@ -41,12 +44,20 @@ export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtPr
     }
 
     if (effectiveWtStatus === 'SCHEDULED' || effectiveWtStatus === 'COMPLETED') {
-      const hasCma = !!(deal?.documents?.cma?.url);
       if (!hasCma) {
         if (isAgent) return { label: 'Upload CMA', color: 'text-[#E3C567]' };
         return { label: 'Waiting for agent to upload CMA', color: 'text-[#808080]' };
       }
-      return { label: 'Confirm property listed', color: 'text-[#E3C567]' };
+      if (!listPriceConfirmed) {
+        if (isInvestor) return { label: 'Review estimated list price', color: 'text-[#E3C567]' };
+        return { label: 'Waiting for investor to confirm list price', color: 'text-[#808080]' };
+      }
+      if (!hasListingAgreement) {
+        if (isAgent) return { label: 'Upload listing agreement', color: 'text-[#E3C567]' };
+        return { label: 'Waiting for listing agreement', color: 'text-[#808080]' };
+      }
+      if (isAgent) return { label: 'Confirm property listed', color: 'text-[#E3C567]' };
+      return { label: 'Waiting for agent to confirm listing', color: 'text-[#808080]' };
     }
   }
 
