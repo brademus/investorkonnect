@@ -57,6 +57,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
       const s = rows?.[0]?.walkthrough?.status;
       if (s && s !== "NOT_SET") safeSetStatus(s);
       else if (dealHasWalkthrough) safeSetStatus("PROPOSED");
+      if (rows?.[0]?.walkthrough?.updatedByUserId) setProposedByProfileId(rows[0].walkthrough.updatedByUserId);
       setApptLoaded(true);
     }).catch(() => {
       if (!cancelled && dealHasWalkthrough && !_wtCache[dealId]?.status) safeSetStatus("PROPOSED");

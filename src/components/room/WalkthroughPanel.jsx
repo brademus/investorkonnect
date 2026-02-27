@@ -88,6 +88,9 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
       } else if (dealHasWalkthrough) {
         safeSetStatus("PROPOSED");
       }
+      if (rows?.[0]?.walkthrough?.updatedByUserId) {
+        setProposedByProfileId(rows[0].walkthrough.updatedByUserId);
+      }
       setApptLoaded(true);
     }).catch(() => {
       if (!cancelled && dealHasWalkthrough && !_wtCache[dealId]?.status) {
