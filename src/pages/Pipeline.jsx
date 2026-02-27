@@ -57,7 +57,7 @@ function PipelineContent() {
   // Load deals
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
-    staleTime: 30_000,
+    staleTime: 5_000,
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
@@ -76,7 +76,7 @@ function PipelineContent() {
   // Load rooms for matching
   const { data: rooms = [], refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
-    staleTime: 30_000,
+    staleTime: 5_000,
     queryFn: async () => {
       const res = await base44.functions.invoke('listMyRoomsEnriched');
       return res.data?.rooms || [];
