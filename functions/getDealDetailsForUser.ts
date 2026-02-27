@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
       walkthrough_confirmed_time: deal.walkthrough_confirmed_time || null,
       walkthrough_slots: deal.walkthrough_slots || [],
       deal_type: deal.deal_type || null,
+      list_price_confirmed: deal.list_price_confirmed || false,
       locked_agent_id: deal.locked_agent_id || null,
       selected_agent_ids: deal.selected_agent_ids || [],
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null, agent_terms: room.agent_terms || null, agent_ids: room.agent_ids || [] } : null

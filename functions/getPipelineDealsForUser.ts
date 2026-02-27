@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
       base.walkthrough_time = deal.walkthrough_time;
       base.walkthrough_slots = deal.walkthrough_slots;
       base.documents = deal.documents || null;
+      base.list_price_confirmed = deal.list_price_confirmed || false;
 
       if (isAdmin || isInvestor || isSigned) {
         return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };
