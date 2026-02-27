@@ -159,7 +159,12 @@ function PipelineContent() {
          locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
          investor_id: room?.investorId || deal.investor_id,
          seller_name: deal.seller_info?.seller_name,
-         selected_agent_ids: deal.selected_agent_ids,
+          selected_agent_ids: deal.selected_agent_ids,
+          documents: deal.documents || null,
+          walkthrough_scheduled: deal.walkthrough_scheduled,
+          walkthrough_slots: deal.walkthrough_slots,
+          walkthrough_date: deal.walkthrough_date,
+          walkthrough_time: deal.walkthrough_time,
          proposed_terms: (() => {
            // Only merge agent-specific counter terms after an agent has signed the agreement
            const base = room?.proposed_terms || deal.proposed_terms || {};
