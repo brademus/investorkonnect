@@ -112,6 +112,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   };
 
+  // Legacy saveListPrice kept for the edit-only flow in showEditListPrice section
   const saveListPrice = async () => {
     const cleaned = Number(String(listPriceInput).replace(/[$,\s]/g, ''));
     if (!cleaned || isNaN(cleaned)) { toast.error('Enter a valid price'); return; }
@@ -119,7 +120,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     try {
       await base44.functions.invoke('updateDealDocuments', {
         dealId: deal.id,
-        estimated_list_price: cleaned
+        estimated_list_price: cleaned,
+        list_price_confirmed: true
       });
       if (roomId) {
         const formatted = `$${cleaned.toLocaleString()}`;
@@ -128,7 +130,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           body: `📋 Investor updated the estimated list price to ${formatted}.`
         }).catch(() => {});
       }
-      onDealUpdate?.({ estimated_list_price: cleaned });
+      onDealUpdate?.({ estimated_list_price: cleaned, list_price_confirmed: true });
       toast.success('List price updated');
       setEditingListPrice(false);
     } catch (err) {
