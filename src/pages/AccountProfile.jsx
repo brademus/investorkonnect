@@ -104,7 +104,8 @@ function AccountProfileContent() {
         goals: formData.goals.trim(),
         next_steps_template: formData.next_steps_template || null,
         next_steps_template_type: formData.next_steps_template_type || "default",
-        custom_next_steps_template: formData.next_steps_template_type === 'custom' ? formData.custom_next_steps_template : null
+        custom_next_steps_template: formData.next_steps_template_type === 'custom' ? formData.custom_next_steps_template : null,
+        notification_preferences: notifPrefs
       };
       
       // Add agent-specific fields if user is an agent
@@ -359,7 +360,14 @@ function AccountProfileContent() {
                 id="phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  let formatted = '';
+                  if (digits.length > 0) formatted = '(' + digits.slice(0, 3);
+                  if (digits.length >= 3) formatted += ') ' + digits.slice(3, 6);
+                  if (digits.length >= 6) formatted += '-' + digits.slice(6, 10);
+                  setFormData({...formData, phone: formatted});
+                }}
                 placeholder="(555) 123-4567"
                 disabled={saving}
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
