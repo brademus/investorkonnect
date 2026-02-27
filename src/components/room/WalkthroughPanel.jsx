@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX, CalendarPlus } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
