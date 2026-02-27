@@ -253,7 +253,7 @@ function PipelineContent() {
       if (!dealIds.length) return {};
       const appts = await base44.entities.DealAppointments.filter({});
       const map = {};
-      appts.forEach(a => { if (a.dealId && a.walkthrough?.status) map[a.dealId] = a.walkthrough.status; });
+      appts.forEach(a => { if (a.dealId && a.walkthrough?.status) map[a.dealId] = { status: a.walkthrough.status, updatedBy: a.walkthrough.updatedByUserId || null }; });
       return map;
     },
     enabled: dealIds.length > 0,
