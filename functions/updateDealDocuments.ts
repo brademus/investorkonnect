@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { dealId, documents, pipeline_stage, estimated_list_price } = body || {};
+    const { dealId, documents, pipeline_stage, estimated_list_price, list_price_confirmed } = body || {};
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
-    if (!documents && !pipeline_stage && estimated_list_price === undefined) return Response.json({ error: 'Nothing to update' }, { status: 400 });
+    if (!documents && !pipeline_stage && estimated_list_price === undefined && list_price_confirmed === undefined) return Response.json({ error: 'Nothing to update' }, { status: 400 });
 
     const profileArr = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profileArr?.[0];
