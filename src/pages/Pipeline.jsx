@@ -96,6 +96,7 @@ function PipelineContent() {
       refetchDeals();
       // Just refetch on stage change; inline review form in pipeline card will handle rating
     }));
+    unsubs.push(base44.entities.DealAppointments.subscribe(() => { queryClient.invalidateQueries({ queryKey: ['wtStatuses'] }); }));
     if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => { refetchDeals(); refetchRooms(); }));
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
   }, [profile?.id, isAgent, isInvestor]);
