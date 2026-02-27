@@ -102,14 +102,11 @@ export function useCurrentProfile() {
           return;
         }
 
-        console.log('[useCurrentProfile] Loading profile for user:', user.id, user.email);
-
         // Load profile by user_id (fastest path) - with rate limit protection
         let profile = null;
         try {
           let profiles = await base44.entities.Profile.filter({ user_id: user.id });
           profile = profiles[0] || null;
-          console.log('[useCurrentProfile] Profile by user_id:', profile ? profile.id : 'not found');
         } catch (e) {
           console.warn('[useCurrentProfile] Filter by user_id failed:', e.message);
         }
@@ -120,12 +117,10 @@ export function useCurrentProfile() {
             const emailLower = user.email.toLowerCase().trim();
             const profiles = await base44.entities.Profile.filter({ email: emailLower });
             profile = profiles[0] || null;
-            console.log('[useCurrentProfile] Profile by email:', profile ? profile.id : 'not found');
             if (profile && profile.user_id !== user.id) {
               try {
                 await base44.entities.Profile.update(profile.id, { user_id: user.id });
                 profile.user_id = user.id;
-                console.log('[useCurrentProfile] Updated profile user_id');
               } catch (e) {
                 console.error('[useCurrentProfile] Failed to update user_id:', e);
               }
@@ -135,9 +130,7 @@ export function useCurrentProfile() {
           }
         }
 
-        if (!profile) {
-          console.error('[useCurrentProfile] No profile found for user:', user.id, user.email);
-        }
+        // No profile found is OK — user may still be in onboarding
 
         if (!mounted) return;
 
@@ -196,15 +189,6 @@ export function useCurrentProfile() {
           error: null
         };
 
-        console.log('[useCurrentProfile] Setting state:', {
-          profileId: profile?.id,
-          fullName: profile?.full_name,
-          role,
-          onboarded,
-          kycVerified,
-          hasNDA
-        });
-
         // Update global cache
         globalProfileCache = finalState;
         globalCacheTimestamp = Date.now();
@@ -213,14 +197,13 @@ export function useCurrentProfile() {
 
       } catch (error) {
         console.error('[useCurrentProfile] Fatal error:', error);
-              const isAuthError = error?.message?.includes('Authentication required') || error?.message?.includes('401') || error?.message?.includes('Unauthorized');
-              if (!isAuthError) {
-                Sentry.captureException(error, { tags: { source: 'useCurrentProfile' } });
-              }
+        const isAuthError = error?.message?.includes('Authentication required') || error?.message?.includes('401') || error?.message?.includes('Unauthorized');
+        if (!isAuthError) {
+          Sentry.captureException(error, { tags: { source: 'useCurrentProfile' } });
+        }
         
-        // On rate limit, use stale cache if available
-        if (error?.message?.includes('Rate limit') && globalProfileCache) {
-          console.log('[useCurrentProfile] Rate limited - using stale cache');
+        // On rate limit or error, use stale cache if available
+        if (globalProfileCache) {
           if (mounted) setState(globalProfileCache);
           return;
         }
@@ -249,8 +232,6 @@ export function useCurrentProfile() {
         };
 
         setState(errorState);
-      } finally {
-        loadingRef.current = false;
       }
     };
 
