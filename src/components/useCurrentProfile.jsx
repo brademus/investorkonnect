@@ -52,8 +52,8 @@ if (typeof window !== 'undefined' && !window.__PROFILE_BFCACHE_LISTENER__) {
  */
 export function useCurrentProfile() {
   const [state, setState] = useState(() => {
-    // Initialize from cache if available to avoid flash
-    if (globalProfileCache && (Date.now() - globalCacheTimestamp) < CACHE_DURATION) {
+    // Initialize from in-memory or sessionStorage cache to avoid loading flash on Safari refresh
+    if (globalProfileCache && globalProfileCache.user) {
       return globalProfileCache;
     }
     return {
