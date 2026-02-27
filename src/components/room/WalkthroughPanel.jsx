@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, CheckCircle2, Loader2, Check, CalendarX, CalendarPlus } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
+import ProposeNewDatesForm from "@/components/room/ProposeNewDatesForm";
 
 /**
  * WalkthroughPanel — shows walkthrough date/time + status on the Deal Board.
@@ -44,9 +44,6 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
 
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [showProposeForm, setShowProposeForm] = useState(false);
-  const [proposeDate, setProposeDate] = useState("");
-  const [proposeTime, setProposeTime] = useState("");
-  const [proposing, setProposing] = useState(false);
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
@@ -138,6 +135,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
   const hasSlots = wtSlots.length > 0;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED";
+  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED";
+  const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const displayText = formatWalkthrough(wtDate, wtTime);
 
   const handleRespond = async () => {
@@ -268,7 +267,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
             </>
           ) : null}
 
-          {canAgentRespond && (
+          {canRespond && (
             <div className="space-y-2 pt-2">
               <div className="flex gap-2">
                 <Button
@@ -287,81 +286,26 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                   className="text-[#808080] hover:text-[#FAFAFA] rounded-full text-xs border border-[#1F1F1F]"
                 >
                   <CalendarPlus className="w-3 h-3 mr-1" />
-                  Propose New Date
+                  Propose New Dates
                 </Button>
               </div>
               {showProposeForm && (
-                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3 space-y-2">
-                  <p className="text-xs text-[#808080]">Propose a new date/time:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-[#808080] mb-1 block">Date</label>
-                      <Input
-                        type="date"
-                        value={proposeDate}
-                        onChange={e => setProposeDate(e.target.value)}
-                        className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA] h-8 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#808080] mb-1 block">Time</label>
-                      <Input
-                        type="time"
-                        value={proposeTime}
-                        onChange={e => setProposeTime(e.target.value)}
-                        className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA] h-8 text-xs"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Button
-                      size="sm"
-                      disabled={proposing || !proposeDate || !proposeTime}
-                      onClick={async () => {
-                        if (!proposeDate || !proposeTime) return;
-                        setProposing(true);
-                        try {
-                          const datetime = `${proposeDate}T${proposeTime}`;
-                          await base44.functions.invoke('upsertDealAppointment', {
-                            dealId: deal?.id,
-                            type: 'walkthrough',
-                            action: 'propose',
-                            datetime,
-                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                          });
-                          await base44.entities.Message.create({
-                            room_id: roomId,
-                            sender_profile_id: profile?.id,
-                            body: `📅 New walk-through date proposed: ${proposeDate} at ${proposeTime}`,
-                            metadata: {
-                              type: 'walkthrough_response',
-                              status: 'pending',
-                              walkthrough_datetime: datetime,
-                            }
-                          });
-                          toast.success("New date proposed");
-                          setShowProposeForm(false);
-                          setProposeDate("");
-                          setProposeTime("");
-                        } catch (e) {
-                          toast.error("Failed to propose date");
-                        } finally {
-                          setProposing(false);
-                        }
-                      }}
-                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs h-7"
-                    >
-                      {proposing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                      Send Proposal
-                    </Button>
-                    <button onClick={() => setShowProposeForm(false)} className="text-xs text-[#808080] hover:text-[#FAFAFA]">Cancel</button>
-                  </div>
-                </div>
+                <ProposeNewDatesForm
+                  dealId={deal?.id}
+                  roomId={roomId}
+                  profileId={profile?.id}
+                  onProposed={() => {
+                    setShowProposeForm(false);
+                    setSelectedSlotIdx(null);
+                    safeSetStatus("PROPOSED");
+                  }}
+                  onCancel={() => setShowProposeForm(false)}
+                />
               )}
             </div>
           )}
 
-          {isAgent && !isSigned && status === "PROPOSED" && (
+          {(isAgent || isInvestor) && !isSigned && status === "PROPOSED" && (
             <p className="text-xs text-[#F59E0B] pt-2">Sign the agreement to confirm this walk-through.</p>
           )}
         </div>
