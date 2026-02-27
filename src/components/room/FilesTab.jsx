@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, Upload, Lock, CheckCircle2, Plus } from "lucide-react";
+import { FileText, Download, Upload, Lock, CheckCircle2, Plus, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { reportError } from "@/components/utils/reportError";
+import FileViewerModal from "@/components/room/FileViewerModal";
 
-function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage }) {
+function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage, onView }) {
   const hasFile = !!url;
   return (
     <div className={`flex items-center gap-3 p-4 rounded-xl border transition-colors ${hasFile ? 'bg-[#141414] border-[#1F1F1F]' : 'bg-[#0A0A0A] border-[#1A1A1A] opacity-60'}`}>
@@ -25,9 +26,14 @@ function DocRow({ label, url, filename, verified, available, onUpload, blockedMe
         )}
       </div>
       {hasFile ? (
-        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
-          <Download className="w-3 h-3" />Download
-        </a>
+        <div className="flex items-center gap-2">
+          <button onClick={onView} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+            <Eye className="w-3 h-3" />View
+          </button>
+          <button onClick={onView} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+            <Download className="w-3 h-3" />Download
+          </button>
+        </div>
       ) : onUpload ? (
         <Button onClick={onUpload} variant="outline" size="sm" className="rounded-full border-[#1F1F1F] text-[#808080] hover:border-[#E3C567] hover:text-[#E3C567]">
           <Upload className="w-3 h-3 mr-1.5" />Upload
@@ -40,6 +46,7 @@ function DocRow({ label, url, filename, verified, available, onUpload, blockedMe
 export default function FilesTab({ deal, room, roomId, profile }) {
   const [localRoom, setLocalRoom] = useState(room);
   const [localDeal, setLocalDeal] = useState(deal);
+  const [viewerFile, setViewerFile] = useState(null);
 
   // Shared messages hook — no duplicate fetch
   const { messages: roomMessages } = useRoomMessages(roomId);
