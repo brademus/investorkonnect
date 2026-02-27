@@ -31,14 +31,16 @@ function getSignatureStyle(name) {
   };
 }
 
-export default function CounterpartyInfoBar({ counterparty }) {
+export default function CounterpartyInfoBar({ counterparty, showContactInfo = true }) {
   if (!counterparty) return null;
 
   const sigStyle = useMemo(() => getSignatureStyle(counterparty.name), [counterparty.name]);
 
   const items = [
-    { icon: Mail, value: counterparty.email, href: counterparty.email ? `mailto:${counterparty.email}` : null },
-    { icon: Phone, value: counterparty.phone, href: counterparty.phone ? `tel:${counterparty.phone}` : null },
+    ...(showContactInfo ? [
+      { icon: Mail, value: counterparty.email, href: counterparty.email ? `mailto:${counterparty.email}` : null },
+      { icon: Phone, value: counterparty.phone, href: counterparty.phone ? `tel:${counterparty.phone}` : null },
+    ] : []),
     { icon: Building2, value: counterparty.company },
     { icon: MapPin, value: counterparty.company_address },
   ].filter(i => i.value);
