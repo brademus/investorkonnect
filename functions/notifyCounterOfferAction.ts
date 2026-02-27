@@ -66,6 +66,18 @@ Best regards,
 Investor Konnect Team
       `.trim()
     });
+
+    // Send SMS if sender has phone and text notifications enabled
+    const textEnabled = sender.notification_preferences?.text !== false;
+    if (textEnabled && sender.phone) {
+      try {
+        const smsText = `Investor Konnect: Your counter offer for ${dealTitle} has been ${action}. Log in for details.`;
+        await base44.asServiceRole.functions.invoke('sendSms', { to: sender.phone, message: smsText });
+        console.log('[notifyCounterOfferAction] SMS sent to', sender.email);
+      } catch (smsErr) {
+        console.warn('[notifyCounterOfferAction] SMS failed:', smsErr.message);
+      }
+    }
     
     return Response.json({ 
       success: true, 

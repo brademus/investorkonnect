@@ -90,6 +90,23 @@ Best regards,
 Investor Konnect Team
       `.trim()
     });
+
+    // Send SMS notifications if users have phone numbers and text notifications enabled
+    const smsText = `Investor Konnect: Agreement for ${dealTitle} (${propertyAddress}) is fully signed! Log in to view next steps.`;
+    
+    const sendSmsIfEnabled = async (profile) => {
+      const textEnabled = profile.notification_preferences?.text !== false;
+      if (textEnabled && profile.phone) {
+        try {
+          await base44.asServiceRole.functions.invoke('sendSms', { to: profile.phone, message: smsText });
+          console.log('[notifyFullAgreementSigned] SMS sent to', profile.email);
+        } catch (smsErr) {
+          console.warn('[notifyFullAgreementSigned] SMS failed for', profile.email, smsErr.message);
+        }
+      }
+    };
+
+    await Promise.all([sendSmsIfEnabled(investor), sendSmsIfEnabled(agent)]);
     
     return Response.json({ 
       success: true, 
