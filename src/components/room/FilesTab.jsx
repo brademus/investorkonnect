@@ -221,6 +221,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={docs.listing_agreement?.name}
             available={!!listingAgreementUrl}
             onUpload={localDeal?.list_price_confirmed ? () => uploadDocToRoom('listing_agreement') : undefined}
+            blockedMessage={!listingAgreementUrl && cmaUrl && !localDeal?.list_price_confirmed ? 'Waiting for investor to confirm list price' : undefined}
           />
           <DocRow
             label="Buyer's Contract"
