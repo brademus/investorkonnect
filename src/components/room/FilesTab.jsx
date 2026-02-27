@@ -221,6 +221,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             url={sellerContractUrl}
             filename={sellerContractName}
             available={!!sellerContractUrl}
+            onView={() => setViewerFile({ url: sellerContractUrl, name: sellerContractName })}
           />
           <DocRow
             label="Internal Agreement (IOA)"
@@ -228,6 +229,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={agreementLabel}
             verified={true}
             available={!!internalAgreementUrl}
+            onView={() => setViewerFile({ url: internalAgreementUrl, name: agreementLabel })}
           />
           <DocRow
             label="CMA"
@@ -235,6 +237,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={docs.cma?.name}
             available={!!cmaUrl}
             onUpload={() => uploadDocToRoom('cma')}
+            onView={() => setViewerFile({ url: cmaUrl, name: docs.cma?.name || 'CMA' })}
           />
           <DocRow
             label="Listing Agreement"
@@ -243,6 +246,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             available={!!listingAgreementUrl}
             onUpload={localDeal?.list_price_confirmed ? () => uploadDocToRoom('listing_agreement') : undefined}
             blockedMessage={!listingAgreementUrl && cmaUrl && !localDeal?.list_price_confirmed ? 'Waiting for investor to confirm list price' : undefined}
+            onView={() => setViewerFile({ url: listingAgreementUrl, name: docs.listing_agreement?.name || 'Listing Agreement' })}
           />
           <DocRow
             label="Buyer's Contract"
@@ -250,6 +254,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             filename={docs.buyer_contract?.name}
             available={!!buyerContractUrl}
             onUpload={() => uploadDocToRoom('buyer_contract')}
+            onView={() => setViewerFile({ url: buyerContractUrl, name: docs.buyer_contract?.name || "Buyer's Contract" })}
           />
         </div>
       </div>
@@ -270,17 +275,29 @@ export default function FilesTab({ deal, room, roomId, profile }) {
               <div key={i} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
                 <FileText className="w-5 h-5 text-[#E3C567] flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[#FAFAFA] truncate">{f.name}</p>
-                  <p className="text-xs text-[#808080]">{f.source}</p>
-                </div>
-                <a href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
-                  <Download className="w-3 h-3" />Download
-                </a>
+                     <p className="text-sm text-[#FAFAFA] truncate">{f.name}</p>
+                     <p className="text-xs text-[#808080]">{f.source}</p>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <button onClick={() => setViewerFile({ url: f.url, name: f.name })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+                       <Eye className="w-3 h-3" />View
+                     </button>
+                     <button onClick={() => setViewerFile({ url: f.url, name: f.name })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+                       <Download className="w-3 h-3" />Download
+                     </button>
+                   </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <FileViewerModal
+        open={!!viewerFile}
+        onOpenChange={(open) => { if (!open) setViewerFile(null); }}
+        fileUrl={viewerFile?.url}
+        fileName={viewerFile?.name}
+      />
     </div>
   );
 }
