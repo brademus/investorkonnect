@@ -169,6 +169,7 @@ export default function MyAgreement() {
           const wtSlots = (wtScheduled && Array.isArray(dealData.walkthroughSlots) && dealData.walkthroughSlots.length > 0) ? dealData.walkthroughSlots : [];
           console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, slots: wtSlots.length });
 
+          const cleanedListPrice = String(dealData.estimatedListPrice || "").replace(/[$,\s]/g, "").trim();
           const draftPayload = {
             investor_profile_id: profile.id,
             property_address: dealData.propertyAddress,
@@ -177,6 +178,7 @@ export default function MyAgreement() {
             zip: dealData.zip,
             county: dealData.county,
             purchase_price: Number(cleanedPrice),
+            estimated_list_price: cleanedListPrice ? Number(cleanedListPrice) : null,
             property_type: dealData.propertyType || null,
             beds: dealData.beds ? Number(dealData.beds) : null,
             baths: dealData.baths ? Number(dealData.baths) : null,
