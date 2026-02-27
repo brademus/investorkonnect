@@ -60,6 +60,7 @@ export default function MyAgreement() {
             zip: dbDeal.zip,
             county: dbDeal.county,
             purchasePrice: dbDeal.purchase_price,
+            estimatedListPrice: dbDeal.estimated_list_price || null,
             closingDate: dbDeal.key_dates?.closing_date,
             contractDate: dbDeal.key_dates?.contract_date,
             propertyType: dbDeal.property_type,

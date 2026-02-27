@@ -155,7 +155,8 @@ export default function Room() {
           property_address: (isAgent && dealData?.property_address === null && !roomIsLocked) ? null : (dealData?.property_address || room.property_address),
           city: dealData?.city || room.city,
           state: dealData?.state || room.state,
-          budget: dealData?.purchase_price || room.budget,
+          budget: dealData?.purchase_price ?? room.budget,
+          estimated_list_price: dealData?.estimated_list_price || room.estimated_list_price || null,
           is_fully_signed: resolvedIsSigned,
           counterparty_name: enrichedRoom?.counterparty_name || room.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
           counterparty_headshot: enrichedRoom?.counterparty_headshot || (isAgent ? dealData?.investor_contact?.headshotUrl : dealData?.agent_contact?.headshotUrl) || null,
@@ -485,7 +486,10 @@ export default function Room() {
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
-                  {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
+                  {isAgent
+                    ? (currentRoom.estimated_list_price > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.estimated_list_price.toLocaleString()}</span></>)
+                    : (currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>)
+                  }
                   {isSigned && roomSellerComp && <><span className="text-[#333]">|</span><span className="text-[#E3C567] font-semibold">Agent Comp: {roomSellerComp}</span></>}
                 </div>
               </div>
