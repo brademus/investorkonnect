@@ -466,6 +466,7 @@ export default function Room() {
                   ? { ...deal?.agent_contact, name: deal?.agent_full_name }
                   : { ...deal?.investor_contact, name: deal?.investor_full_name }
                 }
+                showContactInfo={isSigned}
               />
             )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
