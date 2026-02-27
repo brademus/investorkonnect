@@ -217,7 +217,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
             url={listingAgreementUrl}
             filename={docs.listing_agreement?.name}
             available={!!listingAgreementUrl}
-            onUpload={() => uploadDocToRoom('listing_agreement')}
+            onUpload={localDeal?.list_price_confirmed ? () => uploadDocToRoom('listing_agreement') : undefined}
           />
           <DocRow
             label="Buyer's Contract"
