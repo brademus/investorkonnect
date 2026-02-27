@@ -76,7 +76,7 @@ export function useCurrentProfile() {
         if (!mounted) return;
         
         if (!user) {
-          setState({
+          const noUserState = {
             loading: false,
             user: null,
             profile: null,
@@ -95,7 +95,10 @@ export function useCurrentProfile() {
             subscriptionStatus: 'none',
             isPaidSubscriber: false,
             error: null
-          });
+          };
+          globalProfileCache = noUserState;
+          globalCacheTimestamp = Date.now();
+          if (mounted) setState(noUserState);
           return;
         }
 
