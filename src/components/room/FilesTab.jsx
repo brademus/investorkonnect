@@ -40,10 +40,10 @@ function DocRow({ label, url, filename, verified, available, onUpload, blockedMe
       </div>
       {hasFile ? (
         <div className="flex items-center gap-2">
-          <button onClick={onView} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
             <Eye className="w-3 h-3" />View
           </button>
-          <button onClick={onDownload} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
             <Download className="w-3 h-3" />Download
           </button>
         </div>
@@ -297,10 +297,10 @@ export default function FilesTab({ deal, room, roomId, profile }) {
                      <p className="text-xs text-[#808080]">{f.source}</p>
                    </div>
                    <div className="flex items-center gap-2">
-                     <button onClick={() => setViewerFile({ url: f.url, name: f.name })} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+                     <button onClick={(e) => { e.stopPropagation(); setViewerFile({ url: f.url, name: f.name }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
                        <Eye className="w-3 h-3" />View
                      </button>
-                     <button onClick={() => downloadFile(f.url, f.name)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+                     <button onClick={(e) => { e.stopPropagation(); downloadFile(f.url, f.name); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
                        <Download className="w-3 h-3" />Download
                      </button>
                    </div>
