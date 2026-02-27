@@ -2,7 +2,7 @@ import React from "react";
 import { Mail, Phone, Building2, Briefcase, Star } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
-export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
+export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showContactInfo = false }) {
   if (!agentProfile) return null;
 
   const { rating, reviewCount } = useAgentRating(agentProfile.id);
@@ -83,9 +83,9 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
         {/* Divider */}
         <div className="h-px bg-[#1F1F1F] mb-6" />
 
-        {/* Contact details */}
+        {/* Contact details - only shown after agreement signed */}
         <div className="space-y-3">
-          {email && (
+          {showContactInfo && email && (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#E3C567]/10 flex items-center justify-center flex-shrink-0">
                 <Mail className="w-4 h-4 text-[#E3C567]" />
@@ -103,7 +103,7 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount }) {
             </div>
           )}
 
-          {phone && (
+          {showContactInfo && phone && (
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-[#E3C567]/10 flex items-center justify-center flex-shrink-0">
                 <Phone className="w-4 h-4 text-[#E3C567]" />

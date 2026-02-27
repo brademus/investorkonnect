@@ -18,6 +18,7 @@ export default function AgentProfile() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dealsCompleted, setDealsCompleted] = useState(null);
+  const [hasSignedAgreement, setHasSignedAgreement] = useState(false);
 
   // Fetch reviews via service-role backend to bypass per-user security rules
   const fetchReviews = async () => {
@@ -60,6 +61,20 @@ export default function AgentProfile() {
         } catch (err) {
           console.log('Could not compute deals completed:', err);
           setDealsCompleted(null);
+        }
+
+        // Check if current user has a fully signed agreement with this agent
+        if (currentProfile?.id) {
+          try {
+            const invites = await base44.entities.DealInvite.filter({
+              agent_profile_id: profileId,
+              investor_id: currentProfile.id,
+              status: "LOCKED"
+            });
+            setHasSignedAgreement(invites.length > 0);
+          } catch (err) {
+            console.log('Could not check agreement status:', err);
+          }
         }
 
       } catch (error) {
@@ -146,7 +161,7 @@ export default function AgentProfile() {
 
         {/* Digital Business Card */}
         <div className="mb-6">
-          <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} />
+          <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} showContactInfo={hasSignedAgreement || currentProfile?.role === 'admin'} />
         </div>
 
 
