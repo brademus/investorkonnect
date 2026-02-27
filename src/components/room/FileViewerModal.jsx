@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,22 +6,66 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, X, ExternalLink, FileText } from "lucide-react";
+import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
 
 /**
  * Modal for viewing/downloading files inline without navigating away.
- * Supports PDFs and images via iframe/img, and provides a download button for all file types.
+ * Converts files to blob URLs so they render in-app without triggering downloads.
  */
 export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName }) {
   const ext = (fileName || fileUrl || '').split('.').pop()?.toLowerCase()?.split('?')[0] || '';
   const isPdf = ext === 'pdf' || (fileUrl || '').includes('.pdf');
-  const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || (fileUrl || '').match(/\.(png|jpg|jpeg|gif|webp|svg)/i);
-  const isDoc = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
+  const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) || !!(fileUrl || '').match(/\.(png|jpg|jpeg|gif|webp|svg)/i);
+  const isOfficeDoc = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
+  const canPreview = isPdf || isImage || isOfficeDoc;
 
-  const canPreview = isPdf || isImage || isDoc;
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [loadingBlob, setLoadingBlob] = useState(false);
+  const [blobError, setBlobError] = useState(false);
+  const prevUrlRef = useRef(null);
 
-  // For PDFs and docs, use Google Docs Viewer which handles cross-origin files reliably
-  const googleViewerUrl = (isPdf || isDoc) && fileUrl
+  // For PDFs: fetch as blob so the browser's built-in PDF viewer renders inline
+  // instead of triggering a download from the remote content-disposition header.
+  useEffect(() => {
+    if (!open || !fileUrl || !isPdf) {
+      if (blobUrl) { URL.revokeObjectURL(blobUrl); setBlobUrl(null); }
+      setBlobError(false);
+      prevUrlRef.current = null;
+      return;
+    }
+    if (prevUrlRef.current === fileUrl) return;
+    prevUrlRef.current = fileUrl;
+    setLoadingBlob(true);
+    setBlobError(false);
+
+    fetch(fileUrl)
+      .then(res => {
+        if (!res.ok) throw new Error('fetch failed');
+        return res.blob();
+      })
+      .then(blob => {
+        const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(pdfBlob);
+        setBlobUrl(url);
+        setLoadingBlob(false);
+      })
+      .catch(() => {
+        setBlobError(true);
+        setLoadingBlob(false);
+      });
+
+    return () => {
+      // cleanup handled on next open/close cycle
+    };
+  }, [open, fileUrl, isPdf]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+  }, [blobUrl]);
+
+  // Google Docs Viewer fallback for Office docs or when PDF blob fails
+  const googleViewerUrl = (isOfficeDoc || (isPdf && blobError)) && fileUrl
     ? `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`
     : null;
 
@@ -69,13 +113,32 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
-          {googleViewerUrl && (
+          {/* PDF: render blob URL in iframe so browser PDF viewer shows inline */}
+          {isPdf && !blobError && (
+            loadingBlob ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" />
+                <p className="text-sm text-[#808080]">Loading document...</p>
+              </div>
+            ) : blobUrl ? (
+              <iframe
+                src={blobUrl}
+                className="w-full h-full border-0 bg-white"
+                title={fileName || 'PDF Viewer'}
+              />
+            ) : null
+          )}
+
+          {/* PDF fallback or Office docs: use Google Docs Viewer */}
+          {googleViewerUrl && !(isPdf && !blobError) && (
             <iframe
               src={googleViewerUrl}
               className="w-full h-full border-0 bg-white"
               title={fileName || 'Document Viewer'}
             />
           )}
+
+          {/* Images */}
           {isImage && !isPdf && (
             <div className="w-full h-full flex items-center justify-center bg-[#0A0A0A] p-4 overflow-auto">
               <img
@@ -85,6 +148,8 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
               />
             </div>
           )}
+
+          {/* Unsupported file type */}
           {!canPreview && (
             <div className="w-full h-full flex flex-col items-center justify-center text-center gap-4 p-8">
               <div className="w-20 h-20 rounded-full bg-[#1F1F1F] flex items-center justify-center">
