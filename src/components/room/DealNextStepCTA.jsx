@@ -287,6 +287,9 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     if (hasCma) {
       completedMilestones.push({ icon: FileCheck, label: 'CMA Uploaded' });
     }
+    if (hasCma && listPriceConfirmed) {
+      completedMilestones.push({ icon: CheckCircle2, label: 'List Price Confirmed' });
+    }
     if (hasListingAgreement) {
       completedMilestones.push({ icon: FileSignature, label: 'Listing Agreement Uploaded' });
     }
