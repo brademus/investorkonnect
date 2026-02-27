@@ -335,7 +335,8 @@ function PipelineContent() {
                                      </div>
                                      {/* Next step: full width below */}
                                      {(() => {
-                                       const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtStatusMap[deal.deal_id] || null });
+                                       const wtInfo = wtStatusMap[deal.deal_id] || null;
+                                       const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id });
                                        if (!step) return null;
                                        return (
                                          <div className="flex items-center justify-between bg-[#0D0D0D] rounded-lg p-2 border border-[#1F1F1F]">
