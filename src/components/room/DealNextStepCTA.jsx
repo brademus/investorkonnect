@@ -292,7 +292,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     }
   }
 
-  const showEditListPrice = isInvestor && stage === 'connected_deals' && hasCma && !hasListingAgreement;
+  const showEditListPrice = isInvestor && stage === 'connected_deals' && hasCma && listPriceConfirmed && !hasListingAgreement;
   if (!cta && !showClosePrompt && completedMilestones.length === 0 && !showEditListPrice) return null;
 
   // Close prompt UI
