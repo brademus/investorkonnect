@@ -70,6 +70,9 @@ Deno.serve(async (req) => {
       }
       updatePayload.estimated_list_price = parsed;
     }
+    if (list_price_confirmed !== undefined) {
+      updatePayload.list_price_confirmed = !!list_price_confirmed;
+    }
 
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
     const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
