@@ -254,7 +254,7 @@ function PipelineContent() {
   const dealIds = useMemo(() => deals.map(d => d.deal_id).filter(Boolean), [deals]);
   const { data: wtStatusMap = {} } = useQuery({
     queryKey: ['wtStatuses', dealIds.join(',')],
-    staleTime: 30_000,
+    staleTime: 10_000,
     queryFn: async () => {
       if (!dealIds.length) return {};
       const appts = await base44.entities.DealAppointments.filter({});
