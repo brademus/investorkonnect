@@ -47,9 +47,9 @@ Deno.serve(async (req) => {
 
     const result = await res.json();
 
-    if (!res.ok) {
-      console.error('[sendSms] Twilio error:', result);
-      return Response.json({ error: result.message || 'Twilio error', ok: false }, { status: res.status });
+    if (!res.ok || result.error_code) {
+      console.error('[sendSms] Twilio error:', JSON.stringify(result));
+      return Response.json({ error: result.message || 'Twilio error', ok: false, details: result }, { status: res.status || 400 });
     }
 
     console.log('[sendSms] Sent SMS to', cleanTo, 'sid:', result.sid);
