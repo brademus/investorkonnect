@@ -243,25 +243,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- NOTIFY AGENTS via email --- (DISABLED for now)
-    // for (const agentId of selectedAgentIds) {
-    //   try {
-    //     const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
-    //     const agent = agentProfiles?.[0];
-    //     if (agent?.email) {
-    //       const wtNote = (wtScheduled && (wtDate || wtTime)) ? `\n\nA walk-through has been proposed — you can confirm or decline after signing.\n` : '';
-    //       await base44.asServiceRole.integrations.Core.SendEmail({
-    //         to: agent.email,
-    //         subject: `New Deal Invitation - ${deal.title || deal.property_address || 'New Deal'}`,
-    //         body: `Hello ${agent.full_name || 'Agent'},\n\nYou have been invited to a new deal: ${deal.title || deal.property_address}.\n\nThe investor has signed the agreement. Please log in to review the deal and sign the agreement to lock in your spot.${wtNote}\nNote: The first agent to sign will be selected for this deal.\n\nBest regards,\nInvestor Konnect Team`
-    //       });
-    //       console.log('[createInvites] Notified agent:', agent.email);
-    //     }
-    //   } catch (emailErr) {
-    //     console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
-    //   }
-    // }
-    console.log('[createInvites] Agent email notifications are disabled');
+    // --- NOTIFY AGENTS via SMS ---
+    for (const agentId of selectedAgentIds) {
+      try {
+        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
+        const agent = agentProfiles?.[0];
+        const textEnabled = agent?.notification_preferences?.text !== false;
+        if (textEnabled && agent?.phone) {
+          const smsText = `Investor Konnect: New deal invitation for ${deal.title || deal.property_address || 'a property'}. Log in to review and sign to lock in your spot.`;
+          await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: smsText });
+          console.log('[createInvites] SMS sent to agent:', agent.email);
+        }
+      } catch (smsErr) {
+        console.warn('[createInvites] Failed to SMS agent:', agentId, smsErr.message);
+      }
+    }
 
     return Response.json({ ok: true, room_id: room.id, invite_ids: createdInvites });
     
