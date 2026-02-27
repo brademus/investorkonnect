@@ -198,14 +198,14 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               <span className="text-sm font-medium text-[#34D399]">${contractPrice}</span>
             </div>
           )}
-          {/* Estimated List Price visible to all */}
-          {(deal?.estimated_list_price || profile?.user_role === 'investor' || profile?.role === 'admin') && (
+          {/* Estimated List Price - always visible to agents (replaces contract price), also shown to investors/admins when set */}
+          {(deal?.estimated_list_price || profile?.user_role === 'agent' || profile?.user_role === 'investor' || profile?.role === 'admin') && (
             <div className="flex items-center justify-between py-1.5 border-b border-[#1F1F1F] last:border-0">
               <span className="text-sm text-[#808080]">Estimated List Price</span>
               <span className="text-sm font-medium text-[#34D399]">
                 {deal?.estimated_list_price
                   ? `$${Number(deal.estimated_list_price).toLocaleString()}`
-                  : `$${contractPrice}`}
+                  : (profile?.user_role === 'agent' ? 'Not set' : `$${contractPrice}`)}
               </span>
             </div>
           )}
