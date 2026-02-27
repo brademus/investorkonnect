@@ -469,7 +469,7 @@ function AccountProfileContent() {
                     <Switch
                       checked={notifPrefs[key]}
                       onCheckedChange={async (val) => {
-                        const updated = { ...notifPrefs, [key]: val };
+                        const updated = { app: notifPrefs.app ?? true, email: notifPrefs.email ?? true, text: notifPrefs.text ?? false, [key]: val };
                         setNotifPrefs(updated);
                         try {
                           await base44.entities.Profile.update(profile.id, { notification_preferences: updated });
