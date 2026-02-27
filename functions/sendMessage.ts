@@ -38,21 +38,45 @@ Deno.serve(async (req) => {
       room_id, sender_profile_id: profile.id, body: text
     });
 
-    // Send SMS to other participants who have text notifications enabled
+    // Send notifications to other participants
     try {
       const allParticipantIds = [room.investorId, ...(room.agent_ids || [])].filter(Boolean);
       const otherIds = allParticipantIds.filter(id => id !== profile.id);
       for (const pid of otherIds) {
         const ps = await base44.asServiceRole.entities.Profile.filter({ id: pid });
         const p = ps?.[0];
-        const textEnabled = p?.notification_preferences?.text === true;
-        if (textEnabled && p?.phone) {
-          const smsText = `Investor Konnect: New message from ${profile.full_name || 'a participant'} on ${room.title || 'your deal'}. Log in to view.`;
-          await base44.asServiceRole.functions.invoke('sendSms', { to: p.phone, message: smsText });
+        if (!p) continue;
+
+        const dealLabel = room.title || room.property_address || 'your deal';
+        const senderName = profile.full_name || 'a participant';
+
+        // Email notification
+        const emailEnabled = p.notification_preferences?.email !== false;
+        if (emailEnabled && p.email) {
+          try {
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              to: p.email,
+              subject: `New message on ${dealLabel} - Investor Konnect`,
+              body: `Hi ${p.full_name || 'there'},\n\n${senderName} sent a new message on ${dealLabel}:\n\n"${text.length > 300 ? text.substring(0, 300) + '...' : text}"\n\nLog in to view and reply.\n\nBest,\nInvestor Konnect Team`
+            });
+          } catch (emailErr) {
+            console.warn('[sendMessage] Email notification failed for', p.email, emailErr.message);
+          }
+        }
+
+        // SMS notification
+        const textEnabled = p.notification_preferences?.text === true;
+        if (textEnabled && p.phone) {
+          try {
+            const smsText = `Investor Konnect: New message from ${senderName} on ${dealLabel}. Log in to view.`;
+            await base44.asServiceRole.functions.invoke('sendSms', { to: p.phone, message: smsText });
+          } catch (smsErr) {
+            console.warn('[sendMessage] SMS notification failed for', p.email, smsErr.message);
+          }
         }
       }
-    } catch (smsErr) {
-      console.warn('[sendMessage] SMS notification failed (non-fatal):', smsErr.message);
+    } catch (notifyErr) {
+      console.warn('[sendMessage] Notification loop failed (non-fatal):', notifyErr.message);
     }
 
     return Response.json({ ok: true, message });
