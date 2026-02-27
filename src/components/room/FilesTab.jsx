@@ -67,6 +67,20 @@ export default function FilesTab({ deal, room, roomId, profile }) {
     });
   }, [deal]);
 
+  // Subscribe to real-time Deal updates so list_price_confirmed etc. arrive promptly
+  useEffect(() => {
+    if (!deal?.id) return;
+    const unsub = base44.entities.Deal.subscribe((event) => {
+      if (event.id === deal.id && event.type === 'update' && event.data) {
+        setLocalDeal(prev => {
+          const mergedDocs = { ...(event.data.documents || {}), ...(prev?.documents || {}) };
+          return { ...event.data, documents: mergedDocs };
+        });
+      }
+    });
+    return unsub;
+  }, [deal?.id]);
+
   // Fetch the agreement's signed/final PDF URL — show immediately, upgrade in background
   const [agreementUrl, setAgreementUrl] = useState(null);
   const [agreementLabel, setAgreementLabel] = useState('Legal Agreement');
