@@ -101,15 +101,21 @@ function LayoutContent({ children }) {
     }
   }, [error]);
 
-  const [showAppLoader, setShowAppLoader] = useState(true);
+  const [showAppLoader, setShowAppLoader] = useState(loading);
   useEffect(() => {
-    if (loading) {
-      setShowAppLoader(true);
-    } else {
-      const t = setTimeout(() => setShowAppLoader(false), 150);
+    if (!loading) {
+      // Small delay to avoid flash
+      const t = setTimeout(() => setShowAppLoader(false), 100);
       return () => clearTimeout(t);
     }
   }, [loading]);
+
+  // Safety timeout: never block the UI for more than 4 seconds
+  useEffect(() => {
+    if (!showAppLoader) return;
+    const t = setTimeout(() => setShowAppLoader(false), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   const noNavPages = [
     '/',
