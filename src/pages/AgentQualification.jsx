@@ -410,7 +410,7 @@ export default function AgentQualification() {
   };
 
   const handleOutcomeContinue = () => {
-    if (result?.outcome === "approved") {
+    if (result?.outcome === "approved" || result?.outcome === "conditional") {
       // Bust profile cache so AgentOnboarding picks up fresh qualification_status
       try {
         sessionStorage.removeItem('__ik_profile_cache');
