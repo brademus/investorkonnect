@@ -375,10 +375,18 @@ function OutcomeScreen({ result, onContinue }) {
 
 export default function AgentQualification() {
   const navigate = useNavigate();
-  const { profile } = useCurrentProfile();
+  const { profile, loading } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // If already qualified + onboarded, redirect to next step
+  useEffect(() => {
+    if (loading || !profile) return;
+    if (profile.qualification_status === 'completed' && profile.onboarding_completed_at) {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+    }
+  }, [loading, profile]);
 
   const handleQuestionnaire = async ({ outcome, tier, score, autoReject }) => {
     setSubmitting(true);
@@ -400,11 +408,19 @@ export default function AgentQualification() {
 
   const handleOutcomeContinue = () => {
     if (result?.outcome === "approved") {
-      navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      navigate(createPageUrl("AgentOnboarding") + "?fromQualification=1", { replace: true });
     } else {
       navigate(createPageUrl("Home"), { replace: true });
     }
   };
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <LoadingAnimation className="w-64 h-64" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-transparent">
