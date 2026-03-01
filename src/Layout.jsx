@@ -55,28 +55,9 @@ function LayoutContent({ children }) {
     return () => clearTimeout(timer);
   }, [location.pathname, user]);
   
-  // #3 — Identify user in Sentry for better debugging
-  useEffect(() => {
-    if (user) {
-      Sentry.setUser({
-        id: user.id,
-        email: user.email,
-        username: profile?.full_name || user.full_name || undefined,
-      });
-      Sentry.setTag("user_role", role || "unknown");
-      Sentry.setTag("subscription_status", profile?.subscription_status || "none");
-    } else if (!loading) {
-      Sentry.setUser(null);
-    }
-  }, [user, profile, role, loading]);
-
   useEffect(() => {
     if (error) {
       console.error('[Layout] Profile error:', error);
-      const isAuthError = typeof error === 'string' && (error.includes('Authentication required') || error.includes('401') || error.includes('Unauthorized'));
-      if (!isAuthError) {
-        Sentry.captureException(new Error(`Profile load error: ${error}`), { tags: { source: "useCurrentProfile" } });
-      }
     }
   }, [error]);
 
