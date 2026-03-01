@@ -71,6 +71,7 @@ function AccountProfileContent() {
         goals: profile.goals || "",
         brokerage: profile.agent?.brokerage || profile.broker || "",
         license_number: profile.agent?.license_number || profile.license_number || "",
+        main_county: profile.agent?.main_county || "",
         next_steps_template: profile.next_steps_template || "",
         next_steps_template_type: profile.next_steps_template_type || "default",
         custom_next_steps_template: profile.custom_next_steps_template || ""
@@ -114,7 +115,8 @@ function AccountProfileContent() {
         updateData.agent = {
           ...(profile.agent || {}),
           brokerage: formData.brokerage.trim(),
-          license_number: formData.license_number.trim()
+          license_number: formData.license_number.trim(),
+          main_county: formData.main_county.trim()
         };
       }
 
@@ -446,6 +448,19 @@ function AccountProfileContent() {
                     className="bg-[#141414] border-[#333] text-[#FAFAFA]"
                   />
                   <p className="text-xs text-[#808080] mt-1">Required for generating agreements</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="main_county" className="text-[#FAFAFA]">Main County *</Label>
+                  <Input
+                    id="main_county"
+                    value={formData.main_county}
+                    onChange={(e) => setFormData({...formData, main_county: e.target.value})}
+                    placeholder="e.g., Maricopa County"
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">Your primary county of operation</p>
                 </div>
               </>
             )}
