@@ -22,36 +22,19 @@ export default function IdentityVerification() {
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
   const startedRef = React.useRef(false); // Prevent double auto-start
 
-  // Single routing effect — runs when loading completes or kycVerified changes
   useEffect(() => {
     if (loading) return;
-    
-    // Already verified → go to NDA
-    if (kycVerified) {
-      console.log('[IdentityVerification] Already verified, redirecting to NDA');
-      navigate(createPageUrl("NDA"), { replace: true });
-      return;
-    }
-
-    // No profile → PostAuth
-    if (!profile) {
-      navigate(createPageUrl("PostAuth"), { replace: true });
-      return;
-    }
-
-    // Not onboarded → back to onboarding (but check real fields, not stale cache)
-    const trulyOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
-    if (!trulyOnboarded && !onboarded) {
+    if (kycVerified) { navigate(createPageUrl("NDA"), { replace: true }); return; }
+    if (!profile) { navigate(createPageUrl("PostAuth"), { replace: true }); return; }
+    const done = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
+    if (!done && !onboarded) {
       const role = profile.user_role;
       if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
-
-    // Auto-start verification exactly once
     if (!startedRef.current && status === 'pending') {
       startedRef.current = true;
-      console.log('[IdentityVerification] Auto-starting verification flow');
       handleStartVerification();
     }
   }, [loading, kycVerified]);
@@ -61,11 +44,8 @@ export default function IdentityVerification() {
     setStatus('verifying');
 
     try {
-      // 1) Ask backend to create a Stripe Identity Verification Session (with retry on 502)
-      console.log('[IdentityVerification] Calling createStripeIdentitySession...');
       const resp = await base44.functions.invoke('createStripeIdentitySession', {});
       const sessionData = resp.data;
-      console.log('[IdentityVerification] Response:', JSON.stringify(sessionData));
 
       const clientSecret = sessionData?.client_secret;
       const publishableKey = sessionData?.publishable_key;
@@ -94,42 +74,21 @@ export default function IdentityVerification() {
 
       // 3) Poll backend for final status (Stripe may take a moment to finalize)
       let attempts = 0;
-      let finalStatus = 'processing';
       while (attempts < 15) {
         try {
           const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
           const s = statusData?.status;
-          console.log('[IdentityVerification] Poll attempt', attempts, 'status:', s);
-          if (s === 'verified') {
-            finalStatus = 'verified';
-            break;
-          }
-          if (s === 'requires_input' || s === 'canceled') {
-            finalStatus = 'error';
-            break;
-          }
-        } catch (pollError) {
-          console.warn('[IdentityVerification] Poll error:', pollError);
-          // Continue polling on error
-        }
+          if (s === 'verified') break;
+          if (s === 'requires_input' || s === 'canceled') break;
+        } catch {}
         await new Promise(r => setTimeout(r, 1000));
         attempts += 1;
       }
 
-      console.log('[IdentityVerification] Final status after polling:', finalStatus);
-
-      // Mark as success and redirect
       setStatus('success');
       toast.success('Identity verification submitted. Redirecting...');
-      
-      // Force-refresh the profile so kycVerified gets updated from the DB
-      // This busts the in-memory + sessionStorage cache
       refresh();
-      
-      // Wait for fresh data, then navigate via React router
-      setTimeout(() => {
-        navigate(createPageUrl('NDA'), { replace: true });
-      }, 1500);
+      setTimeout(() => { navigate(createPageUrl('NDA'), { replace: true }); }, 1500);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);

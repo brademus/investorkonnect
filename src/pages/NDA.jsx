@@ -31,65 +31,31 @@ function NDAContent() {
     document.title = "NDA Required - Investor Konnect";
   }, []);
 
-  // Routing effect — re-evaluates when key state changes (loading, kycVerified, hasNDA)
   useEffect(() => {
     if (loading) return;
-
-    // Already accepted → Pipeline
-    if (hasNDA) {
-      console.log('[NDA] Already accepted, redirecting to dashboard...');
-      navigate(createPageUrl("Pipeline"), { replace: true });
-      return;
-    }
-
-    // Admin bypass
+    if (hasNDA) { navigate(createPageUrl("Pipeline"), { replace: true }); return; }
     if (user?.role === 'admin') {
-      const autoSign = async () => {
+      (async () => {
         if (profile && !profile.nda_accepted) {
-          await base44.entities.Profile.update(profile.id, {
-            nda_accepted: true,
-            nda_accepted_at: new Date().toISOString(),
-            nda_version: 'v1.0'
-          });
+          await base44.entities.Profile.update(profile.id, { nda_accepted: true, nda_accepted_at: new Date().toISOString(), nda_version: 'v1.0' });
         }
         toast.success('Admin access granted');
         navigate(createPageUrl("Pipeline"), { replace: true });
-      };
-      autoSign().catch(() => {});
+      })().catch(() => {});
       return;
     }
-
-    // No profile → PostAuth
-    if (!profile) {
-      navigate(createPageUrl("PostAuth"), { replace: true });
-      return;
-    }
-
-    // Not onboarded → back to onboarding
+    if (!profile) { navigate(createPageUrl("PostAuth"), { replace: true }); return; }
     if (!onboarded) {
-      const role = profile.user_role;
-      if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      const r = profile.user_role;
+      if (r === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      else if (r === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
-
-    // Investor subscription check
-    const role = profile.user_role;
-    if (role === 'investor') {
+    if (profile.user_role === 'investor') {
       const sub = profile.subscription_status;
-      if (sub !== 'active' && sub !== 'trialing') {
-        navigate(createPageUrl("Pricing"), { replace: true });
-        return;
-      }
+      if (sub !== 'active' && sub !== 'trialing') { navigate(createPageUrl("Pricing"), { replace: true }); return; }
     }
-
-    // KYC check — only redirect if NOT verified
-    if (!kycVerified) {
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
-      return;
-    }
-
-    // If we get here, user needs to sign the NDA — stay on this page
+    if (!kycVerified) { navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
   }, [loading, kycVerified, hasNDA]);
 
 
@@ -99,40 +65,26 @@ function NDAContent() {
       return;
     }
 
-    console.log('[NDA] Accepting NDA...');
     setAccepting(true);
     setError(null);
 
     try {
-      console.log('[NDA] Updating profile directly with NDA acceptance...');
-      
-      // Get fresh profile data to ensure we have the latest
       let currentProfile = profile;
       if (!currentProfile?.id) {
         const profiles = await base44.entities.Profile.filter({ user_id: user?.id });
         currentProfile = profiles[0];
       }
-      
-      if (!currentProfile?.id) {
-        throw new Error("Profile not available");
-      }
+      if (!currentProfile?.id) throw new Error("Profile not available");
       
       await base44.entities.Profile.update(currentProfile.id, {
         nda_accepted: true,
         nda_accepted_at: new Date().toISOString(),
         nda_version: isAgent ? 'agent-v1.0' : 'v1.0'
       });
-      console.log('[NDA] Profile updated with NDA flags');
       
       toast.success("NDA accepted successfully!");
-      
-      // Force-refresh profile cache so hasNDA becomes true, then navigate
       refresh();
-      
-      // Small delay to let the refresh complete, then navigate via React router
-      setTimeout(() => {
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }, 800);
+      setTimeout(() => { navigate(createPageUrl("Pipeline"), { replace: true }); }, 800);
     } catch (error) {
       console.error('[NDA] Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
