@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import * as Sentry from '@sentry/react';
+
 
 // Global cache to prevent redundant API calls across component instances
 let globalProfileCache = null;
@@ -220,7 +220,7 @@ export function useCurrentProfile() {
         console.error('[useCurrentProfile] Fatal error:', error);
         const isAuthError = error?.message?.includes('Authentication required') || error?.message?.includes('401') || error?.message?.includes('Unauthorized');
         if (!isAuthError) {
-          Sentry.captureException(error, { tags: { source: 'useCurrentProfile' } });
+          console.error('[useCurrentProfile] Error captured:', error);
         }
         
         // On rate limit or error, use stale cache if available
