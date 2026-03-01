@@ -214,7 +214,7 @@ function Step2({ onSubmit, submitting }) {
 
   const allAnswered = QUESTIONS.every(q => {
     if (q.type === "radio") return !!answers[q.id];
-    if (q.type === "checkbox") return (answers[q.id] || []).length >= 0; // optional
+    // Checkbox questions are optional (selecting none is valid)
     return true;
   });
 
