@@ -82,14 +82,16 @@ export default function InvestorOnboarding() {
     checkAccess();
   }, [navigate]);
 
-  // Redirect if already onboarded
+  // Redirect if already onboarded — use real fields, not just derived flag
   useEffect(() => {
-    if (!checking && onboarded) {
+    if (checking) return;
+    if (!profile) return;
+    
+    const trulyOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
+    
+    if (trulyOnboarded) {
       console.log('[InvestorOnboarding] Already onboarded, checking next step...');
-      console.log('[InvestorOnboarding] isPaidSubscriber:', isPaidSubscriber);
-      console.log('[InvestorOnboarding] subscription_status:', profile?.subscription_status);
       
-      // Already onboarded, check next step
       if (!isPaidSubscriber) {
         console.log('[InvestorOnboarding] Redirecting to Pricing');
         navigate(createPageUrl("Pricing"), { replace: true });
@@ -98,7 +100,7 @@ export default function InvestorOnboarding() {
         navigate(createPageUrl("IdentityVerification"), { replace: true });
       }
     }
-  }, [checking, onboarded, isPaidSubscriber, navigate, profile?.subscription_status]);
+  }, [checking, profile, isPaidSubscriber, navigate]);
 
   // Load existing data
   useEffect(() => {
