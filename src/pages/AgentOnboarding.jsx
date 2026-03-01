@@ -304,6 +304,12 @@ export default function AgentOnboarding() {
 
       toast.success("Profile saved! Let's verify your identity.");
       
+      // Bust profile cache so IdentityVerification picks up fresh onboarded state
+      // This prevents a redirect loop where IdentityVerification sees stale onboarded=false
+      try {
+        sessionStorage.removeItem('__ik_profile_cache');
+      } catch (_) {}
+      
       // Navigate to Identity Verification (next step for agents)
       await new Promise(resolve => setTimeout(resolve, 500));
       navigate(createPageUrl("IdentityVerification"), { replace: true });
