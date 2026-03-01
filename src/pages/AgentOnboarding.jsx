@@ -406,21 +406,27 @@ export default function AgentOnboarding() {
   const step2HasAllLicenses = formData.markets.length > 0 && formData.markets.every(st => (formData.state_licenses[st] || '').trim().length > 0);
 
   // Validate county against centroid data whenever county or markets change
+  // Use JSON.stringify on markets array to avoid re-running on every render
+  const marketsKey = JSON.stringify(formData.markets);
   useEffect(() => {
     const county = formData.main_county.trim();
     const primaryState = formData.markets[0] || '';
     if (!county || !primaryState) {
       setCountyValid(null);
+      setCountyChecking(false);
       return;
     }
     setCountyChecking(true);
+    let cancelled = false;
     const timer = setTimeout(async () => {
       const coords = await getCountyCentroid(county, primaryState);
-      setCountyValid(coords !== null);
-      setCountyChecking(false);
+      if (!cancelled) {
+        setCountyValid(coords !== null);
+        setCountyChecking(false);
+      }
     }, 400);
-    return () => clearTimeout(timer);
-  }, [formData.main_county, formData.markets]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [formData.main_county, marketsKey]);
 
   const renderStep2 = () => (
     <div>
