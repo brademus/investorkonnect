@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Phone, Building2, Briefcase, Star } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, Star, MapPin, Shield } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
 export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showContactInfo = false }) {
@@ -13,6 +13,8 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
   const brokerage = agent.brokerage || agentProfile.broker || agentProfile.company;
   const headshot = agentProfile.headshotUrl;
   const markets = agent.markets || agentProfile.markets || [];
+  const licensedStates = agent.licensed_states || (agent.license_state ? [agent.license_state] : agentProfile.license_state ? [agentProfile.license_state] : []);
+  const mainCounty = agent.primary_neighborhoods_notes || (markets.length > 0 ? markets[0] : null);
   const investmentStrategies = agent.investment_strategies || [];
   const propertySpecialties = agent.specialties || [];
   const allSpecialties = [...new Set([...investmentStrategies, ...propertySpecialties])];
@@ -60,6 +62,18 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
                 <div className="flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
                   <span className="text-xs text-[#FAFAFA]/70 truncate">{brokerage}</span>
+                </div>
+              )}
+              {licensedStates.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">Licensed: {licensedStates.join(', ')}</span>
+                </div>
+              )}
+              {mainCounty && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">{mainCounty}</span>
                 </div>
               )}
             </div>
