@@ -20,50 +20,40 @@ export default function IdentityVerification() {
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [verifying, setVerifying] = useState(false);
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
+  const startedRef = React.useRef(false); // Prevent double auto-start
 
-  // Redirect if already verified
+  // Single routing effect — runs once when loading completes
   useEffect(() => {
-    if (!loading && kycVerified) {
+    if (loading) return;
+    
+    // Already verified → go to NDA
+    if (kycVerified) {
       console.log('[IdentityVerification] Already verified, redirecting to NDA');
       navigate(createPageUrl("NDA"), { replace: true });
       return;
     }
-  }, [loading, kycVerified, navigate]);
 
-  // Auto-start verification when page loads
-  useEffect(() => {
-    if (!loading && profile && onboarded && !kycVerified && status === 'pending' && !verifying) {
-      console.log('[IdentityVerification] Auto-starting verification flow');
-      // Small delay to ensure UI is ready
-      const timer = setTimeout(() => {
-        handleStartVerification();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, profile, onboarded, kycVerified]);
-
-  // Redirect incomplete users back to proper step
-  useEffect(() => {
-    if (loading) return; // Wait for loading to complete
-    
+    // No profile → PostAuth
     if (!profile) {
-      console.log('[IdentityVerification] No profile found, redirecting to PostAuth');
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
 
-    const role = profile.user_role;
-    
+    // Not onboarded → back to onboarding
     if (!onboarded) {
-      console.log('[IdentityVerification] Not onboarded, redirecting to onboarding');
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      }
+      const role = profile.user_role;
+      if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
-  }, [loading, profile, onboarded, navigate]);
+
+    // Auto-start verification exactly once
+    if (!startedRef.current && status === 'pending') {
+      startedRef.current = true;
+      console.log('[IdentityVerification] Auto-starting verification flow');
+      handleStartVerification();
+    }
+  }, [loading]);
 
   const handleStartVerification = async () => {
     setVerifying(true);
@@ -127,17 +117,17 @@ export default function IdentityVerification() {
 
       console.log('[IdentityVerification] Final status after polling:', finalStatus);
 
-      // Always mark as success and redirect - backend will update profile async
+      // Mark as success and redirect
       setStatus('success');
       toast.success('Identity verification submitted. Redirecting...');
       
-      // Refresh profile to get updated verification status
-      refresh();
+      // Clear stale profile cache so NDA page gets fresh data
+      try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
       
-      // Redirect to NDA 
+      // Hard redirect to NDA to avoid useEffect loops
       setTimeout(() => {
-        navigate(createPageUrl('NDA'), { replace: true });
-      }, 1500);
+        window.location.replace(createPageUrl('NDA'));
+      }, 1200);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);
@@ -188,7 +178,7 @@ export default function IdentityVerification() {
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
               <p className="text-[#808080] mb-6">Something went wrong. Please try again.</p>
               <Button
-                onClick={() => { setStatus('pending'); setVerifying(false); }}
+                onClick={() => { startedRef.current = false; setStatus('pending'); setVerifying(false); }}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
               >
                 Try Again
