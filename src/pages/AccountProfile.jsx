@@ -42,6 +42,7 @@ function AccountProfileContent() {
     goals: "",
     brokerage: "",
     license_number: "",
+    main_county: "",
     next_steps_template: "",
     next_steps_template_type: "default",
     custom_next_steps_template: ""
