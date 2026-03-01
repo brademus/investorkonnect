@@ -311,7 +311,6 @@ export default function AgentOnboarding() {
       toast.success("Profile saved! Let's verify your identity.");
       
       // Bust profile cache so IdentityVerification picks up fresh onboarded state
-      // This prevents a redirect loop where IdentityVerification sees stale onboarded=false
       try {
         sessionStorage.removeItem('__ik_profile_cache');
       } catch (_) {}
@@ -322,6 +321,7 @@ export default function AgentOnboarding() {
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
+    } finally {
       setSaving(false);
     }
   };
