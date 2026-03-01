@@ -1348,6 +1348,11 @@ Type "WIPE" to confirm:`;
           </Card>
         )}
 
+        {/* User Activity Panel */}
+        {selectedProfile && (
+          <UserActivityPanel profile={selectedProfile} onClose={() => setSelectedProfile(null)} />
+        )}
+
         {/* Health Check Results */}
         {healthData && (
           <Card>
