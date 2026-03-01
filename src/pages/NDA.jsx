@@ -33,13 +33,12 @@ function NDAContent() {
     document.title = "NDA Required - Investor Konnect";
   }, []);
 
-  // Single routing effect — runs once when loading completes
+  // Routing effect — re-evaluates when key state changes (loading, kycVerified, hasNDA)
   useEffect(() => {
-    if (loading || handledRef.current) return;
+    if (loading) return;
 
     // Already accepted → Pipeline
     if (hasNDA) {
-      handledRef.current = true;
       console.log('[NDA] Already accepted, redirecting to dashboard...');
       navigate(createPageUrl("Pipeline"), { replace: true });
       return;
@@ -47,7 +46,6 @@ function NDAContent() {
 
     // Admin bypass
     if (user?.role === 'admin') {
-      handledRef.current = true;
       const autoSign = async () => {
         if (profile && !profile.nda_accepted) {
           await base44.entities.Profile.update(profile.id, {
@@ -65,14 +63,12 @@ function NDAContent() {
 
     // No profile → PostAuth
     if (!profile) {
-      handledRef.current = true;
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
 
     // Not onboarded → back to onboarding
     if (!onboarded) {
-      handledRef.current = true;
       const role = profile.user_role;
       if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
@@ -84,21 +80,19 @@ function NDAContent() {
     if (role === 'investor') {
       const sub = profile.subscription_status;
       if (sub !== 'active' && sub !== 'trialing') {
-        handledRef.current = true;
         navigate(createPageUrl("Pricing"), { replace: true });
         return;
       }
     }
 
-    // KYC check
+    // KYC check — only redirect if NOT verified
     if (!kycVerified) {
-      handledRef.current = true;
       navigate(createPageUrl("IdentityVerification"), { replace: true });
       return;
     }
 
     // If we get here, user needs to sign the NDA — stay on this page
-  }, [loading]);
+  }, [loading, kycVerified, hasNDA]);
 
 
   const handleAccept = async () => {
@@ -132,13 +126,15 @@ function NDAContent() {
       });
       console.log('[NDA] Profile updated with NDA flags');
       
-      // Clear sessionStorage profile cache so Pipeline doesn't see stale data
-      try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
-      
       toast.success("NDA accepted successfully!");
       
-      // Immediate hard redirect — no delays
-      window.location.replace(createPageUrl("Pipeline"));
+      // Force-refresh profile cache so hasNDA becomes true, then navigate
+      refresh();
+      
+      // Small delay to let the refresh complete, then navigate via React router
+      setTimeout(() => {
+        navigate(createPageUrl("Pipeline"), { replace: true });
+      }, 800);
     } catch (error) {
       console.error('[NDA] Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";

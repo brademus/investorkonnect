@@ -22,7 +22,7 @@ export default function IdentityVerification() {
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
   const startedRef = React.useRef(false); // Prevent double auto-start
 
-  // Single routing effect — runs once when loading completes
+  // Single routing effect — runs when loading completes or kycVerified changes
   useEffect(() => {
     if (loading) return;
     
@@ -53,7 +53,7 @@ export default function IdentityVerification() {
       console.log('[IdentityVerification] Auto-starting verification flow');
       handleStartVerification();
     }
-  }, [loading]);
+  }, [loading, kycVerified]);
 
   const handleStartVerification = async () => {
     setVerifying(true);
@@ -121,13 +121,14 @@ export default function IdentityVerification() {
       setStatus('success');
       toast.success('Identity verification submitted. Redirecting...');
       
-      // Clear stale profile cache so NDA page gets fresh data
-      try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+      // Force-refresh the profile so kycVerified gets updated from the DB
+      // This busts the in-memory + sessionStorage cache
+      refresh();
       
-      // Hard redirect to NDA to avoid useEffect loops
+      // Wait for fresh data, then navigate via React router
       setTimeout(() => {
-        window.location.replace(createPageUrl('NDA'));
-      }, 1200);
+        navigate(createPageUrl('NDA'), { replace: true });
+      }, 1500);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);
