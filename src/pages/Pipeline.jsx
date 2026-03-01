@@ -49,7 +49,7 @@ function PipelineContent() {
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
-    if (profile.role === 'admin') { setReady(true); return; }
+    if (profile.role === 'admin' || profile.user_role === 'admin') { setReady(true); return; }
     if (!onboarded) {
       gateRef.current = true;
       navigate(createPageUrl(profile.user_role === 'agent' ? "AgentOnboarding" : "InvestorOnboarding"), { replace: true });
