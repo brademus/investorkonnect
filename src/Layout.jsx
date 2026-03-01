@@ -295,9 +295,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <QueryClientProvider client={queryClient}>
       <WizardProvider>
-        <ErrorBoundary>
-          <LayoutContent>{children}</LayoutContent>
-        </ErrorBoundary>
+        <LayoutContent>{children}</LayoutContent>
       </WizardProvider>
     </QueryClientProvider>
   );
