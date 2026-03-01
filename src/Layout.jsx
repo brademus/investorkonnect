@@ -112,18 +112,9 @@ function LayoutContent({ children }) {
     { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
   ];
 
-  const marketingPages = [
-    createPageUrl("RoleLanding"),
-    createPageUrl("InvestorLanding"),
-    createPageUrl("AgentLanding"),
-    createPageUrl("Investors"),
-    createPageUrl("Agents"),
-    createPageUrl("Home"),
-    createPageUrl("About"),
-    createPageUrl("HowItWorks"),
-    createPageUrl("Pricing"),
-  ];
-  const useHeavyBg = !marketingPages.some(p => location.pathname === p);
+  // Background image only on Pipeline + Room pages
+  const dealBgPages = ['/Pipeline', '/Room'];
+  const useHeavyBg = dealBgPages.some(p => location.pathname.startsWith(p));
 
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
