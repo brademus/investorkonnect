@@ -355,11 +355,13 @@ export default function AgentOnboarding() {
             type="tel" 
             value={formData.phone} 
             onChange={(e) => {
-              const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+              const raw = e.target.value;
+              const digits = raw.replace(/\D/g, '').slice(0, 10);
               let formatted = '';
-              if (digits.length > 0) formatted = '(' + digits.slice(0, 3);
-              if (digits.length >= 3) formatted += ') ' + digits.slice(3, 6);
-              if (digits.length >= 6) formatted += '-' + digits.slice(6, 10);
+              if (digits.length === 0) { formatted = ''; }
+              else if (digits.length <= 3) { formatted = '(' + digits; }
+              else if (digits.length <= 6) { formatted = '(' + digits.slice(0, 3) + ') ' + digits.slice(3); }
+              else { formatted = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6); }
               updateField('phone', formatted);
             }} 
             placeholder="(555) 123-4567" 
