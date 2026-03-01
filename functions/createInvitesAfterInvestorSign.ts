@@ -183,14 +183,13 @@ Deno.serve(async (req) => {
       console.log('[createInvites] Created invite:', invite.id, 'for agent:', agentId);
     }
 
-    // --- SCHEDULE WALKTHROUGH if investor set one during deal creation ---
+    // --- SCHEDULE WALKTHROUGH: DealAppointments only (chat message is sent by sendNextStepsMessage AFTER the custom message) ---
     const wtScheduled = deal.walkthrough_scheduled === true;
     const wtDate = deal.walkthrough_date || null;
     const wtTime = deal.walkthrough_time || null;
     if (wtScheduled && (wtDate || wtTime)) {
-      console.log('[createInvites] Walkthrough scheduled — creating DealAppointments and chat message');
+      console.log('[createInvites] Walkthrough scheduled — creating DealAppointments (chat message deferred to sendNextStepsMessage)');
       try {
-        // Create or update DealAppointments
         const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: deal_id });
         const apptPatch = {
           walkthrough: {
@@ -214,32 +213,8 @@ Deno.serve(async (req) => {
           });
         }
         console.log('[createInvites] Created DealAppointments for walkthrough');
-
-        // Check if a walkthrough_request message already exists in this room to avoid duplicates
-        const existingMessages = await base44.asServiceRole.entities.Message.filter({ room_id: room.id }, '-created_date', 50);
-        const alreadyHasWtMessage = existingMessages.some(m => m?.metadata?.type === 'walkthrough_request');
-
-        if (!alreadyHasWtMessage) {
-          const displayParts = [wtDate, wtTime].filter(Boolean);
-          const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
-
-          await base44.asServiceRole.entities.Message.create({
-            room_id: room.id,
-            sender_profile_id: investorProfile.id,
-            body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time after signing.`,
-            metadata: {
-              type: 'walkthrough_request',
-              walkthrough_date: wtDate,
-              walkthrough_time: wtTime,
-              status: 'pending'
-            }
-          });
-          console.log('[createInvites] Sent walkthrough message to room:', room.id);
-        } else {
-          console.log('[createInvites] Walkthrough message already exists — skipping duplicate');
-        }
       } catch (wtErr) {
-        console.warn('[createInvites] Failed to create walkthrough (non-fatal):', wtErr.message);
+        console.warn('[createInvites] Failed to create DealAppointments (non-fatal):', wtErr.message);
       }
     }
 
