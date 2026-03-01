@@ -353,8 +353,8 @@ function OutcomeScreen({ result, onContinue }) {
         </div>
         <h1 className="text-3xl font-bold text-[#FAFAFA] mb-3">You've been flagged for review.</h1>
         <p className="text-[#808080] mb-8">Based on your answers, our team will reach out to discuss next steps. You may still be a great fit.</p>
-        <Button onClick={onContinue} className="bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] rounded-full font-semibold px-8 h-12">
-          Done
+        <Button onClick={onContinue} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold px-8 h-12">
+          Continue to Profile Setup <ChevronRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
     );
