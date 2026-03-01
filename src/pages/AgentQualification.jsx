@@ -314,11 +314,14 @@ function Step2({ onSubmit, submitting }) {
       <div className="mt-10">
         <Button
           onClick={handleSubmit}
-          disabled={submitting}
-          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold h-12"
+          disabled={submitting || !allAnswered}
+          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold h-12 disabled:opacity-40"
         >
           {submitting ? "Submitting..." : "Submit Questionnaire"}
         </Button>
+        {!allAnswered && (
+          <p className="text-center text-sm text-[#808080] mt-2">Please answer all required questions above</p>
+        )}
       </div>
     </div>
   );
