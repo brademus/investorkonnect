@@ -1242,9 +1242,9 @@ Type "WIPE" to confirm:`;
                 </thead>
                 <tbody>
                   {profiles.slice(0, 20).map((profile) => (
-                    <tr key={profile.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <tr key={profile.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedProfile(profile)}>
                       <td className="py-3">
-                        <div className="font-medium text-slate-900">{profile.email}</div>
+                        <div className="font-medium text-slate-900 hover:text-blue-600 transition-colors">{profile.email}</div>
                         <div className="text-xs text-slate-500">{profile.full_name || 'No name'}</div>
                       </td>
                       <td className="py-3">
