@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered, FileText, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
+import UserActivityPanel from "@/components/admin/UserActivityPanel";
 
 function AdminContent() {
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,7 @@ function AdminContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [adminEmail, setAdminEmail] = useState("");
   const [ndaUpdating, setNdaUpdating] = useState({});
+  const [selectedProfile, setSelectedProfile] = useState(null);
   const [wipingData, setWipingData] = useState(false);
   const [backfillingCoords, setBackfillingCoords] = useState(false);
   const [backfillDone, setBackfillDone] = useState(false);
