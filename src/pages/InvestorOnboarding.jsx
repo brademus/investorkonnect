@@ -29,14 +29,14 @@ export default function InvestorOnboarding() {
   // Block navigation away during onboarding (except to mandatory steps)
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (step !== 3) {
+      if (!saving && step < TOTAL_STEPS) {
         e.preventDefault();
         e.returnValue = '';
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [step]);
+  }, [step, saving]);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
