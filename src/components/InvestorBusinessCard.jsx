@@ -59,16 +59,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
                 {experienceLabel}
               </span>
             )}
-            {/* Signature */}
-            <div className="inline-block mt-1">
-              <p
-                className="text-[#E3C567] text-2xl italic leading-tight"
-                style={{ fontFamily: "'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive" }}
-              >
-                {name}
-              </p>
-              <div className="h-px bg-gradient-to-r from-[#E3C567]/60 to-transparent mt-1 w-full" />
-            </div>
+
           </div>
 
           {/* Rating badge - top right */}

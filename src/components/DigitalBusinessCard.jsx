@@ -43,16 +43,6 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
           <div className="flex-1">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Professional</p>
             <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
-            {/* Generated signature */}
-            <div className="inline-block">
-              <p
-                className="text-[#E3C567] text-2xl italic leading-tight"
-                style={{ fontFamily: "'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive" }}
-              >
-                {name}
-              </p>
-              <div className="h-px bg-gradient-to-r from-[#E3C567]/60 to-transparent mt-1 w-full" />
-            </div>
           </div>
 
           {/* Rating badge - top right */}
