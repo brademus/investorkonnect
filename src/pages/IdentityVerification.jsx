@@ -180,7 +180,7 @@ export default function IdentityVerification() {
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
               <p className="text-[#808080] mb-6">Something went wrong. Please try again.</p>
               <Button
-                onClick={() => { startedRef.current = false; setStatus('pending'); setVerifying(false); }}
+                onClick={() => { startedRef.current = false; setStatus('pending'); setVerifying(false); handleStartVerification(); }}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
               >
                 Try Again
