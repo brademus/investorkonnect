@@ -60,20 +60,6 @@ export default function AgentOnboarding() {
 
   const TOTAL_STEPS = 4;
 
-  const STRATEGY_OPTIONS = [
-    'Fix & Flip', 'Buy & Hold', 'BRRRR', 'Wholesale', 
-    'Short-Term Rental / Airbnb', 'Commercial', 'Multi-Family', 'New Construction', 'Land'
-  ];
-
-  const SPECIALTY_OPTIONS = [
-    'Single Family', 'Multi-Family', 'Condos/Townhomes', 'Commercial', 
-    'Land/Lots', 'Foreclosures/REO', 'Off-Market Deals', 'New Construction', '1031 Exchange'
-  ];
-
-  const RESPONSE_TIME_OPTIONS = [
-    'Within 1 hour', 'Within a few hours', 'Same day', 'Within 24 hours'
-  ];
-
   const toggleArrayItem = (field, item) => {
     setFormData(prev => ({
       ...prev,
