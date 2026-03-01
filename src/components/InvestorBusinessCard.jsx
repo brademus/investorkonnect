@@ -109,35 +109,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
         {/* Divider */}
         <div className="h-px bg-[#1F1F1F] mb-6" />
 
-        {/* Contact details */}
-        <div className="space-y-3">
-          {email && (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E3C567]/10 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-4 h-4 text-[#E3C567]" />
-              </div>
-              <span className="text-sm text-[#FAFAFA]/80">{email}</span>
-            </div>
-          )}
 
-          {company && (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E3C567]/10 flex items-center justify-center flex-shrink-0">
-                <Building2 className="w-4 h-4 text-[#E3C567]" />
-              </div>
-              <span className="text-sm text-[#FAFAFA]/80">{company}</span>
-            </div>
-          )}
-
-          {phone && (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#E3C567]/10 flex items-center justify-center flex-shrink-0">
-                <Phone className="w-4 h-4 text-[#E3C567]" />
-              </div>
-              <span className="text-sm text-[#FAFAFA]/80">{phone}</span>
-            </div>
-          )}
-        </div>
 
         {/* Bio */}
         {(inv.bio || investorProfile.bio || investorProfile.goals) && (
