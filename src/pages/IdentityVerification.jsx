@@ -39,8 +39,9 @@ export default function IdentityVerification() {
       return;
     }
 
-    // Not onboarded → back to onboarding
-    if (!onboarded) {
+    // Not onboarded → back to onboarding (but check real fields, not stale cache)
+    const trulyOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
+    if (!trulyOnboarded && !onboarded) {
       const role = profile.user_role;
       if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
