@@ -542,6 +542,18 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   }
   }
 
+  /* ====== Deal page background (Pipeline + Room) ====== */
+  .ik-deal-bg {
+    background-image:
+      linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.80)),
+      url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=85&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-color: #0D0D0D;
+  }
+
   /* Utility shorthands */
   @layer utilities {
   .ik-text-muted { color: hsl(0 0% 45%); }
