@@ -15,24 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-if (!window.__SENTRY_INITIALIZED__) {
-  try {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    Sentry.init({
-      dsn: "https://6e2d7e141ce3106aa061a12a7a7ef3d3@o4510907728986112.ingest.us.sentry.io/4510908064006144",
-      release: "investor-konnect@2.0.0",
-      environment: isLocalhost ? "development" : "production",
-      sendDefaultPii: true,
-      tracesSampleRate: isLocalhost ? 1.0 : 0.15,
-      tracePropagationTargets: ["localhost", /^https:\/\/.*\.base44\.app/],
-      replaysSessionSampleRate: 0,
-      replaysOnErrorSampleRate: 0,
-    });
-  } catch (_) {
-    console.warn('[Sentry] Init failed, continuing without error tracking');
-  }
-  window.__SENTRY_INITIALIZED__ = true;
-}
+// Sentry removed - was causing React duplicate instance errors
 
 // Singleton QueryClient — survives HMR re-evaluation of this module
 if (!window.__QUERY_CLIENT__) {
