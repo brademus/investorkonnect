@@ -1,5 +1,5 @@
 import React from "react";
-import { Mail, Phone, Building2, Briefcase, Star, MapPin, Shield } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, Star, MapPin } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
 export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showContactInfo = false }) {
@@ -64,18 +64,6 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
                   <span className="text-xs text-[#FAFAFA]/70 truncate">{brokerage}</span>
                 </div>
               )}
-              {licensedStates.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
-                  <span className="text-xs text-[#FAFAFA]/70 truncate">Licensed: {licensedStates.join(', ')}</span>
-                </div>
-              )}
-              {mainCounty && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
-                  <span className="text-xs text-[#FAFAFA]/70 truncate">{mainCounty}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -107,7 +95,29 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
         {/* Divider */}
         <div className="h-px bg-[#1F1F1F] mb-6" />
 
-
+        {/* Licensed States & Main County */}
+        {(licensedStates.length > 0 || mainCounty) && (
+          <div className="mt-0 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4 text-[#E3C567]" />
+              <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Markets & Geography</p>
+            </div>
+            <div className="space-y-2">
+              {licensedStates.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#808080]">Licensed States</span>
+                  <span className="text-sm text-[#FAFAFA]/80">{licensedStates.join(", ")}</span>
+                </div>
+              )}
+              {mainCounty && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#808080]">Main County</span>
+                  <span className="text-sm text-[#FAFAFA]/80">{mainCounty}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Bio */}
         {(agent.bio || agentProfile.bio) && (
