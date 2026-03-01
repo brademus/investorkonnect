@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell } from "lucide-react";
+import { getCountyCentroid } from "@/components/utils/agentScoring";
 import { Switch } from "@/components/ui/switch";
 import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
@@ -112,12 +113,29 @@ function AccountProfileContent() {
       
       // Add agent-specific fields if user is an agent
       if (formData.role === 'agent') {
-        updateData.agent = {
+        const agentUpdate = {
           ...(profile.agent || {}),
           brokerage: formData.brokerage.trim(),
           license_number: formData.license_number.trim(),
           main_county: formData.main_county.trim()
         };
+
+        // Geocode main county for matching if it changed
+        const oldCounty = (profile.agent?.main_county || '').trim().toLowerCase();
+        const newCounty = formData.main_county.trim().toLowerCase();
+        if (newCounty && newCounty !== oldCounty) {
+          const primaryState = profile.agent?.license_state || profile.license_state || profile.target_state || '';
+          if (primaryState) {
+            const coords = await getCountyCentroid(formData.main_county.trim(), primaryState);
+            if (coords) {
+              agentUpdate.lat = coords.lat;
+              agentUpdate.lng = coords.lng;
+              console.log('[AccountProfile] Geocoded county:', formData.main_county, primaryState, coords);
+            }
+          }
+        }
+
+        updateData.agent = agentUpdate;
       }
 
       console.log('[AccountProfile] 📤 Updating profile:', updateData);
