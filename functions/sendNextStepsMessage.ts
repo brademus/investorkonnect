@@ -145,11 +145,52 @@ ${investorEmail}`;
       read_by: [investorId],
     });
 
+    console.log("[sendNextSteps] Custom message sent for room:", room.id);
+
+    // --- Send walkthrough request message AFTER the custom message so it appears below ---
+    const wtScheduled = deal.walkthrough_scheduled === true;
+    const wtDate = deal.walkthrough_date || null;
+    const wtTime = deal.walkthrough_time || null;
+    const wtSlots = (Array.isArray(deal.walkthrough_slots) && deal.walkthrough_slots.length > 0) ? deal.walkthrough_slots : [];
+
+    if (wtScheduled && (wtDate || wtTime || wtSlots.length > 0)) {
+      // Check for existing walkthrough_request to avoid duplicates
+      const existingMsgs = await base44.asServiceRole.entities.Message.filter({ room_id: room.id }, '-created_date', 50);
+      const alreadyHasWt = existingMsgs.some(m => m?.metadata?.type === 'walkthrough_request');
+
+      if (!alreadyHasWt) {
+        const displayParts = [wtDate, wtTime].filter(Boolean);
+        const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
+
+        const wtMeta = {
+          type: 'walkthrough_request',
+          walkthrough_date: wtDate,
+          walkthrough_time: wtTime,
+          status: 'pending'
+        };
+        if (wtSlots.length > 0) wtMeta.walkthrough_slots = wtSlots;
+
+        // Small delay to ensure ordering (created_date after the custom message)
+        await new Promise(r => setTimeout(r, 500));
+
+        await base44.asServiceRole.entities.Message.create({
+          room_id: room.id,
+          sender_profile_id: investorId,
+          body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time.`,
+          metadata: wtMeta,
+          read_by: [investorId],
+        });
+        console.log("[sendNextSteps] Walkthrough request message sent after custom message");
+      } else {
+        console.log("[sendNextSteps] Walkthrough message already exists — skipping");
+      }
+    }
+
     await base44.asServiceRole.entities.Room.update(room.id, {
       onboarding_message_sent: true,
     });
 
-    console.log("[sendNextSteps] Message sent successfully for room:", room.id);
+    console.log("[sendNextSteps] All messages sent for room:", room.id);
     return Response.json({ ok: true, sent: true });
   } catch (error) {
     console.error("[sendNextSteps] Error:", error);
