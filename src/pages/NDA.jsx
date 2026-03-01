@@ -27,87 +27,78 @@ function NDAContent() {
   const [error, setError] = useState(null);
   const isAgent = profile?.user_role === 'agent';
 
-  // ADMIN BYPASS: Auto-sign NDA for admin users
-  useEffect(() => {
-    const handleAdminNDA = async () => {
-      if (!loading && user?.role === 'admin') {
-        console.log('[NDA] Admin user detected - auto-signing NDA');
-        
-        try {
-          // Auto-sign NDA for admin if not already signed
-          if (profile && !profile.nda_accepted) {
-            await base44.entities.Profile.update(profile.id, {
-              nda_accepted: true,
-              nda_accepted_at: new Date().toISOString(),
-              nda_version: 'v1.0'
-            });
-            await refresh();
-          }
-          
-          // Redirect to Dashboard
-          toast.success('Admin access granted - NDA bypassed');
-          setTimeout(() => {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          }, 500);
-        } catch (err) {
-          console.error('[NDA] Admin auto-sign error:', err);
-        }
-      }
-    };
-    
-    handleAdminNDA();
-  }, [loading, user, profile, navigate, refresh]);
+  const handledRef = React.useRef(false);
 
   useEffect(() => {
     document.title = "NDA Required - Investor Konnect";
   }, []);
 
-  // Redirect incomplete users back to proper step
+  // Single routing effect — runs once when loading completes
   useEffect(() => {
-    if (loading) return;
-    
+    if (loading || handledRef.current) return;
+
+    // Already accepted → Pipeline
+    if (hasNDA) {
+      handledRef.current = true;
+      console.log('[NDA] Already accepted, redirecting to dashboard...');
+      navigate(createPageUrl("Pipeline"), { replace: true });
+      return;
+    }
+
+    // Admin bypass
+    if (user?.role === 'admin') {
+      handledRef.current = true;
+      const autoSign = async () => {
+        if (profile && !profile.nda_accepted) {
+          await base44.entities.Profile.update(profile.id, {
+            nda_accepted: true,
+            nda_accepted_at: new Date().toISOString(),
+            nda_version: 'v1.0'
+          });
+        }
+        toast.success('Admin access granted');
+        navigate(createPageUrl("Pipeline"), { replace: true });
+      };
+      autoSign().catch(() => {});
+      return;
+    }
+
+    // No profile → PostAuth
     if (!profile) {
+      handledRef.current = true;
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
-    
-    const role = profile.user_role;
-    
+
+    // Not onboarded → back to onboarding
     if (!onboarded) {
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      handledRef.current = true;
+      const role = profile.user_role;
+      if (role === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      else if (role === 'agent') navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      return;
+    }
+
+    // Investor subscription check
+    const role = profile.user_role;
+    if (role === 'investor') {
+      const sub = profile.subscription_status;
+      if (sub !== 'active' && sub !== 'trialing') {
+        handledRef.current = true;
+        navigate(createPageUrl("Pricing"), { replace: true });
+        return;
       }
-      return;
     }
-    
-    // Investor-specific subscription check
-    if (role === 'investor' && !profile.subscription_status) {
-      navigate(createPageUrl("Pricing"), { replace: true });
-      return;
-    }
-    
-    if (role === 'investor' && profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing') {
-      navigate(createPageUrl("Pricing"), { replace: true });
-      return;
-    }
-    
+
+    // KYC check
     if (!kycVerified) {
+      handledRef.current = true;
       navigate(createPageUrl("IdentityVerification"), { replace: true });
       return;
     }
-  }, [loading, profile, onboarded, kycVerified, navigate]);
 
-  // Redirect if already accepted (check after loading completes)
-  useEffect(() => {
-    if (!loading && hasNDA) {
-      console.log('[NDA] Already accepted, redirecting to dashboard...');
-      setTimeout(() => {
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }, 500);
-    }
-  }, [loading, hasNDA, navigate]);
+    // If we get here, user needs to sign the NDA — stay on this page
+  }, [loading]);
 
 
   const handleAccept = async () => {
