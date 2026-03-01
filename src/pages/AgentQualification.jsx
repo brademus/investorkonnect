@@ -408,7 +408,11 @@ export default function AgentQualification() {
 
   const handleOutcomeContinue = () => {
     if (result?.outcome === "approved") {
-      navigate(createPageUrl("AgentOnboarding") + "?fromQualification=1", { replace: true });
+      // Bust profile cache so AgentOnboarding picks up fresh qualification_status
+      try {
+        sessionStorage.removeItem('__ik_profile_cache');
+      } catch (_) {}
+      navigate(createPageUrl("AgentOnboarding"), { replace: true });
     } else {
       navigate(createPageUrl("Home"), { replace: true });
     }
