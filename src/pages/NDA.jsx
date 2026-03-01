@@ -141,11 +141,13 @@ function NDAContent() {
       });
       console.log('[NDA] Profile updated with NDA flags');
       
+      // Clear sessionStorage profile cache so Pipeline doesn't see stale data
+      try { sessionStorage.removeItem('ik_profile_cache'); } catch (_) {}
+      
       toast.success("NDA accepted successfully!");
       
-      // Hard navigate to ensure fresh page load with updated profile
-      console.log('[NDA] Navigating to Pipeline...');
-      window.location.href = createPageUrl("Pipeline");
+      // Immediate hard redirect — no delays
+      window.location.replace(createPageUrl("Pipeline"));
     } catch (error) {
       console.error('[NDA] Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
