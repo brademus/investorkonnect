@@ -80,28 +80,28 @@ function AdminContent() {
         role: user?.role
       });
 
-      const response = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
+      // Check admin via User entity role first (most reliable)
+      let adminRole = user?.role === 'admin';
 
-      if (response.ok) {
-        const state = await response.json();
-        
-        console.log('[Admin] Profile state:', {
-          email: state.email,
-          profileRole: state.profile?.role,
-          userRole: user?.role
-        });
-        
-        const adminRole = state.profile?.role === 'admin' || user?.role === 'admin';
-        
-        setIsAdmin(adminRole);
-        
-        if (adminRole) {
-          await loadData();
+      // Also check Profile entity role as fallback
+      if (!adminRole && user?.email) {
+        try {
+          const profiles = await base44.entities.Profile.filter({ email: user.email.toLowerCase().trim() });
+          const profile = profiles?.[0];
+          if (profile?.role === 'admin') {
+            adminRole = true;
+          }
+          console.log('[Admin] Profile role check:', profile?.role);
+        } catch (e) {
+          console.warn('[Admin] Profile check failed:', e.message);
         }
+      }
+
+      console.log('[Admin] Admin access:', adminRole);
+      setIsAdmin(adminRole);
+      
+      if (adminRole) {
+        await loadData();
       }
       
       setLoading(false);
