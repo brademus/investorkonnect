@@ -102,18 +102,7 @@ export default function RoleLanding() {
           </button>
         </div>
 
-        {/* Footer Note */}
-        <div className="text-center mt-12">
-          <p className="text-sm text-[#808080]">
-            Already have an account?{" "}
-            <button
-              onClick={() => base44.auth.redirectToLogin(createPageUrl("PostAuth"))}
-              className="text-[#E3C567] hover:underline font-medium"
-            >
-              Log in
-            </button>
-          </p>
-        </div>
+
       </div>
     </div>
   );
