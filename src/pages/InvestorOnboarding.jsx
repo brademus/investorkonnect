@@ -214,6 +214,7 @@ export default function InvestorOnboarding() {
     } catch (error) {
       console.error('[InvestorOnboarding] Save error:', error);
       toast.error(error?.message || "Failed to save. Please try again.");
+    } finally {
       setSaving(false);
     }
   };
