@@ -260,7 +260,13 @@ export function useCurrentProfile() {
     return () => { mounted = false; };
   }, [refreshTrigger]);
 
-  const refresh = () => setRefreshTrigger(prev => prev + 1);
+  const refresh = () => {
+    // Bust all caches so the next fetch gets fresh data
+    globalProfileCache = null;
+    globalCacheTimestamp = 0;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {}
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return { ...state, refresh };
 }
