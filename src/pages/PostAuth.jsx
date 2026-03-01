@@ -131,6 +131,14 @@ export default function PostAuth() {
          if (!mounted) return;
          setNavigated(true); // Mark as navigated to prevent re-runs
 
+         // Admin users skip ALL onboarding and gates
+         const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
+         if (isAdmin) {
+           console.log('[PostAuth] Admin user, skipping all gates → Pipeline');
+           navigate(createPageUrl("Pipeline"), { replace: true });
+           return;
+         }
+
          // Route strictly by existing role state (ignore selectedRole for existing users)
          if (!hasRole) {
            // New user without role: respect selectedRole from landing and go straight to onboarding
@@ -163,13 +171,6 @@ export default function PostAuth() {
            }
          } else {
            // 4. Post-Onboarding Gates (Subscription -> KYC -> NDA)
-
-           // Skip all gates for admin users
-           if (profile?.role === 'admin') {
-             console.log('[PostAuth] Admin user, redirecting to Pipeline');
-             navigate(createPageUrl("Pipeline"), { replace: true });
-             return;
-           }
 
            // Gate A: Subscription (Investors only)
            const subscriptionStatus = profile?.subscription_status || 'none';

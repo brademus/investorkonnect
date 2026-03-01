@@ -160,9 +160,9 @@ export function useCurrentProfile() {
         if (isAdmin) role = 'admin';
         else if (role !== 'investor' && role !== 'agent') role = 'member';
 
-        // 2. Onboarding
+        // 2. Onboarding — admins always considered onboarded
         const hasLegacyProfile = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name));
-        const onboarded = !!(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version || hasLegacyProfile);
+        const onboarded = isAdmin || !!(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version || hasLegacyProfile);
         const needsOnboarding = !isAdmin && (role === 'investor' || role === 'agent') && !onboarded;
 
         // 3. Subscription (Investors only)
