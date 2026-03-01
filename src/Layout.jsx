@@ -6,10 +6,8 @@ import { base44 } from "@/api/base44Client";
 import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import * as Sentry from "@sentry/react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye } from "lucide-react";
-import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   DropdownMenu,
   DropdownMenuContent,
