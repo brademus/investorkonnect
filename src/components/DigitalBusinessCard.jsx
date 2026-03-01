@@ -14,7 +14,7 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
   const headshot = agentProfile.headshotUrl;
   const markets = agent.markets || agentProfile.markets || [];
   const licensedStates = agent.licensed_states || (agent.license_state ? [agent.license_state] : agentProfile.license_state ? [agentProfile.license_state] : []);
-  const mainCounty = agent.main_county || agent.primary_neighborhoods_notes || null;
+  const mainCounty = agent.main_county || agent.primary_neighborhoods_notes || (markets.length > 0 ? markets[0] : null);
   const investmentStrategies = agent.investment_strategies || [];
   const propertySpecialties = agent.specialties || [];
   const allSpecialties = [...new Set([...investmentStrategies, ...propertySpecialties])];
