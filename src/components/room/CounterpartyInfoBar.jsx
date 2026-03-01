@@ -50,14 +50,7 @@ export default function CounterpartyInfoBar({ counterparty, showContactInfo = tr
   return (
     <div className="bg-[#0A0A0A] border-b border-[#1F1F1F] px-6 py-3 flex-shrink-0">
       <div className="flex flex-col items-center gap-1.5">
-        {counterparty.name && (
-          <span
-            className="text-[#E3C567] select-none leading-tight inline-block"
-            style={sigStyle}
-          >
-            {counterparty.name}
-          </span>
-        )}
+
         {items.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 justify-center">
             {items.map((item, i) => {
