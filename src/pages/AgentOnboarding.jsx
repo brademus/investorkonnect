@@ -39,6 +39,8 @@ export default function AgentOnboarding() {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [countyValid, setCountyValid] = useState(null); // null = not checked, true/false
+  const [countyChecking, setCountyChecking] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -288,19 +290,17 @@ export default function AgentOnboarding() {
       const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
       console.log('[AgentOnboarding] Profile saved successfully:', result);
 
-      // Fire-and-forget: geocode agent's main county for matching
-      try {
-        const primaryState = Object.keys(formData.state_licenses)[0] || '';
-        if (formData.main_county && primaryState) {
-          getCountyCentroid(formData.main_county, primaryState).then(coords => {
-            if (coords) {
-              base44.entities.Profile.update(profileToUpdate.id, {
-                agent: { ...updateData.agent, lat: coords.lat, lng: coords.lng }
-              }).catch(() => {});
-            }
-          }).catch(() => {});
+      // Geocode agent's main county for matching (already validated on step 2)
+      const primaryState = Object.keys(formData.state_licenses)[0] || '';
+      if (formData.main_county && primaryState) {
+        const coords = await getCountyCentroid(formData.main_county, primaryState);
+        if (coords) {
+          await base44.entities.Profile.update(profileToUpdate.id, {
+            agent: { ...updateData.agent, lat: coords.lat, lng: coords.lng }
+          });
+          console.log('[AgentOnboarding] Geocoded county:', formData.main_county, primaryState, coords);
         }
-      } catch (_) {}
+      }
 
       toast.success("Profile saved! Let's verify your identity.");
       
@@ -405,6 +405,23 @@ export default function AgentOnboarding() {
 
   const step2HasAllLicenses = formData.markets.length > 0 && formData.markets.every(st => (formData.state_licenses[st] || '').trim().length > 0);
 
+  // Validate county against centroid data whenever county or markets change
+  useEffect(() => {
+    const county = formData.main_county.trim();
+    const primaryState = formData.markets[0] || '';
+    if (!county || !primaryState) {
+      setCountyValid(null);
+      return;
+    }
+    setCountyChecking(true);
+    const timer = setTimeout(async () => {
+      const coords = await getCountyCentroid(county, primaryState);
+      setCountyValid(coords !== null);
+      setCountyChecking(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [formData.main_county, formData.markets]);
+
   const renderStep2 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
@@ -465,9 +482,33 @@ export default function AgentOnboarding() {
             id="main_county" 
             value={formData.main_county} 
             onChange={(e) => updateField('main_county', e.target.value)} 
-            placeholder="e.g., Maricopa County" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+            placeholder="e.g., Maricopa" 
+            className={`h-16 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] placeholder:text-[#666666] focus:ring-2 ${
+              formData.main_county.trim() && !countyChecking
+                ? countyValid 
+                  ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' 
+                  : 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
+                : 'border-[#1F1F1F] focus:border-[#E3C567] focus:ring-[#E3C567]/30'
+            }`} 
           />
+          <div className="mt-2 min-h-[20px]">
+            {countyChecking && formData.main_county.trim() && (
+              <p className="text-sm text-[#808080]">Checking county...</p>
+            )}
+            {!countyChecking && formData.main_county.trim() && countyValid === true && (
+              <p className="text-sm text-green-400 flex items-center gap-1">
+                <CheckCircle className="w-3.5 h-3.5" /> County recognized — will be used for deal matching
+              </p>
+            )}
+            {!countyChecking && formData.main_county.trim() && countyValid === false && (
+              <p className="text-sm text-red-400">
+                County not found in {formData.markets[0] || 'your state'}. Try entering just the county name (e.g., "Milwaukee" not "Milwaukee County").
+              </p>
+            )}
+            {!formData.main_county.trim() && (
+              <p className="text-sm text-[#808080]">Enter the county where you primarily operate</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -672,7 +713,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name || (formData.phone || '').replace(/\D/g, '').length < 10)) || (step === 2 && (formData.markets.length === 0 || !step2HasAllLicenses || !formData.brokerage || !formData.main_county))}
+              disabled={saving || (step === 1 && (!formData.first_name || !formData.last_name || (formData.phone || '').replace(/\D/g, '').length < 10)) || (step === 2 && (formData.markets.length === 0 || !step2HasAllLicenses || !formData.brokerage || !formData.main_county.trim() || countyValid !== true))}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
