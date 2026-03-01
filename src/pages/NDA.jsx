@@ -27,8 +27,6 @@ function NDAContent() {
   const [error, setError] = useState(null);
   const isAgent = profile?.user_role === 'agent';
 
-  const handledRef = React.useRef(false);
-
   useEffect(() => {
     document.title = "NDA Required - Investor Konnect";
   }, []);
