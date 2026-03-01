@@ -133,7 +133,7 @@ function NDAContent() {
       console.log('[NDA] Profile updated with NDA flags');
       
       // Clear sessionStorage profile cache so Pipeline doesn't see stale data
-      try { sessionStorage.removeItem('ik_profile_cache'); } catch (_) {}
+      try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
       
       toast.success("NDA accepted successfully!");
       
