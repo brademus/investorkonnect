@@ -12,6 +12,10 @@ export function SetupChecklist({ profile, onRefresh }) {
   const [collapsed, setCollapsed] = useState(false);
   const refreshCalledRef = useState(false);
 
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
+  // Admins never see the setup checklist
+  if (isAdmin) return null;
+
   const isInvestor = profile?.user_role === 'investor' || profile?.user_type === 'investor';
   const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
 

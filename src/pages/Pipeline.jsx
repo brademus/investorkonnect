@@ -281,8 +281,8 @@ function PipelineContent() {
     return <div className="min-h-screen bg-transparent flex flex-col"><Header profile={profile} /><div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" /></div></div>;
   }
 
-  // Setup check
-  const setupDone = isInvestor ? (!!profile.onboarding_completed_at && !!profile.nda_accepted) : (!!profile.onboarding_completed_at && !!profile.nda_accepted && (profile.identity_status === 'approved' || profile.identity_status === 'verified'));
+  // Setup check — admins always considered fully set up
+  const setupDone = isAdmin || (isInvestor ? (!!profile.onboarding_completed_at && !!profile.nda_accepted) : (!!profile.onboarding_completed_at && !!profile.nda_accepted && (profile.identity_status === 'approved' || profile.identity_status === 'verified')));
 
   return (
     <>

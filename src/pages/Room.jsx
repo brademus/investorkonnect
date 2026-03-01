@@ -42,11 +42,13 @@ export default function Room() {
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set(['board']));
 
-  // Gating - redirect if not setup
+  // Gating - redirect if not setup (admins skip all gates)
   const gateChecked = useRef(false);
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
   useEffect(() => {
     if (loading || gateChecked.current) return;
     gateChecked.current = true;
+    if (isAdmin) return; // Admins bypass all onboarding gates
     if (!profile || !onboarded) { navigate(createPageUrl("PostAuth"), { replace: true }); return; }
     if (profile.user_role === 'investor' && !isPaidSubscriber) { navigate(createPageUrl("Pricing"), { replace: true }); return; }
     if (!kycVerified) { navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
