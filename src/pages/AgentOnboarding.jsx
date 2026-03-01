@@ -106,14 +106,20 @@ export default function AgentOnboarding() {
     checkAccess();
   }, [navigate]);
 
-  // Redirect if already onboarded
+  // Redirect if already onboarded — BUT only if the profile hook has finished loading
+  // and only if the current profile actually belongs to us (prevents stale-cache redirects)
   useEffect(() => {
-    if (!checking && onboarded) {
+    if (checking) return;
+    if (!profile) return;
+    
+    // Only redirect if truly onboarded (has onboarding_completed_at timestamp)
+    // The legacy "onboarded" flag can be a false positive from partial profile data
+    const trulyOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
+    
+    if (trulyOnboarded) {
       console.log('[AgentOnboarding] Already onboarded, checking next step...');
       console.log('[AgentOnboarding] kycVerified:', kycVerified);
-      console.log('[AgentOnboarding] identity_status:', profile?.identity_status);
       
-      // Already onboarded, check next step
       if (!kycVerified) {
         console.log('[AgentOnboarding] Redirecting to IdentityVerification');
         navigate(createPageUrl("IdentityVerification"), { replace: true });
@@ -122,7 +128,7 @@ export default function AgentOnboarding() {
         navigate(createPageUrl("Pipeline"), { replace: true });
       }
     }
-  }, [checking, onboarded, kycVerified, navigate, profile?.identity_status]);
+  }, [checking, profile, kycVerified, navigate]);
 
   // Load existing data
   useEffect(() => {
