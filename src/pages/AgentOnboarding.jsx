@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { CheckCircle, Plus, X, Upload, Trash2 } from "lucide-react";
+import { CheckCircle, Upload, Trash2 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -11,594 +11,224 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getCountyCentroid } from "@/components/utils/agentScoring";
+import OnboardingShell from "@/components/onboarding/OnboardingShell";
+import useOnboardingAccess from "@/components/onboarding/useOnboardingAccess";
+import PhoneInput from "@/components/onboarding/PhoneInput";
 
-const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
-/**
- * AGENT ONBOARDING - Simple 3-step initial onboarding
- * 
- * Flow: Onboarding -> Identity Verification -> NDA -> Dashboard
- * (Agents skip the subscription step)
- */
+const TOTAL_STEPS = 4;
+
+const DEAL_TYPE_OPTIONS = [
+  { label: 'Wholesale', value: 'Wholesale' },
+  { label: 'Novation', value: 'Novation' },
+  { label: 'Whole-tail', value: 'Whole-tail' },
+  { label: 'Fix & Flip', value: 'Fix & Flip' },
+  { label: 'Buy & Hold', value: 'Buy & Hold' },
+  { label: 'Sub-2', value: 'Sub-2', tooltip: "Taking over seller's existing mortgage" },
+];
+
+const PROPERTY_TYPE_OPTIONS = ['Single-Family', 'Multi-Family', 'Condo', 'Townhouse', 'Manufactured', 'Land'];
+
 export default function AgentOnboarding() {
   const navigate = useNavigate();
-  const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
+  const { profile, kycVerified } = useCurrentProfile();
+  const { checking } = useOnboardingAccess();
   const [step, setStep] = useState(1);
-  
-  // Block navigation away during onboarding (except to mandatory steps)
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (!saving && step < TOTAL_STEPS) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [step, saving]);
   const [saving, setSaving] = useState(false);
-  const [checking, setChecking] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [countyValid, setCountyValid] = useState(null); // null = not checked, true/false
+  const [countyValid, setCountyValid] = useState(null);
   const [countyChecking, setCountyChecking] = useState(false);
 
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    phone: '',
-    state_licenses: {},  // { "IL": "IL-123456", "WI": "WI-789" }
-    brokerage: '',
-    main_county: '',
-    markets: [],
-    experience_years: '',
-    deals_closed: '',
-    investment_strategies: [],
-    specialties: [],
-    bio: '',
-    headshotUrl: ''
+    first_name: '', last_name: '', phone: '',
+    state_licenses: {}, brokerage: '', main_county: '',
+    markets: [], experience_years: '', deals_closed: '',
+    investment_strategies: [], specialties: [],
+    bio: '', headshotUrl: ''
   });
 
-  const TOTAL_STEPS = 4;
-
-  const toggleArrayItem = (field, item) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(item)
-        ? prev[field].filter(i => i !== item)
-        : [...prev[field], item]
-    }));
-  };
-
-  // Check access
+  // Block accidental navigation
   useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        const authUser = await base44.auth.me();
-        if (!authUser) {
-          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
-          return;
-        }
-        // Admin bypass
-        if (authUser.role === 'admin') {
-          toast.success('Admin access granted');
-          navigate(createPageUrl("Pipeline"), { replace: true });
-          return;
-        }
-        setChecking(false);
-      } catch (e) {
-        base44.auth.redirectToLogin(createPageUrl("PostAuth"));
-      }
-    };
-    checkAccess();
-  }, [navigate]);
+    const handler = (e) => { if (!saving && step < TOTAL_STEPS) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [step, saving]);
 
-  // Redirect if already onboarded — BUT only if the profile hook has finished loading
-  // and only if the current profile actually belongs to us (prevents stale-cache redirects)
+  // Redirect if already onboarded
   useEffect(() => {
-    if (checking) return;
-    if (!profile) return;
-    
-    // Only redirect if truly onboarded (has onboarding_completed_at timestamp)
-    // The legacy "onboarded" flag can be a false positive from partial profile data
-    const trulyOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
-    
-    if (trulyOnboarded) {
-      console.log('[AgentOnboarding] Already onboarded, checking next step...');
-      console.log('[AgentOnboarding] kycVerified:', kycVerified);
-      
-      if (!kycVerified) {
-        console.log('[AgentOnboarding] Redirecting to IdentityVerification');
-        navigate(createPageUrl("IdentityVerification"), { replace: true });
-      } else {
-        console.log('[AgentOnboarding] Redirecting to Pipeline');
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }
+    if (checking || !profile) return;
+    const done = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
+    if (done) {
+      navigate(createPageUrl(kycVerified ? "Pipeline" : "IdentityVerification"), { replace: true });
     }
   }, [checking, profile, kycVerified, navigate]);
 
   // Load existing data
   useEffect(() => {
     document.title = "Complete Your Profile - Investor Konnect";
-    if (profile) {
-      const agent = profile.agent || {};
-      const nameParts = (profile.full_name || '').split(' ');
-      const existingFirst = profile.onboarding_first_name || nameParts[0] || '';
-      const existingLast = profile.onboarding_last_name || nameParts.slice(1).join(' ') || '';
-      // Rebuild state_licenses from existing data
-      const existingMarkets = agent.markets || profile.markets || [];
-      const existingStateLicenses = agent.state_licenses || {};
-      // If no state_licenses saved yet, try to build from legacy data
-      if (Object.keys(existingStateLicenses).length === 0) {
-        const primary = agent.license_number || profile.license_number || '';
-        const primaryState = agent.license_state || profile.license_state || '';
-        if (primaryState && primary) {
-          existingStateLicenses[primaryState] = primary;
-        }
-        const additional = agent.additional_license_numbers || [];
-        const licensedStates = agent.licensed_states || [];
-        licensedStates.forEach((st, i) => {
-          if (!existingStateLicenses[st] && additional[i]) {
-            existingStateLicenses[st] = additional[i];
-          }
-        });
-      }
-      setFormData(prev => ({
-        ...prev,
-        first_name: existingFirst,
-        last_name: existingLast,
-        phone: profile.phone || '',
-        state_licenses: existingStateLicenses,
-        brokerage: agent.brokerage || profile.broker || '',
-        main_county: agent.main_county || '',
-        markets: existingMarkets,
-        experience_years: agent.experience_years || '',
-        deals_closed: agent.investment_deals_last_12m || '',
-        investment_strategies: agent.investment_strategies || [],
-        specialties: agent.specialties || [],
-        bio: agent.bio || '',
-        headshotUrl: profile.headshotUrl || ''
-      }));
+    if (!profile) return;
+    const agent = profile.agent || {};
+    const nameParts = (profile.full_name || '').split(' ');
+    const existingMarkets = agent.markets || profile.markets || [];
+    const existingStateLicenses = agent.state_licenses || {};
+    if (Object.keys(existingStateLicenses).length === 0) {
+      const primary = agent.license_number || profile.license_number || '';
+      const primaryState = agent.license_state || profile.license_state || '';
+      if (primaryState && primary) existingStateLicenses[primaryState] = primary;
     }
+    setFormData(prev => ({
+      ...prev,
+      first_name: profile.onboarding_first_name || nameParts[0] || '',
+      last_name: profile.onboarding_last_name || nameParts.slice(1).join(' ') || '',
+      phone: profile.phone || '',
+      state_licenses: existingStateLicenses,
+      brokerage: agent.brokerage || profile.broker || '',
+      main_county: agent.main_county || '',
+      markets: existingMarkets,
+      experience_years: agent.experience_years || '',
+      deals_closed: agent.investment_deals_last_12m || '',
+      investment_strategies: agent.investment_strategies || [],
+      specialties: agent.specialties || [],
+      bio: agent.bio || '',
+      headshotUrl: profile.headshotUrl || ''
+    }));
   }, [profile]);
 
-  // Enforce role consistency: agents only
+  // Enforce role consistency
   useEffect(() => {
     if (!profile) return;
-    const current = profile.user_role;
-    if (!current || current === 'member') {
+    const r = profile.user_role;
+    if (!r || r === 'member') {
       base44.entities.Profile.update(profile.id, { user_role: 'agent', user_type: 'agent' }).catch(() => {});
-    } else if (current === 'investor') {
+    } else if (r === 'investor') {
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
     }
   }, [profile, navigate]);
 
-  const updateField = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  // County validation
+  const marketsKey = useMemo(() => JSON.stringify(formData.markets), [formData.markets]);
+  useEffect(() => {
+    const county = formData.main_county.trim();
+    const primaryState = formData.markets[0] || '';
+    if (!county || !primaryState) { setCountyValid(null); setCountyChecking(false); return; }
+    setCountyChecking(true);
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const coords = await getCountyCentroid(county, primaryState);
+      if (!cancelled) { setCountyValid(coords !== null); setCountyChecking(false); }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [formData.main_county, marketsKey]);
 
+  const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const toggleArrayItem = (field, item) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].includes(item) ? prev[field].filter(i => i !== item) : [...prev[field], item]
+    }));
+  };
   const toggleMarket = (state) => {
     setFormData(prev => {
       const isSelected = prev.markets.includes(state);
-      const newMarkets = isSelected
-        ? prev.markets.filter(s => s !== state)
-        : [...prev.markets, state];
+      const newMarkets = isSelected ? prev.markets.filter(s => s !== state) : [...prev.markets, state];
       const newLicenses = { ...prev.state_licenses };
-      if (isSelected) {
-        delete newLicenses[state];
-      }
+      if (isSelected) delete newLicenses[state];
       return { ...prev, markets: newMarkets, state_licenses: newLicenses };
     });
   };
-
-  const handleNext = async () => {
-    if (step === TOTAL_STEPS) {
-      await handleSubmit();
-    } else {
-      setStep(step + 1);
-    }
+  const updateStateLicense = (state, value) => {
+    setFormData(prev => ({ ...prev, state_licenses: { ...prev.state_licenses, [state]: value } }));
   };
 
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
+  const step2HasAllLicenses = formData.markets.length > 0 && formData.markets.every(st => (formData.state_licenses[st] || '').trim().length > 0);
 
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      // Get authenticated user
       const authUser = await base44.auth.me();
-      if (!authUser) {
-        throw new Error('Not authenticated');
-      }
-      
-      // Find profile by email (canonical) or user_id
+      if (!authUser) throw new Error('Not authenticated');
       const emailLower = authUser.email.toLowerCase().trim();
       let profiles = await base44.entities.Profile.filter({ email: emailLower });
-      
-      if (!profiles || profiles.length === 0) {
-        profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
-      }
-      
+      if (!profiles?.length) profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
       let profileToUpdate = profiles[0];
-      
-      // If no profile exists, create one
       if (!profileToUpdate) {
-        console.log('[AgentOnboarding] No profile found, creating new one');
         profileToUpdate = await base44.entities.Profile.create({
-          user_id: authUser.id,
-          email: emailLower,
-          full_name: formData.full_name || authUser.full_name || '',
-          user_role: 'agent',
-          user_type: 'agent'
+          user_id: authUser.id, email: emailLower,
+          full_name: `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim(),
+          user_role: 'agent', user_type: 'agent'
         });
-        console.log('[AgentOnboarding] Created new profile:', profileToUpdate.id);
       }
 
-      // Build the complete update data
       const licensedStates = formData.markets;
       const firstState = licensedStates[0] || '';
       const firstLicense = formData.state_licenses[firstState] || '';
-      const additionalLicenses = licensedStates.slice(1).map(st => formData.state_licenses[st] || '').filter(Boolean);
-      
       const combinedName = `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim();
-      const updateData = {
-          full_name: combinedName,
-          onboarding_first_name: formData.first_name.trim(),
-          onboarding_last_name: formData.last_name.trim(),
-          phone: formData.phone,
-          user_role: 'agent',
-          user_type: 'agent',
-          broker: formData.brokerage,
-          license_number: firstLicense,
-          license_state: firstState,
-          markets: licensedStates,
-          target_state: firstState,
-          onboarding_step: 'basic_complete',
-          onboarding_completed_at: new Date().toISOString(),
-          onboarding_version: 'agent-v1',
-          headshotUrl: formData.headshotUrl || '',
-          agent: {
-            ...(profileToUpdate.agent || {}),
-            license_number: firstLicense,
-            additional_license_numbers: additionalLicenses,
-            state_licenses: formData.state_licenses,
-            license_state: firstState,
-            licensed_states: licensedStates,
-            main_county: formData.main_county,
-            markets: licensedStates,
-            experience_years: parseInt(formData.experience_years) || 0,
-            investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
-            investment_strategies: formData.investment_strategies,
-            specialties: formData.specialties,
-            bio: formData.bio,
-            investor_friendly: true,
-            brokerage: formData.brokerage
-          }
-        };
-      
-      console.log('[AgentOnboarding] Saving profile ID:', profileToUpdate.id);
-      console.log('[AgentOnboarding] Update data:', JSON.stringify(updateData, null, 2));
-      
-      const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
-      console.log('[AgentOnboarding] Profile saved successfully:', result);
 
-      // Geocode agent's main county for matching (already validated on step 2)
-      const primaryState = Object.keys(formData.state_licenses)[0] || '';
-      if (formData.main_county && primaryState) {
-        const coords = await getCountyCentroid(formData.main_county, primaryState);
-        if (coords) {
-          await base44.entities.Profile.update(profileToUpdate.id, {
-            agent: { ...updateData.agent, lat: coords.lat, lng: coords.lng }
-          });
-          console.log('[AgentOnboarding] Geocoded county:', formData.main_county, primaryState, coords);
-        }
+      const agentData = {
+        ...(profileToUpdate.agent || {}),
+        license_number: firstLicense,
+        state_licenses: formData.state_licenses,
+        license_state: firstState,
+        licensed_states: licensedStates,
+        main_county: formData.main_county,
+        markets: licensedStates,
+        experience_years: parseInt(formData.experience_years) || 0,
+        investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
+        investment_strategies: formData.investment_strategies,
+        specialties: formData.specialties,
+        bio: formData.bio,
+        investor_friendly: true,
+        brokerage: formData.brokerage
+      };
+
+      await base44.entities.Profile.update(profileToUpdate.id, {
+        full_name: combinedName,
+        onboarding_first_name: formData.first_name.trim(),
+        onboarding_last_name: formData.last_name.trim(),
+        phone: formData.phone, user_role: 'agent', user_type: 'agent',
+        broker: formData.brokerage, license_number: firstLicense,
+        license_state: firstState, markets: licensedStates,
+        target_state: firstState,
+        onboarding_step: 'basic_complete',
+        onboarding_completed_at: new Date().toISOString(),
+        onboarding_version: 'agent-v1',
+        headshotUrl: formData.headshotUrl || '',
+        agent: agentData
+      });
+
+      // Geocode county in background
+      if (formData.main_county && firstState) {
+        getCountyCentroid(formData.main_county, firstState).then(coords => {
+          if (coords) {
+            base44.entities.Profile.update(profileToUpdate.id, {
+              agent: { ...agentData, lat: coords.lat, lng: coords.lng }
+            }).catch(() => {});
+          }
+        });
       }
 
       toast.success("Profile saved! Let's verify your identity.");
-      
-      // Bust profile cache so IdentityVerification picks up fresh onboarded state
-      try {
-        sessionStorage.removeItem('__ik_profile_cache');
-      } catch (_) {}
-      
-      // Navigate to Identity Verification (next step for agents)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+      await new Promise(r => setTimeout(r, 400));
       navigate(createPageUrl("IdentityVerification"), { replace: true });
     } catch (error) {
-      console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
     } finally {
       setSaving(false);
     }
   };
 
-  if (checking) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <LoadingAnimation className="w-64 h-64" />
-      </div>
-    );
-  }
-
-  const renderStep1 = () => (
-    <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
-      
-      <div className="space-y-7">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="first_name" className="text-[#FAFAFA] text-[19px] font-medium">First Name *</Label>
-            <Input 
-              id="first_name" 
-              value={formData.first_name} 
-              onChange={(e) => updateField('first_name', e.target.value)} 
-              placeholder="First name" 
-              className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-            />
-          </div>
-          <div>
-            <Label htmlFor="last_name" className="text-[#FAFAFA] text-[19px] font-medium">Last Name *</Label>
-            <Input 
-              id="last_name" 
-              value={formData.last_name} 
-              onChange={(e) => updateField('last_name', e.target.value)} 
-              placeholder="Last name" 
-              className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-            />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number *</Label>
-          <Input 
-            id="phone" 
-            type="tel" 
-            value={formData.phone} 
-            onChange={(e) => {
-              const raw = e.target.value;
-              const digits = raw.replace(/\D/g, '').slice(0, 10);
-              let formatted = '';
-              if (digits.length === 0) { formatted = ''; }
-              else if (digits.length <= 3) { formatted = '(' + digits; }
-              else if (digits.length <= 6) { formatted = '(' + digits.slice(0, 3) + ') ' + digits.slice(3); }
-              else { formatted = '(' + digits.slice(0, 3) + ') ' + digits.slice(3, 6) + '-' + digits.slice(6); }
-              updateField('phone', formatted);
-            }} 
-            placeholder="(555) 123-4567" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
-        </div>
-        <div>
-          <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years of Experience</Label>
-          <Input 
-            id="experience_years" 
-            type="number"
-            min="0"
-            value={formData.experience_years} 
-            onChange={(e) => updateField('experience_years', e.target.value)} 
-            placeholder="e.g., 5" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
-        </div>
-        <div>
-          <Label htmlFor="deals_closed" className="text-[#FAFAFA] text-[19px] font-medium">Deals Closed (Last 12 Months)</Label>
-          <Input 
-            id="deals_closed" 
-            type="number"
-            min="0"
-            value={formData.deals_closed} 
-            onChange={(e) => updateField('deals_closed', e.target.value)} 
-            placeholder="e.g., 12" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const updateStateLicense = (state, value) => {
-    setFormData(prev => ({
-      ...prev,
-      state_licenses: { ...prev.state_licenses, [state]: value }
-    }));
+  const handleNext = async () => {
+    if (step === TOTAL_STEPS) await handleSubmit();
+    else setStep(step + 1);
   };
-
-  const step2HasAllLicenses = formData.markets.length > 0 && formData.markets.every(st => (formData.state_licenses[st] || '').trim().length > 0);
-
-  // Validate county against centroid data whenever county or markets change
-  // Use JSON.stringify on markets array to avoid re-running on every render
-  const marketsKey = JSON.stringify(formData.markets);
-  useEffect(() => {
-    const county = formData.main_county.trim();
-    const primaryState = formData.markets[0] || '';
-    if (!county || !primaryState) {
-      setCountyValid(null);
-      setCountyChecking(false);
-      return;
-    }
-    setCountyChecking(true);
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      const coords = await getCountyCentroid(county, primaryState);
-      if (!cancelled) {
-        setCountyValid(coords !== null);
-        setCountyChecking(false);
-      }
-    }, 400);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [formData.main_county, marketsKey]);
-
-  const renderStep2 = () => (
-    <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Select your licensed states and enter each license number</p>
-      
-      <div className="space-y-7">
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">States Where You're Licensed *</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
-          <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
-            {US_STATES.map((state) => (
-              <div key={state} className="flex items-center gap-3">
-                <Checkbox 
-                  id={`market-${state}`} 
-                  checked={formData.markets.includes(state)} 
-                  onCheckedChange={() => toggleMarket(state)} 
-                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
-                />
-                <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {formData.markets.length > 0 && (
-          <div>
-            <Label className="text-[#FAFAFA] text-[19px] font-medium">License Numbers *</Label>
-            <p className="text-sm text-[#808080] mt-1 mb-3">Enter your license number for each state</p>
-            <div className="space-y-3">
-              {formData.markets.map((state) => (
-                <div key={state}>
-                  <Label className="text-[#FAFAFA] text-[15px] font-medium mb-1 block">{state} License Number</Label>
-                  <Input 
-                    value={formData.state_licenses[state] || ''} 
-                    onChange={(e) => updateStateLicense(state, e.target.value)} 
-                    placeholder={`e.g., ${state}-123456`} 
-                    className="h-14 text-[17px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <Label htmlFor="brokerage" className="text-[#FAFAFA] text-[19px] font-medium">Brokerage Name *</Label>
-          <Input 
-            id="brokerage" 
-            value={formData.brokerage} 
-            onChange={(e) => updateField('brokerage', e.target.value)} 
-            placeholder="e.g., Keller Williams, eXp Realty" 
-            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
-          />
-        </div>
-        <div>
-          <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Main County *</Label>
-          <Input 
-            id="main_county" 
-            value={formData.main_county} 
-            onChange={(e) => updateField('main_county', e.target.value)} 
-            placeholder="e.g., Maricopa" 
-            className={`h-16 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] placeholder:text-[#666666] focus:ring-2 ${
-              formData.main_county.trim() && !countyChecking
-                ? countyValid 
-                  ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' 
-                  : 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
-                : 'border-[#1F1F1F] focus:border-[#E3C567] focus:ring-[#E3C567]/30'
-            }`} 
-          />
-          <div className="mt-2 min-h-[20px]">
-            {countyChecking && formData.main_county.trim() && (
-              <p className="text-sm text-[#808080]">Checking county...</p>
-            )}
-            {!countyChecking && formData.main_county.trim() && countyValid === true && (
-              <p className="text-sm text-green-400 flex items-center gap-1">
-                <CheckCircle className="w-3.5 h-3.5" /> County recognized — will be used for deal matching
-              </p>
-            )}
-            {!countyChecking && formData.main_county.trim() && countyValid === false && (
-              <p className="text-sm text-red-400">
-                County not found in {formData.markets[0] || 'your state'}. Try entering just the county name (e.g., "Milwaukee" not "Milwaukee County").
-              </p>
-            )}
-            {!formData.main_county.trim() && (
-              <p className="text-sm text-[#808080]">Enter the county where you primarily operate</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const DEAL_TYPE_OPTIONS = [
-    { label: 'Wholesale', value: 'Wholesale' },
-    { label: 'Novation', value: 'Novation' },
-    { label: 'Whole-tail', value: 'Whole-tail' },
-    { label: 'Fix & Flip', value: 'Fix & Flip' },
-    { label: 'Buy & Hold', value: 'Buy & Hold' },
-    { label: 'Sub-2', value: 'Sub-2', tooltip: 'Taking over seller\'s existing mortgage' },
-  ];
-
-  const PROPERTY_TYPE_OPTIONS = [
-    'Single-Family', 'Multi-Family', 'Condo', 'Townhouse', 'Manufactured', 'Land'
-  ];
-
-  const renderStep3 = () => (
-    <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your Expertise</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell investors what types of deals and properties you specialize in</p>
-      
-      <div className="space-y-7">
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Type of Deals</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
-          <div className="grid grid-cols-2 gap-3">
-            {DEAL_TYPE_OPTIONS.map((deal) => (
-              <div key={deal.value} className="flex items-center gap-3">
-                <Checkbox 
-                  id={`strategy-${deal.value}`} 
-                  checked={formData.investment_strategies.includes(deal.value)} 
-                  onCheckedChange={() => toggleArrayItem('investment_strategies', deal.value)} 
-                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
-                />
-                <Label htmlFor={`strategy-${deal.value}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex items-center gap-1.5">
-                  {deal.label}
-                  {deal.tooltip && (
-                    <span className="relative group">
-                      <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-[#808080] text-[10px] text-[#808080] cursor-help">?</span>
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] text-[#FAFAFA] text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                        {deal.tooltip}
-                      </span>
-                    </span>
-                  )}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property Types</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
-          <div className="grid grid-cols-2 gap-3">
-            {PROPERTY_TYPE_OPTIONS.map((specialty) => (
-              <div key={specialty} className="flex items-center gap-3">
-                <Checkbox 
-                  id={`specialty-${specialty}`} 
-                  checked={formData.specialties.includes(specialty)} 
-                  onCheckedChange={() => toggleArrayItem('specialties', specialty)} 
-                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
-                />
-                <Label htmlFor={`specialty-${specialty}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{specialty}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   const handleHeadshotUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file (JPG, PNG, etc.)');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
-    }
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return; }
     setUploadingPhoto(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     updateField('headshotUrl', file_url);
@@ -606,133 +236,177 @@ export default function AgentOnboarding() {
     toast.success('Photo uploaded!');
   };
 
-  const renderStep4 = () => (
-    <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Profile Photo & Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Add a photo and tell investors about your background</p>
-      
-      <div className="space-y-7">
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Profile Photo</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Optional — a photo helps investors put a face to your name</p>
-          <div className="flex items-center gap-5">
-            {formData.headshotUrl ? (
-              <div className="relative group">
-                <img 
-                  src={formData.headshotUrl} 
-                  alt="Headshot" 
-                  className="w-24 h-24 rounded-full object-cover border-2 border-[#E3C567]" 
-                />
-                <button 
-                  type="button"
-                  onClick={() => updateField('headshotUrl', '')}
-                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-3 h-3 text-white" />
-                </button>
-              </div>
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-[#141414] border-2 border-dashed border-[#1F1F1F] flex items-center justify-center">
-                <Upload className="w-6 h-6 text-[#808080]" />
-              </div>
-            )}
-            <label className="cursor-pointer">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleHeadshotUpload} 
-                className="hidden" 
-              />
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#1F1F1F] bg-[#141414] text-[#FAFAFA] text-sm hover:border-[#E3C567] transition-colors">
-                {uploadingPhoto ? 'Uploading...' : formData.headshotUrl ? 'Change Photo' : 'Upload Photo'}
-              </span>
-            </label>
-          </div>
-        </div>
+  if (checking) {
+    return <div className="min-h-screen bg-black flex items-center justify-center"><LoadingAnimation className="w-64 h-64" /></div>;
+  }
 
-        <div>
-          <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
-          <Textarea 
-            id="bio" 
-            value={formData.bio} 
-            onChange={(e) => updateField('bio', e.target.value)} 
-            placeholder="Introduce yourself and highlight your experience working with investor clients..." 
-            rows={5}
-            className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" 
-          />
-          <p className="text-[16px] text-[#808080] mt-2">This will appear on your public profile</p>
-        </div>
+  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
+  const isStep2Valid = formData.markets.length > 0 && step2HasAllLicenses && formData.brokerage.trim() && formData.main_county.trim() && countyValid === true;
 
-        <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5">
-          <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
-          <p className="text-sm text-[#E3C567]">
-            Next, we'll verify your identity to ensure trust and security on the platform.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
+  const nextLabel = step === TOTAL_STEPS ? 'Continue to Verification →' : 'Continue →';
 
   return (
-    <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
-      <header className="h-20 flex items-center justify-center border-b border-[#1F1F1F]">
-        <div className="flex items-center gap-2">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
-            alt="Investor Konnect"
-            className="h-10 w-10 object-contain"
-          />
-          <span className="text-xl font-bold text-[#E3C567]">INVESTOR KONNECT</span>
-        </div>
-      </header>
-
-      <div className="py-6 flex flex-col items-center">
-        <div className="flex items-center gap-3 mb-2">
-          {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
-            <div
-              key={idx}
-              className={`rounded-full transition-all ${
-                idx + 1 === step 
-                  ? 'w-4 h-4 bg-[#E3C567] animate-pulse' 
-                  : idx + 1 < step 
-                    ? 'w-3 h-3 bg-[#E3C567]' 
-                    : 'w-3 h-3 border-2 border-[#1F1F1F] bg-transparent'
-              }`}
-            />
-          ))}
-        </div>
-        <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
-      </div>
-
-      <div className="max-w-[700px] mx-auto px-4 pb-12">
-        <div className="bg-[#0D0D0D] rounded-3xl p-12 border border-[#1F1F1F]" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-          {step === 4 && renderStep4()}
-
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">
-            {step > 1 ? (
-              <button onClick={handleBack} disabled={saving} className="text-[#808080] hover:text-[#E3C567] font-medium transition-colors">
-                ← Back
-              </button>
-            ) : <div />}
-            <button
-              onClick={handleNext}
-              disabled={saving || (step === 1 && (!formData.first_name.trim() || !formData.last_name.trim() || (formData.phone || '').replace(/\D/g, '').length < 10)) || (step === 2 && (formData.markets.length === 0 || !step2HasAllLicenses || !formData.brokerage.trim() || !formData.main_county.trim() || countyValid !== true))}
-              className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
-            >
-              {saving ? (
-                <><LoadingAnimation className="w-4 h-4 mr-2 inline" />Saving...</>
-              ) : step === TOTAL_STEPS ? (
-                'Continue to Verification →'
-              ) : (
-                'Continue →'
-              )}
-            </button>
+    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} saving={saving} onBack={() => setStep(step - 1)} onNext={handleNext} nextDisabled={nextDisabled} nextLabel={nextLabel}>
+      {step === 1 && (
+        <div>
+          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
+          <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
+          <div className="space-y-7">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="first_name" className="text-[#FAFAFA] text-[19px] font-medium">First Name *</Label>
+                <Input id="first_name" value={formData.first_name} onChange={(e) => updateField('first_name', e.target.value)} placeholder="First name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+              </div>
+              <div>
+                <Label htmlFor="last_name" className="text-[#FAFAFA] text-[19px] font-medium">Last Name *</Label>
+                <Input id="last_name" value={formData.last_name} onChange={(e) => updateField('last_name', e.target.value)} placeholder="Last name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+              </div>
+            </div>
+            <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
+            <div>
+              <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years of Experience</Label>
+              <Input id="experience_years" type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} placeholder="e.g., 5" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+            </div>
+            <div>
+              <Label htmlFor="deals_closed" className="text-[#FAFAFA] text-[19px] font-medium">Deals Closed (Last 12 Months)</Label>
+              <Input id="deals_closed" type="number" min="0" value={formData.deals_closed} onChange={(e) => updateField('deals_closed', e.target.value)} placeholder="e.g., 12" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {step === 2 && (
+        <div>
+          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
+          <p className="text-[18px] text-[#808080] mb-10">Select your licensed states and enter each license number</p>
+          <div className="space-y-7">
+            <div>
+              <Label className="text-[#FAFAFA] text-[19px] font-medium">States Where You're Licensed *</Label>
+              <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
+              <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
+                {US_STATES.map((state) => (
+                  <div key={state} className="flex items-center gap-3">
+                    <Checkbox id={`market-${state}`} checked={formData.markets.includes(state)} onCheckedChange={() => toggleMarket(state)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                    <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {formData.markets.length > 0 && (
+              <div>
+                <Label className="text-[#FAFAFA] text-[19px] font-medium">License Numbers *</Label>
+                <p className="text-sm text-[#808080] mt-1 mb-3">Enter your license number for each state</p>
+                <div className="space-y-3">
+                  {formData.markets.map((state) => (
+                    <div key={state}>
+                      <Label className="text-[#FAFAFA] text-[15px] font-medium mb-1 block">{state} License Number</Label>
+                      <Input value={formData.state_licenses[state] || ''} onChange={(e) => updateStateLicense(state, e.target.value)} placeholder={`e.g., ${state}-123456`} className="h-14 text-[17px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="brokerage" className="text-[#FAFAFA] text-[19px] font-medium">Brokerage Name *</Label>
+              <Input id="brokerage" value={formData.brokerage} onChange={(e) => updateField('brokerage', e.target.value)} placeholder="e.g., Keller Williams, eXp Realty" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+            </div>
+            <div>
+              <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Main County *</Label>
+              <Input id="main_county" value={formData.main_county} onChange={(e) => updateField('main_county', e.target.value)} placeholder="e.g., Maricopa" className={`h-16 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] placeholder:text-[#666666] focus:ring-2 ${formData.main_county.trim() && !countyChecking ? countyValid ? 'border-green-500 focus:border-green-500 focus:ring-green-500/30' : 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : 'border-[#1F1F1F] focus:border-[#E3C567] focus:ring-[#E3C567]/30'}`} />
+              <div className="mt-2 min-h-[20px]">
+                {countyChecking && formData.main_county.trim() && <p className="text-sm text-[#808080]">Checking county...</p>}
+                {!countyChecking && formData.main_county.trim() && countyValid === true && <p className="text-sm text-green-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> County recognized</p>}
+                {!countyChecking && formData.main_county.trim() && countyValid === false && <p className="text-sm text-red-400">County not found in {formData.markets[0] || 'your state'}. Try just the county name.</p>}
+                {!formData.main_county.trim() && <p className="text-sm text-[#808080]">Enter the county where you primarily operate</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div>
+          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your Expertise</h3>
+          <p className="text-[18px] text-[#808080] mb-10">Tell investors what types of deals and properties you specialize in</p>
+          <div className="space-y-7">
+            <div>
+              <Label className="text-[#FAFAFA] text-[19px] font-medium">Type of Deals</Label>
+              <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
+              <div className="grid grid-cols-2 gap-3">
+                {DEAL_TYPE_OPTIONS.map((deal) => (
+                  <div key={deal.value} className="flex items-center gap-3">
+                    <Checkbox id={`strategy-${deal.value}`} checked={formData.investment_strategies.includes(deal.value)} onCheckedChange={() => toggleArrayItem('investment_strategies', deal.value)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                    <Label htmlFor={`strategy-${deal.value}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex items-center gap-1.5">
+                      {deal.label}
+                      {deal.tooltip && (
+                        <span className="relative group">
+                          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-[#808080] text-[10px] text-[#808080] cursor-help">?</span>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1F1F1F] text-[#FAFAFA] text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">{deal.tooltip}</span>
+                        </span>
+                      )}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label className="text-[#FAFAFA] text-[19px] font-medium">Property Types</Label>
+              <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
+              <div className="grid grid-cols-2 gap-3">
+                {PROPERTY_TYPE_OPTIONS.map((specialty) => (
+                  <div key={specialty} className="flex items-center gap-3">
+                    <Checkbox id={`specialty-${specialty}`} checked={formData.specialties.includes(specialty)} onCheckedChange={() => toggleArrayItem('specialties', specialty)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                    <Label htmlFor={`specialty-${specialty}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{specialty}</Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div>
+          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Profile Photo & Bio</h3>
+          <p className="text-[18px] text-[#808080] mb-10">Add a photo and tell investors about your background</p>
+          <div className="space-y-7">
+            <div>
+              <Label className="text-[#FAFAFA] text-[19px] font-medium">Profile Photo</Label>
+              <p className="text-sm text-[#808080] mt-1 mb-3">Optional — a photo helps investors put a face to your name</p>
+              <div className="flex items-center gap-5">
+                {formData.headshotUrl ? (
+                  <div className="relative group">
+                    <img src={formData.headshotUrl} alt="Headshot" className="w-24 h-24 rounded-full object-cover border-2 border-[#E3C567]" />
+                    <button type="button" onClick={() => updateField('headshotUrl', '')} className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-[#141414] border-2 border-dashed border-[#1F1F1F] flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-[#808080]" />
+                  </div>
+                )}
+                <label className="cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleHeadshotUpload} className="hidden" />
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#1F1F1F] bg-[#141414] text-[#FAFAFA] text-sm hover:border-[#E3C567] transition-colors">
+                    {uploadingPhoto ? 'Uploading...' : formData.headshotUrl ? 'Change Photo' : 'Upload Photo'}
+                  </span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
+              <Textarea id="bio" value={formData.bio} onChange={(e) => updateField('bio', e.target.value)} placeholder="Introduce yourself and highlight your experience working with investor clients..." rows={5} className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" />
+              <p className="text-[16px] text-[#808080] mt-2">This will appear on your public profile</p>
+            </div>
+            <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5">
+              <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
+              <p className="text-sm text-[#E3C567]">Next, we'll verify your identity to ensure trust and security on the platform.</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </OnboardingShell>
   );
 }
