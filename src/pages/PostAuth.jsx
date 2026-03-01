@@ -160,7 +160,12 @@ export default function PostAuth() {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (role === 'agent') {
             // Check qualification first
-            if (!profile?.qualification_status || profile.qualification_status !== 'completed') {
+            const qualStatus = profile?.qualification_status;
+            const qualTier = profile?.qualification_tier;
+            if (!qualStatus || qualStatus !== 'completed') {
+              navigate(createPageUrl("AgentQualification"), { replace: true });
+            } else if (qualTier === 'rejected') {
+              // Rejected agents cannot proceed to onboarding
               navigate(createPageUrl("AgentQualification"), { replace: true });
             } else {
               navigate(createPageUrl("AgentOnboarding"), { replace: true });
