@@ -51,15 +51,34 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Investor</p>
-            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
+            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-2">{name}</h3>
             {experienceLabel && (
               <span className="inline-block px-3 py-1 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium mb-2">
                 {experienceLabel}
               </span>
             )}
-
+            <div className="space-y-1">
+              {email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">{email}</span>
+                </div>
+              )}
+              {phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70">{phone}</span>
+                </div>
+              )}
+              {company && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">{company}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Rating badge - top right */}

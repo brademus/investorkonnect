@@ -39,10 +39,30 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
             )}
           </div>
 
-          {/* Name + Signature (center) */}
-          <div className="flex-1">
+          {/* Name + Contact Info */}
+          <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Professional</p>
-            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-1">{name}</h3>
+            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-2">{name}</h3>
+            <div className="space-y-1">
+              {email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">{email}</span>
+                </div>
+              )}
+              {phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70">{phone}</span>
+                </div>
+              )}
+              {brokerage && (
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
+                  <span className="text-xs text-[#FAFAFA]/70 truncate">{brokerage}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Rating badge - top right */}
