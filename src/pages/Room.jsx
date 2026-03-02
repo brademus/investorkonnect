@@ -60,6 +60,27 @@ export default function Room() {
   const isInvestor = profile?.user_role === 'investor';
   const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
+
+  // Track unread message count for the Messages button badge
+  const { messages: roomMessages } = useRoomMessages(roomId);
+  const unreadMsgCount = useMemo(() => {
+    if (!roomMessages?.length || !profile?.id || !roomId) return 0;
+    const lastSeenTs = profile?.last_seen_timestamps?.[roomId];
+    return roomMessages.filter(m => {
+      if (m.sender_profile_id === profile.id) return false;
+      if (!lastSeenTs) return true;
+      return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
+    }).length;
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId]);
+
+  // Clear unread count when viewing messages
+  useEffect(() => {
+    if (activeView === 'messages' && roomId && profile?.id && unreadMsgCount > 0) {
+      base44.entities.Profile.update(profile.id, {
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
+      }).catch(() => {});
+    }
+  }, [activeView, roomId, profile?.id]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
