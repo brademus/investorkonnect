@@ -342,18 +342,35 @@ export default function Room() {
           }
           return merged;
         });
-        // If room just became locked, refresh deal and pending agents
+        // If room just became locked, refresh deal, clear pending agents, and switch to board
         if (updated.request_status === 'locked' || updated.agreement_status === 'fully_signed') {
-          // Refetch deal to get updated stage and signing status
+          setPendingInvites([]);
+          setSelectedInvite(null);
+          setActiveView('board');
+          setMountedViews(prev => { const next = new Set(prev); next.add('board'); return next; });
+          // Refetch deal to get updated stage, signing status, and counterparty info
           if (currentRoom?.deal_id) {
             base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id })
               .then(res => {
-                if (res?.data) setDeal(res.data);
+                if (res?.data) {
+                  setDeal(res.data);
+                  // Update counterparty info from fresh deal data
+                  setCurrentRoom(prev => {
+                    if (!prev) return prev;
+                    const agentContact = res.data.agent_contact;
+                    const agentName = res.data.agent_full_name;
+                    return {
+                      ...prev,
+                      counterparty_name: agentName || prev.counterparty_name,
+                      counterparty_headshot: agentContact?.headshotUrl || prev.counterparty_headshot,
+                    };
+                  });
+                }
               })
               .catch(() => {});
           }
-          setPendingInvites([]);
-          if (activeView === 'pending_agents') setActiveView('board');
+          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
         }
       }
     });
