@@ -81,13 +81,25 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       }));
       unsubs.push(base44.entities.CounterOffer.subscribe((e) => {
         if (e?.data?.room_id === roomId) {
-          if (e.data.status === 'pending') setPendingCounters(prev => [...prev.filter(c => c.id !== e.id), e.data]);
-          else setPendingCounters(prev => prev.filter(c => c.id !== e.id));
+          if (e.data.status === 'pending') setPendingCounters(prev => [...prev.filter(c => c.id !== e.data.id), e.data]);
+          else setPendingCounters(prev => prev.filter(c => c.id !== e.data.id));
         }
       }));
     }
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
   }, [dealId, roomId]);
+
+  // Re-fetch counters when returning from counter offer page
+  useEffect(() => {
+    if (!roomId || !loaded) return;
+    const handleFocus = () => {
+      base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50)
+        .then(counters => setPendingCounters(counters || []))
+        .catch(() => {});
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [roomId, loaded]);
 
   // Filter counters to only show those relevant to the current agent context
   const relevantCounters = pendingCounters.filter(c => {
