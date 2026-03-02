@@ -69,11 +69,37 @@ function AgentReviewCard({ profile, onAction }) {
         await base44.entities.Profile.update(profile.id, {
           qualification_tier: "approved",
         });
+        // Send approval email
+        base44.integrations.Core.SendEmail({
+          to: profile.email,
+          subject: "You've Been Approved — Welcome to Investor Konnect!",
+          body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #E3C567;">Congratulations, ${profile.full_name || "Agent"}!</h2>
+            <p>Great news — your application to join <strong>Investor Konnect</strong> has been reviewed and <strong>approved</strong>.</p>
+            <p>You can now log back in and complete your agent profile setup to start receiving deal opportunities.</p>
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${window.location.origin}" style="background: #E3C567; color: #000; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: bold;">Log In & Complete Profile</a>
+            </div>
+            <p style="color: #808080; font-size: 13px;">If you have any questions, reply to this email or contact our support team.</p>
+          </div>`,
+        }).catch(err => console.warn("Approval email failed:", err));
         toast.success(`${profile.full_name || profile.email} approved — they can now complete onboarding.`);
       } else {
         await base44.entities.Profile.update(profile.id, {
           qualification_tier: "rejected",
         });
+        // Send rejection email
+        base44.integrations.Core.SendEmail({
+          to: profile.email,
+          subject: "Investor Konnect — Application Update",
+          body: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #E3C567;">Hi ${profile.full_name || "there"},</h2>
+            <p>Thank you for your interest in joining <strong>Investor Konnect</strong>.</p>
+            <p>After reviewing your application, we've determined that the platform isn't the right fit at this time. Our deals require specific broker permissions and investor-focused experience that didn't align with your current profile.</p>
+            <p>We appreciate the time you took to apply and wish you the best in your real estate career.</p>
+            <p style="color: #808080; font-size: 13px; margin-top: 30px;">If you believe this was made in error, please contact our support team.</p>
+          </div>`,
+        }).catch(err => console.warn("Rejection email failed:", err));
         toast.success(`${profile.full_name || profile.email} has been rejected.`);
       }
       onAction();
