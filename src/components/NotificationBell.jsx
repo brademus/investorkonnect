@@ -137,14 +137,18 @@ export default function NotificationBell() {
     if (!open) {
       fetchNotifications(); // always refresh on open
       setOpen(true);
-      // Mark all current notifications as "seen"
-      const now = Date.now();
-      setLastSeenAt(now);
-      try { sessionStorage.setItem('notif_last_seen', String(now)); } catch {}
     } else {
       setOpen(false);
     }
   };
+
+  // Whenever the panel is open, stamp lastSeenAt so the badge resets to 0
+  useEffect(() => {
+    if (!open) return;
+    const now = Date.now();
+    setLastSeenAt(now);
+    try { sessionStorage.setItem('notif_last_seen', String(now)); } catch {}
+  }, [open, notifications]);
 
   const handleNotificationClick = (n) => {
     setOpen(false);
