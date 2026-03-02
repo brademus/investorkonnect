@@ -144,7 +144,8 @@ export default function Room() {
       defaultView = 'board';
     }
     setActiveView(defaultView);
-    setMountedViews(new Set([defaultView]));
+    // Always include 'board' in mounted views so it renders when auto-selected
+    setMountedViews(new Set([defaultView, 'board']));
     setPendingInvites([]);
     setSelectedInvite(null);
 
