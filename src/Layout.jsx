@@ -118,7 +118,7 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className="ik-shell ik-silk-bg">
+    <div className="ik-shell ik-silk-bg" style={{ minHeight: '100vh' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -126,10 +126,12 @@ function LayoutContent({ children }) {
         :root {
           --font-serif: 'Cinzel', serif;
           --font-sans: 'Inter', sans-serif;
+          --background: 0 0% 3% !important;
         }
-        body {
+        html, body, #root {
+          background-color: #070709 !important;
+          background: #070709 !important;
           font-family: var(--font-sans);
-          background-color: transparent !important;
         }
         h1, h2, h3, h4, h5, h6, .font-serif {
           font-family: var(--font-serif) !important;
