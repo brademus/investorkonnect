@@ -119,22 +119,28 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell ik-silk-bg" style={{ minHeight: '100vh' }}>
-      {/* Fixed background image — rendered as real <img> so it always paints */}
-      <img
-        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/9e0928a8f_9E86D1C0-294F-4D1B-A04F-981308BFD7AB.png"
-        alt=""
+      {/* Fixed background image with dark overlay to match theme */}
+      <div
         aria-hidden="true"
         style={{
           position: 'fixed',
           inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center top',
           zIndex: 0,
           pointerEvents: 'none',
         }}
-      />
+      >
+        <img
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/9e0928a8f_9E86D1C0-294F-4D1B-A04F-981308BFD7AB.png"
+          alt=""
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center top',
+            opacity: 0.45,
+          }}
+        />
+      </div>
       {/* All visible content above the background */}
       <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
