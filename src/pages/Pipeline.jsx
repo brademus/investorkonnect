@@ -346,7 +346,7 @@ function PipelineContent() {
                         </div>
                         <Droppable droppableId={stage.id}>
                           {(provided, snapshot) => (
-                            <div ref={provided.innerRef} {...provided.droppableProps} className={`flex-1 md:overflow-y-auto space-y-3 pr-1 ${snapshot.isDraggingOver ? 'bg-[#E7C873]/5 rounded-lg' : ''}`}>
+                            <div ref={provided.innerRef} {...provided.droppableProps} className={`flex-1 md:overflow-y-auto space-y-3 pr-1 ${snapshot.isDraggingOver ? 'bg-[#E7C873]/5 rounded-lg' : ''}`} style={{ overscrollBehavior: 'contain' }}>
                               {stageDeals.length === 0 ? (
                                 <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
                                   {snapshot.isDraggingOver ? 'Drop here' : 'No deals'}
