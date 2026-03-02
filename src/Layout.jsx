@@ -130,14 +130,14 @@ function LayoutContent({ children }) {
         }}
       >
         <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/7f8a615de_1293AC3B-9FDA-4A13-BB91-671E9D0D7B14.png"
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/b44bcae9f_background_gold_matched_E3C567.png"
           alt=""
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
             objectPosition: 'center top',
-            opacity: 0.45,
+            opacity: 0.30,
           }}
         />
       </div>
