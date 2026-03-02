@@ -118,10 +118,14 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
                 </Badge>
                 {agentCounters[agent.id] && (() => {
                   const ct = agentCounters[agent.id].terms_delta || {};
-                  const label = ct.buyer_commission_type === 'flat_fee' && ct.buyer_flat_fee != null
-                    ? `$${Number(ct.buyer_flat_fee).toLocaleString()}`
-                    : ct.buyer_commission_percentage != null
-                      ? `${ct.buyer_commission_percentage}%`
+                  // Check both seller and buyer commission fields
+                  const flatFee = ct.seller_flat_fee ?? ct.buyer_flat_fee;
+                  const pct = ct.seller_commission_percentage ?? ct.buyer_commission_percentage;
+                  const commType = ct.seller_commission_type || ct.buyer_commission_type;
+                  const label = (commType === 'flat' || commType === 'flat_fee') && flatFee != null
+                    ? `$${Number(flatFee).toLocaleString()}`
+                    : pct != null
+                      ? `${pct}%`
                       : null;
                   if (!label) return null;
                   return (
