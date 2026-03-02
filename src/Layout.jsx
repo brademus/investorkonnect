@@ -173,13 +173,14 @@ function LayoutContent({ children }) {
               <div className="flex-1"></div>
 
               {/* Center: logo + brand */}
-              <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(createPageUrl("Pipeline"))}>
+              <div className="flex items-center gap-2 select-none">
                 <img 
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2a5ae75f8_616CA829-4C69-40A9-8555-BE50375B7FC6.png"
                   alt="Investor Konnect"
                   className="h-8 w-8 object-contain"
+                  style={{ background: 'transparent' }}
                 />
-                <span className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
+                <span className="text-base font-light tracking-wide text-[#E3C567]" style={{ fontFamily: "'Cinzel', serif" }}>
                   Investor Konnect
                 </span>
               </div>
