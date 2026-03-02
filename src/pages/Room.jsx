@@ -229,12 +229,8 @@ export default function Room() {
         if (dealData) setDeal(dealData);
         setRoomLoading(false);
 
-        // Mark room as read (fire-and-forget)
-        if (profile?.id && room?.id) {
-          base44.entities.Profile.update(profile.id, {
-            last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [room.id]: new Date().toISOString() }
-          }).catch(() => {});
-        }
+        // NOTE: We no longer auto-persist last_seen_timestamps on room load.
+        // It's persisted only when user leaves the messages view (see prevActiveView effect).
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
          if (isInvestor && room.deal_id && !roomIsLocked) {
