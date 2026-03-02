@@ -6,6 +6,11 @@
 
 /* ====== Production-Ready Global Styles ====== */
 
+/* Force dark background on html/body to prevent index.css light-mode override */
+html, body {
+  background-color: #070709 !important;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
