@@ -128,6 +128,8 @@ function LayoutContent({ children }) {
       <div className="ik-silk-gleam" />
       <div className="ik-silk-grain" />
       <div className="ik-silk-vignette" />
+      {/* Content wrapper — z-index:1, above all background layers */}
+      <div className="ik-silk-content" style={{ minHeight: '100vh' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -290,6 +292,7 @@ function LayoutContent({ children }) {
           <MessageSquare className="w-6 h-6 text-black" />
         </Link>
       )}
+      </div>{/* end ik-silk-content */}
     </div>
   );
 }
