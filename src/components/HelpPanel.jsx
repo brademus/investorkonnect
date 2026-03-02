@@ -76,7 +76,7 @@ export default function HelpPanel({ open, onOpenChange, userRole }) {
                           <Play className="w-5 h-5 text-[#E3C567]" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-[#FAFAFA]">Deal Board Walkthrough</p>
+                          <p className="text-sm font-medium text-[#FAFAFA]">Understanding the Deal Board</p>
                         </div>
                       </div>
                       <div className="px-4 pb-4">
@@ -124,7 +124,7 @@ export default function HelpPanel({ open, onOpenChange, userRole }) {
                           <Play className="w-5 h-5 text-[#E3C567]" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-[#FAFAFA]">Deal Board Walkthrough</p>
+                          <p className="text-sm font-medium text-[#FAFAFA]">Understanding the Deal Board</p>
                         </div>
                       </div>
                       <div className="px-4 pb-4">
@@ -139,33 +139,6 @@ export default function HelpPanel({ open, onOpenChange, userRole }) {
                       </div>
                     </div>
                   )}
-                </div>
-
-                {/* Upcoming Tutorials */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Coming Soon</h4>
-                  
-                  {[
-                    { title: 'Finding the Right Agent', duration: '2 min' },
-                    { title: 'Understanding the Deal Board', duration: '4 min' },
-                    { title: 'Managing Documents & Files', duration: '3 min' },
-                    { title: 'Communication Best Practices', duration: '5 min' }
-                  ].map((tutorial, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 hover:border-[#60A5FA]/30 transition-all cursor-not-allowed opacity-60"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#60A5FA]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Play className="w-5 h-5 text-[#60A5FA]" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-[#FAFAFA]">{tutorial.title}</p>
-                          <p className="text-xs text-[#808080] mt-0.5">{tutorial.duration}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
 
                 {/* Support Section */}
