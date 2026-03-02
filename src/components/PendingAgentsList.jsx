@@ -31,19 +31,21 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
   // Fetch pending counter offers for each agent
   useEffect(() => {
     if (!invites.length) return;
-    const roomId = invites[0]?.room_id;
-    if (!roomId) return;
-    base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50)
+    const dealId = invites[0]?.deal_id;
+    if (!dealId) return;
+    base44.entities.CounterOffer.filter({ deal_id: dealId, from_role: 'agent' }, '-created_date', 50)
       .then(counters => {
         const map = {};
+        // Keep the most recent counter per agent (first match wins since sorted by -created_date)
         (counters || []).forEach(c => {
-          if (c.from_role === 'agent' && c.from_profile_id) {
+          if (c.from_profile_id && !map[c.from_profile_id]) {
             map[c.from_profile_id] = c;
           }
         });
         setAgentCounters(map);
+        console.log('[PendingAgentsList] counters by agent:', Object.keys(map), counters?.length);
       })
-      .catch(() => {});
+      .catch((err) => console.error('[PendingAgentsList] counter fetch error:', err));
   }, [invites]);
 
   return (
