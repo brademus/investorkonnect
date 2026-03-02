@@ -552,22 +552,19 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 }
 
 /* ====== Luxury silk/draped fabric background ====== */
+/* All layers use positive z-index; content sits at z-index:1 via .ik-silk-content */
 .ik-silk-bg,
 .ik-deal-bg {
   position: relative;
-  background-color: #0c0c0e !important;
+  background-color: #0c0c0e;
 }
 
-/* Multi-layer silk background via pseudo-elements */
-.ik-silk-bg::before,
-.ik-deal-bg::before {
-  content: '';
+/* Base warm-tone layer */
+.ik-silk-base {
   position: fixed;
   inset: 0;
-  z-index: -5;
+  z-index: 0;
   pointer-events: none;
-
-  /* Base layer — warm dark tones */
   background:
     radial-gradient(ellipse 110% 60% at 15% 0%, #2e2b20 0%, #1c1c20 35%, transparent 65%),
     radial-gradient(ellipse 90% 75% at 82% 95%, #241f18 0%, #161618 50%, transparent 72%),
@@ -575,17 +572,13 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     linear-gradient(162deg, #28261e 0%, #16161a 25%, #0e0e10 50%, #1c1a14 78%, #0a0a0c 100%);
 }
 
-.ik-silk-bg::after,
-.ik-deal-bg::after {
-  content: '';
+/* Gold folds layer */
+.ik-silk-folds {
   position: fixed;
   inset: 0;
-  z-index: -4;
+  z-index: 0;
   pointer-events: none;
-
-  /* Gold folds + gleam layer */
   background:
-    /* Gold folds */
     radial-gradient(ellipse 55% 28% at 6% 3%, rgba(215,188,128,0.26) 0%, rgba(185,158,98,0.12) 35%, transparent 62%),
     radial-gradient(ellipse 18% 62% at 1% 52%, rgba(195,168,108,0.16) 0%, transparent 55%),
     radial-gradient(ellipse 22% 42% at 97% 28%, rgba(200,173,112,0.14) 0%, transparent 52%),
@@ -594,11 +587,11 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     radial-gradient(ellipse 25% 20% at 70% 15%, rgba(180,155,100,0.06) 0%, transparent 55%);
 }
 
-/* Diagonal silk lines overlay */
+/* Diagonal silk lines */
 .ik-silk-lines {
   position: fixed;
   inset: 0;
-  z-index: -3;
+  z-index: 0;
   pointer-events: none;
   background-image:
     repeating-linear-gradient(
@@ -622,7 +615,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 .ik-silk-lines2 {
   position: fixed;
   inset: 0;
-  z-index: -3;
+  z-index: 0;
   pointer-events: none;
   background-image:
     repeating-linear-gradient(
@@ -639,7 +632,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 .ik-silk-shadows {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   pointer-events: none;
   background:
     linear-gradient(
@@ -656,7 +649,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 .ik-silk-gleam {
   position: fixed;
   inset: 0;
-  z-index: -2;
+  z-index: 0;
   pointer-events: none;
   background:
     linear-gradient(
@@ -673,7 +666,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 .ik-silk-grain {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   opacity: 0.55;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.11'/%3E%3C/svg%3E");
@@ -685,7 +678,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 .ik-silk-vignette {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   background: radial-gradient(
     ellipse 88% 88% at 50% 47%,
@@ -693,6 +686,12 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     rgba(0,0,0,0.28) 62%,
     rgba(0,0,0,0.68) 100%
   );
+}
+
+/* Content wrapper — sits above all background layers */
+.ik-silk-content {
+  position: relative;
+  z-index: 1;
 }
 
   /* Utility shorthands */

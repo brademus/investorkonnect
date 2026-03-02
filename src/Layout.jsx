@@ -119,7 +119,9 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell ik-silk-bg" style={{ minHeight: '100vh' }}>
-      {/* Silk background overlay layers */}
+      {/* Silk background overlay layers (z-index:0, fixed) */}
+      <div className="ik-silk-base" />
+      <div className="ik-silk-folds" />
       <div className="ik-silk-lines" />
       <div className="ik-silk-lines2" />
       <div className="ik-silk-shadows" />
