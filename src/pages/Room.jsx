@@ -63,21 +63,27 @@ export default function Room() {
 
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
+  // Local override for last_seen so badge resets instantly when viewing messages
+  const [localLastSeen, setLocalLastSeen] = useState({});
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    const lastSeenTs = profile?.last_seen_timestamps?.[roomId];
+    const lastSeenTs = localLastSeen[roomId] || profile?.last_seen_timestamps?.[roomId];
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
       if (!lastSeenTs) return true;
       return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
     }).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId]);
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, localLastSeen]);
 
   // Clear unread count when viewing messages
   useEffect(() => {
-    if (activeView === 'messages' && roomId && profile?.id && unreadMsgCount > 0) {
+    if (activeView === 'messages' && roomId && profile?.id) {
+      const now = new Date().toISOString();
+      // Instantly reset badge locally
+      setLocalLastSeen(prev => ({ ...prev, [roomId]: now }));
+      // Persist to server
       base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: now }
       }).catch(() => {});
     }
   }, [activeView, roomId, profile?.id]);
