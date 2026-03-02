@@ -63,32 +63,29 @@ export default function Room() {
 
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
-  // Local state tracks when user last viewed messages — survives re-renders and takes priority over server
-  const [localLastSeen, setLocalLastSeen] = useState({});
+  // Once user views messages, we track "has seen messages" per room to force zero badge
+  const [seenRooms, setSeenRooms] = useState({});
   
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    // Local always wins over server — it's set to a future timestamp when user views messages
-    const localTs = localLastSeen[roomId];
+    // If user has viewed messages in this room during this session, badge is 0
+    if (seenRooms[roomId]) return 0;
+    // Otherwise compute from server timestamp
     const serverTs = profile?.last_seen_timestamps?.[roomId];
-    // Pick whichever is later
-    let lastSeenTime = 0;
-    if (localTs) lastSeenTime = Math.max(lastSeenTime, new Date(localTs).getTime());
-    if (serverTs) lastSeenTime = Math.max(lastSeenTime, new Date(serverTs).getTime());
-    if (lastSeenTime === 0) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
+    if (!serverTs) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
+    const lastSeenTime = new Date(serverTs).getTime();
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
       return new Date(m.created_date).getTime() > lastSeenTime;
     }).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, localLastSeen]);
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, seenRooms]);
 
   // Mark read when switching to messages view
   useEffect(() => {
     if (activeView === 'messages' && roomId && profile?.id) {
-      // Set far-future timestamp locally so all messages count as read
-      const futureTs = new Date(Date.now() + 600000).toISOString(); // 10 min ahead
-      setLocalLastSeen(prev => ({ ...prev, [roomId]: futureTs }));
-      // Persist actual "now" to server (fire-and-forget)
+      // Instantly mark this room as "seen" — badge goes to 0
+      setSeenRooms(prev => ({ ...prev, [roomId]: true }));
+      // Persist to server (fire-and-forget)
       const serverTs = new Date().toISOString();
       base44.entities.Profile.update(profile.id, {
         last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: serverTs }
@@ -96,13 +93,17 @@ export default function Room() {
     }
   }, [activeView, roomId, profile?.id]);
 
-  // Also re-stamp whenever new messages arrive while already on messages view
+  // When new messages arrive while NOT on messages view, reset the "seen" flag so badge shows
   useEffect(() => {
-    if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
-      const futureTs = new Date(Date.now() + 600000).toISOString();
-      setLocalLastSeen(prev => ({ ...prev, [roomId]: futureTs }));
+    if (activeView !== 'messages' && roomId && seenRooms[roomId]) {
+      // Check if there are actually new messages since we marked seen
+      const latestOtherMsg = roomMessages?.filter(m => m.sender_profile_id !== profile?.id).slice(-1)[0];
+      const serverTs = profile?.last_seen_timestamps?.[roomId];
+      if (latestOtherMsg && serverTs && new Date(latestOtherMsg.created_date).getTime() > new Date(serverTs).getTime()) {
+        setSeenRooms(prev => ({ ...prev, [roomId]: false }));
+      }
     }
-  }, [roomMessages?.length, activeView, roomId]);
+  }, [roomMessages?.length]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
