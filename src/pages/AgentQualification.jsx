@@ -415,23 +415,37 @@ export default function AgentQualification() {
   const handleQuestionnaire = async ({ outcome, tier, score, autoReject, answers }) => {
     setSubmitting(true);
     try {
-      if (profile?.id) {
-        await base44.entities.Profile.update(profile.id, {
-          qualification_status: "completed",
-          qualification_tier: tier,
-          metadata: {
-            ...(profile.metadata || {}),
-            qualification_answers: answers || {},
-            qualification_score: score || 0,
-          },
-        });
+      // Ensure we have a profile ID — refetch if needed
+      let pid = profile?.id;
+      if (!pid) {
+        const user = await base44.auth.me();
+        if (user?.email) {
+          const profs = await base44.entities.Profile.filter({ email: user.email.toLowerCase().trim() });
+          if (profs?.[0]?.id) pid = profs[0].id;
+        }
       }
 
+      if (!pid) {
+        toast.error("Could not find your profile. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      await base44.entities.Profile.update(pid, {
+        qualification_status: "completed",
+        qualification_tier: tier,
+        metadata: {
+          ...(profile?.metadata || {}),
+          qualification_answers: answers || {},
+          qualification_score: score || 0,
+        },
+      });
+
       // If conditional (50-69), notify admins via backend
-      if (tier === "conditional" && profile?.id) {
+      if (tier === "conditional") {
         base44.functions.invoke('notifyAdminConditionalAgent', {
-          agentProfileId: profile.id,
-          agentName: profile.full_name || profile.email,
+          agentProfileId: pid,
+          agentName: profile?.full_name || profile?.email || 'Unknown Agent',
           score: score || 0,
         }).catch(err => console.warn('[AgentQualification] Admin notify failed:', err));
       }
@@ -439,6 +453,7 @@ export default function AgentQualification() {
       setResult({ outcome, tier, autoReject });
       setStep(3);
     } catch (e) {
+      console.error('[AgentQualification] Save failed:', e);
       toast.error("Failed to save results. Please try again.");
     } finally {
       setSubmitting(false);
