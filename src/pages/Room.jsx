@@ -95,16 +95,32 @@ export default function Room() {
     setMsgCountWhenViewed(prev => ({ ...prev, [roomId]: countSeen }));
   }, [profile?.last_seen_timestamps, roomId, roomMessages]);
 
-  // Persist last-seen to server when leaving messages view
+  // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
+  const persistLastSeen = useCallback(() => {
+    if (!roomId || !profile?.id) return;
+    const newTs = new Date().toISOString();
+    const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
+    // Update profile object in memory so refresh reads the correct value
+    if (profile) profile.last_seen_timestamps = updated;
+    base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated }).catch(() => {});
+  }, [roomId, profile]);
+
   useEffect(() => {
-    if (prevActiveView.current === 'messages' && activeView !== 'messages' && roomId && profile?.id) {
-      base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
-      }).catch(() => {});
+    if (prevActiveView.current === 'messages' && activeView !== 'messages') {
+      persistLastSeen();
     }
     prevActiveView.current = activeView;
-  }, [activeView]);
+  }, [activeView, persistLastSeen]);
+
+  // Also persist on page unload if currently viewing messages
+  useEffect(() => {
+    const onUnload = () => {
+      if (activeView === 'messages') persistLastSeen();
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, [activeView, persistLastSeen]);
 
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
