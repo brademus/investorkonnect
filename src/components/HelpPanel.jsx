@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Play, BookOpen, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function HelpPanel({ open, onOpenChange }) {
+export default function HelpPanel({ open, onOpenChange, userRole }) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = typeof open === 'boolean' ? open : internalOpen;
   const setIsOpen = onOpenChange || setInternalOpen;
@@ -44,27 +44,53 @@ export default function HelpPanel({ open, onOpenChange }) {
                 <div className="space-y-4">
                   <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Video Tutorials</h4>
                   
-                  {/* Creating a New Deal */}
-                  <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
-                    <div className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Play className="w-5 h-5 text-[#E3C567]" />
+                  {/* Creating a New Deal - Investors only */}
+                  {userRole !== 'agent' && (
+                    <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
+                      <div className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Play className="w-5 h-5 text-[#E3C567]" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-[#FAFAFA]">Creating a New Deal</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-[#FAFAFA]">Creating a New Deal</p>
+                      <div className="px-4 pb-4">
+                        <div className="rounded-xl overflow-hidden border border-[#1F1F1F]">
+                          <video
+                            src="https://dl.dropboxusercontent.com/scl/fi/tnzovyig0qlxzr66gjzof/Investor-Making-the-agreement.mov?rlkey=tw07i8il2d2g6ztjl3c6npjcz&st=7o0mqv2f"
+                            className="w-full aspect-video bg-black"
+                            controls
+                            preload="metadata"
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="px-4 pb-4">
-                      <div className="rounded-xl overflow-hidden border border-[#1F1F1F]">
-                        <video
-                          src="https://dl.dropboxusercontent.com/scl/fi/tnzovyig0qlxzr66gjzof/Investor-Making-the-agreement.mov?rlkey=tw07i8il2d2g6ztjl3c6npjcz&st=7o0mqv2f"
-                          className="w-full aspect-video bg-black"
-                          controls
-                          preload="metadata"
-                        />
+                  )}
+
+                  {/* Signing Your First Agreement - Agents only */}
+                  {userRole === 'agent' && (
+                    <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
+                      <div className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Play className="w-5 h-5 text-[#E3C567]" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-[#FAFAFA]">Signing Your First Agreement</p>
+                        </div>
+                      </div>
+                      <div className="px-4 pb-4">
+                        <div className="rounded-xl overflow-hidden border border-[#1F1F1F]">
+                          <video
+                            src="https://dl.dropboxusercontent.com/scl/fi/tnzovyig0qlxzr66gjzof/Investor-Making-the-agreement.mov?rlkey=tw07i8il2d2g6ztjl3c6npjcz&st=nj1u622d"
+                            className="w-full aspect-video bg-black"
+                            controls
+                            preload="metadata"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Upcoming Tutorials */}

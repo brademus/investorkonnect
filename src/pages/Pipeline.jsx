@@ -450,7 +450,7 @@ function PipelineContent() {
           </div>
         </div>
       </div>
-      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} />
+      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} userRole={profile?.user_role} />
     </>
   );
 }
