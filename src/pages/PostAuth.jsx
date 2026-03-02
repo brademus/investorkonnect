@@ -21,6 +21,8 @@ function routeAgent(profile, navigate) {
   const qt = profile?.qualification_tier;
   if (!qs || qs !== 'completed' || qt === 'rejected') {
     navigate(createPageUrl("AgentQualification"), { replace: true });
+  } else if (qt === 'conditional') {
+    navigate(createPageUrl("ConditionalReview"), { replace: true });
   } else {
     navigate(createPageUrl("AgentOnboarding"), { replace: true });
   }
