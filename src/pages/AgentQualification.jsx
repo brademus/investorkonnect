@@ -203,6 +203,8 @@ const QUESTIONS = [
 
 function Step2({ onSubmit, submitting }) {
   const [answers, setAnswers] = useState({});
+  // Expose raw answers to parent
+  const getAnswers = () => answers;
 
   const setRadio = (id, value) => setAnswers(prev => ({ ...prev, [id]: value }));
   const toggleCheck = (id, value) => {
@@ -249,7 +251,7 @@ function Step2({ onSubmit, submitting }) {
     else if (totalScore >= 50) { tier = "conditional"; outcome = "conditional"; }
     else { tier = "rejected"; outcome = "rejected"; }
 
-    onSubmit({ outcome, tier, score: totalScore });
+    onSubmit({ outcome, tier, score: totalScore, answers });
   };
 
   const categories = [
@@ -391,13 +393,18 @@ export default function AgentQualification() {
     }
   }, [loading, profile]);
 
-  const handleQuestionnaire = async ({ outcome, tier, score, autoReject }) => {
+  const handleQuestionnaire = async ({ outcome, tier, score, autoReject, answers }) => {
     setSubmitting(true);
     try {
       if (profile?.id) {
         await base44.entities.Profile.update(profile.id, {
           qualification_status: "completed",
           qualification_tier: tier,
+          metadata: {
+            ...(profile.metadata || {}),
+            qualification_answers: answers || {},
+            qualification_score: score || 0,
+          },
         });
       }
 
