@@ -302,9 +302,12 @@ export default function Room() {
   }, [location.search, roomId, isAgent]);
 
   // Sync counterparty data from enriched rooms cache (covers late-loading headshots)
+  // Skip if investor has a pending agent selected — that agent's headshot takes priority
   const enrichedRoomForSync = useMemo(() => rooms?.find(r => r.id === roomId), [rooms, roomId]);
   useEffect(() => {
     if (!enrichedRoomForSync) return;
+    // Don't overwrite headshot if investor has selected a specific pending agent
+    if (isInvestor && selectedInvite && !isSigned) return;
     setCurrentRoom(prev => {
       if (!prev) return prev;
       const updates = {};
@@ -313,7 +316,7 @@ export default function Room() {
       if (Object.keys(updates).length === 0) return prev;
       return { ...prev, ...updates };
     });
-  }, [enrichedRoomForSync?.counterparty_headshot]);
+  }, [enrichedRoomForSync?.counterparty_headshot, selectedInvite, isSigned]);
 
   // When investor selects a different pending agent, update header photo/name
   useEffect(() => {
