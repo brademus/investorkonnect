@@ -31,6 +31,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     if (externalRoom) setRoom(externalRoom);
   }, [externalRoom]);
 
+  // Track a refresh key to force re-fetch counters (e.g. after sending a counter offer)
+  const [counterRefreshKey, setCounterRefreshKey] = useState(0);
+
   // Load agreement + room + counters on mount — all in parallel
   useEffect(() => {
     if (!dealId) return;
@@ -63,7 +66,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     };
     load();
     return () => { cancelled = true; };
-  }, [dealId, roomId, selectedAgentProfileId]);
+  }, [dealId, roomId, selectedAgentProfileId, counterRefreshKey]);
 
   // Real-time subscriptions
   useEffect(() => {
