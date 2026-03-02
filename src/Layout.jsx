@@ -118,7 +118,17 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className={`ik-shell ${useHeavyBg ? 'ik-deal-bg' : ''}`}>
+    <div
+      className="ik-shell"
+      style={{
+        backgroundImage: `url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/4f49c5c52_IMG_0647.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+        backgroundColor: '#050505',
+      }}
+    >
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
