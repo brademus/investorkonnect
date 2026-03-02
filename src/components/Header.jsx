@@ -30,7 +30,7 @@ export function Header({ profile }) {
   const navLinks = [];
 
   return (
-    <header className="sticky top-0 z-50" style={{ background: 'rgba(10,10,12,0.55)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,215,120,0.08)' }}>
+    <header className="sticky top-0 z-50" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           
