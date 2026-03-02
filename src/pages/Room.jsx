@@ -308,6 +308,19 @@ export default function Room() {
     });
   }, [enrichedRoomForSync?.counterparty_headshot]);
 
+  // When investor selects a different pending agent, update header photo/name
+  useEffect(() => {
+    if (!selectedInvite?.agent || !isInvestor || isSigned) return;
+    setCurrentRoom(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        counterparty_headshot: selectedInvite.agent.headshotUrl || null,
+        counterparty_name: selectedInvite.agent.full_name || 'Agent',
+      };
+    });
+  }, [selectedInvite?.id]);
+
   // Real-time room updates
   useEffect(() => {
     if (!roomId) return;
