@@ -64,16 +64,15 @@ export default function Room() {
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
   // Stores the cutoff timestamp (ms) per room — messages after this are "unread"
-  const lastReadAtRef = useRef({});
-  const [badgeTick, setBadgeTick] = useState(0);
+  const [lastReadAt, setLastReadAt] = useState({});
 
   // When user switches to messages, stamp the cutoff to NOW and persist
   useEffect(() => {
     if (activeView === 'messages' && roomId && profile?.id) {
-      lastReadAtRef.current[roomId] = Date.now();
-      setBadgeTick(t => t + 1);
+      const now = Date.now();
+      setLastReadAt(prev => ({ ...prev, [roomId]: now }));
       base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(now).toISOString() }
       }).catch(() => {});
     }
   }, [activeView, roomId, profile?.id]);
@@ -81,25 +80,33 @@ export default function Room() {
   // While on messages view, keep cutoff fresh as new messages arrive
   useEffect(() => {
     if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
-      lastReadAtRef.current[roomId] = Date.now();
-      setBadgeTick(t => t + 1);
+      setLastReadAt(prev => ({ ...prev, [roomId]: Date.now() }));
     }
   }, [roomMessages?.length, activeView, roomId]);
   
+  // Initialize local cutoff from server timestamp when profile loads (covers page refresh)
+  useEffect(() => {
+    if (!profile?.last_seen_timestamps || !roomId) return;
+    const serverTs = profile.last_seen_timestamps[roomId];
+    if (serverTs) {
+      const serverMs = new Date(serverTs).getTime();
+      setLastReadAt(prev => {
+        // Only set if we don't already have a newer local value
+        if ((prev[roomId] || 0) >= serverMs) return prev;
+        return { ...prev, [roomId]: serverMs };
+      });
+    }
+  }, [profile?.last_seen_timestamps, roomId]);
+
   const unreadMsgCount = useMemo(() => {
-    void badgeTick; // trigger recompute
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    // Use whichever is later: local ref or server timestamp
-    const localMs = lastReadAtRef.current[roomId] || 0;
-    const serverTs = profile?.last_seen_timestamps?.[roomId];
-    const serverMs = serverTs ? new Date(serverTs).getTime() : 0;
-    const cutoff = Math.max(localMs, serverMs);
+    const cutoff = lastReadAt[roomId] || 0;
     if (cutoff === 0) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
       return new Date(m.created_date).getTime() > cutoff;
     }).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, badgeTick]);
+  }, [roomMessages, profile?.id, roomId, lastReadAt]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
