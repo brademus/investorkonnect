@@ -2,13 +2,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
+    // Clone the request so we can read the body AND pass it to createClientFromRequest
+    const cloned = req.clone();
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { agentProfileId, agentName, score } = await req.json();
+    const { agentProfileId, agentName, score } = await cloned.json();
 
     // Fetch all admin profiles
     const admins = await base44.asServiceRole.entities.Profile.filter({ role: 'admin' });
@@ -43,6 +45,7 @@ Deno.serve(async (req) => {
           from_name: 'Investor Konnect',
         });
         sent++;
+        console.log(`[notifyAdminConditionalAgent] Email sent to ${admin.email}`);
       } catch (emailErr) {
         console.error(`[notifyAdminConditionalAgent] Failed to email ${admin.email}:`, emailErr.message);
       }
