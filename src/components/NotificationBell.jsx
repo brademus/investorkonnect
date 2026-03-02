@@ -134,9 +134,16 @@ export default function NotificationBell() {
   }, [open]);
 
   const handleToggle = () => {
-    if (!open && !fetched) fetchNotifications();
-    else if (!open) fetchNotifications(); // always refresh on open
-    setOpen(!open);
+    if (!open) {
+      fetchNotifications(); // always refresh on open
+      setOpen(true);
+      // Mark all current notifications as "seen"
+      const now = Date.now();
+      setLastSeenAt(now);
+      try { sessionStorage.setItem('notif_last_seen', String(now)); } catch {}
+    } else {
+      setOpen(false);
+    }
   };
 
   const handleNotificationClick = (n) => {
