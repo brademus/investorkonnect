@@ -68,25 +68,34 @@ export default function Room() {
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
     const lastSeenTs = localLastSeen[roomId] || profile?.last_seen_timestamps?.[roomId];
+    if (!lastSeenTs) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
+    const lastSeenTime = new Date(lastSeenTs).getTime();
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
-      if (!lastSeenTs) return true;
-      return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
+      return new Date(m.created_date).getTime() > lastSeenTime;
     }).length;
   }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, localLastSeen]);
 
-  // Clear unread count when viewing messages
+  // Clear unread count when viewing messages — also re-stamp while actively viewing
+  const markMessagesRead = useCallback(() => {
+    if (!roomId || !profile?.id) return;
+    // Use a timestamp slightly in the future to avoid edge-case same-second messages
+    const now = new Date(Date.now() + 1000).toISOString();
+    setLocalLastSeen(prev => ({ ...prev, [roomId]: now }));
+    base44.entities.Profile.update(profile.id, {
+      last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: now }
+    }).catch(() => {});
+  }, [roomId, profile?.id, profile?.last_seen_timestamps]);
+
+  // Mark read when switching to messages view
   useEffect(() => {
-    if (activeView === 'messages' && roomId && profile?.id) {
-      const now = new Date().toISOString();
-      // Instantly reset badge locally
-      setLocalLastSeen(prev => ({ ...prev, [roomId]: now }));
-      // Persist to server
-      base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: now }
-      }).catch(() => {});
-    }
-  }, [activeView, roomId, profile?.id]);
+    if (activeView === 'messages') markMessagesRead();
+  }, [activeView, roomId]);
+
+  // Also re-stamp whenever new messages arrive while already on messages view
+  useEffect(() => {
+    if (activeView === 'messages' && roomMessages?.length > 0) markMessagesRead();
+  }, [roomMessages?.length]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
