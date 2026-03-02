@@ -123,7 +123,14 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   }
 
   body {
-    background: #050505;
+    background-color: #0a0a0a;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(227,197,103,0.07) 0%, transparent 50%),
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 80px 80px, 80px 80px, 20px 20px, 20px 20px;
     background-attachment: fixed;
     @apply text-foreground;
     font-family: 'Inter', sans-serif;
