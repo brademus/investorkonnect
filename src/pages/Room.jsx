@@ -451,8 +451,13 @@ export default function Room() {
                    </Button>
                  )}
                 {isSigned && (
-                  <Button onClick={() => setActiveView('messages')} className={`rounded-full font-semibold ${activeView === 'messages' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                  <Button onClick={() => setActiveView('messages')} className={`relative rounded-full font-semibold ${activeView === 'messages' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Send className="w-4 h-4 mr-2" />Messages
+                    {unreadMsgCount > 0 && activeView !== 'messages' && (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                        {unreadMsgCount > 99 ? '99+' : unreadMsgCount}
+                      </span>
+                    )}
                   </Button>
                 )}
                 {isInvestor && (isSigned || pendingInvites.length === 1) && (currentRoom?.locked_agent_id || currentRoom?.agent_ids?.length > 0 || selectedInvite?.agent_profile_id) && (
