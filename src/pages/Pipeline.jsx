@@ -298,7 +298,7 @@ function PipelineContent() {
           <div className="max-w-[1800px] mx-auto">
             {!setupDone && <div className="mb-8"><SetupChecklist profile={profile} /></div>}
 
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center justify-between mb-10 rounded-[16px] p-5" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-[#E3C567]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
                 <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>Manage your deals</p>
