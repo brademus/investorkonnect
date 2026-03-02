@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Users, FileText, PenTool, Settings, ArrowLeft } from "lucide-react";
+import { Loader2, Shield, Users, FileText, PenTool, Settings, ArrowLeft, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 import AdminStatsBar from "@/components/admin/AdminStatsBar";
@@ -11,6 +11,7 @@ import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminDealsTab from "@/components/admin/AdminDealsTab";
 import AdminAgreementsTab from "@/components/admin/AdminAgreementsTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
+import AdminVettingReviewTab from "@/components/admin/AdminVettingReviewTab";
 
 function AdminContent() {
   const [loading, setLoading] = useState(true);
@@ -133,6 +134,14 @@ function AdminContent() {
             <TabsTrigger value="agreements" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <PenTool className="w-4 h-4" /> Agreements
             </TabsTrigger>
+            <TabsTrigger value="vetting" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg relative">
+              <ClipboardCheck className="w-4 h-4" /> Vetting Review
+              {profiles.filter(p => p.user_role === 'agent' && p.qualification_tier === 'conditional').length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#F59E0B] rounded-full text-[10px] text-black font-bold flex items-center justify-center">
+                  {profiles.filter(p => p.user_role === 'agent' && p.qualification_tier === 'conditional').length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <Settings className="w-4 h-4" /> Settings & Tools
             </TabsTrigger>
@@ -148,6 +157,10 @@ function AdminContent() {
 
           <TabsContent value="agreements">
             <AdminAgreementsTab agreements={agreements} profiles={profiles} onReload={loadData} />
+          </TabsContent>
+
+          <TabsContent value="vetting">
+            <AdminVettingReviewTab profiles={profiles} onReload={loadData} />
           </TabsContent>
 
           <TabsContent value="settings">
