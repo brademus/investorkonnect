@@ -124,7 +124,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   }
 
   body {
-    background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%);
+    background: #050505;
     background-attachment: fixed;
     @apply text-foreground;
     font-family: 'Inter', sans-serif;
@@ -542,22 +542,12 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   }
   }
 
-  /* ====== Deal page background — dark with subtle grid lines ====== */
+  /* ====== Dark silk/satin wave background ====== */
   .ik-deal-bg {
-    background-color: #0a0a0a !important;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px),
-      radial-gradient(ellipse at 50% 0%, rgba(227,197,103,0.04) 0%, transparent 70%) !important;
-    background-size:
-      60px 60px,
-      60px 60px,
-      15px 15px,
-      15px 15px,
-      100% 100% !important;
-    background-attachment: fixed !important;
+    background: 
+      linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.7) 100%),
+      url('https://images.unsplash.com/photo-1553095066-5f3f45dd7b53?w=1920&q=90&auto=format&fit=crop') center center / cover no-repeat fixed !important;
+    background-color: #050505 !important;
   }
 
   /* Utility shorthands */
