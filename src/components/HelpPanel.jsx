@@ -49,12 +49,38 @@ export default function HelpPanel({ open, onOpenChange }) {
                   </p>
                 </div>
 
-                {/* Placeholder Tutorial Categories */}
+                {/* Video Tutorials */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Video Tutorials</h4>
+                  
+                  {/* Creating a New Deal */}
+                  <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
+                    <div className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Play className="w-5 h-5 text-[#E3C567]" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-[#FAFAFA]">Creating a New Deal</p>
+                      </div>
+                    </div>
+                    <div className="px-4 pb-4">
+                      <div className="rounded-xl overflow-hidden border border-[#1F1F1F]">
+                        <video
+                          src="https://dl.dropboxusercontent.com/scl/fi/tnzovyig0qlxzr66gjzof/Investor-Making-the-agreement.mov?rlkey=tw07i8il2d2g6ztjl3c6npjcz&st=7o0mqv2f"
+                          className="w-full aspect-video bg-black"
+                          controls
+                          preload="metadata"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upcoming Tutorials */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Quick Start Guides</h4>
+                  <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Coming Soon</h4>
                   
                   {[
-                    { title: 'Creating Your First Deal', duration: '3 min' },
                     { title: 'Finding the Right Agent', duration: '2 min' },
                     { title: 'Understanding the Deal Board', duration: '4 min' },
                     { title: 'Managing Documents & Files', duration: '3 min' },
