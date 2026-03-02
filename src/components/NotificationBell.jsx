@@ -78,6 +78,13 @@ export default function NotificationBell() {
   const [fetched, setFetched] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
+  // Track when user last opened the panel to distinguish "new" notifications
+  const [lastSeenAt, setLastSeenAt] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('notif_last_seen');
+      return stored ? parseInt(stored, 10) : 0;
+    } catch { return 0; }
+  });
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
