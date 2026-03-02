@@ -123,14 +123,29 @@ export default function Room() {
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
-  // Keep views mounted once activated
+  // Keep views mounted once activated + sync view to URL so refresh preserves it
   useEffect(() => {
+    if (!activeView) return;
     setMountedViews(prev => {
       if (prev.has(activeView)) return prev;
       const next = new Set(prev);
       next.add(activeView);
       return next;
     });
+    // Update URL ?view= param without triggering navigation
+    const url = new URL(window.location);
+    if (activeView === 'board' || activeView === 'messages') {
+      if (url.searchParams.get('view') !== activeView) {
+        url.searchParams.set('view', activeView);
+        window.history.replaceState({}, '', url);
+      }
+    } else {
+      // For pending_agents, remove the view param (transient state)
+      if (url.searchParams.has('view')) {
+        url.searchParams.delete('view');
+        window.history.replaceState({}, '', url);
+      }
+    }
   }, [activeView]);
 
   // Load room + deal when roomId changes
