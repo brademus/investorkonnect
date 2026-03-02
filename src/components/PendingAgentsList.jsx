@@ -12,6 +12,7 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
   const navigate = useNavigate();
   const [ratings, setRatings] = useState(new Map());
   const [headshots, setHeadshots] = useState({});
+  const [agentCounters, setAgentCounters] = useState({});
 
   useEffect(() => {
     const agentIds = invites.map(i => i.agent?.id).filter(Boolean);
@@ -25,6 +26,24 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
         setHeadshots(map);
       }).catch(() => {});
     }
+  }, [invites]);
+
+  // Fetch pending counter offers for each agent
+  useEffect(() => {
+    if (!invites.length) return;
+    const roomId = invites[0]?.room_id;
+    if (!roomId) return;
+    base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50)
+      .then(counters => {
+        const map = {};
+        (counters || []).forEach(c => {
+          if (c.from_role === 'agent' && c.from_profile_id) {
+            map[c.from_profile_id] = c;
+          }
+        });
+        setAgentCounters(map);
+      })
+      .catch(() => {});
   }, [invites]);
 
   return (
