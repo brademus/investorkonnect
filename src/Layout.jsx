@@ -119,7 +119,7 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className={`ik-shell ${useHeavyBg ? 'ik-deal-bg' : ''}`} style={{ backgroundColor: useHeavyBg ? undefined : '#0D0D0D' }}>
+    <div className={`ik-shell ${useHeavyBg ? 'ik-deal-bg' : ''}`} style={{ backgroundColor: '#0D0D0D' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
