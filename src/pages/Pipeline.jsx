@@ -284,7 +284,7 @@ function PipelineContent() {
   // Setup check — admins always considered fully set up
   const setupDone = isAdmin || (isInvestor ? (!!profile.onboarding_completed_at && !!profile.nda_accepted) : (!!profile.onboarding_completed_at && !!profile.nda_accepted && (profile.identity_status === 'approved' || profile.identity_status === 'verified')));
 
-  const pipelineBgUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/e59dd6f70_9EE794BA-7AAF-4ADB-B5DF-EFF734972638.png";
+  const pipelineBgUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/7f8a615de_1293AC3B-9FDA-4A13-BB91-671E9D0D7B14.png";
 
   return (
     <>
