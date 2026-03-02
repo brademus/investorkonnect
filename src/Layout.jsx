@@ -137,7 +137,8 @@ function LayoutContent({ children }) {
             height: '100%',
             objectFit: 'cover',
             objectPosition: 'center top',
-            opacity: 0.30,
+            opacity: 0.25,
+            filter: 'blur(2px) saturate(0.8)',
           }}
         />
       </div>

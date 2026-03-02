@@ -189,7 +189,7 @@ function AccountProfileContent() {
         </div>
 
         {/* Profile Form */}
-        <div className="ik-card p-8 bg-[#0D0D0D] border border-[#1F1F1F]">
+        <div className="ik-card p-8" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Picture & Business Card - side by side */}
             <div>

@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
@@ -142,6 +141,7 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     -moz-osx-font-smoothing: grayscale;
     font-weight: 300;
     letter-spacing: 0.015em;
+    color: rgba(255,255,255,0.88);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -210,22 +210,22 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 
   /* Cards */
   .ik-card {
-    border-radius: 24px;
-    background-color: #0D0D0D;
-    border: 1px solid #1F1F1F;
-    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #17171B 0%, #111114 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
   }
 
   .ik-card-hover {
-    transition: transform 150ms ease, box-shadow 150ms ease,
-      background-color 150ms ease, border-color 150ms ease;
+    transition: transform 180ms ease, box-shadow 180ms ease,
+      background-color 180ms ease, border-color 180ms ease;
   }
 
   .ik-card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 24px 55px rgba(227, 197, 103, 0.3);
-    border-color: #E3C567;
-    background-color: #141414;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.70);
+    border-color: rgba(255,255,255,0.10);
+    background: linear-gradient(180deg, #1A1A1F 0%, #141418 100%);
   }
 
   .ik-shell {
@@ -369,22 +369,22 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    border-radius: 18px;
-    border: 1px solid #1F1F1F;
-    background-color: #0D0D0D;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: linear-gradient(180deg, #17171B 0%, #111114 100%);
     padding: 0.9rem 1rem;
     font-size: 0.95rem;
     font-weight: 500;
-    color: #FAFAFA;
+    color: rgba(255,255,255,0.90);
     cursor: pointer;
-    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+    transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 150ms ease;
   }
 
   .ik-tile:hover {
-    border-color: #E3C567;
-    background-color: #141414;
-    box-shadow: 0 14px 30px rgba(227, 197, 103, 0.3);
-    transform: translateY(-1px);
+    border-color: rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, #1A1A1F 0%, #141418 100%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.60);
+    transform: translateY(-2px);
   }
 
   /* Small icon bubble used in tiles/cards */
@@ -426,11 +426,11 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
 
   /* Generic content card shell for other pages */
   .ik-page-card {
-    border-radius: 24px;
-    background-color: #0D0D0D;
-    border: 1px solid #1F1F1F;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #17171B 0%, #111114 100%);
+    border: 1px solid rgba(255,255,255,0.06);
     padding: 1.5rem 1.4rem;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
   }
 
   @media (min-width: 640px) {

@@ -243,11 +243,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Tab Nav */}
-      <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
+      <div className="rounded-[14px] p-1.5 flex gap-1.5 overflow-x-auto" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
         {tabs.map(tab => {
           const Icon = tab.icon;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${activeTab === tab.id ? 'bg-[#E3C567] text-black shadow-lg' : 'text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'}`}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] font-medium text-sm whitespace-nowrap transition-all duration-180 ${activeTab === tab.id ? 'bg-[#E3C567] text-black' : 'text-[#808080] hover:bg-[rgba(255,255,255,0.04)] hover:text-[rgba(255,255,255,0.80)]'}`} style={activeTab === tab.id ? {} : {}}>
               <Icon className="w-4 h-4" />{tab.label}
             </button>
           );
@@ -267,7 +267,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           )}
           {/* Deal Header */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+          <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
             <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
             <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
             {isAgent ? (
@@ -298,7 +298,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
           {/* Agreement actions (below, full width) */}
           {!isSigned && (
-            <div data-agreement-panel className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <div data-agreement-panel className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
               <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} inline />
             </div>
           )}
@@ -316,8 +316,8 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           />
 
           {/* Deal Progress with inline Next Step CTA */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-            <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+          <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+            <h4 className="text-lg font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.90)' }}>Deal Progress</h4>
             <div className="space-y-3">
               {PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(stage => {
                 const norm = normalizeStage(localDeal?.pipeline_stage);
@@ -352,7 +352,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                 return (
                   <div key={stage.id}>
                     <button onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-black' : isPast ? 'bg-[#34D399]' : 'bg-[#1F1F1F]'}`}>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-[#111114]' : isPast ? 'bg-[#2D8A6E]' : 'bg-[#1F1F1F]'}`}>
                         <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
                       </div>
                       <div><p className={`text-sm font-medium ${isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666]'}`}>{stage.label}</p>{isActive && <p className="text-xs text-[#E3C567]">Current</p>}</div>
@@ -411,10 +411,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
       {/* Photos Tab */}
       {activeTab === 'photos' && (
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+        <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-[#FAFAFA]">Photos</h4>
-            <Button onClick={() => uploadToRoom('photo')} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"><Plus className="w-4 h-4 mr-2" />Upload</Button>
+            <h4 className="text-lg font-semibold" style={{ color: 'rgba(255,255,255,0.90)' }}>Photos</h4>
+            <Button onClick={() => uploadToRoom('photo')} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px]"><Plus className="w-4 h-4 mr-2" />Upload</Button>
           </div>
           {(() => {
             // Merge room.photos + message photos, dedupe by URL

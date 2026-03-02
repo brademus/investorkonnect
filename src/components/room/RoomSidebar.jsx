@@ -34,7 +34,7 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
           const badge = getAgreementStatusLabel({ room, agreement: room.agreement, role: userRole });
 
           return (
-            <button key={room.id} onClick={() => onRoomClick(room)} className={`w-full text-left px-5 py-4 border-b border-[#1F1F1F] flex items-center gap-4 transition-all ${isActive ? "bg-[#E3C567]/20 border-l-4 border-l-[#E3C567]" : "hover:bg-[#141414] border-l-4 border-l-transparent"}`}>
+            <button key={room.id} onClick={() => onRoomClick(room)} className={`w-full text-left px-5 py-4 border-b border-[#1F1F1F]/60 flex items-center gap-4 transition-all ${isActive ? "border-l-[3px] border-l-[#E3C567]" : "hover:bg-[#141414] border-l-[3px] border-l-transparent"}`} style={isActive ? { background: 'linear-gradient(90deg, rgba(227,197,103,0.10), transparent)' } : {}}>
               <div className="w-12 h-12 rounded-full flex-shrink-0 overflow-hidden bg-[#E3C567]/20 flex items-center justify-center">
                 {room.counterparty_headshot ? (
                   <img src={room.counterparty_headshot} alt="" className="w-full h-full object-cover" />

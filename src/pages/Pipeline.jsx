@@ -300,13 +300,13 @@ function PipelineContent() {
 
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-[#E7C873]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
-                <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.50)' }}>Manage your deals</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-[#E3C567]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
+                <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>Manage your deals</p>
               </div>
               <div className="flex items-center gap-3">
                 <NotificationBell />
-                {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E7C873] text-black hover:bg-[#F5D06F] rounded-full shadow-lg shadow-[#E7C873]/20 transition-all duration-200 hover:shadow-[#E7C873]/30 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
-                <Button onClick={() => setHelpOpen(true)} className="rounded-full border transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'rgba(20,20,24,0.88)', borderColor: 'rgba(255,215,120,0.12)', color: 'rgba(255,255,255,0.88)' }}>Tutorials</Button>
+                {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-[14px] shadow-md transition-all duration-200 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
+                <Button onClick={() => setHelpOpen(true)} className="rounded-[14px] border transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Tutorials</Button>
               </div>
             </div>
 
@@ -320,19 +320,19 @@ function PipelineContent() {
                       key={stage.id}
                       className="flex flex-col md:h-[420px] rounded-[16px] overflow-hidden"
                       style={{
-                        background: 'linear-gradient(180deg, rgba(25,25,30,0.92) 0%, rgba(18,18,22,0.96) 100%)',
+                        background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)',
                         backdropFilter: 'blur(12px)',
                         WebkitBackdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255,215,120,0.12)',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.60)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.60)',
                       }}
                     >
-                      {/* Gold accent top line */}
-                      <div style={{ height: 2, background: 'linear-gradient(90deg, #C9A227, #F5D06F)' }} />
+                      {/* Subtle accent top line */}
+                      <div style={{ height: 2, background: 'linear-gradient(90deg, rgba(201,162,39,0.5), rgba(245,208,111,0.3), transparent)' }} />
                       <div className="p-5 flex flex-col flex-1">
-                        <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,215,120,0.08)' }}>
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(231,200,115,0.12)' }}>
-                            <Icon className="w-4 h-4 text-[#E7C873]" />
+                        <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(227,197,103,0.10)' }}>
+                            <Icon className="w-4 h-4 text-[#E3C567]" />
                           </div>
                           <div>
                             <h3 className="font-semibold text-sm" style={{ color: 'rgba(255,255,255,0.90)' }}>{stage.label}</h3>
@@ -356,13 +356,13 @@ function PipelineContent() {
                                       className="rounded-[14px] p-4 transition-all duration-200"
                                       style={{
                                         ...provided.draggableProps.style,
-                                        background: snapshot.isDragging ? 'rgba(30,30,36,0.98)' : 'rgba(20,20,24,0.88)',
-                                        border: snapshot.isDragging ? '1px solid rgba(255,215,120,0.30)' : '1px solid rgba(255,215,120,0.10)',
-                                        boxShadow: snapshot.isDragging ? '0 14px 40px rgba(0,0,0,0.70), 0 0 0 2px rgba(231,200,115,0.3)' : '0 4px 16px rgba(0,0,0,0.40)',
+                                        background: snapshot.isDragging ? 'linear-gradient(180deg, #1E1E24 0%, #18181C 100%)' : 'linear-gradient(180deg, #151518 0%, #111114 100%)',
+                                        border: snapshot.isDragging ? '1px solid rgba(227,197,103,0.25)' : '1px solid rgba(255,255,255,0.06)',
+                                        boxShadow: snapshot.isDragging ? '0 14px 40px rgba(0,0,0,0.70), 0 0 0 1px rgba(227,197,103,0.2)' : '0 4px 16px rgba(0,0,0,0.40)',
                                         transform: snapshot.isDragging ? (provided.draggableProps.style?.transform || '') : (provided.draggableProps.style?.transform || ''),
                                       }}
-                                      onMouseEnter={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(0,0,0,0.70)'; e.currentTarget.style.borderColor = 'rgba(255,215,120,0.22)'; }}}
-                                      onMouseLeave={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.40)'; e.currentTarget.style.borderColor = 'rgba(255,215,120,0.10)'; }}}
+                                      onMouseEnter={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(0,0,0,0.70)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)'; }}}
+                                      onMouseLeave={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.40)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}}
                                     >
                                      <div className="space-y-3">
                                        <div>
@@ -398,7 +398,7 @@ function PipelineContent() {
                                          const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id });
                                          if (!step) return null;
                                          return (
-                                           <div className="flex items-center justify-between rounded-lg p-2" style={{ background: 'rgba(10,10,14,0.60)', border: '1px solid rgba(255,215,120,0.06)' }}>
+                                           <div className="flex items-center justify-between rounded-lg p-2" style={{ background: 'rgba(10,10,14,0.60)', border: '1px solid rgba(255,255,255,0.04)' }}>
                                              <span className="text-[10px] font-medium" style={{ color: 'rgba(255,255,255,0.42)' }}>Next Steps</span>
                                              <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
                                            </div>
@@ -423,9 +423,9 @@ function PipelineContent() {
                                          />
                                        )}
                                      </div>
-                                     <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,215,120,0.08)' }}>
-                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E7C873] hover:bg-[#F5D06F] text-black rounded-full text-xs py-1.5 h-auto shadow-md shadow-[#E7C873]/15 transition-all duration-200 hover:-translate-y-0.5">Open Deal Room</Button>
-                                       {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-full text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'rgba(20,20,24,0.88)', border: '1px solid rgba(255,215,120,0.12)', color: 'rgba(255,255,255,0.88)' }}>Edit</Button>}
+                                     <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">Open Deal Room</Button>
+                                      {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-[12px] text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Edit</Button>}
                                      </div>
                                     </div>
                                   )}
