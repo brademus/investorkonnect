@@ -175,7 +175,7 @@ function LayoutContent({ children }) {
               {/* Center: logo + brand */}
               <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(createPageUrl("Pipeline"))}>
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2a5ae75f8_616CA829-4C69-40A9-8555-BE50375B7FC6.png"
                   alt="Investor Konnect"
                   className="h-8 w-8 object-contain"
                 />
