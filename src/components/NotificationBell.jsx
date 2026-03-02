@@ -4,17 +4,32 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import {
   Bell, MessageSquare, FileSignature, ArrowRightLeft,
-  Calendar, Upload, RefreshCw, ChevronRight, Loader2, AlertTriangle
+  Calendar, Upload, RefreshCw, ChevronRight, Loader2, AlertTriangle,
+  CheckCircle2, XCircle, UserCheck, TrendingUp, FileCheck, Camera, Zap
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const ICON_MAP = {
   unread_messages: MessageSquare,
-  counter_offer: ArrowRightLeft,
+  counter_offer_pending: ArrowRightLeft,
+  counter_offer_accepted: CheckCircle2,
+  counter_offer_declined: XCircle,
+  new_deal: Zap,
   agreement_sign: FileSignature,
+  agreement_fully_signed: FileCheck,
   agreement_regenerated: RefreshCw,
+  investor_signed: UserCheck,
+  agent_signed: UserCheck,
   walkthrough_confirm: Calendar,
+  walkthrough_scheduled: Calendar,
   action_needed: Upload,
+  activity_deal_created: Zap,
+  activity_agent_accepted: UserCheck,
+  activity_agent_locked_in: CheckCircle2,
+  activity_agent_rejected: XCircle,
+  activity_deal_stage_changed: TrendingUp,
+  activity_file_uploaded: FileCheck,
+  activity_photo_uploaded: Camera,
 };
 
 const COLOR_MAP = {
