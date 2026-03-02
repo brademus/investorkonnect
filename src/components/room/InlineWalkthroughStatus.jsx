@@ -38,6 +38,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   const wtDate = deal?.walkthrough_date && String(deal.walkthrough_date).length >= 8 ? deal.walkthrough_date : null;
   const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
   const dealHasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime || wtSlots.length > 0);
+  const dealConfirmed = deal?.walkthrough_confirmed === true;
   const hasWalkthrough = dealHasWalkthrough || (apptStatus && apptStatus !== "NOT_SET");
 
   useEffect(() => {
@@ -96,7 +97,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId, dealId]);
 
-  const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
+  const status = dealConfirmed ? "SCHEDULED" : (apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null));
   // Either party can confirm proposed dates — the one who didn't propose them
   const proposedBySelf2 = proposedByProfileId === profile?.id;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
