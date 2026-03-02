@@ -226,7 +226,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
   return (
     <div className="space-y-6">
       {/* Required Documents Panel */}
-      <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+      <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
         <h4 className="text-lg font-semibold text-[#FAFAFA] mb-5">Required Documents</h4>
         <div className="space-y-3">
           <DocRow
