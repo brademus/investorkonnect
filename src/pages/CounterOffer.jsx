@@ -185,7 +185,7 @@ export default function CounterOfferPage() {
            toast.error(res.data.error);
          } else if (res.data?.ok || res.data?.success) {
            toast.success('Counter offer sent');
-           setTimeout(() => navigate(-1), 500);
+           setTimeout(() => navigate(`/Room?roomId=${roomId}`, { state: { counterJustSent: true } }), 500);
          } else {
            toast.error('Failed to send counter');
          }
