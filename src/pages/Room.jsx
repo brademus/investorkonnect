@@ -63,13 +63,34 @@ export default function Room() {
 
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
-  // Stores the timestamp (ms) when user last left the messages view — used as the local "read" cutoff
-  const [lastViewedAt, setLastViewedAt] = useState({});
+  // Stores the cutoff timestamp (ms) per room — messages after this are "unread"
+  const lastReadAtRef = useRef({});
+  const [badgeTick, setBadgeTick] = useState(0);
+
+  // When user switches to messages, stamp the cutoff to NOW and persist
+  useEffect(() => {
+    if (activeView === 'messages' && roomId && profile?.id) {
+      lastReadAtRef.current[roomId] = Date.now();
+      setBadgeTick(t => t + 1);
+      base44.entities.Profile.update(profile.id, {
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
+      }).catch(() => {});
+    }
+  }, [activeView, roomId, profile?.id]);
+
+  // While on messages view, keep cutoff fresh as new messages arrive
+  useEffect(() => {
+    if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
+      lastReadAtRef.current[roomId] = Date.now();
+      setBadgeTick(t => t + 1);
+    }
+  }, [roomMessages?.length, activeView, roomId]);
   
   const unreadMsgCount = useMemo(() => {
+    void badgeTick; // trigger recompute
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    // Use the most recent of: local "last viewed" timestamp OR server timestamp
-    const localMs = lastViewedAt[roomId] || 0;
+    // Use whichever is later: local ref or server timestamp
+    const localMs = lastReadAtRef.current[roomId] || 0;
     const serverTs = profile?.last_seen_timestamps?.[roomId];
     const serverMs = serverTs ? new Date(serverTs).getTime() : 0;
     const cutoff = Math.max(localMs, serverMs);
@@ -78,35 +99,7 @@ export default function Room() {
       if (m.sender_profile_id === profile.id) return false;
       return new Date(m.created_date).getTime() > cutoff;
     }).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, lastViewedAt]);
-
-  // When user is on messages view, continuously update the local cutoff to "now"
-  // so everything is read. When they leave, the cutoff stays frozen.
-  const prevActiveView = useRef(activeView);
-  useEffect(() => {
-    const wasMessages = prevActiveView.current === 'messages';
-    prevActiveView.current = activeView;
-    
-    if (activeView === 'messages' && roomId && profile?.id) {
-      // Entering messages — stamp now
-      const now = Date.now();
-      setLastViewedAt(prev => ({ ...prev, [roomId]: now }));
-      // Persist to server
-      base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(now).toISOString() }
-      }).catch(() => {});
-    } else if (wasMessages && activeView !== 'messages' && roomId) {
-      // Leaving messages — stamp the exit time so new messages after this show as unread
-      setLastViewedAt(prev => ({ ...prev, [roomId]: Date.now() }));
-    }
-  }, [activeView, roomId, profile?.id]);
-
-  // While on messages view, keep stamping as new messages arrive so they're all "read"
-  useEffect(() => {
-    if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
-      setLastViewedAt(prev => ({ ...prev, [roomId]: Date.now() }));
-    }
-  }, [roomMessages?.length, activeView, roomId]);
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, badgeTick]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
