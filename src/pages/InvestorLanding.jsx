@@ -101,14 +101,28 @@ export default function InvestorLanding() {
           </div>
 
           {/* Video Section */}
-          <div className="mt-16 max-w-4xl mx-auto">
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
-              <iframe 
-                src="https://drive.google.com/file/d/1TZXb6W9V5_vVITTIxt7tEXLtoFarKzAf/preview" 
-                className="w-full aspect-video"
-                allow="autoplay"
-                loading="lazy"
-              />
+          <div className="mt-16 max-w-4xl mx-auto space-y-10">
+            <div>
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
+                <iframe 
+                  src="https://drive.google.com/file/d/1TZXb6W9V5_vVITTIxt7tEXLtoFarKzAf/preview" 
+                  className="w-full aspect-video"
+                  allow="autoplay"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-semibold text-[#FAFAFA] mb-4 tracking-wide">Creating a New Deal</h3>
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
+                <video 
+                  src="https://dl.dropboxusercontent.com/scl/fi/tnzovyig0qlxzr66gjzof/Investor-Making-the-agreement.mov?rlkey=tw07i8il2d2g6ztjl3c6npjcz&st=7o0mqv2f"
+                  className="w-full aspect-video bg-black"
+                  controls
+                  preload="metadata"
+                />
+              </div>
             </div>
           </div>
         </div>
