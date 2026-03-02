@@ -38,16 +38,7 @@ export default function HelpPanel({ open, onOpenChange }) {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-6">
-                {/* Coming Soon Notice */}
-                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6 text-center">
-                  <Video className="w-12 h-12 text-[#60A5FA] mx-auto mb-3" />
-                  <h3 className="text-lg font-bold text-[#FAFAFA] mb-2">
-                    Video Tutorials Coming Soon
-                  </h3>
-                  <p className="text-sm text-[#808080]">
-                    We're creating step-by-step video guides to help you master every feature
-                  </p>
-                </div>
+
 
                 {/* Video Tutorials */}
                 <div className="space-y-4">
