@@ -351,10 +351,10 @@ function OutcomeScreen({ result, onContinue }) {
         <div className="w-20 h-20 bg-[#F59E0B]/20 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle className="w-10 h-10 text-[#F59E0B]" />
         </div>
-        <h1 className="text-3xl font-bold text-[#FAFAFA] mb-3">You've been flagged for review.</h1>
-        <p className="text-[#808080] mb-8">Based on your answers, our team will reach out to discuss next steps. You may still be a great fit.</p>
-        <Button onClick={onContinue} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold px-8 h-12">
-          Continue to Profile Setup <ChevronRight className="w-4 h-4 ml-1" />
+        <h1 className="text-3xl font-bold text-[#FAFAFA] mb-3">Your Application Is Under Review</h1>
+        <p className="text-[#808080] mb-8">Based on your answers, our team needs to review your profile before you can proceed. We'll notify you once a decision has been made.</p>
+        <Button onClick={onContinue} className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full font-semibold px-8 h-12">
+          Got It
         </Button>
       </div>
     );
@@ -420,12 +420,12 @@ export default function AgentQualification() {
   };
 
   const handleOutcomeContinue = () => {
-    if (result?.outcome === "approved" || result?.outcome === "conditional") {
-      // Bust profile cache so AgentOnboarding picks up fresh qualification_status
-      try {
-        sessionStorage.removeItem('__ik_profile_cache');
-      } catch (_) {}
+    // Bust profile cache
+    try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+    if (result?.outcome === "approved") {
       navigate(createPageUrl("AgentOnboarding"), { replace: true });
+    } else if (result?.outcome === "conditional") {
+      navigate(createPageUrl("ConditionalReview"), { replace: true });
     } else {
       navigate(createPageUrl("Home"), { replace: true });
     }
