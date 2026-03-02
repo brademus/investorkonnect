@@ -120,6 +120,7 @@ export default function InvestorProfile() {
   const [loading, setLoading] = useState(true);
   const [ikDealsCount, setIkDealsCount] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [hasSignedAgreement, setHasSignedAgreement] = useState(false);
 
   // Fetch reviews with subscription support
   const fetchReviews = async () => {
@@ -147,11 +148,25 @@ export default function InvestorProfile() {
            setIkDealsCount(0);
          }
          await fetchReviews();
-       } catch (err) {
+
+         // Check if current user has a fully signed deal with this investor
+         if (currentProfile?.id && currentProfile.id !== profileId) {
+           try {
+             const rooms = await base44.entities.Room.filter({ investorId: profileId });
+             const hasLocked = rooms.some(r =>
+               (r.agent_ids || []).includes(currentProfile.id) &&
+               (r.agreement_status === 'fully_signed' || r.request_status === 'locked')
+             );
+             setHasSignedAgreement(hasLocked);
+           } catch (e) {
+             console.log('[InvestorProfile] Could not check agreement:', e);
+           }
+         }
+         } catch (err) {
          console.error("[InvestorProfile] Load failed:", err);
-       } finally {
+         } finally {
          setLoading(false);
-       }
+         }
      };
      load();
    }, [profileId]);
@@ -214,7 +229,7 @@ export default function InvestorProfile() {
 
         {/* Digital Business Card */}
         <div className="mb-6">
-          <InvestorBusinessCard investorProfile={investorProfile} ikDealsCount={ikDealsCount} />
+          <InvestorBusinessCard investorProfile={investorProfile} ikDealsCount={ikDealsCount} showContactInfo={hasSignedAgreement || currentProfile?.role === 'admin' || currentProfile?.user_role === 'admin' || currentProfile?.id === profileId} />
         </div>
 
         {/* Uploaded Business Card */}

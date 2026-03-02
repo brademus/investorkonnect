@@ -2,7 +2,7 @@ import React from "react";
 import { Mail, Phone, Building2, MapPin, Target, Briefcase, Star } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
-export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) {
+export default function InvestorBusinessCard({ investorProfile, ikDealsCount, showContactInfo = false }) {
   if (!investorProfile) return null;
 
   const inv = investorProfile.investor || {};
@@ -60,13 +60,13 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
               </span>
             )}
             <div className="space-y-1">
-              {email && (
+              {showContactInfo && email && (
                 <div className="flex items-center gap-2">
                   <Mail className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
                   <span className="text-xs text-[#FAFAFA]/70 truncate">{email}</span>
                 </div>
               )}
-              {phone && (
+              {showContactInfo && phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
                   <span className="text-xs text-[#FAFAFA]/70">{phone}</span>
@@ -77,6 +77,9 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount }) 
                   <Building2 className="w-3.5 h-3.5 text-[#E3C567]/60 flex-shrink-0" />
                   <span className="text-xs text-[#FAFAFA]/70 truncate">{company}</span>
                 </div>
+              )}
+              {!showContactInfo && (
+                <p className="text-[10px] text-[#808080] mt-1 italic">Contact info visible after agreement is fully signed</p>
               )}
             </div>
           </div>
