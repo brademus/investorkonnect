@@ -112,9 +112,8 @@ function LayoutContent({ children }) {
     { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
   ];
 
-  // Background image only on Pipeline + Room pages
-  const dealBgPages = ['/Pipeline', '/Room'];
-  const useHeavyBg = dealBgPages.some(p => location.pathname.startsWith(p));
+  // Background image on all authenticated pages
+  const useHeavyBg = true;
 
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
