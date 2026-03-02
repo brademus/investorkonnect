@@ -490,7 +490,7 @@ export default function Room() {
             <ArrowLeft className="w-4 h-4" /><span className="hidden md:inline ml-2">Pipeline</span>
           </Button>
           <div className="w-12 h-12 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center mr-4">
-            {currentRoom?.counterparty_headshot ? (
+            {currentRoom?.counterparty_headshot && isSigned ? (
               <img src={currentRoom.counterparty_headshot} alt="" className="w-full h-full object-cover" />
             ) : (
               <User className="w-6 h-6 text-[#E3C567]" />
