@@ -50,6 +50,11 @@ function PipelineContent() {
       return;
     }
     if (profile.role === 'admin' || profile.user_role === 'admin') { setReady(true); return; }
+    if (profile.user_role === 'agent' && profile.qualification_tier === 'conditional') {
+      gateRef.current = true;
+      navigate(createPageUrl("ConditionalReview"), { replace: true });
+      return;
+    }
     if (!onboarded) {
       gateRef.current = true;
       navigate(createPageUrl(profile.user_role === 'agent' ? "AgentOnboarding" : "InvestorOnboarding"), { replace: true });
