@@ -111,22 +111,39 @@ export function haversineDistance(lat1, lng1, lat2, lng2) {
 
 // ─── Scoring Functions ───
 
+/**
+ * Distance score — max 50 points
+ */
 export function distanceScore(miles) {
-  if (miles == null || isNaN(miles)) return 40; // neutral fallback
-  if (miles <= 25) return 100;
-  if (miles <= 50) return 80;
-  if (miles <= 100) return 60;
-  if (miles <= 200) return 35;
-  return 10;
+  if (miles == null || isNaN(miles)) return 25; // neutral fallback
+  if (miles <= 10) return 50;
+  if (miles <= 25) return 40;
+  if (miles <= 50) return 30;
+  if (miles <= 100) return 20;
+  if (miles <= 200) return 10;
+  return 0;
 }
 
+/**
+ * Rating score — max 30 points
+ * Agents with 0 reviews get 15 (neutral).
+ */
 export function ratingScore(rating, reviewCount) {
-  if (!rating || !reviewCount) return 25;
-  return Math.round((rating / 5) * 80);
+  if (!rating || !reviewCount) return 15;
+  return Math.round((rating / 5) * 30);
 }
 
-export function activityScore(ikDealCount, externalDeals) {
-  return Math.min((ikDealCount || 0) * 3, 15) + Math.min((externalDeals || 0) * 1, 5);
+/**
+ * IK Activity score — max 20 points
+ * Based on completed deals inside Investor Konnect.
+ */
+export function activityScore(ikDealCount) {
+  const c = ikDealCount || 0;
+  if (c === 0) return 0;
+  if (c <= 2) return 8;
+  if (c <= 5) return 14;
+  if (c <= 10) return 17;
+  return 20;
 }
 
 // ─── Hard Filter Helper ───
@@ -191,9 +208,8 @@ export function rankAgentsForDeal(agents, dealLocation, ratingsMap, ikDealsMap) 
 
     const r = ratingsMap?.get(agent.id) || { rating: null, reviewCount: 0 };
     const rScore = ratingScore(r.rating, r.reviewCount);
-    const externalDeals = agent.agent?.investment_deals_last_12m || 0;
     const ikCount = ikDealsMap?.get(agent.id) || 0;
-    const aScore = activityScore(ikCount, externalDeals);
+    const aScore = activityScore(ikCount);
     const totalScore = dScore + rScore + aScore;
 
     const badges = [];

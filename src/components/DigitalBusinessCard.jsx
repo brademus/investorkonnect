@@ -44,7 +44,28 @@ export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showCo
           {/* Name + Contact Info */}
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Professional</p>
-            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-2">{name}</h3>
+            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-2">
+              {name}
+              {agentProfile.qualification_tier === "elite" && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px",
+                  backgroundColor: "#D4AF37",
+                  color: "#000",
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  padding: "2px 7px",
+                  borderRadius: "999px",
+                  letterSpacing: "0.04em",
+                  marginLeft: "6px",
+                  textTransform: "uppercase",
+                  verticalAlign: "middle"
+                }}>
+                  ⭐ Elite Certified
+                </span>
+              )}
+            </h3>
             <div className="space-y-1">
               {showContactInfo && email && (
                 <div className="flex items-center gap-2">

@@ -238,6 +238,25 @@ export default function SelectAgent() {
                       )}
                       <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
                         {agent.full_name || "Unnamed Agent"}
+                        {agent.qualification_tier === "elite" && (
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "3px",
+                            backgroundColor: "#D4AF37",
+                            color: "#000",
+                            fontSize: "10px",
+                            fontWeight: "700",
+                            padding: "2px 7px",
+                            borderRadius: "999px",
+                            letterSpacing: "0.04em",
+                            marginLeft: "6px",
+                            textTransform: "uppercase",
+                            verticalAlign: "middle"
+                          }}>
+                            ⭐ Elite Certified
+                          </span>
+                        )}
                       </h3>
                       {md.distanceMiles != null && (
                         <p className="text-xs text-[#808080] mb-1">~{md.distanceMiles} miles away</p>
