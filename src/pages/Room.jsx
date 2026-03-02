@@ -639,15 +639,21 @@ export default function Room() {
           )}
 
           {/* Pending Agents */}
-          {activeView === 'pending_agents' && isInvestor && pendingInvites.length > 0 && !isSigned && (
-            <PendingAgentsList
-              invites={pendingInvites}
-              selectedInviteId={selectedInvite?.id}
-              onSelectAgent={(invite) => {
-                setSelectedInvite(invite);
-                setActiveView('board');
-              }}
-            />
+          {activeView === 'pending_agents' && isInvestor && !isSigned && (
+            pendingInvites.length > 0 ? (
+              <PendingAgentsList
+                invites={pendingInvites}
+                selectedInviteId={selectedInvite?.id}
+                onSelectAgent={(invite) => {
+                  setSelectedInvite(invite);
+                  setActiveView('board');
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-[#808080]">No pending agents — switching to deal board...</p>
+              </div>
+            )
           )}
 
           {/* Messages */}
