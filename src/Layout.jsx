@@ -137,7 +137,7 @@ function LayoutContent({ children }) {
             height: '100%',
             objectFit: 'cover',
             objectPosition: 'center top',
-            opacity: 0.10,
+            opacity: 0.20,
             filter: 'blur(2px) saturate(0.8)',
           }}
         />
