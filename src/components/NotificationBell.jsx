@@ -155,8 +155,14 @@ export default function NotificationBell() {
     }
   };
 
-  const count = notifications.length;
-  const highCount = notifications.filter(n => n.priority === 'high').length;
+  // Badge count = only notifications with a timestamp AFTER last time user opened the panel
+  const unseenNotifications = notifications.filter(n => {
+    if (!lastSeenAt) return true; // never opened = all are unseen
+    const ts = n.timestamp ? new Date(n.timestamp).getTime() : 0;
+    return ts > lastSeenAt;
+  });
+  const count = unseenNotifications.length;
+  const highCount = unseenNotifications.filter(n => n.priority === 'high').length;
 
   return (
     <div className="relative">
