@@ -323,7 +323,7 @@ function PipelineContent() {
                   return (
                     <div
                       key={stage.id}
-                      className="flex flex-col md:h-[420px] rounded-[16px] overflow-hidden"
+                      className="flex flex-col md:h-[420px] rounded-[16px] overflow-hidden min-h-0"
                       style={{
                         background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)',
                         backdropFilter: 'blur(12px)',
@@ -334,7 +334,7 @@ function PipelineContent() {
                     >
                       {/* Subtle accent top line */}
                       <div style={{ height: 2, background: 'linear-gradient(90deg, rgba(201,162,39,0.5), rgba(245,208,111,0.3), transparent)' }} />
-                      <div className="p-5 flex flex-col flex-1">
+                      <div className="p-5 flex flex-col flex-1 min-h-0">
                         <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(227,197,103,0.10)' }}>
                             <Icon className="w-4 h-4 text-[#E3C567]" />
@@ -346,7 +346,8 @@ function PipelineContent() {
                         </div>
                         <Droppable droppableId={stage.id}>
                           {(provided, snapshot) => (
-                            <div ref={provided.innerRef} {...provided.droppableProps} className={`flex-1 md:overflow-y-auto space-y-3 pr-1 ${snapshot.isDraggingOver ? 'bg-[#E7C873]/5 rounded-lg' : ''}`} style={{ overscrollBehavior: 'contain' }}>
+                            <div ref={provided.innerRef} {...provided.droppableProps} className={`flex-1 overflow-y-auto space-y-3 pr-1 ${snapshot.isDraggingOver ? 'bg-[#E7C873]/5 rounded-lg' : ''}`} style={{ overscrollBehavior: 'contain', minHeight: 0 }}
+                              onWheel={e => { const el = e.currentTarget; if (el.scrollHeight > el.clientHeight) { e.stopPropagation(); } }}>
                               {stageDeals.length === 0 ? (
                                 <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
                                   {snapshot.isDraggingOver ? 'Drop here' : 'No deals'}
