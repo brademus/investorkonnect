@@ -142,9 +142,12 @@ export default function Room() {
     const cachedIsSigned = enrichedRoom?.is_fully_signed || false;
 
     // Pick the right default view BEFORE any async work
-    // For investors on unsigned deals, default to pending_agents (invites will load async)
+    // Respect URL ?view= param if present (so refresh preserves current view)
+    const urlView = new URLSearchParams(window.location.search).get('view');
     let defaultView;
-    if (isInvestor && !cachedIsSigned) {
+    if (urlView === 'messages' || urlView === 'board') {
+      defaultView = urlView;
+    } else if (isInvestor && !cachedIsSigned) {
       defaultView = 'pending_agents';
     } else {
       defaultView = 'board';
