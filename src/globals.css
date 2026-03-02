@@ -545,8 +545,8 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   /* ====== Dark silk/satin wave background ====== */
   .ik-deal-bg {
     background: 
-      linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.7) 100%),
-      url('https://images.unsplash.com/photo-1553095066-5f3f45dd7b53?w=1920&q=90&auto=format&fit=crop') center center / cover no-repeat fixed !important;
+      linear-gradient(180deg, rgba(5,5,5,0.25) 0%, rgba(5,5,5,0.45) 60%, rgba(5,5,5,0.7) 100%),
+      url('https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=1920&q=90&auto=format&fit=crop') center center / cover no-repeat fixed !important;
     background-color: #050505 !important;
   }
 
