@@ -34,7 +34,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   useEffect(() => {
     if (!deal?.id) return;
     base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
-      setApptStatus(rows?.[0]?.walkthrough?.status || null);
+      const s = rows?.[0]?.walkthrough?.status || null;
+      setApptStatus(s);
     }).catch(() => {});
 
     const unsub = base44.entities.DealAppointments.subscribe(e => {
@@ -145,7 +146,9 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
   const wtDate = deal?.walkthrough_date;
   const hasWalkthrough = wtScheduled && (wtDate || wtSlots.length > 0);
-  const wtStatus = apptStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET');
+  // Also check deal.walkthrough_confirmed as a fallback — it gets set on confirmation
+  const dealConfirmed = deal?.walkthrough_confirmed === true;
+  const wtStatus = dealConfirmed ? 'SCHEDULED' : (apptStatus || (hasWalkthrough ? 'PROPOSED' : 'NOT_SET'));
 
   const hasCma = !!(deal?.documents?.cma?.url);
   const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
