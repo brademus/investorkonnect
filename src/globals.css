@@ -559,25 +559,6 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   background-color: #0c0c0e;
 }
 
-/* Background image layer */
-.ik-silk-bg-img {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/9e0928a8f_9E86D1C0-294F-4D1B-A04F-981308BFD7AB.png');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
-
-/* Content wrapper — sits above background */
-.ik-silk-content {
-  position: relative;
-  z-index: 1;
-}
-
   /* Utility shorthands */
   @layer utilities {
   .ik-text-muted { color: hsl(0 0% 45%); }

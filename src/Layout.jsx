@@ -119,10 +119,24 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell ik-silk-bg" style={{ minHeight: '100vh' }}>
-      {/* Silk background image layer */}
-      <div className="ik-silk-bg-img" />
-      {/* Content wrapper — z-index:1, above all background layers */}
-      <div className="ik-silk-content" style={{ minHeight: '100vh' }}>
+      {/* Fixed background image — rendered as real <img> so it always paints */}
+      <img
+        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/9e0928a8f_9E86D1C0-294F-4D1B-A04F-981308BFD7AB.png"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center top',
+          zIndex: 0,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* All visible content above the background */}
+      <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -285,7 +299,7 @@ function LayoutContent({ children }) {
           <MessageSquare className="w-6 h-6 text-black" />
         </Link>
       )}
-      </div>{/* end ik-silk-content */}
+      </div>{/* end content wrapper */}
     </div>
   );
 }
