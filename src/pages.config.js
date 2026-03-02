@@ -54,6 +54,7 @@ import AgentOnboarding from './pages/AgentOnboarding';
 import AgentProfile from './pages/AgentProfile';
 import AgentQualification from './pages/AgentQualification';
 import BillingSuccess from './pages/BillingSuccess';
+import ConditionalReview from './pages/ConditionalReview';
 import ContractVerify from './pages/ContractVerify';
 import CounterOffer from './pages/CounterOffer';
 import DocuSignReturn from './pages/DocuSignReturn';
@@ -77,7 +78,6 @@ import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
-import ConditionalReview from './pages/ConditionalReview';
 import __Layout from './Layout.jsx';
 
 
@@ -89,6 +89,7 @@ export const PAGES = {
     "AgentProfile": AgentProfile,
     "AgentQualification": AgentQualification,
     "BillingSuccess": BillingSuccess,
+    "ConditionalReview": ConditionalReview,
     "ContractVerify": ContractVerify,
     "CounterOffer": CounterOffer,
     "DocuSignReturn": DocuSignReturn,
@@ -112,7 +113,6 @@ export const PAGES = {
     "SelectAgent": SelectAgent,
     "SendCounter": SendCounter,
     "Terms": Terms,
-    "ConditionalReview": ConditionalReview,
 }
 
 export const pagesConfig = {

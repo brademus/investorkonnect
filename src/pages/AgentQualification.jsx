@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, AlertTriangle, ChevronRight, ArrowLeft } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, ChevronRight, ArrowLeft, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 const DEAL_TYPES = [
@@ -355,8 +355,8 @@ function OutcomeScreen({ result, onContinue }) {
         </div>
         <h1 className="text-3xl font-bold text-[#FAFAFA] mb-3">Your Application Is Under Review</h1>
         <p className="text-[#808080] mb-8">Based on your answers, our team needs to review your profile before you can proceed. We'll notify you once a decision has been made.</p>
-        <Button onClick={onContinue} className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full font-semibold px-8 h-12">
-          Got It
+        <Button onClick={() => base44.auth.logout(createPageUrl("Home"))} variant="outline" className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full font-semibold px-8 h-12">
+          <LogOut className="w-4 h-4 mr-2" /> Sign Out
         </Button>
       </div>
     );
