@@ -284,115 +284,163 @@ function PipelineContent() {
   // Setup check — admins always considered fully set up
   const setupDone = isAdmin || (isInvestor ? (!!profile.onboarding_completed_at && !!profile.nda_accepted) : (!!profile.onboarding_completed_at && !!profile.nda_accepted && (profile.identity_status === 'approved' || profile.identity_status === 'verified')));
 
+  const pipelineBgUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/e59dd6f70_9EE794BA-7AAF-4ADB-B5DF-EFF734972638.png";
+
   return (
     <>
       <Header profile={profile} />
-      <div className="h-screen bg-transparent flex flex-col pt-4">
-        <div className="flex-1 overflow-auto px-6 pb-6">
-          <div className="max-w-[1800px] mx-auto">
-            {!setupDone && <div className="mb-6"><SetupChecklist profile={profile} /></div>}
+      <div className="h-screen flex flex-col pt-4 relative">
+        {/* Premium background image */}
+        <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+          <img src={pipelineBgUrl} alt="" className="w-full h-full object-cover object-center" />
+          {/* Dark overlay */}
+          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.62)' }} />
+          {/* Vignette */}
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, rgba(0,0,0,0.55) 100%)' }} />
+        </div>
 
-            <div className="flex items-center justify-between mb-8">
-              <div><h1 className="text-3xl font-bold text-[#E3C567]">Dashboard</h1><p className="text-sm text-[#808080] mt-1">Manage your deals</p></div>
+        <div className="flex-1 overflow-auto px-6 md:px-8 pb-8 relative z-[1]">
+          <div className="max-w-[1800px] mx-auto">
+            {!setupDone && <div className="mb-8"><SetupChecklist profile={profile} /></div>}
+
+            <div className="flex items-center justify-between mb-10">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-[#E7C873]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
+                <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.50)' }}>Manage your deals</p>
+              </div>
               <div className="flex items-center gap-3">
                 <NotificationBell />
-                {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
-                <Button onClick={() => setHelpOpen(true)} className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full">Tutorials</Button>
+                {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E7C873] text-black hover:bg-[#F5D06F] rounded-full shadow-lg shadow-[#E7C873]/20 transition-all duration-200 hover:shadow-[#E7C873]/30 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
+                <Button onClick={() => setHelpOpen(true)} className="rounded-full border transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'rgba(20,20,24,0.88)', borderColor: 'rgba(255,215,120,0.12)', color: 'rgba(255,255,255,0.88)' }}>Tutorials</Button>
               </div>
             </div>
 
             <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-7 mb-10">
                 {pipelineStages.map(stage => {
                   const stageDeals = dealsByStage.get(stage.id) || [];
                   const Icon = stage.icon;
                   return (
-                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px]">
-                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
-                        <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]"><Icon className="w-4 h-4" /></div>
-                        <div><h3 className="text-[#FAFAFA] font-bold text-sm">{stage.label}</h3><p className="text-xs text-[#808080]">{stageDeals.length} deals</p></div>
-                      </div>
-                      <Droppable droppableId={stage.id}>
-                        {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.droppableProps} className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 ${snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''}`}>
-                            {stageDeals.length === 0 ? <div className="h-full flex items-center justify-center text-[#333] text-sm">{snapshot.isDraggingOver ? 'Drop here' : 'No deals'}</div> : stageDeals.map((deal, index) => (
-                              <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
-                                {(provided, snapshot) => (
-                                  <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] transition-all ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567]' : ''}`}>
-                                   <div className="space-y-3">
-                                     {/* Top: deal info */}
-                                     <div>
-                                       <div className="flex justify-between items-start mb-2 gap-2">
-                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2">{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
-                                         <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">{getDaysInPipeline(deal.created_date)}</span>
-                                       </div>
-                                       <div className="flex flex-col gap-2 mb-3">
-                                         <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
-                                         {isAgent
-                                           ? (deal.estimated_list_price > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.estimated_list_price.toLocaleString()}</div>)
-                                           : (deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>)
-                                         }
-                                         {(() => {
-                                           const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
-                                           const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
-                                           return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
-                                         })()}
-                                         {(() => {
-                                           const badge = getAgreementStatusLabel({
-                                             room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
-                                             agreement: deal.agreement || undefined,
-                                             negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
-                                             role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
-                                           });
-                                           return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
-                                         })()}
-                                         {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
-                                       </div>
-                                     </div>
-                                     {/* Next step: full width below */}
-                                     {(() => {
-                                       const wtInfo = wtStatusMap[deal.deal_id] || null;
-                                       const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id });
-                                       if (!step) return null;
-                                       return (
-                                         <div className="flex items-center justify-between bg-[#0D0D0D] rounded-lg p-2 border border-[#1F1F1F]">
-                                           <span className="text-[10px] text-[#808080] font-medium">Next Steps</span>
-                                           <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
-                                         </div>
-                                       );
-                                     })()}
-                                     {/* Inline review form for completed/canceled deals */}
-                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isInvestor && (
-                                       <InlineReviewForm 
-                                         dealId={deal.deal_id} 
-                                         agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
-                                         reviewerProfileId={profile?.id}
-                                         onSubmitted={() => {}}
-                                         compact={true}
-                                       />
-                                     )}
-                                     {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.investor_id && (
-                                       <InlineAgentReviewForm 
-                                         dealId={deal.deal_id}
-                                         investorProfileId={deal.investor_id}
-                                         reviewerProfileId={profile?.id}
-                                         onSubmitted={() => {}}
-                                         compact={true}
-                                       />
-                                     )}
-                                   </div>
-                                   <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
-                                     <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
-                                     {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
-                                   </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
+                    <div
+                      key={stage.id}
+                      className="flex flex-col md:h-[420px] rounded-[16px] overflow-hidden"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(25,25,30,0.92) 0%, rgba(18,18,22,0.96) 100%)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255,215,120,0.12)',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.60)',
+                      }}
+                    >
+                      {/* Gold accent top line */}
+                      <div style={{ height: 2, background: 'linear-gradient(90deg, #C9A227, #F5D06F)' }} />
+                      <div className="p-5 flex flex-col flex-1">
+                        <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid rgba(255,215,120,0.08)' }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(231,200,115,0.12)' }}>
+                            <Icon className="w-4 h-4 text-[#E7C873]" />
                           </div>
-                        )}
-                      </Droppable>
+                          <div>
+                            <h3 className="font-semibold text-sm" style={{ color: 'rgba(255,255,255,0.90)' }}>{stage.label}</h3>
+                            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}>{stageDeals.length} deals</p>
+                          </div>
+                        </div>
+                        <Droppable droppableId={stage.id}>
+                          {(provided, snapshot) => (
+                            <div ref={provided.innerRef} {...provided.droppableProps} className={`flex-1 md:overflow-y-auto space-y-3 pr-1 ${snapshot.isDraggingOver ? 'bg-[#E7C873]/5 rounded-lg' : ''}`}>
+                              {stageDeals.length === 0 ? (
+                                <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                                  {snapshot.isDraggingOver ? 'Drop here' : 'No deals'}
+                                </div>
+                              ) : stageDeals.map((deal, index) => (
+                                <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className="rounded-[14px] p-4 transition-all duration-200"
+                                      style={{
+                                        ...provided.draggableProps.style,
+                                        background: snapshot.isDragging ? 'rgba(30,30,36,0.98)' : 'rgba(20,20,24,0.88)',
+                                        border: snapshot.isDragging ? '1px solid rgba(255,215,120,0.30)' : '1px solid rgba(255,215,120,0.10)',
+                                        boxShadow: snapshot.isDragging ? '0 14px 40px rgba(0,0,0,0.70), 0 0 0 2px rgba(231,200,115,0.3)' : '0 4px 16px rgba(0,0,0,0.40)',
+                                        transform: snapshot.isDragging ? (provided.draggableProps.style?.transform || '') : (provided.draggableProps.style?.transform || ''),
+                                      }}
+                                      onMouseEnter={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(0,0,0,0.70)'; e.currentTarget.style.borderColor = 'rgba(255,215,120,0.22)'; }}}
+                                      onMouseLeave={e => { if (!snapshot.isDragging) { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.40)'; e.currentTarget.style.borderColor = 'rgba(255,215,120,0.10)'; }}}
+                                    >
+                                     <div className="space-y-3">
+                                       <div>
+                                         <div className="flex justify-between items-start mb-2 gap-2">
+                                           <h4 className="font-semibold text-sm line-clamp-2" style={{ color: 'rgba(255,255,255,0.92)' }}>{isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}</h4>
+                                           <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.42)' }}>{getDaysInPipeline(deal.created_date)}</span>
+                                         </div>
+                                         <div className="flex flex-col gap-2 mb-3">
+                                           <div className="flex items-center gap-1 text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
+                                           {isAgent
+                                             ? (deal.estimated_list_price > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.estimated_list_price.toLocaleString()}</div>)
+                                             : (deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>)
+                                           }
+                                           {(() => {
+                                             const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
+                                             const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
+                                             return comp ? <div className="text-xs text-[#E7C873] font-semibold">Agent Comp: {comp}</div> : null;
+                                           })()}
+                                           {(() => {
+                                             const badge = getAgreementStatusLabel({
+                                               room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed, investor_signed_at: deal.investor_signed_at, agreement: deal.agreement },
+                                               agreement: deal.agreement || undefined,
+                                               negotiation: deal.pending_counter_offer ? { status: deal.pending_counter_offer.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR', last_actor: deal.pending_counter_offer.from_role } : undefined,
+                                               role: isAgent ? 'agent' : (isAdmin ? 'investor' : 'investor')
+                                             });
+                                             return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
+                                           })()}
+                                           {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                         </div>
+                                       </div>
+                                       {(() => {
+                                         const wtInfo = wtStatusMap[deal.deal_id] || null;
+                                         const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id });
+                                         if (!step) return null;
+                                         return (
+                                           <div className="flex items-center justify-between rounded-lg p-2" style={{ background: 'rgba(10,10,14,0.60)', border: '1px solid rgba(255,215,120,0.06)' }}>
+                                             <span className="text-[10px] font-medium" style={{ color: 'rgba(255,255,255,0.42)' }}>Next Steps</span>
+                                             <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
+                                           </div>
+                                         );
+                                       })()}
+                                       {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isInvestor && (
+                                         <InlineReviewForm 
+                                           dealId={deal.deal_id} 
+                                           agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
+                                           reviewerProfileId={profile?.id}
+                                           onSubmitted={() => {}}
+                                           compact={true}
+                                         />
+                                       )}
+                                       {(stage.id === 'completed' && (deal.pipeline_stage === 'completed' || deal.pipeline_stage === 'canceled')) && isAgent && deal.investor_id && (
+                                         <InlineAgentReviewForm 
+                                           dealId={deal.deal_id}
+                                           investorProfileId={deal.investor_id}
+                                           reviewerProfileId={profile?.id}
+                                           onSubmitted={() => {}}
+                                           compact={true}
+                                         />
+                                       )}
+                                     </div>
+                                     <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,215,120,0.08)' }}>
+                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E7C873] hover:bg-[#F5D06F] text-black rounded-full text-xs py-1.5 h-auto shadow-md shadow-[#E7C873]/15 transition-all duration-200 hover:-translate-y-0.5">Open Deal Room</Button>
+                                       {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-full text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'rgba(20,20,24,0.88)', border: '1px solid rgba(255,215,120,0.12)', color: 'rgba(255,255,255,0.88)' }}>Edit</Button>}
+                                     </div>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </div>
                     </div>
                   );
                 })}
