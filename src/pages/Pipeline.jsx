@@ -373,13 +373,13 @@ function PipelineContent() {
                                          <div className="flex flex-col gap-2 mb-3">
                                            <div className="flex items-center gap-1 text-xs" style={{ color: 'rgba(255,255,255,0.42)' }}><Home className="w-3 h-3" />{deal.city}, {deal.state}</div>
                                            {isAgent
-                                             ? (deal.estimated_list_price > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.estimated_list_price.toLocaleString()}</div>)
-                                             : (deal.budget > 0 && <div className="text-xs text-[#34D399] font-semibold">${deal.budget.toLocaleString()}</div>)
+                                             ? (deal.estimated_list_price > 0 && <div className="text-xs text-[#2D8A6E] font-semibold">${deal.estimated_list_price.toLocaleString()}</div>)
+                                             : (deal.budget > 0 && <div className="text-xs text-[#2D8A6E] font-semibold">${deal.budget.toLocaleString()}</div>)
                                            }
                                            {(() => {
                                              const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
                                              const comp = getSellerCompLabel(exhibitTerms, deal.proposed_terms);
-                                             return comp ? <div className="text-xs text-[#E7C873] font-semibold">Agent Comp: {comp}</div> : null;
+                                             return comp ? <div className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</div> : null;
                                            })()}
                                            {(() => {
                                              const badge = getAgreementStatusLabel({
@@ -390,7 +390,7 @@ function PipelineContent() {
                                              });
                                              return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
                                            })()}
-                                           {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#10B981] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                           {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#2D8A6E] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
                                          </div>
                                        </div>
                                        {(() => {
