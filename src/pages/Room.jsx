@@ -66,23 +66,28 @@ export default function Room() {
   // Stores the cutoff timestamp (ms) per room — messages after this are "unread"
   const [lastReadAt, setLastReadAt] = useState({});
 
-  // When user switches to messages, stamp the cutoff to NOW and persist
+  // When user is on messages view, keep cutoff past the latest message so badge = 0
   useEffect(() => {
-    if (activeView === 'messages' && roomId && profile?.id) {
-      const now = Date.now();
-      setLastReadAt(prev => ({ ...prev, [roomId]: now }));
-      base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(now).toISOString() }
-      }).catch(() => {});
+    if (activeView !== 'messages' || !roomId || !profile?.id) return;
+    // Find the max message timestamp, then add buffer to cover clock skew
+    let maxTs = Date.now();
+    if (roomMessages?.length > 0) {
+      for (const m of roomMessages) {
+        if (m.created_date) {
+          const t = new Date(m.created_date).getTime();
+          if (t > maxTs) maxTs = t;
+        }
+      }
     }
-  }, [activeView, roomId, profile?.id]);
-
-  // While on messages view, keep cutoff fresh as new messages arrive
-  useEffect(() => {
-    if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
-      setLastReadAt(prev => ({ ...prev, [roomId]: Date.now() }));
-    }
-  }, [roomMessages?.length, activeView, roomId]);
+    const seenTs = maxTs + 1;
+    setLastReadAt(prev => {
+      if ((prev[roomId] || 0) >= seenTs) return prev;
+      return { ...prev, [roomId]: seenTs };
+    });
+    base44.entities.Profile.update(profile.id, {
+      last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(seenTs).toISOString() }
+    }).catch(() => {});
+  }, [activeView, roomId, profile?.id, roomMessages]);
   
   // Initialize local cutoff from server timestamp when profile loads (covers page refresh)
   useEffect(() => {
