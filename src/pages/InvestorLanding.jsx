@@ -103,11 +103,12 @@ export default function InvestorLanding() {
           {/* Video Section */}
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
-              <iframe 
-                src="https://drive.google.com/file/d/1TZXb6W9V5_vVITTIxt7tEXLtoFarKzAf/preview" 
+              <video 
+                src="https://dl.dropboxusercontent.com/scl/fi/5nkej365moh8mpxvzegoa/0224-1.mov?rlkey=gtjon9b8isp2mrwr7rlhjq8h1&st=5ybwr0a4" 
                 className="w-full aspect-video"
-                allow="autoplay"
-                loading="lazy"
+                controls
+                playsInline
+                preload="metadata"
               />
             </div>
           </div>
