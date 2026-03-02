@@ -64,29 +64,36 @@ export default function Room() {
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
   // Stores the cutoff timestamp (ms) per room — messages after this are "unread"
-  const [lastReadAt, setLastReadAt] = useState({});
+  const lastReadAtRef = useRef({});
+  const [badgeTick, setBadgeTick] = useState(0); // forces re-render when cutoff changes
 
-  // When user is on messages view, keep cutoff past the latest message so badge = 0
-  useEffect(() => {
-    if (activeView !== 'messages' || !roomId || !profile?.id) return;
-    // Find the max message timestamp, then add buffer to cover clock skew
+  // Helper: compute max message timestamp for a room
+  const getMaxMsgTs = (msgs) => {
     let maxTs = Date.now();
-    if (roomMessages?.length > 0) {
-      for (const m of roomMessages) {
+    if (msgs?.length > 0) {
+      for (const m of msgs) {
         if (m.created_date) {
           const t = new Date(m.created_date).getTime();
           if (t > maxTs) maxTs = t;
         }
       }
     }
-    const seenTs = maxTs + 1;
-    setLastReadAt(prev => {
-      if ((prev[roomId] || 0) >= seenTs) return prev;
-      return { ...prev, [roomId]: seenTs };
-    });
-    base44.entities.Profile.update(profile.id, {
-      last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(seenTs).toISOString() }
-    }).catch(() => {});
+    return maxTs;
+  };
+
+  // When user enters messages view, stamp cutoff past all current messages
+  // This runs on EVERY render where activeView === 'messages', keeping the cutoff fresh
+  // as new messages stream in
+  useEffect(() => {
+    if (activeView !== 'messages' || !roomId || !profile?.id) return;
+    const seenTs = getMaxMsgTs(roomMessages) + 1;
+    if ((lastReadAtRef.current[roomId] || 0) < seenTs) {
+      lastReadAtRef.current[roomId] = seenTs;
+      setBadgeTick(t => t + 1);
+      base44.entities.Profile.update(profile.id, {
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(seenTs).toISOString() }
+      }).catch(() => {});
+    }
   }, [activeView, roomId, profile?.id, roomMessages]);
   
   // Initialize local cutoff from server timestamp when profile loads (covers page refresh)
@@ -95,23 +102,24 @@ export default function Room() {
     const serverTs = profile.last_seen_timestamps[roomId];
     if (serverTs) {
       const serverMs = new Date(serverTs).getTime();
-      setLastReadAt(prev => {
-        // Only set if we don't already have a newer local value
-        if ((prev[roomId] || 0) >= serverMs) return prev;
-        return { ...prev, [roomId]: serverMs };
-      });
+      if ((lastReadAtRef.current[roomId] || 0) < serverMs) {
+        lastReadAtRef.current[roomId] = serverMs;
+        setBadgeTick(t => t + 1);
+      }
     }
   }, [profile?.last_seen_timestamps, roomId]);
 
   const unreadMsgCount = useMemo(() => {
+    // badgeTick is in the dep array to force recompute when cutoff changes
+    void badgeTick;
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    const cutoff = lastReadAt[roomId] || 0;
+    const cutoff = lastReadAtRef.current[roomId] || 0;
     if (cutoff === 0) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
       return new Date(m.created_date).getTime() > cutoff;
     }).length;
-  }, [roomMessages, profile?.id, roomId, lastReadAt]);
+  }, [roomMessages, profile?.id, roomId, badgeTick]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
