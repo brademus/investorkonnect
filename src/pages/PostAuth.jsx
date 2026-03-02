@@ -115,6 +115,11 @@ export default function PostAuth() {
            else if (role === 'agent') routeAgent(profile, navigate);
            else navigate(createPageUrl("InvestorOnboarding"), { replace: true });
          } else {
+           // Conditional agent gate — block even if onboarded
+           if (role === 'agent' && profile?.qualification_tier === 'conditional') {
+             navigate(createPageUrl("ConditionalReview"), { replace: true }); return;
+           }
+
            // Post-Onboarding Gates
            const subStatus = profile?.subscription_status || 'none';
            const isPaid = subStatus === 'active' || subStatus === 'trialing';
