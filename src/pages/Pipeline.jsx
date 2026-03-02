@@ -285,19 +285,14 @@ function PipelineContent() {
   const setupDone = isAdmin || (isInvestor ? (!!profile.onboarding_completed_at && !!profile.nda_accepted) : (!!profile.onboarding_completed_at && !!profile.nda_accepted && (profile.identity_status === 'approved' || profile.identity_status === 'verified')));
 
   const pipelineBgUrl = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/7f8a615de_1293AC3B-9FDA-4A13-BB91-671E9D0D7B14.png";
+  // Pipeline uses same bg as Layout — the fixed bg in Layout already covers this page.
+  // We skip the per-page bg layer so it doesn't double up.
 
   return (
     <>
       <Header profile={profile} />
       <div className="h-screen flex flex-col pt-4 relative">
-        {/* Premium background image */}
-        <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
-          <img src={pipelineBgUrl} alt="" className="w-full h-full object-cover object-center" />
-          {/* Dark overlay */}
-          <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.62)' }} />
-          {/* Vignette */}
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 30%, rgba(0,0,0,0.55) 100%)' }} />
-        </div>
+        {/* Background handled by global Layout */}
 
         <div className="flex-1 overflow-auto px-6 md:px-8 pb-8 relative z-[1]">
           <div className="max-w-[1800px] mx-auto">

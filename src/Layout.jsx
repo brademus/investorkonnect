@@ -130,7 +130,7 @@ function LayoutContent({ children }) {
         }}
       >
         <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/9e0928a8f_9E86D1C0-294F-4D1B-A04F-981308BFD7AB.png"
+          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/7f8a615de_1293AC3B-9FDA-4A13-BB91-671E9D0D7B14.png"
           alt=""
           style={{
             width: '100%',
