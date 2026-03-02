@@ -24,6 +24,7 @@ function routeAgent(profile, navigate) {
   } else if (qt === 'conditional') {
     navigate(createPageUrl("ConditionalReview"), { replace: true });
   } else {
+    // "approved", "elite", or any non-conditional/rejected tier → onboarding
     navigate(createPageUrl("AgentOnboarding"), { replace: true });
   }
 }

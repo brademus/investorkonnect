@@ -385,11 +385,23 @@ export default function AgentQualification() {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // If already qualified + onboarded, redirect to next step
+  // If already qualified, redirect based on tier
   useEffect(() => {
     if (loading || !profile) return;
-    if (profile.qualification_status === 'completed' && profile.onboarding_completed_at) {
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
+    if (profile.qualification_status === 'completed') {
+      const tier = profile.qualification_tier;
+      if (tier === 'conditional') {
+        navigate(createPageUrl("ConditionalReview"), { replace: true });
+      } else if (tier === 'rejected') {
+        // Stay on page (show rejected outcome)
+      } else {
+        // approved / elite — skip questionnaire, go to onboarding (or beyond if already done)
+        if (profile.onboarding_completed_at) {
+          navigate(createPageUrl("IdentityVerification"), { replace: true });
+        } else {
+          navigate(createPageUrl("AgentOnboarding"), { replace: true });
+        }
+      }
     }
   }, [loading, profile]);
 
