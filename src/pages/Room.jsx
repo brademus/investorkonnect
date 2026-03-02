@@ -82,18 +82,34 @@ export default function Room() {
     });
   }, [activeView, roomId, roomMessages?.length]);
 
-  // Initialize from server timestamp on page load
+  // Initialize unread count from server timestamp on page load
+  // Use a ref to fetch fresh timestamps from server instead of relying on cached profile
+  const lastSeenInitialized = useRef({});
   useEffect(() => {
-    if (!profile?.last_seen_timestamps || !roomId || !roomMessages?.length) return;
-    const serverTs = profile.last_seen_timestamps[roomId];
-    if (!serverTs) return;
-    // If we already have a snapshot for this room, skip
-    if (msgCountWhenViewed[roomId] !== undefined) return;
-    const serverMs = new Date(serverTs).getTime();
-    // Count how many messages were before/at the server timestamp
-    const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
-    setMsgCountWhenViewed(prev => ({ ...prev, [roomId]: countSeen }));
-  }, [profile?.last_seen_timestamps, roomId, roomMessages]);
+    if (!roomId || !roomMessages?.length || !profile?.id) return;
+    // Already initialized for this room
+    if (lastSeenInitialized.current[roomId]) return;
+    // If currently on messages view, just mark all as seen
+    if (activeView === 'messages') {
+      lastSeenInitialized.current[roomId] = true;
+      setMsgCountWhenViewed(prev => ({ ...prev, [roomId]: roomMessages.length }));
+      return;
+    }
+    lastSeenInitialized.current[roomId] = true;
+    // Fetch fresh profile to get accurate last_seen_timestamps (cached profile may be stale)
+    base44.entities.Profile.filter({ id: profile.id }).then(profiles => {
+      const freshProfile = profiles?.[0];
+      const serverTs = freshProfile?.last_seen_timestamps?.[roomId];
+      if (!serverTs) return; // Never seen — leave undefined so all non-self msgs show as unread
+      const serverMs = new Date(serverTs).getTime();
+      const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
+      setMsgCountWhenViewed(prev => {
+        // Don't overwrite if user already opened messages
+        if (prev[roomId] !== undefined) return prev;
+        return { ...prev, [roomId]: countSeen };
+      });
+    }).catch(() => {});
+  }, [roomId, roomMessages, profile?.id, activeView]);
 
   // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
