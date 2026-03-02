@@ -142,12 +142,21 @@ export default function NotificationBell() {
     }
   };
 
-  // Whenever the panel is open, stamp lastSeenAt so the badge resets to 0
+  // Whenever the panel is open, stamp lastSeenAt to the max notification timestamp (or now)
+  // so ALL current notifications are considered "seen"
   useEffect(() => {
     if (!open) return;
-    const now = Date.now();
-    setLastSeenAt(now);
-    try { sessionStorage.setItem('notif_last_seen', String(now)); } catch {}
+    let maxTs = Date.now();
+    for (const n of notifications) {
+      if (n.timestamp) {
+        const t = new Date(n.timestamp).getTime();
+        if (t > maxTs) maxTs = t;
+      }
+    }
+    // Add 1ms buffer to ensure even the latest notification is "seen"
+    const seenTs = maxTs + 1;
+    setLastSeenAt(seenTs);
+    try { sessionStorage.setItem('notif_last_seen', String(seenTs)); } catch {}
   }, [open, notifications]);
 
   const handleNotificationClick = (n) => {
