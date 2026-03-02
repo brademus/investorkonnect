@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const PROTECTED_EMAILS = ['outtocreate@gmail.com', 'mike4verve@gmail.com'];
+    const PROTECTED_EMAILS = ['mike4verve@gmail.com', 'outtocreate@gmail.com', 'mike4empire@gmail.com', 'arturolefevre@yahoo.com', 'hellerbraden6@gmail.com'];
 
     // Get all profiles
     const allProfiles = await base44.asServiceRole.entities.Profile.list();
