@@ -63,47 +63,50 @@ export default function Room() {
 
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
-  // Once user views messages, we track "has seen messages" per room to force zero badge
-  const [seenRooms, setSeenRooms] = useState({});
+  // Stores the timestamp (ms) when user last left the messages view — used as the local "read" cutoff
+  const [lastViewedAt, setLastViewedAt] = useState({});
   
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    // If user has viewed messages in this room during this session, badge is 0
-    if (seenRooms[roomId]) return 0;
-    // Otherwise compute from server timestamp
+    // Use the most recent of: local "last viewed" timestamp OR server timestamp
+    const localMs = lastViewedAt[roomId] || 0;
     const serverTs = profile?.last_seen_timestamps?.[roomId];
-    if (!serverTs) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
-    const lastSeenTime = new Date(serverTs).getTime();
+    const serverMs = serverTs ? new Date(serverTs).getTime() : 0;
+    const cutoff = Math.max(localMs, serverMs);
+    if (cutoff === 0) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
     return roomMessages.filter(m => {
       if (m.sender_profile_id === profile.id) return false;
-      return new Date(m.created_date).getTime() > lastSeenTime;
+      return new Date(m.created_date).getTime() > cutoff;
     }).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, seenRooms]);
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, lastViewedAt]);
 
-  // Mark read when switching to messages view
+  // When user is on messages view, continuously update the local cutoff to "now"
+  // so everything is read. When they leave, the cutoff stays frozen.
+  const prevActiveView = useRef(activeView);
   useEffect(() => {
+    const wasMessages = prevActiveView.current === 'messages';
+    prevActiveView.current = activeView;
+    
     if (activeView === 'messages' && roomId && profile?.id) {
-      // Instantly mark this room as "seen" — badge goes to 0
-      setSeenRooms(prev => ({ ...prev, [roomId]: true }));
-      // Persist to server (fire-and-forget)
-      const serverTs = new Date().toISOString();
+      // Entering messages — stamp now
+      const now = Date.now();
+      setLastViewedAt(prev => ({ ...prev, [roomId]: now }));
+      // Persist to server
       base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: serverTs }
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(now).toISOString() }
       }).catch(() => {});
+    } else if (wasMessages && activeView !== 'messages' && roomId) {
+      // Leaving messages — stamp the exit time so new messages after this show as unread
+      setLastViewedAt(prev => ({ ...prev, [roomId]: Date.now() }));
     }
   }, [activeView, roomId, profile?.id]);
 
-  // When new messages arrive while NOT on messages view, reset the "seen" flag so badge shows
+  // While on messages view, keep stamping as new messages arrive so they're all "read"
   useEffect(() => {
-    if (activeView !== 'messages' && roomId && seenRooms[roomId]) {
-      // Check if there are actually new messages since we marked seen
-      const latestOtherMsg = roomMessages?.filter(m => m.sender_profile_id !== profile?.id).slice(-1)[0];
-      const serverTs = profile?.last_seen_timestamps?.[roomId];
-      if (latestOtherMsg && serverTs && new Date(latestOtherMsg.created_date).getTime() > new Date(serverTs).getTime()) {
-        setSeenRooms(prev => ({ ...prev, [roomId]: false }));
-      }
+    if (activeView === 'messages' && roomId && roomMessages?.length > 0) {
+      setLastViewedAt(prev => ({ ...prev, [roomId]: Date.now() }));
     }
-  }, [roomMessages?.length]);
+  }, [roomMessages?.length, activeView, roomId]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
