@@ -102,7 +102,7 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
               </div>
 
               {/* Agreement Status */}
-              <div className="mb-4">
+              <div className="mb-4 space-y-2">
                 <Badge className={
                   invite.agreement_status === 'fully_signed' ? 'bg-[#34D399]/20 text-[#34D399] border-[#34D399]/30' :
                   invite.agreement_status === 'investor_signed' ? 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30' :
@@ -114,6 +114,21 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
                    invite.agreement_status === 'investor_signed' ? 'Pending Agent Signature' :
                    'Not Yet Signed'}
                 </Badge>
+                {agentCounters[agent.id] && (() => {
+                  const ct = agentCounters[agent.id].terms_delta || {};
+                  const label = ct.buyer_commission_type === 'flat_fee' && ct.buyer_flat_fee != null
+                    ? `$${Number(ct.buyer_flat_fee).toLocaleString()}`
+                    : ct.buyer_commission_percentage != null
+                      ? `${ct.buyer_commission_percentage}%`
+                      : null;
+                  if (!label) return null;
+                  return (
+                    <Badge className="bg-[#F59E0B]/20 text-[#F59E0B] border-[#F59E0B]/30">
+                      <ArrowRightLeft className="w-3 h-3 mr-1" />
+                      Counter Offer: {label}
+                    </Badge>
+                  );
+                })()}
               </div>
 
               {/* Actions */}
