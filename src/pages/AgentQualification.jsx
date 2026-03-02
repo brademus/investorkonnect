@@ -373,7 +373,12 @@ function OutcomeScreen({ result, onContinue }) {
           ? "Your broker does not currently allow assignment of contract transactions, which is required for this platform."
           : "Based on your responses, this platform may not be the right fit. Our deals require specific broker permissions and investor experience."}
       </p>
-      <a href="https://investorkonnect.com" className="text-[#E3C567] underline text-sm">Learn More</a>
+      <div className="flex flex-col items-center gap-3 mt-6">
+        <Button onClick={() => base44.auth.logout(createPageUrl("Home"))} variant="outline" className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full font-semibold px-8 h-12">
+          <LogOut className="w-4 h-4 mr-2" /> Sign Out
+        </Button>
+        <a href="https://investorkonnect.com" className="text-[#E3C567] underline text-sm">Learn More</a>
+      </div>
     </div>
   );
 }
@@ -393,7 +398,9 @@ export default function AgentQualification() {
       if (tier === 'conditional') {
         navigate(createPageUrl("ConditionalReview"), { replace: true });
       } else if (tier === 'rejected') {
-        // Stay on page (show rejected outcome)
+        // Show rejected outcome directly
+        setResult({ outcome: "rejected", tier: "rejected", autoReject: !!profile.metadata?.qualification_answers?.broker_assignments && profile.metadata.qualification_answers.broker_assignments === "no" });
+        setStep(3);
       } else {
         // approved / elite — skip questionnaire, go to onboarding (or beyond if already done)
         if (profile.onboarding_completed_at) {
