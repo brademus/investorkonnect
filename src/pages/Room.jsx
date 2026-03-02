@@ -239,7 +239,11 @@ export default function Room() {
          if (isInvestor && room.deal_id && !roomIsLocked) {
            base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
              const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-             if (activeInvites.length === 0) return;
+             if (activeInvites.length === 0) {
+               // No pending agents — switch to board
+               setActiveView(prev => prev === 'pending_agents' ? 'board' : prev);
+               return;
+             }
              // Batch-fetch all agent profiles at once instead of one-by-one
              const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
              const agentProfiles = agentIds.length > 0
