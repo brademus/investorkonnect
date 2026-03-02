@@ -63,63 +63,57 @@ export default function Room() {
 
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
-  // Stores the cutoff timestamp (ms) per room — messages after this are "unread"
-  const lastReadAtRef = useRef({});
-  const [badgeTick, setBadgeTick] = useState(0); // forces re-render when cutoff changes
+  // Snapshot of message count when user last viewed messages — messages arriving after are "unread"
+  const [msgCountWhenViewed, setMsgCountWhenViewed] = useState({});
 
-  // Helper: compute max message timestamp for a room
-  const getMaxMsgTs = (msgs) => {
-    let maxTs = Date.now();
-    if (msgs?.length > 0) {
-      for (const m of msgs) {
-        if (m.created_date) {
-          const t = new Date(m.created_date).getTime();
-          if (t > maxTs) maxTs = t;
-        }
-      }
-    }
-    return maxTs;
-  };
-
-  // When user enters messages view, stamp cutoff past all current messages
-  // This runs on EVERY render where activeView === 'messages', keeping the cutoff fresh
-  // as new messages stream in
+  // When user is on messages view, snapshot the current message count so badge shows 0
   useEffect(() => {
-    if (activeView !== 'messages' || !roomId || !profile?.id) return;
-    const seenTs = getMaxMsgTs(roomMessages) + 1;
-    if ((lastReadAtRef.current[roomId] || 0) < seenTs) {
-      lastReadAtRef.current[roomId] = seenTs;
-      setBadgeTick(t => t + 1);
+    if (activeView !== 'messages' || !roomId || !roomMessages) return;
+    setMsgCountWhenViewed(prev => {
+      const currentCount = roomMessages.length;
+      if (prev[roomId] === currentCount) return prev;
+      return { ...prev, [roomId]: currentCount };
+    });
+  }, [activeView, roomId, roomMessages?.length]);
+
+  // Initialize from server timestamp on page load
+  useEffect(() => {
+    if (!profile?.last_seen_timestamps || !roomId || !roomMessages?.length) return;
+    const serverTs = profile.last_seen_timestamps[roomId];
+    if (!serverTs) return;
+    // If we already have a snapshot for this room, skip
+    if (msgCountWhenViewed[roomId] !== undefined) return;
+    const serverMs = new Date(serverTs).getTime();
+    // Count how many messages were before/at the server timestamp
+    const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
+    setMsgCountWhenViewed(prev => ({ ...prev, [roomId]: countSeen }));
+  }, [profile?.last_seen_timestamps, roomId, roomMessages]);
+
+  // Persist last-seen to server when leaving messages view
+  const prevActiveView = useRef(activeView);
+  useEffect(() => {
+    if (prevActiveView.current === 'messages' && activeView !== 'messages' && roomId && profile?.id) {
       base44.entities.Profile.update(profile.id, {
-        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date(seenTs).toISOString() }
+        last_seen_timestamps: { ...(profile.last_seen_timestamps || {}), [roomId]: new Date().toISOString() }
       }).catch(() => {});
     }
-  }, [activeView, roomId, profile?.id, roomMessages]);
-  
-  // Initialize local cutoff from server timestamp when profile loads (covers page refresh)
-  useEffect(() => {
-    if (!profile?.last_seen_timestamps || !roomId) return;
-    const serverTs = profile.last_seen_timestamps[roomId];
-    if (serverTs) {
-      const serverMs = new Date(serverTs).getTime();
-      if ((lastReadAtRef.current[roomId] || 0) < serverMs) {
-        lastReadAtRef.current[roomId] = serverMs;
-        setBadgeTick(t => t + 1);
-      }
-    }
-  }, [profile?.last_seen_timestamps, roomId]);
+    prevActiveView.current = activeView;
+  }, [activeView]);
 
   const unreadMsgCount = useMemo(() => {
-    // badgeTick is in the dep array to force recompute when cutoff changes
-    void badgeTick;
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    const cutoff = lastReadAtRef.current[roomId] || 0;
-    if (cutoff === 0) return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
-    return roomMessages.filter(m => {
-      if (m.sender_profile_id === profile.id) return false;
-      return new Date(m.created_date).getTime() > cutoff;
-    }).length;
-  }, [roomMessages, profile?.id, roomId, badgeTick]);
+    const snapshotCount = msgCountWhenViewed[roomId];
+    // If user has never viewed messages for this room, all non-self messages are unread
+    if (snapshotCount === undefined) {
+      return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
+    }
+    // New messages = total messages now minus total when last viewed
+    const newMsgs = roomMessages.length - snapshotCount;
+    if (newMsgs <= 0) return 0;
+    // Count only non-self messages among the newest ones
+    const newest = roomMessages.slice(-newMsgs);
+    return newest.filter(m => m.sender_profile_id !== profile.id).length;
+  }, [roomMessages, profile?.id, roomId, msgCountWhenViewed]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
