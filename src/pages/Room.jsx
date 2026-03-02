@@ -17,6 +17,7 @@ import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import PendingAgentsList from "@/components/PendingAgentsList";
 import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
+import { useRoomMessages } from "@/components/room/useRoomMessages";
 
 export default function Room() {
   const navigate = useNavigate();
