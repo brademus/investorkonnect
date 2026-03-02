@@ -443,11 +443,16 @@ export default function AgentQualification() {
 
       // If conditional (50-69), notify admins via backend
       if (tier === "conditional") {
-        base44.functions.invoke('notifyAdminConditionalAgent', {
-          agentProfileId: pid,
-          agentName: profile?.full_name || profile?.email || 'Unknown Agent',
-          score: score || 0,
-        }).catch(err => console.warn('[AgentQualification] Admin notify failed:', err));
+        try {
+          const notifyRes = await base44.functions.invoke('notifyAdminConditionalAgent', {
+            agentProfileId: pid,
+            agentName: profile?.full_name || profile?.email || 'Unknown Agent',
+            score: score || 0,
+          });
+          console.log('[AgentQualification] Admin notify result:', notifyRes?.data);
+        } catch (err) {
+          console.error('[AgentQualification] Admin notify failed:', err);
+        }
       }
 
       setResult({ outcome, tier, autoReject });
