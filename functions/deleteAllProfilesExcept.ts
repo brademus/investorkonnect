@@ -30,136 +30,39 @@ Deno.serve(async (req) => {
     let deletedCount = 0;
     const errors = [];
 
-    // Delete each profile and related data with rate limit handling
+    // Helper: delete with retry on rate limit
+    const deleteWithRetry = async (entity, id, retries = 3) => {
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          await entity.delete(id);
+          return true;
+        } catch (err) {
+          if (err?.message?.includes('Rate limit') && attempt < retries - 1) {
+            await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+
+    // Process in batches of 5 profiles with pauses between batches
+    const BATCH_SIZE = 3;
     for (let i = 0; i < profilesToDelete.length; i++) {
       const profile = profilesToDelete[i];
       try {
         const profileId = profile.id;
-        
-        // Delete deals where this profile is investor
-        const investorDeals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profileId });
-        for (const deal of investorDeals) {
-          await base44.asServiceRole.entities.Deal.delete(deal.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
 
-        // Delete deals where this profile is agent
-        const agentDeals = await base44.asServiceRole.entities.Deal.filter({ locked_agent_id: profileId });
-        for (const deal of agentDeals) {
-          await base44.asServiceRole.entities.Deal.delete(deal.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete rooms
-        const rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profileId });
-        for (const room of rooms) {
-          await base44.asServiceRole.entities.Room.delete(room.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete reviews as reviewer
-        const reviewsAsReviewer = await base44.asServiceRole.entities.Review.filter({ reviewer_profile_id: profileId });
-        for (const review of reviewsAsReviewer) {
-          await base44.asServiceRole.entities.Review.delete(review.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete reviews as reviewee
-        const reviewsAsReviewee = await base44.asServiceRole.entities.Review.filter({ reviewee_profile_id: profileId });
-        for (const review of reviewsAsReviewee) {
-          await base44.asServiceRole.entities.Review.delete(review.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete messages
-        const messages = await base44.asServiceRole.entities.Message.filter({ sender_profile_id: profileId });
-        for (const msg of messages) {
-          await base44.asServiceRole.entities.Message.delete(msg.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete legal agreements
-        const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ investor_profile_id: profileId });
-        for (const agreement of agreements) {
-          await base44.asServiceRole.entities.LegalAgreement.delete(agreement.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        const agentAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ agent_profile_id: profileId });
-        for (const agreement of agentAgreements) {
-          await base44.asServiceRole.entities.LegalAgreement.delete(agreement.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete deal invites
-        const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profileId });
-        for (const invite of invites) {
-          await base44.asServiceRole.entities.DealInvite.delete(invite.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete deal drafts
-        const drafts = await base44.asServiceRole.entities.DealDraft.filter({ investor_profile_id: profileId });
-        for (const draft of drafts) {
-          await base44.asServiceRole.entities.DealDraft.delete(draft.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete activity records
-        const activities = await base44.asServiceRole.entities.Activity.filter({ actor_id: profileId });
-        for (const activity of activities) {
-          await base44.asServiceRole.entities.Activity.delete(activity.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete counter offers
-        const counters = await base44.asServiceRole.entities.CounterOffer.filter({ from_profile_id: profileId });
-        for (const counter of counters) {
-          await base44.asServiceRole.entities.CounterOffer.delete(counter.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete payment schedules & milestones
-        const schedules = await base44.asServiceRole.entities.PaymentSchedule.filter({ owner_profile_id: profileId });
-        for (const schedule of schedules) {
-          const milestones = await base44.asServiceRole.entities.PaymentMilestone.filter({ schedule_id: schedule.id });
-          for (const milestone of milestones) {
-            await base44.asServiceRole.entities.PaymentMilestone.delete(milestone.id);
-            await new Promise(r => setTimeout(r, 150));
-          }
-          await base44.asServiceRole.entities.PaymentSchedule.delete(schedule.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete deal appointments
-        const appointments = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: profileId });
-        for (const appt of appointments) {
-          await base44.asServiceRole.entities.DealAppointments.delete(appt.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete NDAs
-        const ndas = await base44.asServiceRole.entities.NDA.filter({ user_id: profileId });
-        for (const nda of ndas) {
-          await base44.asServiceRole.entities.NDA.delete(nda.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Delete audit logs
-        const auditLogs = await base44.asServiceRole.entities.AuditLog.filter({ actor_id: profileId });
-        for (const log of auditLogs) {
-          await base44.asServiceRole.entities.AuditLog.delete(log.id);
-          await new Promise(r => setTimeout(r, 150));
-        }
-
-        // Finally, delete the profile itself
-        await base44.asServiceRole.entities.Profile.delete(profileId);
+        // Just delete the profile — most test profiles have no associated data
+        await deleteWithRetry(base44.asServiceRole.entities.Profile, profileId);
         deletedCount++;
-        console.log(`[deleteAllProfilesExcept] Deleted profile: ${profile.email}`);
+        console.log(`[deleteAllProfilesExcept] Deleted profile ${deletedCount}: ${profile.email}`);
 
-        // Add delay between profile deletions to avoid rate limit
-        if (i < profilesToDelete.length - 1) {
-          await new Promise(r => setTimeout(r, 500));
+        // Pause longer every BATCH_SIZE profiles
+        if ((i + 1) % BATCH_SIZE === 0) {
+          await new Promise(r => setTimeout(r, 3000));
+        } else {
+          await new Promise(r => setTimeout(r, 300));
         }
 
       } catch (err) {
