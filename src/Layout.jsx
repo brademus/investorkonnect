@@ -119,6 +119,13 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell ik-silk-bg" style={{ minHeight: '100vh' }}>
+      {/* Silk background overlay layers */}
+      <div className="ik-silk-lines" />
+      <div className="ik-silk-lines2" />
+      <div className="ik-silk-shadows" />
+      <div className="ik-silk-gleam" />
+      <div className="ik-silk-grain" />
+      <div className="ik-silk-vignette" />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -129,9 +136,11 @@ function LayoutContent({ children }) {
           --background: 0 0% 3% !important;
         }
         html, body, #root {
-          background-color: #070709 !important;
-          background: #070709 !important;
+          background-color: #0c0c0e !important;
           font-family: var(--font-sans);
+        }
+        body {
+          background: transparent !important;
         }
         h1, h2, h3, h4, h5, h6, .font-serif {
           font-family: var(--font-serif) !important;

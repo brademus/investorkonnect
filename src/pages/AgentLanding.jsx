@@ -114,7 +114,7 @@ export default function AgentLanding() {
             Why agents use Investor Konnect
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <div className="bg-[#0D0D0D]/85 border border-[#1F1F1F] rounded-2xl p-6 backdrop-blur-sm">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Users size={24} color="#E3C567" />
               </div>
@@ -123,7 +123,7 @@ export default function AgentLanding() {
                 Work with investors who already have a deal in motion and want an agent to execute.
               </p>
             </div>
-            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <div className="bg-[#0D0D0D]/85 border border-[#1F1F1F] rounded-2xl p-6 backdrop-blur-sm">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Briefcase size={24} color="#E3C567" />
               </div>
@@ -132,7 +132,7 @@ export default function AgentLanding() {
                 Everything tied to the deal—contracts, signatures, updates, walkthrough/inspection scheduling—stays organized.
               </p>
             </div>
-            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <div className="bg-[#0D0D0D]/85 border border-[#1F1F1F] rounded-2xl p-6 backdrop-blur-sm">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Award size={24} color="#E3C567" />
               </div>
