@@ -31,7 +31,13 @@ export default function Room() {
   const [drawer, setDrawer] = useState(false);
   const [search, setSearch] = useState("");
   // activeView: 'board' | 'messages' | 'pending_agents'
-  const [activeView, setActiveView] = useState(null);
+  // Default to 'board' so page is never blank on initial render
+  const [activeView, setActiveView] = useState(() => {
+    // Check URL for a view hint (e.g. ?view=messages)
+    const urlView = new URLSearchParams(window.location.search).get('view');
+    if (urlView === 'messages' || urlView === 'board') return urlView;
+    return 'board';
+  });
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
