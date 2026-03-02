@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Star, CheckCircle, Clock, Shield, FileText } from 'lucide-react';
+import { User, Star, CheckCircle, Clock, Shield, FileText, ArrowRightLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 import AgentRatingStars from '@/components/AgentRatingStars';
