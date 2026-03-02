@@ -129,8 +129,7 @@ function LayoutContent({ children }) {
         }
         body {
           font-family: var(--font-sans);
-          background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%) !important;
-          background-attachment: fixed !important;
+          background-color: #050505 !important;
         }
         h1, h2, h3, h4, h5, h6, .font-serif {
           font-family: var(--font-serif) !important;
