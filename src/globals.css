@@ -540,20 +540,25 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
     margin: 0 auto 16px;
     color: hsl(0 0% 70%);
   }
+}
 
-  /* ====== Dark silk/satin wave background ====== */
-  .ik-deal-bg {
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(227,197,103,0.04) 0%, transparent 60%),
-      linear-gradient(180deg, rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(180deg, rgba(255,255,255,0.012) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px),
-      #0a0a0a !important;
-    background-size: 100% 100%, 60px 60px, 60px 60px, 20px 20px, 20px 20px, 100% 100% !important;
-    background-attachment: fixed !important;
-  }
-  }
+/* ====== Dark grid background with gold glow ====== */
+.ik-deal-bg {
+  background-color: #0a0a0a !important;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(227,197,103,0.07) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px) !important;
+  background-size:
+    100% 100%,
+    80px 80px,
+    80px 80px,
+    20px 20px,
+    20px 20px !important;
+  background-attachment: fixed !important;
+}
 
   /* Utility shorthands */
   @layer utilities {
