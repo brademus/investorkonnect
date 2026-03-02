@@ -8,13 +8,13 @@ import { ChevronDown, ChevronUp, Loader2, ExternalLink, Trash2 } from "lucide-re
 import moment from "moment";
 
 const STATUS_COLORS = {
-  draft: "bg-slate-100 text-slate-600",
-  sent: "bg-blue-100 text-blue-700",
-  investor_signed: "bg-amber-100 text-amber-700",
-  agent_signed: "bg-amber-100 text-amber-700",
-  fully_signed: "bg-emerald-100 text-emerald-700",
-  voided: "bg-red-100 text-red-700",
-  superseded: "bg-slate-100 text-slate-500",
+  draft: "bg-[rgba(255,255,255,0.04)] text-[#808080] border border-[rgba(255,255,255,0.06)]",
+  sent: "bg-[#60A5FA]/15 text-[#60A5FA] border border-[#60A5FA]/30",
+  investor_signed: "bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30",
+  agent_signed: "bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30",
+  fully_signed: "bg-[#34D399]/15 text-[#34D399] border border-[#34D399]/30",
+  voided: "bg-red-500/15 text-red-400 border border-red-500/30",
+  superseded: "bg-[rgba(255,255,255,0.04)] text-[#808080]/60 border border-[rgba(255,255,255,0.04)]",
 };
 
 export default function AdminAgreementsTab({ agreements, profiles, onReload }) {
@@ -65,8 +65,8 @@ export default function AdminAgreementsTab({ agreements, profiles, onReload }) {
     <div>
       <div className="flex gap-3 mb-4">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
+          <SelectTrigger className="w-[180px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] rounded-lg"><SelectValue /></SelectTrigger>
+          <SelectContent className="bg-[#0D0D0D] border-[#1F1F1F]">
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="sent">Sent</SelectItem>
@@ -77,40 +77,40 @@ export default function AdminAgreementsTab({ agreements, profiles, onReload }) {
         </Select>
       </div>
 
-      <p className="text-xs text-slate-500 mb-3">{filtered.length} agreements</p>
+      <p className="text-xs text-[#808080] mb-3">{filtered.length} agreements</p>
 
       <div className="space-y-2">
-        {filtered.length === 0 && <p className="text-sm text-slate-400 text-center py-8">No agreements found</p>}
+        {filtered.length === 0 && <p className="text-sm text-[#808080] text-center py-8">No agreements found</p>}
         {filtered.map(ag => (
-          <div key={ag.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div key={ag.id} className="rounded-xl overflow-hidden" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div
-              className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50"
+              className="flex items-center justify-between px-4 py-3.5 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-colors"
               onClick={() => setExpanded(expanded === ag.id ? null : ag.id)}
             >
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-slate-900">
+                <div className="text-sm font-medium text-[#FAFAFA]">
                   {getName(ag.investor_profile_id)} ↔ {getName(ag.agent_profile_id)}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-[#808080]">
                   {ag.governing_state} • {ag.transaction_type || "—"} • {moment(ag.created_date).fromNow()}
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className={`text-[10px] ${STATUS_COLORS[ag.status] || "bg-slate-100"}`}>
+                <Badge className={`text-[10px] rounded-full ${STATUS_COLORS[ag.status] || "bg-[rgba(255,255,255,0.04)] text-[#808080]"}`}>
                   {(ag.status || "").replace(/_/g, " ")}
                 </Badge>
-                {expanded === ag.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {expanded === ag.id ? <ChevronUp className="w-4 h-4 text-[#808080]" /> : <ChevronDown className="w-4 h-4 text-[#808080]" />}
               </div>
             </div>
             {expanded === ag.id && (
-              <div className="border-t border-slate-100 px-4 py-4 bg-slate-50">
+              <div className="px-4 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs mb-4">
-                  <div><span className="text-slate-500">Investor Signed:</span> {ag.investor_signed_at ? moment(ag.investor_signed_at).format("MMM D, h:mm A") : "No"}</div>
-                  <div><span className="text-slate-500">Agent Signed:</span> {ag.agent_signed_at ? moment(ag.agent_signed_at).format("MMM D, h:mm A") : "No"}</div>
-                  <div><span className="text-slate-500">DocuSign:</span> {ag.docusign_envelope_id ? "Yes" : "No"}</div>
+                  <div><span className="text-[#808080]">Investor Signed:</span> <span className="text-[#FAFAFA]">{ag.investor_signed_at ? moment(ag.investor_signed_at).format("MMM D, h:mm A") : "No"}</span></div>
+                  <div><span className="text-[#808080]">Agent Signed:</span> <span className="text-[#FAFAFA]">{ag.agent_signed_at ? moment(ag.agent_signed_at).format("MMM D, h:mm A") : "No"}</span></div>
+                  <div><span className="text-[#808080]">DocuSign:</span> <span className="text-[#FAFAFA]">{ag.docusign_envelope_id ? "Yes" : "No"}</span></div>
                   {ag.signed_pdf_url && (
                     <div>
-                      <a href={ag.signed_pdf_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                      <a href={ag.signed_pdf_url} target="_blank" rel="noreferrer" className="text-[#60A5FA] hover:text-[#93C5FD] flex items-center gap-1">
                         <ExternalLink className="w-3 h-3" /> View Signed PDF
                       </a>
                     </div>
@@ -118,8 +118,8 @@ export default function AdminAgreementsTab({ agreements, profiles, onReload }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Select onValueChange={val => changeStatus(ag, val)} defaultValue={ag.status}>
-                    <SelectTrigger className="w-[170px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectTrigger className="w-[170px] h-8 text-xs bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-[#0D0D0D] border-[#1F1F1F]">
                       <SelectItem value="draft">Draft</SelectItem>
                       <SelectItem value="sent">Sent</SelectItem>
                       <SelectItem value="investor_signed">Investor Signed</SelectItem>
@@ -129,15 +129,15 @@ export default function AdminAgreementsTab({ agreements, profiles, onReload }) {
                       <SelectItem value="superseded">Superseded</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button size="sm" variant="outline" className="text-red-600 border-red-200" onClick={() => voidAgreement(ag)}>
+                  <Button size="sm" className="bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/15 rounded-lg" onClick={() => voidAgreement(ag)}>
                     Void
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => deleteAgreement(ag)} disabled={updating[`${ag.id}_delete`]}>
+                  <Button size="sm" className="bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 rounded-lg" onClick={() => deleteAgreement(ag)} disabled={updating[`${ag.id}_delete`]}>
                     {updating[`${ag.id}_delete`] ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Trash2 className="w-3 h-3 mr-1" />}
                     Delete
                   </Button>
                 </div>
-                <div className="mt-2 text-[10px] text-slate-400">Agreement ID: {ag.id} • Deal: {ag.deal_id}</div>
+                <div className="mt-2 text-[10px] text-[#808080]/50">Agreement ID: {ag.id} • Deal: {ag.deal_id}</div>
               </div>
             )}
           </div>

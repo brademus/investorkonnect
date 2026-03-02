@@ -100,23 +100,25 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
     }
   };
 
+  const cardStyle = { background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' };
+
   return (
     <div className="space-y-6">
       {/* Grant Admin */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="font-semibold text-slate-900 mb-1 flex items-center gap-2">
-          <Shield className="w-4 h-4 text-amber-600" /> Grant Admin Access
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <h3 className="font-semibold text-[#FAFAFA] mb-1 flex items-center gap-2">
+          <Shield className="w-4 h-4 text-[#E3C567]" /> Grant Admin Access
         </h3>
-        <p className="text-xs text-slate-500 mb-3">Give a user admin privileges without affecting their data.</p>
+        <p className="text-xs text-[#808080] mb-3">Give a user admin privileges without affecting their data.</p>
         <div className="flex gap-2">
           <Input
             type="email"
             placeholder="user@example.com"
             value={adminEmail}
             onChange={e => setAdminEmail(e.target.value)}
-            className="flex-1"
+            className="flex-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] rounded-lg"
           />
-          <Button onClick={grantAdmin} disabled={processing.admin}>
+          <Button onClick={grantAdmin} disabled={processing.admin} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-lg">
             {processing.admin ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
             Make Admin
           </Button>
@@ -124,27 +126,27 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
       </div>
 
       {/* DocuSign */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="font-semibold text-slate-900 mb-1 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-blue-600" /> DocuSign Connection
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <h3 className="font-semibold text-[#FAFAFA] mb-1 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-[#60A5FA]" /> DocuSign Connection
         </h3>
         {docusignConnection ? (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-700">Connected</span>
+              <CheckCircle className="w-4 h-4 text-[#34D399]" />
+              <span className="text-sm font-medium text-[#34D399]">Connected</span>
             </div>
-            <div className="text-xs text-slate-500 mb-3">
+            <div className="text-xs text-[#808080] mb-3">
               Account: {docusignConnection.account_id} • Env: {docusignConnection.env}
             </div>
-            <Button size="sm" variant="outline" className="text-red-600 border-red-200" onClick={disconnectDocusign}>
+            <Button size="sm" className="bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/15 rounded-lg" onClick={disconnectDocusign}>
               Disconnect
             </Button>
           </div>
         ) : (
           <div>
-            <p className="text-xs text-slate-500 mb-3">Connect to enable electronic signatures.</p>
-            <Button onClick={connectDocusign} disabled={connectingDocusign}>
+            <p className="text-xs text-[#808080] mb-3">Connect to enable electronic signatures.</p>
+            <Button onClick={connectDocusign} disabled={connectingDocusign} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-lg">
               {connectingDocusign ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
               Connect DocuSign
             </Button>
@@ -153,52 +155,42 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
       </div>
 
       {/* System Tools */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-          <RefreshCw className="w-4 h-4 text-slate-600" /> System Tools
+      <div className="rounded-xl p-5" style={cardStyle}>
+        <h3 className="font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2">
+          <RefreshCw className="w-4 h-4 text-[#808080]" /> System Tools
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Button variant="outline" onClick={runHealthCheck} disabled={processing.health} className="justify-start">
-            {processing.health ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />}
-            Run Health Check
-          </Button>
-          <Button variant="outline" onClick={runDedup} disabled={processing.dedup} className="justify-start">
-            {processing.dedup ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2 text-red-500" />}
-            Remove Duplicate Profiles
-          </Button>
-          <Button variant="outline" onClick={() => refreshVectors("agent")} disabled={processing.vectors_agent} className="justify-start">
-            {processing.vectors_agent ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2 text-purple-500" />}
-            Rebuild Agent Vectors
-          </Button>
-          <Button variant="outline" onClick={() => refreshVectors("investor")} disabled={processing.vectors_investor} className="justify-start">
-            {processing.vectors_investor ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2 text-purple-500" />}
-            Rebuild Investor Vectors
-          </Button>
-          <Button variant="outline" onClick={async () => {
-            setProcessing(prev => ({ ...prev, backfill: true }));
-            try {
-              const res = await base44.functions.invoke("backfillAgentCoordinates", {});
-              toast.success(`Backfill: ${res.data?.updated || 0} updated, ${res.data?.skipped || 0} skipped`);
-            } catch (err) { toast.error(err.message); }
-            finally { setProcessing(prev => ({ ...prev, backfill: false })); }
-          }} disabled={processing.backfill} className="justify-start">
-            {processing.backfill ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2 text-blue-500" />}
-            Backfill Agent Coordinates
-          </Button>
-          <Button variant="outline" onClick={() => { onReload(); toast.success("Data refreshed"); }} className="justify-start">
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh All Data
-          </Button>
+          {[
+            { label: "Run Health Check", icon: <CheckCircle className="w-4 h-4 mr-2 text-[#34D399]" />, key: "health", action: runHealthCheck },
+            { label: "Remove Duplicate Profiles", icon: <Trash2 className="w-4 h-4 mr-2 text-red-400" />, key: "dedup", action: runDedup },
+            { label: "Rebuild Agent Vectors", icon: <RefreshCw className="w-4 h-4 mr-2 text-[#A78BFA]" />, key: "vectors_agent", action: () => refreshVectors("agent") },
+            { label: "Rebuild Investor Vectors", icon: <RefreshCw className="w-4 h-4 mr-2 text-[#A78BFA]" />, key: "vectors_investor", action: () => refreshVectors("investor") },
+            { label: "Backfill Agent Coordinates", icon: <RefreshCw className="w-4 h-4 mr-2 text-[#60A5FA]" />, key: "backfill", action: async () => {
+              setProcessing(prev => ({ ...prev, backfill: true }));
+              try {
+                const res = await base44.functions.invoke("backfillAgentCoordinates", {});
+                toast.success(`Backfill: ${res.data?.updated || 0} updated, ${res.data?.skipped || 0} skipped`);
+              } catch (err) { toast.error(err.message); }
+              finally { setProcessing(prev => ({ ...prev, backfill: false })); }
+            }},
+            { label: "Refresh All Data", icon: <RefreshCw className="w-4 h-4 mr-2" />, key: "refresh", action: () => { onReload(); toast.success("Data refreshed"); } },
+          ].map(tool => (
+            <Button key={tool.key} className="justify-start bg-transparent border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#E3C567] hover:bg-transparent rounded-lg" onClick={tool.action} disabled={processing[tool.key]}>
+              {processing[tool.key] ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : tool.icon}
+              {tool.label}
+            </Button>
+          ))}
         </div>
       </div>
 
       {/* Danger Zone */}
-      <div className="bg-red-50 rounded-xl border border-red-200 p-5">
-        <h3 className="font-semibold text-red-900 mb-1 flex items-center gap-2">
+      <div className="rounded-xl p-5" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
+        <h3 className="font-semibold text-red-400 mb-1 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" /> Danger Zone
         </h3>
-        <p className="text-xs text-red-700 mb-3">These actions are destructive and cannot be undone.</p>
+        <p className="text-xs text-red-400/70 mb-3">These actions are destructive and cannot be undone.</p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="destructive" size="sm" onClick={async () => {
+          <Button size="sm" className="bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 rounded-lg" onClick={async () => {
             const input = prompt("⚠️ This will DELETE all non-admin profiles and related data. Type RESET to confirm:");
             if (input !== "RESET") return;
             setProcessing(prev => ({ ...prev, reset: true }));

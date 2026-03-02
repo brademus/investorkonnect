@@ -1,15 +1,15 @@
 import React from "react";
-import { Users, FileText, Shield, CheckCircle, AlertTriangle, PenTool, CreditCard } from "lucide-react";
+import { Users, FileText, Shield, CheckCircle, PenTool, CreditCard } from "lucide-react";
 
-const StatCard = ({ icon: Icon, label, value, color = "text-[#D3A029]" }) => (
-  <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+const StatCard = ({ icon: Icon, label, value, color = "text-[#E3C567]" }) => (
+  <div className="rounded-[14px] p-4" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
     <div className="flex items-center gap-3">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50`}>
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: 'rgba(227,197,103,0.10)' }}>
         <Icon className={`h-5 w-5 ${color}`} />
       </div>
       <div>
-        <p className="text-xs text-slate-500">{label}</p>
-        <p className="text-xl font-bold text-slate-900">{value}</p>
+        <p className="text-xs text-[#808080]">{label}</p>
+        <p className="text-xl font-bold text-[#FAFAFA]">{value}</p>
       </div>
     </div>
   </div>
@@ -28,10 +28,10 @@ export default function AdminStatsBar({ profiles, deals, rooms, agreements }) {
       <StatCard icon={Users} label="Total Users" value={profiles.length} />
       <StatCard icon={Shield} label="Investors" value={investors} />
       <StatCard icon={Users} label="Agents" value={agents} />
-      <StatCard icon={CheckCircle} label="Onboarded" value={onboarded} color="text-emerald-600" />
-      <StatCard icon={PenTool} label="NDA Signed" value={ndaSigned} color="text-emerald-600" />
-      <StatCard icon={FileText} label="Active Deals" value={activeDeals} color="text-blue-600" />
-      <StatCard icon={CreditCard} label="Agreements" value={signedAgreements} color="text-purple-600" />
+      <StatCard icon={CheckCircle} label="Onboarded" value={onboarded} color="text-[#34D399]" />
+      <StatCard icon={PenTool} label="NDA Signed" value={ndaSigned} color="text-[#34D399]" />
+      <StatCard icon={FileText} label="Active Deals" value={activeDeals} color="text-[#60A5FA]" />
+      <StatCard icon={CreditCard} label="Agreements" value={signedAgreements} color="text-[#A78BFA]" />
     </div>
   );
 }

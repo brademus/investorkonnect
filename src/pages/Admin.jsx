@@ -89,31 +89,31 @@ function AdminContent() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-sm w-full bg-white rounded-2xl border border-slate-200 shadow-lg p-8 text-center">
-          <Shield className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
-          <p className="text-sm text-slate-500 mb-4">Admin privileges required.</p>
-          <p className="text-xs text-slate-400">{currentUser?.email || "Not signed in"} — Role: {currentUser?.role || "none"}</p>
+        <div className="max-w-sm w-full rounded-[16px] p-8 text-center" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+          <Shield className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#FAFAFA] mb-2">Access Denied</h2>
+          <p className="text-sm text-[#808080] mb-4">Admin privileges required.</p>
+          <p className="text-xs text-[#808080]/60">{currentUser?.email || "Not signed in"} — Role: {currentUser?.role || "none"}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-6">
+    <div className="min-h-screen bg-transparent py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => window.location.href = createPageUrl("Pipeline")}>
+            <Button variant="ghost" size="sm" className="text-[#808080] hover:text-[#E3C567] hover:bg-transparent" onClick={() => window.location.href = createPageUrl("Pipeline")}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Pipeline
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-[#D3A029]" />
+              <h1 className="text-2xl font-bold text-[#E3C567] flex items-center gap-2">
+                <Shield className="w-6 h-6 text-[#E3C567]" />
                 Admin Panel
               </h1>
-              <p className="text-xs text-slate-500">{profiles.length} users • {deals.length} deals • {agreements.length} agreements</p>
+              <p className="text-xs text-[#808080]">{profiles.length} users • {deals.length} deals • {agreements.length} agreements</p>
             </div>
           </div>
         </div>
@@ -123,17 +123,17 @@ function AdminContent() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="mt-4">
-          <TabsList className="bg-white border border-slate-200 mb-4">
-            <TabsTrigger value="users" className="gap-1.5">
+          <TabsList className="bg-[#111114] border border-[rgba(255,255,255,0.06)] mb-4 rounded-xl p-1">
+            <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <Users className="w-4 h-4" /> Users
             </TabsTrigger>
-            <TabsTrigger value="deals" className="gap-1.5">
+            <TabsTrigger value="deals" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <FileText className="w-4 h-4" /> Deals
             </TabsTrigger>
-            <TabsTrigger value="agreements" className="gap-1.5">
+            <TabsTrigger value="agreements" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <PenTool className="w-4 h-4" /> Agreements
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-1.5">
+            <TabsTrigger value="settings" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <Settings className="w-4 h-4" /> Settings & Tools
             </TabsTrigger>
           </TabsList>
