@@ -68,6 +68,30 @@ export default function HelpPanel({ open, onOpenChange, userRole }) {
                     </div>
                   )}
 
+                  {/* Deal Board Walkthrough - Investors only */}
+                  {userRole !== 'agent' && (
+                    <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
+                      <div className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Play className="w-5 h-5 text-[#E3C567]" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-[#FAFAFA]">Deal Board Walkthrough</p>
+                        </div>
+                      </div>
+                      <div className="px-4 pb-4">
+                        <div className="rounded-xl overflow-hidden border border-[#1F1F1F]">
+                          <video
+                            src="https://dl.dropboxusercontent.com/scl/fi/w3mbi4q9iixyfc0jxgxt1/Investor-Deal-board-walkthrough.mov?rlkey=atiiai531et56xliiwikjieox&st=syhsaka7"
+                            className="w-full aspect-video bg-black"
+                            controls
+                            preload="metadata"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Signing Your First Agreement - Agents only */}
                   {userRole === 'agent' && (
                     <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl overflow-hidden">
