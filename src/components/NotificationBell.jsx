@@ -92,9 +92,26 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Fetch on mount (background)
+  // Fetch on mount + auto-refresh every 60s
   useEffect(() => {
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Real-time: refetch when deals/rooms/messages/invites change
+  useEffect(() => {
+    const unsubs = [];
+    const refresh = () => fetchNotifications();
+    unsubs.push(base44.entities.Deal.subscribe(refresh));
+    unsubs.push(base44.entities.Room.subscribe(refresh));
+    unsubs.push(base44.entities.Message.subscribe(refresh));
+    unsubs.push(base44.entities.DealInvite.subscribe(refresh));
+    unsubs.push(base44.entities.CounterOffer.subscribe(refresh));
+    unsubs.push(base44.entities.LegalAgreement.subscribe(refresh));
+    unsubs.push(base44.entities.DealAppointments.subscribe(refresh));
+    unsubs.push(base44.entities.Activity.subscribe(refresh));
+    return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
   }, []);
 
   // Close on click outside
