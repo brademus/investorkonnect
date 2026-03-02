@@ -319,6 +319,7 @@ export default function Room() {
   }, [enrichedRoomForSync?.counterparty_headshot, selectedInvite, isSigned]);
 
   // When investor selects a different pending agent, update header photo/name
+  // Use agent ID as dependency (not invite ID) so headshot always matches the selected agent
   useEffect(() => {
     if (!selectedInvite?.agent || !isInvestor || isSigned) return;
     setCurrentRoom(prev => {
@@ -329,7 +330,7 @@ export default function Room() {
         counterparty_name: selectedInvite.agent.full_name || 'Agent',
       };
     });
-  }, [selectedInvite?.id]);
+  }, [selectedInvite?.agent?.id, selectedInvite?.agent?.headshotUrl, isSigned]);
 
   // Real-time room updates
   useEffect(() => {
