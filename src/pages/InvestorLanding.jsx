@@ -8,6 +8,7 @@ import {
   Shield, MapPin, FileText, TrendingUp, Star, 
   CheckCircle, ArrowLeft
 } from "lucide-react";
+import VideoWithPoster from "@/components/VideoWithPoster";
 
 export default function InvestorLanding() {
   const navigate = useNavigate();
@@ -103,13 +104,7 @@ export default function InvestorLanding() {
           {/* Video Section */}
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
-              <video 
-                src="https://dl.dropboxusercontent.com/scl/fi/5nkej365moh8mpxvzegoa/0224-1.mov?rlkey=gtjon9b8isp2mrwr7rlhjq8h1&st=5ybwr0a4" 
-                className="w-full aspect-video"
-                controls
-                playsInline
-                preload="metadata"
-              />
+              <VideoWithPoster src="https://dl.dropboxusercontent.com/scl/fi/5nkej365moh8mpxvzegoa/0224-1.mov?rlkey=gtjon9b8isp2mrwr7rlhjq8h1&st=5ybwr0a4" />
             </div>
           </div>
         </div>

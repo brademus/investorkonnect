@@ -8,6 +8,7 @@ import {
   Users, DollarSign, TrendingUp, Shield, Award,
   CheckCircle, ArrowLeft, Briefcase
 } from "lucide-react";
+import VideoWithPoster from "@/components/VideoWithPoster";
 
 export default function AgentLanding() {
   const navigate = useNavigate();
@@ -107,16 +108,7 @@ export default function AgentLanding() {
 
           {/* Video */}
           <div className="mt-12 max-w-3xl mx-auto rounded-2xl overflow-hidden border border-[#1F1F1F] shadow-2xl">
-            <video
-              controls
-              playsInline
-              preload="metadata"
-              className="w-full"
-              style={{ background: '#000' }}
-            >
-              <source src="https://dl.dropboxusercontent.com/scl/fi/ehalmyxxvfeq3pkx2j251/0224-copy-2.mov?rlkey=foreoij2k9bjhe5u1vimb38er&st=1lywiflf" type="video/quicktime" />
-              Your browser does not support the video tag.
-            </video>
+            <VideoWithPoster src="https://dl.dropboxusercontent.com/scl/fi/ehalmyxxvfeq3pkx2j251/0224-copy-2.mov?rlkey=foreoij2k9bjhe5u1vimb38er&st=1lywiflf" />
           </div>
         </div>
       </section>
