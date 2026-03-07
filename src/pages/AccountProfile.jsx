@@ -602,7 +602,7 @@ function AccountProfileContent() {
                     )}
                     {!countyChecking && formData.main_county.trim() && countyValid === false && (
                       <p className="text-xs text-red-400 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> County not found in {profile?.agent?.license_state || profile?.target_state || 'your state'}. Try just the county name without "County".
+                        <AlertCircle className="w-3 h-3" /> County not found in {formData.licensed_states[0] || 'your state'}. Try just the county name without "County".
                       </p>
                     )}
                     {!formData.main_county.trim() && (
