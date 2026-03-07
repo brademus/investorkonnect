@@ -270,6 +270,7 @@ function PipelineContent() {
     label: s.id === 'completed' ? 'Completed/Canceled' : s.label
   })), []);
 
+  const roomsLoaded = !!(rooms && rooms.length >= 0 && !loadingRooms);
   const dealsByStage = useMemo(() => {
     const m = new Map();
     pipelineStages.forEach(s => m.set(s.id, []));
