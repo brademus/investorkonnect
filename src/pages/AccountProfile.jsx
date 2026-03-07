@@ -153,24 +153,37 @@ function AccountProfileContent() {
       
       // Add agent-specific fields if user is an agent
       if (formData.role === 'agent') {
+        const licensedStates = formData.licensed_states;
+        const firstState = licensedStates[0] || '';
+        const firstLicense = formData.state_licenses[firstState] || '';
+
         const agentUpdate = {
           ...(profile.agent || {}),
           brokerage: formData.brokerage.trim(),
-          license_number: formData.license_number.trim(),
+          license_number: firstLicense,
+          license_state: firstState,
+          state_licenses: formData.state_licenses,
+          licensed_states: licensedStates,
+          markets: licensedStates,
           main_county: formData.main_county.trim()
         };
+
+        // Also update top-level markets for matching
+        updateData.markets = licensedStates;
+        updateData.license_number = firstLicense;
+        updateData.license_state = firstState;
+        updateData.target_state = firstState;
 
         // Geocode main county for matching if it changed
         const oldCounty = (profile.agent?.main_county || '').trim().toLowerCase();
         const newCounty = formData.main_county.trim().toLowerCase();
         if (newCounty && newCounty !== oldCounty) {
-          const primaryState = profile.agent?.license_state || profile.license_state || profile.target_state || '';
-          if (primaryState) {
-            const coords = await getCountyCentroid(formData.main_county.trim(), primaryState);
+          if (firstState) {
+            const coords = await getCountyCentroid(formData.main_county.trim(), firstState);
             if (coords) {
               agentUpdate.lat = coords.lat;
               agentUpdate.lng = coords.lng;
-              console.log('[AccountProfile] Geocoded county:', formData.main_county, primaryState, coords);
+              console.log('[AccountProfile] Geocoded county:', formData.main_county, firstState, coords);
             }
           }
         }
