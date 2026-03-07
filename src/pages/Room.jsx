@@ -19,6 +19,9 @@ import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 import { useRoomMessages } from "@/components/room/useRoomMessages";
 
+// Module-level cache for message-seen counts — survives component unmount/remount
+const _msgSeenCache = {};
+
 export default function Room() {
   const navigate = useNavigate();
   const location = useLocation();
