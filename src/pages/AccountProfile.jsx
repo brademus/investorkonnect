@@ -407,47 +407,6 @@ function AccountProfileContent() {
               <p className="text-xs text-[#808080] mt-1">Account type cannot be changed</p>
             </div>
 
-            {/* Company */}
-            <div>
-              <Label htmlFor="company" className="text-[#FAFAFA]">Company</Label>
-              <Input
-                id="company"
-                value={formData.company}
-                onChange={(e) => setFormData({...formData, company: e.target.value})}
-                placeholder="Your Company"
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-            </div>
-
-            {/* Company Address */}
-            <div>
-              <Label htmlFor="company_address" className="text-[#FAFAFA]">Company Address</Label>
-              <Input
-                id="company_address"
-                value={formData.company_address}
-                onChange={(e) => setFormData({...formData, company_address: e.target.value})}
-                placeholder="123 Main St, Suite 100, City, State ZIP"
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-              <p className="text-xs text-[#808080] mt-1">Visible to your counterparty after agreement is signed</p>
-            </div>
-
-            {/* Markets */}
-            <div>
-              <Label htmlFor="markets" className="text-[#FAFAFA]">Target Markets</Label>
-              <Input
-                id="markets"
-                value={formData.markets}
-                onChange={(e) => setFormData({...formData, markets: e.target.value})}
-                placeholder="Miami, Phoenix, Dallas"
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-              <p className="text-xs text-[#808080] mt-1">Cities or metro areas (comma-separated)</p>
-            </div>
-
             {/* Phone */}
             <div>
               <Label htmlFor="phone" className="text-[#FAFAFA]">Phone Number</Label>
@@ -464,33 +423,6 @@ function AccountProfileContent() {
                   setFormData({...formData, phone: formatted});
                 }}
                 placeholder="(555) 123-4567"
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-            </div>
-
-            {/* Accreditation */}
-            <div>
-              <Label htmlFor="accreditation" className="text-[#FAFAFA]">Accreditation</Label>
-              <Input
-                id="accreditation"
-                value={formData.accreditation}
-                onChange={(e) => setFormData({...formData, accreditation: e.target.value})}
-                placeholder="e.g., Accredited Investor, Licensed Agent"
-                disabled={saving}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-            </div>
-
-            {/* Goals */}
-            <div>
-              <Label htmlFor="goals" className="text-[#FAFAFA]">Goals</Label>
-              <Textarea
-                id="goals"
-                value={formData.goals}
-                onChange={(e) => setFormData({...formData, goals: e.target.value})}
-                placeholder="What are you looking to accomplish on Investor Konnect?"
-                rows={4}
                 disabled={saving}
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
