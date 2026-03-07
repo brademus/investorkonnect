@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell } from "lucide-react";
+import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell, AlertCircle } from "lucide-react";
 import { getCountyCentroid } from "@/components/utils/agentScoring";
 import { Switch } from "@/components/ui/switch";
 import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
@@ -32,6 +32,8 @@ function AccountProfileContent() {
   const [uploadingCard, setUploadingCard] = useState(false);
   const [headshotUrl, setHeadshotUrl] = useState("");
   const [businessCardUrl, setBusinessCardUrl] = useState("");
+  const [countyValid, setCountyValid] = useState(null);
+  const [countyChecking, setCountyChecking] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     role: "",
