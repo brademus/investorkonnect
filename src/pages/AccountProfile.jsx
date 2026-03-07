@@ -188,6 +188,28 @@ function AccountProfileContent() {
         notification_preferences: notifPrefs
       };
       
+      // Add investor-specific fields
+      if (formData.role === 'investor') {
+        updateData.company = formData.investor_company.trim();
+        updateData.goals = formData.investor_bio.trim();
+        updateData.bio = formData.investor_bio.trim();
+        updateData.target_state = formData.investor_nationwide ? 'Nationwide' : (formData.investor_target_states[0] || profile.target_state || '');
+        updateData.markets = formData.investor_nationwide ? ['Nationwide'] : formData.investor_target_states.filter(Boolean);
+        updateData.investor = {
+          ...(profile.investor || {}),
+          company_name: formData.investor_company.trim(),
+          bio: formData.investor_bio.trim(),
+        };
+        updateData.metadata = {
+          ...(profile.metadata || {}),
+          basicProfile: {
+            ...(profile.metadata?.basicProfile || {}),
+            investment_experience: formData.investor_experience,
+            deal_types: formData.investor_deal_types,
+          }
+        };
+      }
+
       // Add agent-specific fields if user is an agent
       if (formData.role === 'agent') {
         const licensedStates = formData.licensed_states;
