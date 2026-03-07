@@ -6,7 +6,6 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell, AlertCircle } from "lucide-react";
 import { getCountyCentroid } from "@/components/utils/agentScoring";
