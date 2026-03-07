@@ -51,21 +51,19 @@ function AccountProfileContent() {
   const [formData, setFormData] = useState({
     full_name: "",
     role: "",
-    company: "",
-    company_address: "",
-    markets: "",
     phone: "",
-    accreditation: "",
-    goals: "",
     brokerage: "",
-    license_number: "",
     main_county: "",
     next_steps_template: "",
     next_steps_template_type: "default",
     custom_next_steps_template: "",
-    // Agent: state licenses
     state_licenses: {},
     licensed_states: [],
+    experience_years: "",
+    deals_closed: "",
+    investment_strategies: [],
+    specialties: [],
+    bio: "",
   });
   const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
 
