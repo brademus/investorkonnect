@@ -132,6 +132,18 @@ function AccountProfileContent() {
       return;
     }
 
+    if (formData.role === 'agent') {
+      if (formData.licensed_states.length === 0) {
+        toast.error("Please select at least one licensed state");
+        return;
+      }
+      const missingLicense = formData.licensed_states.find(st => !(formData.state_licenses[st] || '').trim());
+      if (missingLicense) {
+        toast.error(`Please enter a license number for ${missingLicense}`);
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
