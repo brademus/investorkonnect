@@ -129,14 +129,20 @@ export default function Room() {
     prevActiveView.current = activeView;
   }, [activeView, persistLastSeen]);
 
-  // Also persist on page unload if currently viewing messages
+  // Also persist on page unload or component unmount if currently viewing messages
+  const activeViewRef = useRef(activeView);
+  activeViewRef.current = activeView;
   useEffect(() => {
     const onUnload = () => {
-      if (activeView === 'messages') persistLastSeen();
+      if (activeViewRef.current === 'messages') persistLastSeen();
     };
     window.addEventListener('beforeunload', onUnload);
-    return () => window.removeEventListener('beforeunload', onUnload);
-  }, [activeView, persistLastSeen]);
+    return () => {
+      window.removeEventListener('beforeunload', onUnload);
+      // Persist on component unmount (e.g. navigating away from Room page)
+      if (activeViewRef.current === 'messages') persistLastSeen();
+    };
+  }, [persistLastSeen]);
 
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
