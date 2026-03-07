@@ -13,6 +13,18 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
+
+const DEAL_TYPE_OPTIONS = [
+  { label: 'Wholesale', value: 'Wholesale' },
+  { label: 'Novation', value: 'Novation' },
+  { label: 'Whole-tail', value: 'Whole-tail' },
+  { label: 'Fix & Flip', value: 'Fix & Flip' },
+  { label: 'Buy & Hold', value: 'Buy & Hold' },
+  { label: 'Sub-2', value: 'Sub-2' },
+];
+
+const PROPERTY_TYPE_OPTIONS = ['Single-Family', 'Multi-Family', 'Condo', 'Townhouse', 'Manufactured', 'Land'];
+
 import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
