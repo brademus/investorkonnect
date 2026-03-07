@@ -64,6 +64,13 @@ function AccountProfileContent() {
     investment_strategies: [],
     specialties: [],
     bio: "",
+    // Investor-specific fields
+    investor_company: "",
+    investor_bio: "",
+    investor_target_states: [],
+    investor_nationwide: false,
+    investor_deal_types: [],
+    investor_experience: "",
   });
   const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
 
@@ -104,6 +111,13 @@ function AccountProfileContent() {
       }
       const existingLicensedStates = agent.licensed_states || Object.keys(existingStateLicenses);
 
+      // Investor data
+      const inv = profile.investor || {};
+      const meta = profile.metadata || {};
+      const ob = { ...meta, ...(profile.onboarding || {}), ...(meta.basicProfile || {}) };
+      const existingMarkets = profile.markets || [];
+      const isNationwide = profile.target_state === 'Nationwide' || existingMarkets.includes('Nationwide');
+
       setFormData({
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
@@ -120,6 +134,13 @@ function AccountProfileContent() {
         investment_strategies: agent.investment_strategies || [],
         specialties: agent.specialties || [],
         bio: agent.bio || profile.bio || "",
+        // Investor fields
+        investor_company: inv.company_name || profile.company || "",
+        investor_bio: inv.bio || profile.bio || profile.goals || "",
+        investor_target_states: isNationwide ? [] : existingMarkets,
+        investor_nationwide: isNationwide,
+        investor_deal_types: ob.deal_types || [],
+        investor_experience: ob.investment_experience || "",
       });
       setLoading(false);
     }
