@@ -209,13 +209,25 @@ function PipelineContent() {
     });
   }, [dealsData, rooms, profile?.id, isAgent]);
 
+  const [navigating, setNavigating] = useState(false);
   const handleDealClick = async (deal) => {
     if (deal.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
-    } else {
+      return;
+    }
+    // Fallback: find room via DealInvite (faster for agents) or Room filter
+    setNavigating(true);
+    try {
+      if (isAgent && profile?.id) {
+        const invites = await base44.entities.DealInvite.filter({ deal_id: deal.deal_id, agent_profile_id: profile.id });
+        const invite = invites?.find(i => i.room_id && i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+        if (invite?.room_id) { navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}`); return; }
+      }
       const roomArr = await base44.entities.Room.filter({ deal_id: deal.deal_id });
       if (roomArr?.length) navigate(`${createPageUrl("Room")}?roomId=${roomArr[0].id}`);
       else toast.error('Room not ready yet. Please try again in a moment.');
+    } finally {
+      setNavigating(false);
     }
   };
 
