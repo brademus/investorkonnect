@@ -181,7 +181,12 @@ function AccountProfileContent() {
           state_licenses: formData.state_licenses,
           licensed_states: licensedStates,
           markets: licensedStates,
-          main_county: formData.main_county.trim()
+          main_county: formData.main_county.trim(),
+          experience_years: parseInt(formData.experience_years) || 0,
+          investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
+          investment_strategies: formData.investment_strategies,
+          specialties: formData.specialties,
+          bio: formData.bio,
         };
 
         // Also update top-level markets for matching
