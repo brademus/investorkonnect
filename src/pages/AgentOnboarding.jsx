@@ -176,7 +176,7 @@ export default function AgentOnboarding() {
         state_licenses: formData.state_licenses,
         license_state: firstState,
         licensed_states: licensedStates,
-        main_county: formData.main_county,
+        main_county: formData.main_county.trim(),
         markets: licensedStates,
         experience_years: parseInt(formData.experience_years) || 0,
         investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
@@ -186,6 +186,15 @@ export default function AgentOnboarding() {
         investor_friendly: true,
         brokerage: formData.brokerage
       };
+
+      // Geocode county BEFORE saving so lat/lng are included in the same write
+      if (formData.main_county.trim() && firstState) {
+        const coords = await getCountyCentroid(formData.main_county.trim(), firstState);
+        if (coords) {
+          agentData.lat = coords.lat;
+          agentData.lng = coords.lng;
+        }
+      }
 
       await base44.entities.Profile.update(profileToUpdate.id, {
         full_name: combinedName,
@@ -201,17 +210,6 @@ export default function AgentOnboarding() {
         headshotUrl: formData.headshotUrl || '',
         agent: agentData
       });
-
-      // Geocode county in background
-      if (formData.main_county && firstState) {
-        getCountyCentroid(formData.main_county, firstState).then(coords => {
-          if (coords) {
-            base44.entities.Profile.update(profileToUpdate.id, {
-              agent: { ...agentData, lat: coords.lat, lng: coords.lng }
-            }).catch(() => {});
-          }
-        });
-      }
 
       toast.success("Profile saved! Let's verify your identity.");
       try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
