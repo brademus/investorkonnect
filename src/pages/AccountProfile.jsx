@@ -94,14 +94,15 @@ function AccountProfileContent() {
         text: profile.notification_preferences?.text === true,
       });
       // Build state_licenses from profile
-      const existingStateLicenses = profile.agent?.state_licenses || {};
+      const agent = profile.agent || {};
+      const existingStateLicenses = agent.state_licenses || {};
       // Backfill from legacy fields if empty
       if (Object.keys(existingStateLicenses).length === 0) {
-        const primaryState = profile.agent?.license_state || profile.license_state || '';
-        const primaryLicense = profile.agent?.license_number || profile.license_number || '';
+        const primaryState = agent.license_state || profile.license_state || '';
+        const primaryLicense = agent.license_number || profile.license_number || '';
         if (primaryState && primaryLicense) existingStateLicenses[primaryState] = primaryLicense;
       }
-      const existingLicensedStates = profile.agent?.licensed_states || Object.keys(existingStateLicenses);
+      const existingLicensedStates = agent.licensed_states || Object.keys(existingStateLicenses);
 
       setFormData({
         full_name: profile.full_name || "",
