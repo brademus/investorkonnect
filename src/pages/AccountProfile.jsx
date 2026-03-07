@@ -551,6 +551,105 @@ function AccountProfileContent() {
                     )}
                   </div>
                 </div>
+
+                {/* Experience & Deals */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="experience_years" className="text-[#FAFAFA]">Years of Experience</Label>
+                    <Input
+                      id="experience_years"
+                      type="number"
+                      min="0"
+                      value={formData.experience_years}
+                      onChange={(e) => setFormData({...formData, experience_years: e.target.value})}
+                      placeholder="e.g., 5"
+                      disabled={saving}
+                      className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="deals_closed" className="text-[#FAFAFA]">Deals Closed (Last 12 Mo)</Label>
+                    <Input
+                      id="deals_closed"
+                      type="number"
+                      min="0"
+                      value={formData.deals_closed}
+                      onChange={(e) => setFormData({...formData, deals_closed: e.target.value})}
+                      placeholder="e.g., 12"
+                      disabled={saving}
+                      className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                    />
+                  </div>
+                </div>
+
+                {/* Deal Types */}
+                <div>
+                  <Label className="text-[#FAFAFA]">Type of Deals</Label>
+                  <p className="text-xs text-[#808080] mt-1 mb-3">Select all that apply</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {DEAL_TYPE_OPTIONS.map((deal) => (
+                      <div key={deal.value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`acct-deal-${deal.value}`}
+                          checked={formData.investment_strategies.includes(deal.value)}
+                          disabled={saving}
+                          onCheckedChange={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              investment_strategies: prev.investment_strategies.includes(deal.value)
+                                ? prev.investment_strategies.filter(i => i !== deal.value)
+                                : [...prev.investment_strategies, deal.value]
+                            }));
+                          }}
+                          className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]"
+                        />
+                        <Label htmlFor={`acct-deal-${deal.value}`} className="text-sm font-normal cursor-pointer text-[#FAFAFA]">{deal.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Property Types */}
+                <div>
+                  <Label className="text-[#FAFAFA]">Property Types</Label>
+                  <p className="text-xs text-[#808080] mt-1 mb-3">Select all that apply</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {PROPERTY_TYPE_OPTIONS.map((type) => (
+                      <div key={type} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`acct-prop-${type}`}
+                          checked={formData.specialties.includes(type)}
+                          disabled={saving}
+                          onCheckedChange={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              specialties: prev.specialties.includes(type)
+                                ? prev.specialties.filter(i => i !== type)
+                                : [...prev.specialties, type]
+                            }));
+                          }}
+                          className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]"
+                        />
+                        <Label htmlFor={`acct-prop-${type}`} className="text-sm font-normal cursor-pointer text-[#FAFAFA]">{type}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bio */}
+                <div>
+                  <Label htmlFor="bio" className="text-[#FAFAFA]">Professional Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    placeholder="Introduce yourself and highlight your experience working with investor clients..."
+                    rows={4}
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">This will appear on your public profile</p>
+                </div>
               </>
             )}
 
