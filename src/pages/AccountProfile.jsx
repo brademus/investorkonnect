@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell, AlertCircle } from "lucide-react";
 import { getCountyCentroid } from "@/components/utils/agentScoring";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
