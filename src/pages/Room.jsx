@@ -73,57 +73,53 @@ export default function Room() {
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
   // Snapshot of message count when user last viewed messages — messages arriving after are "unread"
-  const [msgCountWhenViewed, setMsgCountWhenViewed] = useState({});
+  // Initialize from module-level cache so the count survives unmount/remount
+  const [msgCountWhenViewed, setMsgCountWhenViewed] = useState(() => ({ ..._msgSeenCache }));
+
+  // Sync state changes back to module-level cache
+  const updateMsgCount = useCallback((roomIdKey, count) => {
+    _msgSeenCache[roomIdKey] = count;
+    setMsgCountWhenViewed(prev => {
+      if (prev[roomIdKey] === count) return prev;
+      return { ...prev, [roomIdKey]: count };
+    });
+  }, []);
 
   // When user is on messages view, snapshot the current message count so badge shows 0
   useEffect(() => {
     if (activeView !== 'messages' || !roomId || !roomMessages) return;
-    setMsgCountWhenViewed(prev => {
-      const currentCount = roomMessages.length;
-      if (prev[roomId] === currentCount) return prev;
-      return { ...prev, [roomId]: currentCount };
-    });
-  }, [activeView, roomId, roomMessages?.length]);
+    updateMsgCount(roomId, roomMessages.length);
+  }, [activeView, roomId, roomMessages?.length, updateMsgCount]);
 
-  // Initialize unread count from server timestamp on page load
+  // Initialize unread count from server timestamp on first load (only if not in module cache)
   const lastSeenInitialized = useRef({});
   useEffect(() => {
     if (!roomId || !roomMessages?.length || !profile?.id) return;
-    // Already initialized for this room
     if (lastSeenInitialized.current[roomId]) return;
-    // If currently on messages view, just mark all as seen
+    // If already in module cache, skip — we already know the count
+    if (_msgSeenCache[roomId] !== undefined) {
+      lastSeenInitialized.current[roomId] = true;
+      return;
+    }
     if (activeView === 'messages') {
       lastSeenInitialized.current[roomId] = true;
-      setMsgCountWhenViewed(prev => ({ ...prev, [roomId]: roomMessages.length }));
+      updateMsgCount(roomId, roomMessages.length);
       return;
     }
     lastSeenInitialized.current[roomId] = true;
 
-    // First check in-memory profile (updated synchronously by persistLastSeen on unmount)
-    const memoryTs = profile.last_seen_timestamps?.[roomId];
-    if (memoryTs) {
-      const memoryMs = new Date(memoryTs).getTime();
-      const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= memoryMs).length;
-      setMsgCountWhenViewed(prev => {
-        if (prev[roomId] !== undefined) return prev;
-        return { ...prev, [roomId]: countSeen };
-      });
-      return;
-    }
-
-    // Fallback: fetch from server (first visit or no in-memory data)
+    // Fetch from server to determine unread count
     base44.entities.Profile.filter({ id: profile.id }).then(profiles => {
       const freshProfile = profiles?.[0];
       const serverTs = freshProfile?.last_seen_timestamps?.[roomId];
-      if (!serverTs) return; // Never seen — leave undefined so all non-self msgs show as unread
+      if (!serverTs) return;
       const serverMs = new Date(serverTs).getTime();
       const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
-      setMsgCountWhenViewed(prev => {
-        if (prev[roomId] !== undefined) return prev;
-        return { ...prev, [roomId]: countSeen };
-      });
+      if (_msgSeenCache[roomId] === undefined) {
+        updateMsgCount(roomId, countSeen);
+      }
     }).catch(() => {});
-  }, [roomId, roomMessages, profile?.id, activeView]);
+  }, [roomId, roomMessages, profile?.id, activeView, updateMsgCount]);
 
   // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
@@ -131,7 +127,6 @@ export default function Room() {
     if (!roomId || !profile?.id) return;
     const newTs = new Date().toISOString();
     const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
-    // Update profile object in memory so refresh reads the correct value
     if (profile) profile.last_seen_timestamps = updated;
     base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated }).catch(() => {});
   }, [roomId, profile]);
@@ -153,7 +148,6 @@ export default function Room() {
     window.addEventListener('beforeunload', onUnload);
     return () => {
       window.removeEventListener('beforeunload', onUnload);
-      // Persist on component unmount (e.g. navigating away from Room page)
       if (activeViewRef.current === 'messages') persistLastSeen();
     };
   }, [persistLastSeen]);
@@ -161,14 +155,11 @@ export default function Room() {
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
     const snapshotCount = msgCountWhenViewed[roomId];
-    // If user has never viewed messages for this room, all non-self messages are unread
     if (snapshotCount === undefined) {
       return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
     }
-    // New messages = total messages now minus total when last viewed
     const newMsgs = roomMessages.length - snapshotCount;
     if (newMsgs <= 0) return 0;
-    // Count only non-self messages among the newest ones
     const newest = roomMessages.slice(-newMsgs);
     return newest.filter(m => m.sender_profile_id !== profile.id).length;
   }, [roomMessages, profile?.id, roomId, msgCountWhenViewed]);
