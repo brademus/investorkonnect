@@ -106,20 +106,19 @@ function AccountProfileContent() {
       setFormData({
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
-        company: profile.company || "",
-        company_address: profile.company_address || "",
-        markets: Array.isArray(profile.markets) ? profile.markets.join(", ") : "",
         phone: profile.phone || "",
-        accreditation: profile.accreditation || "",
-        goals: profile.goals || "",
-        brokerage: profile.agent?.brokerage || profile.broker || "",
-        license_number: profile.agent?.license_number || profile.license_number || "",
-        main_county: profile.agent?.main_county || "",
+        brokerage: agent.brokerage || profile.broker || "",
+        main_county: agent.main_county || "",
         next_steps_template: profile.next_steps_template || "",
         next_steps_template_type: profile.next_steps_template_type || "default",
         custom_next_steps_template: profile.custom_next_steps_template || "",
         state_licenses: existingStateLicenses,
         licensed_states: existingLicensedStates,
+        experience_years: agent.experience_years || "",
+        deals_closed: agent.investment_deals_last_12m || "",
+        investment_strategies: agent.investment_strategies || [],
+        specialties: agent.specialties || [],
+        bio: agent.bio || profile.bio || "",
       });
       setLoading(false);
     }
