@@ -58,11 +58,11 @@ function AccountProfileContent() {
   });
   const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
 
-  // County validation — same as onboarding
+  // County validation — same as onboarding, uses first licensed state
   useEffect(() => {
     if (formData.role !== 'agent') return;
     const county = formData.main_county.trim();
-    const primaryState = profile?.agent?.license_state || profile?.license_state || profile?.target_state || '';
+    const primaryState = formData.licensed_states[0] || '';
     if (!county || !primaryState) { setCountyValid(null); setCountyChecking(false); return; }
     setCountyChecking(true);
     let cancelled = false;
@@ -71,7 +71,7 @@ function AccountProfileContent() {
       if (!cancelled) { setCountyValid(coords !== null); setCountyChecking(false); }
     }, 400);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [formData.main_county, formData.role, profile]);
+  }, [formData.main_county, formData.role, formData.licensed_states]);
 
   useEffect(() => {
     document.title = "Edit Profile - Investor Konnect";
