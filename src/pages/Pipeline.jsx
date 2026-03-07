@@ -443,7 +443,7 @@ function PipelineContent() {
                                        )}
                                      </div>
                                      <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">Open Deal Room</Button>
+                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" disabled={navigating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">{navigating ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Loading...</> : 'Open Deal Room'}</Button>
                                       {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-[12px] text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Edit</Button>}
                                      </div>
                                     </div>
