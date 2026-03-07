@@ -51,7 +51,10 @@ function AccountProfileContent() {
     main_county: "",
     next_steps_template: "",
     next_steps_template_type: "default",
-    custom_next_steps_template: ""
+    custom_next_steps_template: "",
+    // Agent: state licenses
+    state_licenses: {},
+    licensed_states: [],
   });
   const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
 
