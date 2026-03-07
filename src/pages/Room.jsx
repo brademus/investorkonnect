@@ -83,7 +83,6 @@ export default function Room() {
   }, [activeView, roomId, roomMessages?.length]);
 
   // Initialize unread count from server timestamp on page load
-  // Use a ref to fetch fresh timestamps from server instead of relying on cached profile
   const lastSeenInitialized = useRef({});
   useEffect(() => {
     if (!roomId || !roomMessages?.length || !profile?.id) return;
@@ -96,7 +95,20 @@ export default function Room() {
       return;
     }
     lastSeenInitialized.current[roomId] = true;
-    // Fetch fresh profile to get accurate last_seen_timestamps (cached profile may be stale)
+
+    // First check in-memory profile (updated synchronously by persistLastSeen on unmount)
+    const memoryTs = profile.last_seen_timestamps?.[roomId];
+    if (memoryTs) {
+      const memoryMs = new Date(memoryTs).getTime();
+      const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= memoryMs).length;
+      setMsgCountWhenViewed(prev => {
+        if (prev[roomId] !== undefined) return prev;
+        return { ...prev, [roomId]: countSeen };
+      });
+      return;
+    }
+
+    // Fallback: fetch from server (first visit or no in-memory data)
     base44.entities.Profile.filter({ id: profile.id }).then(profiles => {
       const freshProfile = profiles?.[0];
       const serverTs = freshProfile?.last_seen_timestamps?.[roomId];
@@ -104,7 +116,6 @@ export default function Room() {
       const serverMs = new Date(serverTs).getTime();
       const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
       setMsgCountWhenViewed(prev => {
-        // Don't overwrite if user already opened messages
         if (prev[roomId] !== undefined) return prev;
         return { ...prev, [roomId]: countSeen };
       });
