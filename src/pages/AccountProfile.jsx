@@ -109,6 +109,11 @@ function AccountProfileContent() {
       return;
     }
 
+    if (formData.role === 'agent' && formData.main_county.trim() && countyValid === false) {
+      toast.error("Please enter a valid county that exists in our system");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -491,11 +496,34 @@ function AccountProfileContent() {
                     id="main_county"
                     value={formData.main_county}
                     onChange={(e) => setFormData({...formData, main_county: e.target.value})}
-                    placeholder="e.g., Maricopa County"
+                    placeholder="e.g., Maricopa"
                     disabled={saving}
-                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                    className={`bg-[#141414] text-[#FAFAFA] ${
+                      formData.main_county.trim() && !countyChecking
+                        ? countyValid
+                          ? 'border-green-500 focus:border-green-500'
+                          : 'border-red-500 focus:border-red-500'
+                        : 'border-[#333]'
+                    }`}
                   />
-                  <p className="text-xs text-[#808080] mt-1">Your primary county of operation</p>
+                  <div className="mt-1.5 min-h-[18px]">
+                    {countyChecking && formData.main_county.trim() && (
+                      <p className="text-xs text-[#808080]">Checking county...</p>
+                    )}
+                    {!countyChecking && formData.main_county.trim() && countyValid === true && (
+                      <p className="text-xs text-green-400 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> County recognized — location updated for matching
+                      </p>
+                    )}
+                    {!countyChecking && formData.main_county.trim() && countyValid === false && (
+                      <p className="text-xs text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> County not found in {profile?.agent?.license_state || profile?.target_state || 'your state'}. Try just the county name without "County".
+                      </p>
+                    )}
+                    {!formData.main_county.trim() && (
+                      <p className="text-xs text-[#808080]">Your primary county of operation — used for agent matching</p>
+                    )}
+                  </div>
                 </div>
               </>
             )}
