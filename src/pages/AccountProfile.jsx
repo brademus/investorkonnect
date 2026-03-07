@@ -471,6 +471,136 @@ function AccountProfileContent() {
               />
             </div>
 
+            {/* Investor-specific fields */}
+            {formData.role === 'investor' && (
+              <>
+                <div className="pt-4 border-t border-[#1F1F1F]">
+                  <h3 className="text-lg font-semibold text-[#FAFAFA] mb-4">Investor Information</h3>
+                </div>
+
+                {/* Company */}
+                <div>
+                  <Label htmlFor="investor_company" className="text-[#FAFAFA]">Company Name</Label>
+                  <Input
+                    id="investor_company"
+                    value={formData.investor_company}
+                    onChange={(e) => setFormData({...formData, investor_company: e.target.value})}
+                    placeholder="Your company or LLC name"
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                </div>
+
+                {/* Target States */}
+                <div>
+                  <Label className="text-[#FAFAFA]">Target States *</Label>
+                  <p className="text-xs text-[#808080] mt-1 mb-3">Select your primary investment markets</p>
+                  <label className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all mb-3"
+                    style={{ borderColor: formData.investor_nationwide ? '#E3C567' : '#1F1F1F', backgroundColor: formData.investor_nationwide ? 'rgba(227,197,103,0.1)' : '#141414' }}>
+                    <input type="checkbox" checked={formData.investor_nationwide} onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        investor_nationwide: e.target.checked,
+                        investor_target_states: e.target.checked ? [] : prev.investor_target_states,
+                      }));
+                    }} className="sr-only" />
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.investor_nationwide ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
+                      {formData.investor_nationwide && <CheckCircle className="w-3.5 h-3.5 text-black" />}
+                    </div>
+                    <span className="text-[#FAFAFA] text-sm font-semibold">Nationwide</span>
+                  </label>
+                  {!formData.investor_nationwide && (
+                    <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 max-h-40 overflow-y-auto p-3 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
+                      {US_STATES.map((state) => (
+                        <button
+                          key={state}
+                          type="button"
+                          disabled={saving}
+                          onClick={() => {
+                            setFormData(prev => {
+                              const states = prev.investor_target_states || [];
+                              const updated = states.includes(state)
+                                ? states.filter(s => s !== state)
+                                : [...states, state];
+                              return { ...prev, investor_target_states: updated };
+                            });
+                          }}
+                          className={`p-2 rounded-lg border-2 text-xs font-semibold transition-all ${
+                            (formData.investor_target_states || []).includes(state)
+                              ? 'border-[#E3C567] bg-[#E3C567]/15 text-[#E3C567]'
+                              : 'border-[#1F1F1F] bg-[#141414] text-[#808080] hover:border-[#E3C567]/40 hover:text-[#FAFAFA]'
+                          }`}
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!formData.investor_nationwide && (formData.investor_target_states || []).length > 0 && (
+                    <p className="text-xs text-[#E3C567] mt-2">{formData.investor_target_states.length} state{formData.investor_target_states.length !== 1 ? 's' : ''} selected</p>
+                  )}
+                </div>
+
+                {/* Deal Types */}
+                <div>
+                  <Label className="text-[#FAFAFA]">Type of Deals</Label>
+                  <p className="text-xs text-[#808080] mt-1 mb-3">Select all that apply</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {DEAL_TYPE_OPTIONS.map((deal) => (
+                      <div key={deal.value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`inv-deal-${deal.value}`}
+                          checked={(formData.investor_deal_types || []).includes(deal.value)}
+                          disabled={saving}
+                          onCheckedChange={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              investor_deal_types: (prev.investor_deal_types || []).includes(deal.value)
+                                ? prev.investor_deal_types.filter(i => i !== deal.value)
+                                : [...(prev.investor_deal_types || []), deal.value]
+                            }));
+                          }}
+                          className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]"
+                        />
+                        <Label htmlFor={`inv-deal-${deal.value}`} className="text-sm font-normal cursor-pointer text-[#FAFAFA]">{deal.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Investment Experience */}
+                <div>
+                  <Label htmlFor="investor_experience" className="text-[#FAFAFA]">How Many Deals Have You Done?</Label>
+                  <Input
+                    id="investor_experience"
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.investor_experience}
+                    onChange={(e) => setFormData({...formData, investor_experience: e.target.value})}
+                    placeholder="e.g., 5"
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">Total deals completed — shown on your business card</p>
+                </div>
+
+                {/* Bio */}
+                <div>
+                  <Label htmlFor="investor_bio" className="text-[#FAFAFA]">Bio</Label>
+                  <Textarea
+                    id="investor_bio"
+                    value={formData.investor_bio}
+                    onChange={(e) => setFormData({...formData, investor_bio: e.target.value})}
+                    placeholder="Tell agents about your investment goals and experience..."
+                    rows={4}
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">This will appear on your public profile and business card</p>
+                </div>
+              </>
+            )}
+
             {/* Next Steps Template - Investors only */}
             {formData.role === 'investor' && (
               <div className="pt-4 border-t border-[#1F1F1F]">
