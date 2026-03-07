@@ -70,7 +70,13 @@ export async function respondToWalkthrough({ action, dealId, roomId, profileId, 
     const pendingWt = msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
     for (const m of pendingWt) {
       await base44.entities.Message.update(m.id, {
-        metadata: { ...m.metadata, status: msgStatus, responded_by: profileId, responded_at: now },
+        metadata: {
+          ...m.metadata,
+          status: msgStatus,
+          responded_by: profileId,
+          responded_at: now,
+          ...(isConfirm ? { confirmed_date: wtDate, confirmed_time: wtTime } : {}),
+        },
       });
     }
 
