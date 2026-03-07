@@ -88,7 +88,7 @@ function PipelineContent() {
   });
 
   // Load rooms for matching
-  const { data: rooms = [], refetch: refetchRooms } = useQuery({
+  const { data: rooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
     staleTime: 5_000,
     queryFn: async () => {
