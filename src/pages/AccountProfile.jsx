@@ -84,6 +84,16 @@ function AccountProfileContent() {
         email: profile.notification_preferences?.email !== false,
         text: profile.notification_preferences?.text === true,
       });
+      // Build state_licenses from profile
+      const existingStateLicenses = profile.agent?.state_licenses || {};
+      // Backfill from legacy fields if empty
+      if (Object.keys(existingStateLicenses).length === 0) {
+        const primaryState = profile.agent?.license_state || profile.license_state || '';
+        const primaryLicense = profile.agent?.license_number || profile.license_number || '';
+        if (primaryState && primaryLicense) existingStateLicenses[primaryState] = primaryLicense;
+      }
+      const existingLicensedStates = profile.agent?.licensed_states || Object.keys(existingStateLicenses);
+
       setFormData({
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
@@ -98,7 +108,9 @@ function AccountProfileContent() {
         main_county: profile.agent?.main_county || "",
         next_steps_template: profile.next_steps_template || "",
         next_steps_template_type: profile.next_steps_template_type || "default",
-        custom_next_steps_template: profile.custom_next_steps_template || ""
+        custom_next_steps_template: profile.custom_next_steps_template || "",
+        state_licenses: existingStateLicenses,
+        licensed_states: existingLicensedStates,
       });
       setLoading(false);
     }
