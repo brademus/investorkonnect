@@ -115,8 +115,33 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         <span className="text-sm font-semibold text-[#E3C567]">Walk-through Request</span>
       </div>
 
-      {/* Show all proposed slots */}
-      {wtSlots.length > 0 ? (
+      {/* Show confirmed slot only, or all proposed slots */}
+      {status === 'confirmed' && (meta.confirmed_date || resolvedWtDate) ? (
+        <div className="space-y-2 mb-2">
+          <p className="text-xs text-[#808080]">Confirmed walk-through:</p>
+          {(() => {
+            const cDate = meta.confirmed_date || resolvedWtDate;
+            const cTime = meta.confirmed_time || resolvedWtTime;
+            const confirmedSlot = wtSlots.find(s => s.date === cDate && (!cTime || s.timeStart === cTime));
+            const timeLabel = confirmedSlot
+              ? [confirmedSlot.timeStart, confirmedSlot.timeEnd].filter(Boolean).join(' – ')
+              : cTime || null;
+            return (
+              <div className="w-full flex items-center gap-3 p-2.5 rounded-xl border bg-[#10B981]/10 border-[#10B981]/40 text-left">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-[#10B981]/20">
+                  <Check className="w-4 h-4 text-[#10B981]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#FAFAFA]">{cDate}</p>
+                  {timeLabel && (
+                    <p className="text-xs text-[#808080]">{timeLabel.replace(/(AM|PM)/g, ' $1').trim()}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      ) : wtSlots.length > 0 ? (
         <div className="space-y-2 mb-2">
           <p className="text-xs text-[#808080]">
             {canRespond ? "Select a date & time that works for you:" : "Proposed walk-through options:"}
