@@ -295,7 +295,7 @@ function PipelineContent() {
 
   const getDaysInPipeline = (d) => { if (!d) return 'N/A'; return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`; };
 
-  if (loading || !profile || !ready) {
+  if (loading || !profile || !ready || loadingDeals || loadingRooms) {
     return <div className="min-h-screen bg-transparent flex flex-col"><Header profile={profile} /><div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" /></div></div>;
   }
 
