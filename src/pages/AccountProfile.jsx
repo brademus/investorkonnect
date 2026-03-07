@@ -508,18 +508,60 @@ function AccountProfileContent() {
                   <p className="text-xs text-[#808080] mt-1">Required for generating agreements</p>
                 </div>
 
+                {/* Licensed States — select states, then enter license per state */}
                 <div>
-                  <Label htmlFor="license_number" className="text-[#FAFAFA]">License Number *</Label>
-                  <Input
-                    id="license_number"
-                    value={formData.license_number}
-                    onChange={(e) => setFormData({...formData, license_number: e.target.value})}
-                    placeholder="Your real estate license number"
-                    disabled={saving}
-                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-                  />
-                  <p className="text-xs text-[#808080] mt-1">Required for generating agreements</p>
+                  <Label className="text-[#FAFAFA]">Licensed States *</Label>
+                  <p className="text-xs text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-3 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
+                    {US_STATES.map((state) => (
+                      <div key={state} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`acct-state-${state}`}
+                          checked={formData.licensed_states.includes(state)}
+                          disabled={saving}
+                          onCheckedChange={() => {
+                            setFormData(prev => {
+                              const isSelected = prev.licensed_states.includes(state);
+                              const newStates = isSelected
+                                ? prev.licensed_states.filter(s => s !== state)
+                                : [...prev.licensed_states, state];
+                              const newLicenses = { ...prev.state_licenses };
+                              if (isSelected) delete newLicenses[state];
+                              return { ...prev, licensed_states: newStates, state_licenses: newLicenses };
+                            });
+                          }}
+                          className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]"
+                        />
+                        <Label htmlFor={`acct-state-${state}`} className="text-sm font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Per-state license numbers */}
+                {formData.licensed_states.length > 0 && (
+                  <div>
+                    <Label className="text-[#FAFAFA]">License Numbers *</Label>
+                    <p className="text-xs text-[#808080] mt-1 mb-3">Enter your license number for each state</p>
+                    <div className="space-y-3">
+                      {formData.licensed_states.map((state) => (
+                        <div key={state}>
+                          <Label className="text-[#FAFAFA] text-sm font-medium mb-1 block">{state} License Number</Label>
+                          <Input
+                            value={formData.state_licenses[state] || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              state_licenses: { ...prev.state_licenses, [state]: e.target.value }
+                            }))}
+                            placeholder={`e.g., ${state}-123456`}
+                            disabled={saving}
+                            className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="main_county" className="text-[#FAFAFA]">Main County *</Label>
