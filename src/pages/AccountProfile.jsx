@@ -568,7 +568,7 @@ function AccountProfileContent() {
             <div className="flex gap-3 pt-4">
               <Button
                 type="submit"
-                disabled={saving}
+                disabled={saving || (formData.role === 'agent' && countyChecking)}
                 className="flex-1 bg-[#E3C567] text-black hover:bg-[#EDD89F]"
               >
                 {saving ? (
