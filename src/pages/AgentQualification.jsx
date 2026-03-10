@@ -401,7 +401,7 @@ function OutcomeScreen({ result, onContinue }) {
       <h1 className="text-3xl font-bold text-[#FAFAFA] mb-3">Unfortunately, you're not eligible at this time.</h1>
       <p className="text-[#808080] mb-8">
         {autoReject
-          ? "Your broker does not currently allow assignment of contract transactions, which is required for this platform."
+          ? "Based on your responses to a critical eligibility question, you do not meet the minimum requirements for this platform at this time."
           : "Based on your responses, this platform may not be the right fit. Our deals require specific broker permissions and investor experience."}
       </p>
       <div className="flex flex-col items-center gap-3 mt-6">
