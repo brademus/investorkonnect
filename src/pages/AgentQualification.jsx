@@ -13,7 +13,8 @@ const DEAL_TYPES = [
     title: "1. Wholesale Assignment",
     description: "An investor contracts a property at a discounted price and assigns their purchase rights to a third-party buyer for a fee.",
     bullets: [
-      "You may represent the end buyer or co-broker on the disposition side.",
+      "You may represent the seller, the investor, or the end buyer — or all three.",
+      "You may conduct buyer walkthroughs.",
       "You must understand assignment addendums.",
       "Your broker must allow assignment transactions."
     ]
@@ -29,9 +30,10 @@ const DEAL_TYPES = [
   },
   {
     title: "3. Novation Agreement",
-    description: "Seller allows investor to market property on MLS and sell conventionally while remaining on title until resale. Investor earns the spread.",
+    description: "Seller allows investor to market property on MLS and sell conventionally while remaining on title until resale. Investor earns the spread between the sales price and the contract price with the seller.",
     bullets: [
-      "You may list the property.",
+      "You may list the property on the MLS.",
+      "You may conduct regular showings of the property.",
       "You must understand novation structure.",
       "Your broker must allow novation listings."
     ]
