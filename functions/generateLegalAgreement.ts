@@ -204,6 +204,7 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
     SELLER_COMP_TYPE: (sellerType === 'flat' || sellerType === 'flat_fee') ? 'Flat Fee' : 'Commission Percentage',
     SELLER_COMP_VALUE: sellerCompValue,
     AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || exhibit_a.agreement_length || 180).toString(),
+    PURCHASE_PRICE: deal.purchase_price ? `$${Number(deal.purchase_price).toLocaleString()}` : 'TBD',
     TERM_DAYS: (exhibit_a.agreement_length_days || exhibit_a.agreement_length || 180).toString(),
     TERMINATION_NOTICE_DAYS: '30', EXCLUSIVITY_ON_OFF: 'OFF', ROFR_ON_OFF: 'OFF', ROFR_PERIOD_DAYS: '0',
     COMPENSATION_MODEL: compensationModel, FLAT_FEE_AMOUNT: flatFeeAmount, COMMISSION_PERCENTAGE: commissionPercentage
