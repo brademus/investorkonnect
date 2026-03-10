@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
     const agentSignerEmail = hasRealAgent ? agent.email : placeholderAgentEmail;
     const agentSignerName = hasRealAgent ? (agent.full_name || agent.email) : 'Agent (Pending)';
     
-    const agentLicenseForDeal = hasRealAgent ? pickLicenseForState(agent, stateCode) : '';
+    const agentLicenseForDeal = hasRealAgent ? pickLicenseForState(agent, deal.state) : '';
     const agentTabs = {
       signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
       dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
@@ -373,8 +373,8 @@ Deno.serve(async (req) => {
     const dsBase64 = btoa(dsBinary);
 
     const envDef = {
-      emailSubject: `Sign Agreement - ${stateCode} Deal`,
-      documents: [{ documentBase64: dsBase64, name: `Agreement-${stateCode}-${deal.id}.pdf`, fileExtension: 'pdf', documentId: '1' }],
+      emailSubject: `Sign Agreement - ${deal.state || ''} Deal`,
+      documents: [{ documentBase64: dsBase64, name: `Agreement-${deal.state || 'Deal'}-${deal.id}.pdf`, fileExtension: 'pdf', documentId: '1' }],
       recipients: { signers },
       status: 'sent'
     };
