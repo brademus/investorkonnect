@@ -8,7 +8,7 @@ import {
   Home, Users, MessageSquare, FileText, CreditCard, 
   User, LogOut, Menu, X, ChevronDown, ShieldCheck, Mail
 } from 'lucide-react';
-import { NotificationBell } from './NotificationBell';
+import NotificationBell from './NotificationBell';
 
 export function Header({ profile }) {
   const navigate = useNavigate();
