@@ -487,7 +487,7 @@ export default function AgentQualification() {
 
   return (
     <div className="min-h-screen bg-transparent">
-      {step === 1 && <Step1 onContinue={() => setStep(2)} />}
+      {step === 1 && <Step1 onContinue={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setStep(2); }} />}
       {step === 2 && <Step2 onSubmit={handleQuestionnaire} submitting={submitting} />}
       {step === 3 && result && <OutcomeScreen result={result} onContinue={handleOutcomeContinue} />}
     </div>
