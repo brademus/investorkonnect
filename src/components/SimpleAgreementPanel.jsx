@@ -447,6 +447,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
               <>
                 {investorSigned && !agentSigned && relevantCounters.length === 0 && (
                   <div className="space-y-2">
+                    <p className="text-xs text-[#808080] text-center leading-relaxed px-2">
+                      * Signing this agreement is <span className="text-[#FAFAFA] font-medium">not a commitment to list the property.</span> It is a mutual protection agreement that safeguards both you and the investor while you evaluate the deal together.
+                    </p>
                     <Button onClick={() => handleSign('agent')} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                       {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign Agreement
                     </Button>
