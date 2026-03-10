@@ -115,8 +115,9 @@ During the walkthrough, please:
 - Provide your professional feedback on condition and marketability
 - Prepare and send your CMA (Comparative Market Analysis)
 - Include:
-  - Estimated As-Is Listing Price
+  - Estimated As-Is Value
   - Estimated ARV (After Repair Value)
+  - Estimated Rehab Costs
 
 Step 2: Submission & Review
 
@@ -125,8 +126,9 @@ After the walkthrough, please upload the following directly to the Deal Room und
 - All photos
 - Your written notes
 - CMA report
-- As-Is Listing Price
-- ARV
+- Estimated As-Is Value
+- Estimated ARV (After Repair Value)
+- Estimated Rehab Costs
 
 Once reviewed, we'll confirm alignment and move forward with next steps.
 
