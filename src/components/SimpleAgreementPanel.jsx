@@ -189,7 +189,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           property_address: dealData?.propertyAddress, city: dealData?.city,
           state: dealData?.state, zip: dealData?.zip, county: dealData?.county
         });
-        if (res.data?.agreement) { setAgreement(res.data.agreement); toast.success('Agreement ready'); gotAgreement = true; }
+        if (res.data?.agreement) { setAgreement(res.data.agreement); gotAgreement = true; }
         else if (res.data?.error) toast.error(res.data.error);
       } catch (invokeErr) {
         // The function may have succeeded but timed out returning the response (502).
@@ -209,7 +209,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             const ag = agreements.find(a => a.status !== 'voided' && a.status !== 'superseded' && a.docusign_envelope_id);
             if (ag) {
               setAgreement(ag);
-              toast.success('Agreement ready');
               gotAgreement = true;
               break;
             }
@@ -226,7 +225,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
               const ag = checkRes?.data?.agreement;
               if (ag && ag.docusign_envelope_id && ag.status !== 'voided' && ag.status !== 'superseded') {
                 setAgreement(ag);
-                toast.success('Agreement ready');
                 gotAgreement = true;
                 break;
               }
@@ -236,6 +234,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         if (!gotAgreement) {
           reportError('Agreement generation timed out. Please try again.', { extra: { dealId: effectiveId, roomId, draftId } });
         }
+      }
+
+      if (gotAgreement) {
+        toast.info('Preparing your signing session…');
+        await handleSign('investor');
       }
     } catch (e) { reportError(e?.response?.data?.error || 'Generation failed', { cause: e, extra: { dealId, roomId, draftId } }); }
     finally { setBusy(false); }
