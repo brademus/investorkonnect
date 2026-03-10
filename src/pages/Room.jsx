@@ -648,11 +648,11 @@ export default function Room() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
                   <span className="font-bold text-[#FAFAFA] text-sm">
-                    {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
+                    {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}${currentRoom.zip ? ' ' + currentRoom.zip : ''}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
+                  <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}{currentRoom.zip ? ` ${currentRoom.zip}` : ''}</span>
                   {isAgent
                     ? (currentRoom.estimated_list_price > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.estimated_list_price.toLocaleString()}</span></>)
                     : (currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>)
