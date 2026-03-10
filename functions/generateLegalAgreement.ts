@@ -7,7 +7,7 @@ const VERSION = '4.0.0';
 const DOCUSIGN_INTEGRATION_KEY = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');
 const DOCUSIGN_CLIENT_SECRET = Deno.env.get('DOCUSIGN_CLIENT_SECRET');
 
-const INTERNAL_AGREEMENT_URL = 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/InvestorKonnect_Deal_Participation_Agreement.pdf';
+const INTERNAL_AGREEMENT_URL = 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contract/INVESTORKONNECT%20.pdf';
 
 // ---- Helpers ----
 
