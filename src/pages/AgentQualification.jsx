@@ -121,19 +121,23 @@ function Step1({ onContinue }) {
 }
 
 const QUESTIONS = [
-  // CAT 1
-  { id: "wholesale_count", label: "How many wholesale deals have you participated in?", type: "radio", options: [
+  // CAT 1 — Experience With Investor Deals
+  { id: "wholesale_count", label: "How many transactions have you completed with real estate investors in the past 12 months?", type: "radio", options: [
     { label: "None", value: "none", pts: 0 },
     { label: "1–5", value: "1-5", pts: 4 },
     { label: "6–15", value: "6-15", pts: 7 },
     { label: "15+", value: "15+", pts: 10 },
   ]},
-  { id: "creative_types", label: "Which of the following creative deal types have you worked with? (Check all that apply)", type: "checkbox", options: [
+  { id: "creative_types", label: "What types of investor deals have you worked on? (Check all that apply)", type: "checkbox", options: [
+    { label: "Assignment of Contract", value: "assignment", pts: 2 },
     { label: "Double Close", value: "double_close", pts: 2 },
     { label: "Novation", value: "novation", pts: 2 },
     { label: "Subject-To (Sub2)", value: "sub2", pts: 2 },
     { label: "Seller Financing", value: "seller_financing", pts: 2 },
-    { label: "BRRRR / Value-Add", value: "brrrr", pts: 2 },
+    { label: "Fix & Flip", value: "fix_flip", pts: 2 },
+    { label: "Buy & Hold / BRRRR", value: "brrrr", pts: 2 },
+    { label: "New Construction Investors", value: "new_construction", pts: 1 },
+    { label: "Multi-Family Investors", value: "multi_family", pts: 1 },
   ], maxPts: 10 },
   { id: "investor_pct", label: "What percentage of your current business comes from investor clients?", type: "radio", options: [
     { label: "0–10%", value: "0-10", pts: 2 },
@@ -141,7 +145,13 @@ const QUESTIONS = [
     { label: "25–50%", value: "25-50", pts: 8 },
     { label: "50%+", value: "50+", pts: 10 },
   ]},
-  // CAT 2
+  { id: "cash_buyers", label: "Do you actively work with cash buyers?", type: "radio", options: [
+    { label: "Yes", value: "yes", pts: 5 },
+    { label: "Sometimes", value: "sometimes", pts: 2 },
+    { label: "No", value: "no", pts: 0 },
+  ]},
+
+  // CAT 2 — Broker Approval & Compliance
   { id: "broker_assignments", label: "Does your broker allow assignment of contract transactions?", type: "radio", isAutoReject: true, options: [
     { label: "Yes", value: "yes", pts: 5 },
     { label: "No", value: "no", pts: 0, autoReject: true },
@@ -159,18 +169,37 @@ const QUESTIONS = [
     { label: "Minor issues", value: "minor", pts: 2 },
     { label: "Major past conflict", value: "major", pts: 0 },
   ]},
-  // CAT 3
-  { id: "metrics_known", label: "Which of the following metrics do you know how to calculate? (Check all that apply)", type: "checkbox", options: [
-    { label: "ARV (After Repair Value)", value: "arv", pts: 2 },
-    { label: "MAO (Maximum Allowable Offer)", value: "mao", pts: 2 },
-    { label: "Cap Rate", value: "cap_rate", pts: 2 },
-    { label: "Cash-on-Cash Return", value: "coc", pts: 2 },
-    { label: "Repair estimate methodology", value: "repair", pts: 2 },
+  { id: "disciplinary_action", label: "Have you ever been subject to disciplinary action by your real estate commission?", type: "radio", isAutoReject: true, options: [
+    { label: "No", value: "no", pts: 3 },
+    { label: "Yes", value: "yes", pts: 0, autoReject: true },
+  ]},
+  { id: "eo_insurance", label: "Do you carry active Errors & Omissions (E&O) insurance?", type: "radio", options: [
+    { label: "Yes", value: "yes", pts: 3 },
+    { label: "No", value: "no", pts: 0 },
+  ]},
+  { id: "mls_subscription", label: "Do you currently maintain an active MLS subscription?", type: "radio", options: [
+    { label: "Yes", value: "yes", pts: 2 },
+    { label: "No", value: "no", pts: 0 },
+  ]},
+
+  // CAT 3 — Investor Competency
+  { id: "off_market_closed", label: "Have you closed deals involving off-market or distressed properties?", type: "radio", options: [
+    { label: "Yes, multiple times", value: "yes_many", pts: 5 },
+    { label: "Yes, once or twice", value: "yes_few", pts: 3 },
+    { label: "No", value: "no", pts: 0 },
+  ]},
+  { id: "metrics_known", label: "Are you able to assist investors with? (Check all that apply)", type: "checkbox", options: [
+    { label: "Running comparable sales (comps)", value: "comps", pts: 2 },
+    { label: "Estimating ARV (After Repair Value)", value: "arv", pts: 2 },
+    { label: "Estimating renovation cost ranges", value: "renovation", pts: 2 },
+    { label: "Rental market analysis", value: "rental", pts: 2 },
+    { label: "Cash-on-Cash / Cap Rate analysis", value: "cap", pts: 2 },
   ], maxPts: 10 },
-  { id: "comps_speed", label: "How quickly can you typically deliver comps for a deal?", type: "radio", options: [
-    { label: "Under 2 hours", value: "2hr", pts: 5 },
-    { label: "Same day", value: "same_day", pts: 3 },
-    { label: "24+ hours", value: "24hr", pts: 1 },
+  { id: "comps_speed", label: "How quickly do you typically respond to a new investor opportunity?", type: "radio", options: [
+    { label: "Under 30 minutes", value: "30min", pts: 5 },
+    { label: "Under 1 hour", value: "1hr", pts: 4 },
+    { label: "Same day", value: "same_day", pts: 2 },
+    { label: "Within 24 hours", value: "24hr", pts: 1 },
   ]},
   { id: "low_offers", label: "Are you comfortable submitting low offers on behalf of investor clients?", type: "radio", options: [
     { label: "Yes, comfortable", value: "yes", pts: 5 },
@@ -182,20 +211,17 @@ const QUESTIONS = [
     { label: "Neutral", value: "neutral", pts: 2 },
     { label: "Uncomfortable", value: "no", pts: 0 },
   ]},
-  // CAT 4
-  { id: "no_bypass", label: "Do you agree not to bypass the platform or work directly with platform-introduced investors outside the platform?", type: "radio", isHighRisk: true, options: [
-    { label: "Yes", value: "yes", pts: 10 },
-    { label: "Hesitation / No", value: "no", pts: 0, highRisk: true },
-  ]},
+
+  // CAT 4 — Platform Alignment
   { id: "margin_visibility", label: "Are you comfortable with investors having visible margins on deals?", type: "radio", options: [
     { label: "Yes", value: "yes", pts: 5 },
     { label: "Uncomfortable", value: "no", pts: 0 },
   ]},
-  { id: "close_timeline", label: "Are you comfortable with 7–14 day close timelines?", type: "radio", options: [
-    { label: "Yes", value: "yes", pts: 5 },
+  { id: "close_timeline", label: "Are you comfortable with 7–14 day close timelines and working multiple deals simultaneously?", type: "radio", options: [
+    { label: "Yes, comfortable", value: "yes", pts: 5 },
     { label: "Prefer 30+ days", value: "prefer_30", pts: 1 },
   ]},
-  { id: "investor_reference", label: "Can you provide a reference from an investor client?", type: "radio", options: [
+  { id: "platform_commitment", label: "Do you agree to follow all platform policies, honor deal compensation terms, and maintain professional communication with investors?", type: "radio", options: [
     { label: "Yes", value: "yes", pts: 5 },
     { label: "No", value: "no", pts: 0 },
   ]},
@@ -221,11 +247,16 @@ function Step2({ onSubmit, submitting }) {
   });
 
   const handleSubmit = () => {
-    // Check auto-reject first
-    const brokerAns = answers["broker_assignments"];
-    if (brokerAns === "no") {
-      onSubmit({ outcome: "rejected", tier: "rejected", autoReject: true });
-      return;
+    // Check auto-reject first — any question with isAutoReject + selected autoReject option
+    for (const q of QUESTIONS) {
+      if (q.isAutoReject) {
+        const ans = answers[q.id];
+        const opt = q.options.find(o => o.value === ans);
+        if (opt?.autoReject) {
+          onSubmit({ outcome: "rejected", tier: "rejected", autoReject: true });
+          return;
+        }
+      }
     }
 
     let totalScore = 0;
@@ -255,10 +286,10 @@ function Step2({ onSubmit, submitting }) {
   };
 
   const categories = [
-    { label: "Category 1 — Experience With Investor Deals", ids: ["wholesale_count","creative_types","investor_pct"] },
-    { label: "Category 2 — Broker Approval & Compliance", ids: ["broker_assignments","broker_creative","broker_confirm","broker_conflicts"] },
-    { label: "Category 3 — Investor Competency", ids: ["metrics_known","comps_speed","low_offers","distressed_sellers"] },
-    { label: "Category 4 — Alignment & Platform Risk", ids: ["no_bypass","margin_visibility","close_timeline","investor_reference"] },
+    { label: "Category 1 — Experience With Investor Deals", ids: ["wholesale_count","creative_types","investor_pct","cash_buyers"] },
+    { label: "Category 2 — Broker Approval & Compliance", ids: ["broker_assignments","broker_creative","broker_confirm","broker_conflicts","disciplinary_action","eo_insurance","mls_subscription"] },
+    { label: "Category 3 — Investor Competency", ids: ["off_market_closed","metrics_known","comps_speed","low_offers","distressed_sellers"] },
+    { label: "Category 4 — Platform Alignment", ids: ["margin_visibility","close_timeline","platform_commitment"] },
   ];
 
   return (
