@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
@@ -6,14 +6,26 @@ import { Logo } from './Logo';
 import { Button } from './ui/button';
 import { 
   Home, Users, MessageSquare, FileText, CreditCard, 
-  User, LogOut, Menu, X, ChevronDown, ShieldCheck
+  User, LogOut, Menu, X, ChevronDown, ShieldCheck, Mail
 } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 
 export function Header({ profile }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    base44.functions.invoke('getUnreadMessageCount', { profileId: profile.id })
+      .then(res => {
+        if (res?.data?.count > 0) setUnreadMsgCount(res.data.count);
+      })
+      .catch(() => {});
+  }, [profile?.id]);
+
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
@@ -46,6 +58,19 @@ export function Header({ profile }) {
 
           {/* Right: User Menu */}
           <div className="flex items-center gap-2 flex-1 justify-end">
+            <NotificationBell profile={profile} />
+
+            <button
+              onClick={() => navigate(createPageUrl('Pipeline'))}
+              className="relative p-2 rounded-lg hover:bg-[#0D0D0D] transition-colors"
+              aria-label="Messages"
+            >
+              <Mail className="w-5 h-5 text-[#808080]" />
+              {unreadMsgCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </button>
+
             {/* Desktop User Dropdown */}
             <div className="hidden md:block relative">
               <Button 
