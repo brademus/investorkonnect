@@ -250,7 +250,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     finally { setBusy(false); }
   };
 
-  // Sign agreement
+  // Sign agreement — optimized for speed
   const handleSign = async (role, overrideAgreementId) => {
     setBusy(true);
     try {
@@ -258,11 +258,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
       // AGENT FLOW: Find the investor-signed agreement and ensure agent is on the envelope
       if (role === 'agent') {
-        // Use current agreement if it has investor signature
+        // Use current agreement if it has investor signature — skip extra DB lookups
         let investorSignedAg = (agreement?.investor_signed_at && agreement?.docusign_envelope_id)
-          ? agreement : null;
+          ? agreement
+          : ((agreement?.status === 'investor_signed' || agreement?.signer_mode === 'agent_only') && agreement?.docusign_envelope_id)
+            ? agreement : null;
 
-        // Otherwise search for the investor-signed agreement
+        // Only search DB if we truly don't have a valid agreement loaded
         if (!investorSignedAg) {
           const searchFilter = roomId ? { deal_id: dealId, room_id: roomId } : { deal_id: dealId };
           const allAgs = await base44.entities.LegalAgreement.filter(searchFilter, '-created_date', 10).catch(() => []);
@@ -279,16 +281,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
         targetId = investorSignedAg.id;
 
-        // If agent isn't on this envelope yet, add them
+        // If agent isn't on this envelope yet, add them (this is the only unavoidable extra call)
         const agentAlreadyOnEnvelope = !!(investorSignedAg.agent_recipient_id && investorSignedAg.agent_client_user_id);
         if (!agentAlreadyOnEnvelope) {
-          console.log('[SimpleAgreementPanel] Adding agent to envelope:', targetId);
           const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
             agreement_id: targetId, room_id: roomId
           });
-          // If envelope was completed (legacy), auto-regenerate a new one for agent
           if (prepRes.data?.code === 'ENVELOPE_COMPLETED_REGEN_REQUIRED') {
-            console.log('[SimpleAgreementPanel] Envelope completed, auto-regenerating for agent');
             toast.info('Regenerating agreement for your signature...');
             const regenRes = await base44.functions.invoke('regenerateActiveAgreement', {
               deal_id: dealId, room_id: roomId
@@ -306,8 +305,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             targetId = prepRes.data.agreement.id;
             setAgreement(prepRes.data.agreement);
           }
-        } else {
-          setAgreement(investorSignedAg);
         }
       }
 
@@ -317,13 +314,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       if (res.data?.signing_url) window.location.assign(res.data.signing_url);
       else if (res.data?.already_signed) {
         toast.success('Already signed!');
-        // Refresh agreement state to show signed status in UI
         const latestAg = res.data?.agreement;
         if (latestAg) setAgreement(latestAg);
-        else {
-          const refreshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
-          if (refreshRes.data?.agreement) setAgreement(refreshRes.data.agreement);
-        }
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
         if (role === 'investor' && onInvestorSigned) onInvestorSigned();
       }
