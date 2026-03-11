@@ -218,6 +218,85 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- SEND INITIAL MESSAGES (investor next-steps + walkthrough card) ---
+    // Send immediately so both parties see them before agent signs
+    if (!room.onboarding_message_sent) {
+      try {
+        // Load agent profile for the template
+        const agentId0 = selectedAgentIds[0];
+        let agent0 = null;
+        if (agentId0) {
+          const agProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId0 });
+          agent0 = agProfiles?.[0];
+        }
+        const agentFullName = agent0?.full_name || "";
+        const agentFirstName = agentFullName.split(" ")[0] || "there";
+        const companyName = investorProfile.company || (investorProfile.investor ? investorProfile.investor.company_name : "") || "";
+        const partnerName = companyName.trim() ? companyName.trim() : "me";
+        const investorFullName = investorProfile.full_name || "";
+        const investorPhone = investorProfile.phone || "";
+        const investorEmail = investorProfile.email || "";
+        const propertyAddress = deal.property_address || "";
+
+        const customTemplate = 
+          (investorProfile.next_steps_template_type === 'custom' && investorProfile.custom_next_steps_template?.trim())
+          ? investorProfile.custom_next_steps_template.trim()
+          : (investorProfile.next_steps_template?.trim() && investorProfile.next_steps_template !== '' ? investorProfile.next_steps_template.trim() : null);
+
+        let msgBody;
+        const walkthroughSection = `Please let me know your availability this week so we can schedule the walkthrough for the property.`;
+        if (customTemplate) {
+          msgBody = customTemplate
+            .replace(/{{PROPERTY_ADDRESS}}/g, propertyAddress)
+            .replace(/{{AGENT_FIRST_NAME}}/g, agentFirstName)
+            .replace(/{{PARTNER_NAME}}/g, partnerName)
+            .replace(/{{INVESTOR_FULL_NAME}}/g, investorFullName)
+            .replace(/{{INVESTOR_PHONE_NUMBER}}/g, investorPhone)
+            .replace(/{{INVESTOR_EMAIL}}/g, investorEmail)
+            .replace(/{{WALKTHROUGH_SECTION}}/g, walkthroughSection);
+        } else {
+          msgBody = `Next Steps for ${propertyAddress}\n\nHi ${agentFirstName},\n\nThank you for partnering with ${partnerName} on the property at ${propertyAddress}. I'm looking forward to working together.\n\nBelow is a clear outline of the next steps so we're aligned from the start.\n\nStep 1: Initial Walkthrough\n\n${walkthroughSection}\n\nDuring the walkthrough, please:\n\n- Take clear, detailed photos of the entire property (interior and exterior)\n- Make note of any visible defects, damages, or repair items that could impact financing\n- Provide your professional feedback on condition and marketability\n- Prepare and send your CMA (Comparative Market Analysis)\n- Include:\n  - Estimated As-Is Value\n  - Estimated ARV (After Repair Value)\n  - Estimated Rehab Costs\n\nStep 2: Submission & Review\n\nAfter the walkthrough, please upload the following directly to the Deal Room under the Documents tab (or send to ${investorEmail}):\n\n- All photos\n- Your written notes\n- CMA report\n- Estimated As-Is Value\n- Estimated ARV (After Repair Value)\n- Estimated Rehab Costs\n\nOnce reviewed, we'll confirm alignment and move forward with next steps.\n\nLooking forward to working together.\n\nBest,\n${investorFullName}\n${investorPhone}\n${investorEmail}`;
+        }
+
+        await base44.asServiceRole.entities.Message.create({
+          room_id: room.id,
+          sender_profile_id: investorProfile.id,
+          body: msgBody,
+          read_by: [investorProfile.id],
+        });
+        console.log('[createInvites] Next-steps message sent for room:', room.id);
+
+        // Send walkthrough card message if scheduled
+        const wtSlots2 = (Array.isArray(deal.walkthrough_slots) && deal.walkthrough_slots.length > 0) ? deal.walkthrough_slots : [];
+        if (wtScheduled && (wtDate || wtTime || wtSlots2.length > 0)) {
+          const displayParts = [wtDate, wtTime].filter(Boolean);
+          const displayStr = displayParts.length > 0 ? displayParts.join(' at ') : 'TBD';
+          const wtMeta = {
+            type: 'walkthrough_request',
+            walkthrough_date: wtDate,
+            walkthrough_time: wtTime,
+            status: 'pending'
+          };
+          if (wtSlots2.length > 0) wtMeta.walkthrough_slots = wtSlots2;
+
+          await new Promise(r => setTimeout(r, 500));
+          await base44.asServiceRole.entities.Message.create({
+            room_id: room.id,
+            sender_profile_id: investorProfile.id,
+            body: `📅 Walk-through Requested\n\nProposed Date & Time: ${displayStr}\n\nPlease confirm or suggest a different time.`,
+            metadata: wtMeta,
+            read_by: [investorProfile.id],
+          });
+          console.log('[createInvites] Walkthrough request message sent');
+        }
+
+        await base44.asServiceRole.entities.Room.update(room.id, { onboarding_message_sent: true });
+        console.log('[createInvites] Marked onboarding_message_sent = true');
+      } catch (msgErr) {
+        console.warn('[createInvites] Failed to send initial messages (non-fatal):', msgErr.message);
+      }
+    }
+
     // --- NOTIFY AGENTS via SMS ---
     for (const agentId of selectedAgentIds) {
       try {
