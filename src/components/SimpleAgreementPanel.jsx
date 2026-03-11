@@ -181,6 +181,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       const effectiveId = isEditingExistingDeal ? dealData.dealId : (draftId || dealId);
       
       let gotAgreement = false;
+      let freshAgreement = null;
       try {
         const res = await base44.functions.invoke('generateLegalAgreement', {
           draft_id: isEditingExistingDeal ? undefined : (draftId || undefined),
@@ -191,7 +192,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           state: dealData?.state, zip: dealData?.zip, county: dealData?.county,
           purchase_price: dealData?.purchasePrice || dealData?.purchase_price
         });
-        if (res.data?.agreement) { setAgreement(res.data.agreement); gotAgreement = true; }
+        if (res.data?.agreement) { setAgreement(res.data.agreement); freshAgreement = res.data.agreement; gotAgreement = true; }
         else if (res.data?.error) toast.error(res.data.error);
       } catch (invokeErr) {
         // The function may have succeeded but timed out returning the response (502).
