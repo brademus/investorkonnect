@@ -99,26 +99,30 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Fetch on mount + auto-refresh every 60s
+  // Fetch on mount + auto-refresh every 2 minutes (reduced from 60s)
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    const interval = setInterval(fetchNotifications, 120000);
     return () => clearInterval(interval);
   }, []);
 
-  // Real-time: refetch when deals/rooms/messages/invites change
+  // Real-time: debounced refetch — wait 5s after last event to avoid spamming backend
+  const debounceRef = useRef(null);
   useEffect(() => {
+    const debouncedRefresh = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(fetchNotifications, 5000);
+    };
     const unsubs = [];
-    const refresh = () => fetchNotifications();
-    unsubs.push(base44.entities.Deal.subscribe(refresh));
-    unsubs.push(base44.entities.Room.subscribe(refresh));
-    unsubs.push(base44.entities.Message.subscribe(refresh));
-    unsubs.push(base44.entities.DealInvite.subscribe(refresh));
-    unsubs.push(base44.entities.CounterOffer.subscribe(refresh));
-    unsubs.push(base44.entities.LegalAgreement.subscribe(refresh));
-    unsubs.push(base44.entities.DealAppointments.subscribe(refresh));
-    unsubs.push(base44.entities.Activity.subscribe(refresh));
-    return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
+    // Only subscribe to high-signal entities, not everything
+    unsubs.push(base44.entities.Deal.subscribe(debouncedRefresh));
+    unsubs.push(base44.entities.Room.subscribe(debouncedRefresh));
+    unsubs.push(base44.entities.CounterOffer.subscribe(debouncedRefresh));
+    unsubs.push(base44.entities.DealInvite.subscribe(debouncedRefresh));
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      unsubs.forEach(u => { try { u(); } catch (_) {} });
+    };
   }, []);
 
   // Close on click outside
