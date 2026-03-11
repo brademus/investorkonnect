@@ -1079,6 +1079,16 @@ export default function NewDeal() {
                     </div>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Special Instructions for Your Agent</label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any special instructions or notes for your agent..."
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] min-h-[80px]"
+                  />
+                </div>
               </div>
             </div>
 
