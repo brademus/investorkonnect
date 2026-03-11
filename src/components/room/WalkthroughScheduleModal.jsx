@@ -156,7 +156,7 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
                 </div>
                 <div>
                   <label className="block text-xs text-[#808080] mb-1">Start Time</label>
-                  <Select value={slot.timeStart} onValueChange={(v) => updateSlot(idx, "timeStart", v)}>
+                  <Select value={slot.timeStart} onValueChange={(v) => updateSlot(idx, "timeStart", v === slot.timeStart ? "" : v)}>
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="Start" />
                     </SelectTrigger>
@@ -166,10 +166,13 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
                       ))}
                     </SelectContent>
                   </Select>
+                  {slot.timeStart && (
+                    <button type="button" onClick={() => updateSlot(idx, "timeStart", "")} className="text-[10px] text-[#808080] hover:text-[#E3C567] mt-1 transition-colors">Clear</button>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs text-[#808080] mb-1">End Time</label>
-                  <Select value={slot.timeEnd} onValueChange={(v) => updateSlot(idx, "timeEnd", v)}>
+                  <Select value={slot.timeEnd} onValueChange={(v) => updateSlot(idx, "timeEnd", v === slot.timeEnd ? "" : v)}>
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue placeholder="End" />
                     </SelectTrigger>
@@ -179,6 +182,9 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
                       ))}
                     </SelectContent>
                   </Select>
+                  {slot.timeEnd && (
+                    <button type="button" onClick={() => updateSlot(idx, "timeEnd", "")} className="text-[10px] text-[#808080] hover:text-[#E3C567] mt-1 transition-colors">Clear</button>
+                  )}
                 </div>
               </div>
               {slot.timeStart && slot.timeEnd && (
