@@ -169,9 +169,11 @@ export default function Room() {
   useEffect(() => {
     if (!activeView) return;
     setMountedViews(prev => {
-      if (prev.has(activeView)) return prev;
       const next = new Set(prev);
       next.add(activeView);
+      // Always include 'board' so it's ready when needed
+      next.add('board');
+      if (prev.size === next.size && [...prev].every(v => next.has(v))) return prev;
       return next;
     });
     // Update URL ?view= param without triggering navigation
