@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
     }
 
     await base44.asServiceRole.entities.Deal.update(dealId, updatePayload);
-    const freshDeal = await base44.asServiceRole.entities.Deal.get(dealId);
-    return Response.json({ success: true, data: freshDeal });
+    const freshArr = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    return Response.json({ success: true, data: freshArr?.[0] || null });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
