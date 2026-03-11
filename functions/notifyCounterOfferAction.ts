@@ -4,88 +4,50 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    
     const { event, data, old_data } = body;
-    
-    // Only process update events where status changes to accepted or declined
-    if (event?.type !== 'update' || !data || !old_data) {
-      return Response.json({ success: true, message: 'No action needed' });
-    }
-    
-    const counterOffer = data;
-    const oldCounterOffer = old_data;
-    
-    // Check if status changed to accepted or declined
-    const statusChanged = counterOffer.status !== oldCounterOffer.status;
-    const isResolved = counterOffer.status === 'accepted' || counterOffer.status === 'declined';
-    
-    if (!statusChanged || !isResolved) {
-      return Response.json({ success: true, message: 'Counter offer not newly resolved' });
-    }
-    
-    const roomId = counterOffer.room_id;
-    if (!roomId) {
-      return Response.json({ error: 'No room_id found on counter offer' }, { status: 400 });
-    }
-    
-    // Get the room to identify investor and agent
-    const rooms = await base44.asServiceRole.entities.Room.filter({ id: roomId });
-    if (rooms.length === 0) {
-      return Response.json({ error: 'Room not found' }, { status: 404 });
-    }
-    
-    const room = rooms[0];
-    
-    // Determine who sent the counter (from_role) and get their profile
-    const senderProfileId = counterOffer.from_role === 'investor' ? room.investorId : room.agentId;
+
+    if (event?.type !== 'update' || !data || !old_data) return Response.json({ ok: true });
+
+    const statusChanged = data.status !== old_data.status;
+    const isResolved = data.status === 'accepted' || data.status === 'declined';
+    if (!statusChanged || !isResolved) return Response.json({ ok: true });
+
+    const rooms = await base44.asServiceRole.entities.Room.filter({ id: data.room_id });
+    const room = rooms?.[0];
+    if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
+
+    const senderProfileId = data.from_role === 'investor' ? room.investorId : room.agentId;
     const senderProfiles = await base44.asServiceRole.entities.Profile.filter({ id: senderProfileId });
-    
-    if (senderProfiles.length === 0) {
-      return Response.json({ error: 'Sender profile not found' }, { status: 404 });
-    }
-    
-    const sender = senderProfiles[0];
-    const dealTitle = room.title || 'Your deal';
-    const propertyAddress = room.property_address || 'the property';
-    const action = counterOffer.status === 'accepted' ? 'accepted' : 'declined';
-    
-    // Send email to the counter offer sender
+    const sender = senderProfiles?.[0];
+    if (!sender) return Response.json({ ok: true });
+
+    const address = room.property_address || room.title || 'the property';
+    const action = data.status === 'accepted' ? 'accepted' : 'declined';
+    const firstName = sender.full_name?.split(' ')[0] || 'there';
+
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: sender.email,
-      subject: `Counter Offer ${action.charAt(0).toUpperCase() + action.slice(1)} - ${dealTitle}`,
-      body: `
-Hello ${sender.full_name || 'there'},
+      subject: `Counter offer ${action} — ${address}`,
+      body: `Hi ${firstName},
 
-Your counter offer for ${dealTitle} (${propertyAddress}) has been ${action}.
+Your counter offer for ${address} was ${action}.
 
-${counterOffer.status === 'accepted' 
-  ? 'The new terms have been applied. Please regenerate the agreement to proceed with signing.' 
-  : 'You may submit a new counter offer or proceed with the original terms.'}
+${action === 'accepted'
+  ? 'The updated terms are now in effect. Log in to review and sign.'
+  : 'You can submit a new counter offer or proceed with the original terms.'}
 
-Best regards,
-Investor Konnect Team
-      `.trim()
+Log in here: https://investorkonnect.com
+
+— Investor Konnect`,
     });
 
-    // Send SMS if sender has phone and text notifications enabled
-    const textEnabled = sender.notification_preferences?.text === true;
-    if (textEnabled && sender.phone) {
-      try {
-        const smsText = `Investor Konnect: Your counter offer for ${dealTitle} has been ${action}. Log in for details.`;
-        await base44.asServiceRole.functions.invoke('sendSms', { to: sender.phone, message: smsText });
-        console.log('[notifyCounterOfferAction] SMS sent to', sender.email);
-      } catch (smsErr) {
-        console.warn('[notifyCounterOfferAction] SMS failed:', smsErr.message);
-      }
+    if (sender.notification_preferences?.text && sender.phone) {
+      const sms = `Your counter offer for ${address} was ${action}. Log in to view — investorkonnect.com`;
+      await base44.asServiceRole.functions.invoke('sendSms', { to: sender.phone, message: sms }).catch(() => {});
     }
-    
-    return Response.json({ 
-      success: true, 
-      message: `Notification sent to ${counterOffer.from_role} about ${action} counter offer` 
-    });
-    
+
+    return Response.json({ ok: true });
   } catch (error) {
-    console.error('Error sending counter offer action notification:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

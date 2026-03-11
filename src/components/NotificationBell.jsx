@@ -3,69 +3,59 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import {
-  Bell, MessageSquare, FileSignature, ArrowRightLeft,
-  Calendar, Upload, RefreshCw, ChevronRight, Loader2, AlertTriangle,
-  CheckCircle2, XCircle, UserCheck, TrendingUp, FileCheck, Camera, Zap
+  Bell, MessageSquare, ArrowRightLeft, Calendar,
+  Upload, RefreshCw, Zap, FileSignature, Loader2, ChevronRight
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const ICON_MAP = {
   unread_messages: MessageSquare,
   counter_offer_pending: ArrowRightLeft,
-  counter_offer_accepted: CheckCircle2,
-  counter_offer_declined: XCircle,
+  counter_offer_accepted: ArrowRightLeft,
+  counter_offer_declined: ArrowRightLeft,
   new_deal: Zap,
   agreement_sign: FileSignature,
-  agreement_fully_signed: FileCheck,
+  agreement_fully_signed: FileSignature,
   agreement_regenerated: RefreshCw,
-  investor_signed: UserCheck,
-  agent_signed: UserCheck,
+  investor_signed: FileSignature,
+  agent_signed: FileSignature,
   walkthrough_confirm: Calendar,
   walkthrough_scheduled: Calendar,
   action_needed: Upload,
-  activity_deal_created: Zap,
-  activity_agent_accepted: UserCheck,
-  activity_agent_locked_in: CheckCircle2,
-  activity_agent_rejected: XCircle,
-  activity_deal_stage_changed: TrendingUp,
-  activity_file_uploaded: FileCheck,
-  activity_photo_uploaded: Camera,
-};
-
-const COLOR_MAP = {
-  high: 'text-red-400',
-  medium: 'text-[#E3C567]',
-  low: 'text-[#808080]',
-};
-
-const BG_MAP = {
-  high: 'bg-red-400/10',
-  medium: 'bg-[#E3C567]/10',
-  low: 'bg-[#808080]/10',
 };
 
 function NotificationItem({ notification, onClick }) {
-  const Icon = ICON_MAP[notification.type] || AlertTriangle;
-  const color = COLOR_MAP[notification.priority] || 'text-[#808080]';
-  const bg = BG_MAP[notification.priority] || 'bg-[#808080]/10';
-  const timeAgo = notification.timestamp
-    ? formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })
-    : '';
+  const Icon = ICON_MAP[notification.type] || Bell;
+  const isHigh = notification.priority === 'high';
 
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-[#1A1A1F] transition-colors text-left"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors text-left group"
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
-        <Icon className={`w-4 h-4 ${color}`} />
+      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+        isHigh ? 'bg-[#E3C567]/12' : 'bg-white/[0.05]'
+      }`}>
+        <Icon className={`w-3.5 h-3.5 ${isHigh ? 'text-[#E3C567]' : 'text-[#808080]'}`} />
       </div>
+
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#FAFAFA] leading-tight">{notification.title}</p>
-        <p className="text-xs text-[#808080] truncate mt-0.5">{notification.description}</p>
-        {timeAgo && <p className="text-[10px] text-[#666] mt-1">{timeAgo}</p>}
+        <p className={`text-[13px] leading-tight font-medium ${isHigh ? 'text-[#FAFAFA]' : 'text-[#C0C0C0]'}`}>
+          {notification.title}
+        </p>
+        {notification.description && (
+          <p className="text-[11px] text-[#606060] truncate mt-0.5">{notification.description}</p>
+        )}
       </div>
-      <ChevronRight className="w-4 h-4 text-[#666] flex-shrink-0 mt-1" />
+
+      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        {notification.timestamp && (
+          <span className="text-[10px] text-[#505050]">
+            {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+          </span>
+        )}
+        <ChevronRight className="w-3 h-3 text-[#404040] group-hover:text-[#606060] transition-colors" />
+      </div>
     </button>
   );
 }
@@ -78,7 +68,7 @@ export default function NotificationBell() {
   const [fetched, setFetched] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
-  // Track when user last opened the panel to distinguish "new" notifications
+
   const [lastSeenAt, setLastSeenAt] = useState(() => {
     try {
       const stored = sessionStorage.getItem('notif_last_seen');
@@ -99,33 +89,30 @@ export default function NotificationBell() {
     }
   }, []);
 
-  // Fetch on mount + auto-refresh every 2 minutes (reduced from 60s)
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 120000);
+    const interval = setInterval(fetchNotifications, 120_000);
     return () => clearInterval(interval);
   }, []);
 
-  // Real-time: debounced refetch — wait 5s after last event to avoid spamming backend
   const debounceRef = useRef(null);
   useEffect(() => {
-    const debouncedRefresh = () => {
+    const debounced = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(fetchNotifications, 5000);
     };
-    const unsubs = [];
-    // Only subscribe to high-signal entities, not everything
-    unsubs.push(base44.entities.Deal.subscribe(debouncedRefresh));
-    unsubs.push(base44.entities.Room.subscribe(debouncedRefresh));
-    unsubs.push(base44.entities.CounterOffer.subscribe(debouncedRefresh));
-    unsubs.push(base44.entities.DealInvite.subscribe(debouncedRefresh));
+    const unsubs = [
+      base44.entities.Deal.subscribe(debounced),
+      base44.entities.Room.subscribe(debounced),
+      base44.entities.CounterOffer.subscribe(debounced),
+      base44.entities.DealInvite.subscribe(debounced),
+    ];
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       unsubs.forEach(u => { try { u(); } catch (_) {} });
     };
   }, []);
 
-  // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -137,62 +124,50 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handleToggle = () => {
-    if (!open) {
-      fetchNotifications(); // always refresh on open
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
-  };
-
-  // Whenever the panel is open, stamp lastSeenAt to the max notification timestamp (or now)
-  // so ALL current notifications are considered "seen"
   useEffect(() => {
     if (!open) return;
-    let maxTs = Date.now();
-    for (const n of notifications) {
-      if (n.timestamp) {
-        const t = new Date(n.timestamp).getTime();
-        if (t > maxTs) maxTs = t;
-      }
-    }
-    // Add 1ms buffer to ensure even the latest notification is "seen"
-    const seenTs = maxTs + 1;
+    const seenTs = Date.now() + 1;
     setLastSeenAt(seenTs);
     try { sessionStorage.setItem('notif_last_seen', String(seenTs)); } catch {}
-  }, [open, notifications]);
+  }, [open]);
+
+  const handleToggle = () => {
+    if (!open) { fetchNotifications(); setOpen(true); }
+    else setOpen(false);
+  };
 
   const handleNotificationClick = (n) => {
     setOpen(false);
-    if (n.roomId) {
-      navigate(`${createPageUrl("Room")}?roomId=${n.roomId}`);
-    } else if (n.dealId) {
-      navigate(`${createPageUrl("Room")}?dealId=${n.dealId}`);
-    }
+    if (n.roomId) navigate(`${createPageUrl("Room")}?roomId=${n.roomId}`);
+    else if (n.dealId) navigate(`${createPageUrl("Room")}?dealId=${n.dealId}`);
   };
 
-  // Badge count = only notifications with a timestamp AFTER last time user opened the panel
-  const unseenNotifications = notifications.filter(n => {
-    if (!lastSeenAt) return true; // never opened = all are unseen
-    const ts = n.timestamp ? new Date(n.timestamp).getTime() : 0;
-    return ts > lastSeenAt;
-  });
-  const count = unseenNotifications.length;
-  const highCount = unseenNotifications.filter(n => n.priority === 'high').length;
+  const unseenCount = notifications.filter(n => {
+    if (!lastSeenAt) return true;
+    return (n.timestamp ? new Date(n.timestamp).getTime() : 0) > lastSeenAt;
+  }).length;
+
+  const hasHigh = notifications.some(n =>
+    n.priority === 'high' && (n.timestamp ? new Date(n.timestamp).getTime() : 0) > lastSeenAt
+  );
+
+  const high = notifications.filter(n => n.priority === 'high');
+  const other = notifications.filter(n => n.priority !== 'high');
 
   return (
     <div className="relative">
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="relative p-2 rounded-full border border-[#1F1F1F] bg-[#1A1A1A] hover:bg-[#222] hover:border-[#E3C567] transition-all"
-        aria-label={`${count} notifications`}
+        className="relative p-2 rounded-full border border-[#1F1F1F] bg-[#1A1A1A] hover:bg-[#222] hover:border-[#E3C567]/40 transition-all"
+        aria-label={`${unseenCount} notifications`}
       >
-        <Bell className={`w-5 h-5 ${count > 0 ? "text-[#E3C567]" : "text-[#808080]"}`} />
-        {count > 0 && (
-          <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-[10px] font-bold px-1 leading-none ${highCount > 0 ? 'bg-red-500' : 'bg-[#E3C567] text-black'}`}>
-            {count > 99 ? "99+" : count}
+        <Bell className={`w-5 h-5 ${unseenCount > 0 ? 'text-[#E3C567]' : 'text-[#505050]'}`} />
+        {unseenCount > 0 && (
+          <span className={`absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold px-1 leading-none ${
+            hasHigh ? 'bg-red-500 text-white' : 'bg-[#E3C567] text-black'
+          }`}>
+            {unseenCount > 9 ? '9+' : unseenCount}
           </span>
         )}
       </button>
@@ -200,38 +175,62 @@ export default function NotificationBell() {
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 mt-2 w-[360px] max-h-[480px] overflow-y-auto rounded-[16px] z-50"
+          className="absolute right-0 mt-2 w-[320px] rounded-2xl z-50 overflow-hidden"
           style={{
-            background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.80)',
+            background: '#111114',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.85)',
           }}
         >
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-sm font-semibold text-[#FAFAFA]">Notifications</h3>
-            {loading && <Loader2 className="w-3.5 h-3.5 text-[#E3C567] animate-spin" />}
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-[13px] font-semibold text-[#FAFAFA] tracking-wide">Notifications</span>
+            {loading && <Loader2 className="w-3 h-3 text-[#E3C567] animate-spin" />}
           </div>
 
-          <div className="p-2">
-            {loading && !fetched ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 text-[#E3C567] animate-spin" />
+          <div className="max-h-[400px] overflow-y-auto">
+            {!fetched && loading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-4 h-4 text-[#E3C567] animate-spin" />
               </div>
             ) : notifications.length === 0 ? (
-              <div className="text-center py-8">
-                <Bell className="w-8 h-8 text-[#333] mx-auto mb-2" />
-                <p className="text-sm text-[#808080]">You're all caught up</p>
-                <p className="text-xs text-[#666] mt-1">No pending notifications</p>
+              <div className="text-center py-10 px-4">
+                <Bell className="w-7 h-7 text-[#2A2A2A] mx-auto mb-2.5" />
+                <p className="text-[13px] text-[#505050]">All caught up</p>
               </div>
             ) : (
-              <div className="space-y-1">
-                {notifications.map((n, i) => (
-                  <NotificationItem
-                    key={`${n.type}-${n.dealId}-${n.roomId}-${i}`}
-                    notification={n}
-                    onClick={() => handleNotificationClick(n)}
-                  />
-                ))}
+              <div className="p-2 space-y-0.5">
+                {high.length > 0 && (
+                  <>
+                    <p className="text-[10px] font-semibold text-[#E3C567]/60 uppercase tracking-widest px-3 pt-2 pb-1">
+                      Action required
+                    </p>
+                    {high.map((n, i) => (
+                      <NotificationItem
+                        key={`high-${i}`}
+                        notification={n}
+                        onClick={() => handleNotificationClick(n)}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {other.length > 0 && (
+                  <>
+                    {high.length > 0 && (
+                      <div className="mx-3 my-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+                    )}
+                    <p className="text-[10px] font-semibold text-[#505050] uppercase tracking-widest px-3 pt-1 pb-1">
+                      Updates
+                    </p>
+                    {other.map((n, i) => (
+                      <NotificationItem
+                        key={`other-${i}`}
+                        notification={n}
+                        onClick={() => handleNotificationClick(n)}
+                      />
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>

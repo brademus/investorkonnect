@@ -4,117 +4,64 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    
-    const { event, data } = body;
-    
-    // Only process update events where agreement becomes fully_signed
-    if (event?.type !== 'update' || !data) {
-      return Response.json({ success: true, message: 'No action needed' });
-    }
-    
-    const agreement = data;
-    const oldAgreement = body.old_data;
-    
-    // Check if agreement is now fully_signed (and wasn't before to avoid duplicate notifications)
-    if (agreement.status !== 'fully_signed') {
-      return Response.json({ success: true, message: 'Agreement not fully signed yet' });
-    }
-    
-    // Skip if it was already fully_signed (idempotency check)
-    if (oldAgreement?.status === 'fully_signed') {
-      return Response.json({ success: true, message: 'Agreement already was fully signed' });
-    }
-    
-    // Get the room
-    const roomId = agreement.room_id;
-    if (!roomId) {
-      return Response.json({ error: 'No room_id found on agreement' }, { status: 400 });
-    }
-    
+    const { event, data, old_data } = body;
+
+    if (event?.type !== 'update' || !data) return Response.json({ ok: true });
+    if (data.status !== 'fully_signed') return Response.json({ ok: true });
+    if (old_data?.status === 'fully_signed') return Response.json({ ok: true });
+
+    const roomId = data.room_id;
+    if (!roomId) return Response.json({ error: 'No room_id' }, { status: 400 });
+
     const rooms = await base44.asServiceRole.entities.Room.filter({ id: roomId });
-    if (rooms.length === 0) {
-      return Response.json({ error: 'Room not found' }, { status: 404 });
-    }
-    
-    const room = rooms[0];
-    
-    // Get investor profile
+    const room = rooms?.[0];
+    if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
+
     const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.investorId });
-    if (!investorProfiles?.length) {
-      return Response.json({ error: 'Investor profile not found' }, { status: 404 });
-    }
-    const investor = investorProfiles[0];
+    const investor = investorProfiles?.[0];
+    if (!investor) return Response.json({ error: 'Investor not found' }, { status: 404 });
 
-    // Get winning agent (locked_agent_id on room, or first agent_id)
-    const winningAgentId = room.locked_agent_id || room.agent_ids?.[0];
-    if (!winningAgentId) {
-      return Response.json({ error: 'No agent found on room' }, { status: 404 });
-    }
-    const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: winningAgentId });
-    if (!agentProfiles?.length) {
-      return Response.json({ error: 'Agent profile not found' }, { status: 404 });
-    }
-    const agent = agentProfiles[0];
-    
-    const dealTitle = room.title || 'Your deal';
-    const propertyAddress = room.property_address || 'the property';
-    
-    // Send email to investor
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: investor.email,
-      subject: `Agreement Fully Signed - ${dealTitle}`,
-      body: `
-Hello ${investor.full_name || 'there'},
+    const agentId = room.locked_agent_id || room.agent_ids?.[0];
+    const agentProfiles = agentId
+      ? await base44.asServiceRole.entities.Profile.filter({ id: agentId })
+      : [];
+    const agent = agentProfiles?.[0];
 
-Great news! The agreement for ${dealTitle} (${propertyAddress}) has been fully signed by both parties.
+    const address = room.property_address || room.title || 'the property';
 
-You can now view the signed agreement and proceed with the next steps in your pipeline.
+    const send = async (to, name, role) => {
+      if (!to) return;
+      const opposite = role === 'investor' ? 'agent' : 'investor';
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to,
+        subject: `Agreement signed — ${address}`,
+        body: `Hi ${name || 'there'},
 
-Best regards,
-Investor Konnect Team
-      `.trim()
-    });
-    
-    // Send email to agent
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: agent.email,
-      subject: `Agreement Fully Signed - ${dealTitle}`,
-      body: `
-Hello ${agent.full_name || 'there'},
+Both parties have signed the agreement for ${address}.
 
-Great news! The agreement for ${dealTitle} (${propertyAddress}) has been fully signed by both parties.
+You can now message the ${opposite} and access the full deal room.
 
-You can now view the signed agreement and proceed with the next steps.
+Log in to get started: https://investorkonnect.com
 
-Best regards,
-Investor Konnect Team
-      `.trim()
-    });
-
-    // Send SMS notifications if users have phone numbers and text notifications enabled
-    const smsText = `Investor Konnect: Agreement for ${dealTitle} (${propertyAddress}) is fully signed! Log in to view next steps.`;
-    
-    const sendSmsIfEnabled = async (profile) => {
-      const textEnabled = profile.notification_preferences?.text === true;
-      if (textEnabled && profile.phone) {
-        try {
-          await base44.asServiceRole.functions.invoke('sendSms', { to: profile.phone, message: smsText });
-          console.log('[notifyFullAgreementSigned] SMS sent to', profile.email);
-        } catch (smsErr) {
-          console.warn('[notifyFullAgreementSigned] SMS failed for', profile.email, smsErr.message);
-        }
-      }
+— Investor Konnect`,
+      });
     };
 
-    await Promise.all([sendSmsIfEnabled(investor), sendSmsIfEnabled(agent)]);
-    
-    return Response.json({ 
-      success: true, 
-      message: `Notifications sent to investor and agent for room ${roomId}` 
-    });
-    
+    await Promise.all([
+      send(investor.email, investor.full_name?.split(' ')[0], 'investor'),
+      agent ? send(agent.email, agent.full_name?.split(' ')[0], 'agent') : Promise.resolve(),
+    ]);
+
+    const sms = `Agreement signed for ${address}. Log in to view next steps — investorkonnect.com`;
+    const sendSms = async (profile) => {
+      if (profile?.notification_preferences?.text && profile.phone) {
+        await base44.asServiceRole.functions.invoke('sendSms', { to: profile.phone, message: sms }).catch(() => {});
+      }
+    };
+    await Promise.all([sendSms(investor), agent ? sendSms(agent) : Promise.resolve()]);
+
+    return Response.json({ ok: true });
   } catch (error) {
-    console.error('Error sending full agreement notifications:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
