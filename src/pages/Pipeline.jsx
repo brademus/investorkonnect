@@ -101,18 +101,27 @@ function PipelineContent() {
   // Track previous deal stages for detecting transitions to completed/canceled
   const prevStagesRef = useRef(new Map());
 
-  // Real-time refresh for agents
+  // Real-time refresh — debounced to avoid 429 rate limits during burst events
+  const refetchTimerRef = useRef(null);
+  const debouncedRefetch = () => {
+    if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+    refetchTimerRef.current = setTimeout(() => {
+      refetchDeals();
+      refetchRooms();
+    }, 2000);
+  };
+
   useEffect(() => {
     if (!profile?.id) return;
     const unsubs = [];
-    unsubs.push(base44.entities.Room.subscribe(() => { refetchDeals(); refetchRooms(); }));
-    unsubs.push(base44.entities.Deal.subscribe((event) => {
-      refetchDeals();
-      // Just refetch on stage change; inline review form in pipeline card will handle rating
-    }));
+    unsubs.push(base44.entities.Room.subscribe(() => debouncedRefetch()));
+    unsubs.push(base44.entities.Deal.subscribe(() => debouncedRefetch()));
     unsubs.push(base44.entities.DealAppointments.subscribe(() => { queryClient.invalidateQueries({ queryKey: ['wtStatuses'] }); }));
-    if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => { refetchDeals(); refetchRooms(); }));
-    return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
+    if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => debouncedRefetch()));
+    return () => {
+      if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
+      unsubs.forEach(u => { try { u(); } catch (_) {} });
+    };
   }, [profile?.id, isAgent, isInvestor]);
 
   // Keep previous stages map in sync for detecting transitions
