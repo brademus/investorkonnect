@@ -171,8 +171,10 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
               <button
                 key={idx}
                 type="button"
-                onClick={() => canRespond && setSelectedSlotIdx(idx)}
-                disabled={!canRespond}
+                onClick={() => {
+                  if (!canRespond) return;
+                  setSelectedSlotIdx(prev => prev === idx ? null : idx);
+                }}
                 className={`w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left text-xs ${
                   isSelected ? "bg-[#E3C567]/10 border-[#E3C567]" : "bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]/40"
                 } ${canRespond ? "cursor-pointer" : "cursor-default"}`}
