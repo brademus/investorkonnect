@@ -92,7 +92,16 @@ export default function ProposeNewDatesForm({ dealId, roomId, profileId, onPropo
         });
       }
 
-      // 3. Send walkthrough_request message with new slots
+      // 3. Mark all previous walkthrough_request messages as superseded
+      try {
+        const oldMsgs = await base44.entities.Message.filter({ room_id: roomId });
+        const oldWtMsgs = (oldMsgs || []).filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
+        await Promise.all(oldWtMsgs.map(m =>
+          base44.entities.Message.update(m.id, { metadata: { ...m.metadata, status: 'superseded' } })
+        ));
+      } catch (_) {}
+
+      // 4. Send walkthrough_request message with new slots
       await base44.entities.Message.create({
         room_id: roomId,
         sender_profile_id: profileId,
