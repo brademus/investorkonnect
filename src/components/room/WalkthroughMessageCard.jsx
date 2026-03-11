@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Calendar, Check, Loader2 } from "lucide-react";
+import { Calendar, Check, Loader2, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { formatWalkthrough, respondToWalkthrough } from "@/components/room/walkthroughActions";
+import ProposeNewDatesForm from "@/components/room/ProposeNewDatesForm";
 
 /**
  * Inline walkthrough card shown in the message list.
