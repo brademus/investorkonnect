@@ -20,9 +20,9 @@ export function useRoomMessages(roomId) {
   useEffect(() => {
     if (!roomId) { setMessages([]); setLoaded(true); return; }
 
-    // If cached and fresh (< 10s), use cache
+    // If cached and fresh (< 3s), use cache
     const cached = _cache[roomId];
-    if (cached?.messages && cached.fetchedAt && (Date.now() - cached.fetchedAt) < 10000) {
+    if (cached?.messages && cached.fetchedAt && (Date.now() - cached.fetchedAt) < 3000) {
       setMessages(cached.messages);
       setLoaded(true);
       return;
@@ -39,8 +39,15 @@ export function useRoomMessages(roomId) {
       return;
     }
 
-    // First caller fetches
-    setLoaded(false);
+    // Show cached data immediately while refetching
+    if (cached?.messages) {
+      setMessages(cached.messages);
+      setLoaded(true);
+    } else {
+      setLoaded(false);
+    }
+
+    // Always fetch fresh data
     const fetchPromise = base44.entities.Message.filter({ room_id: roomId }, "created_date")
       .then(rows => {
         const msgs = rows || [];
