@@ -91,11 +91,13 @@ function PipelineContent() {
   });
 
   // Load rooms for matching
-  const { data: rooms = [], isLoading: loadingRooms, isError: roomsError, refetch: refetchRooms } = useQuery({
+  const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, isError: roomsError, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
     staleTime: 30_000,
+    gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       const res = await base44.functions.invoke('listMyRoomsEnriched');
       return res.data?.rooms || [];
