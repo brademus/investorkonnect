@@ -229,6 +229,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
               const ag = checkRes?.data?.agreement;
               if (ag && ag.docusign_envelope_id && ag.status !== 'voided' && ag.status !== 'superseded') {
                 setAgreement(ag);
+                freshAgreement = ag;
                 gotAgreement = true;
                 break;
               }
