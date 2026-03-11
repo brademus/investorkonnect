@@ -130,7 +130,17 @@ Deno.serve(async (req) => {
     // For agent signatures: update room/invite status and trigger lock-in if fully signed
     if (role === 'agent' && agreement.status === 'fully_signed') {
       console.log('[pollAndFinalize] Agent signature makes it fully_signed, updating room & deal');
-      const roomId = agreement.room_id;
+      let roomId = agreement.room_id;
+      // Fallback: look up room by deal_id if room_id is null on the agreement
+      if (!roomId && agreement.deal_id) {
+        const roomArr = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id }).catch(() => []);
+        if (roomArr?.[0]) {
+          roomId = roomArr[0].id;
+          console.log('[pollAndFinalize] Resolved room from deal_id:', roomId);
+          // Backfill room_id on the agreement for future lookups
+          await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, { room_id: roomId }).catch(() => {});
+        }
+      }
       if (roomId) {
         // Update room agreement_status
         await base44.asServiceRole.entities.Room.update(roomId, {

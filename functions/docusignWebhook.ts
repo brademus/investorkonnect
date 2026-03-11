@@ -167,16 +167,27 @@ Deno.serve(async (req) => {
           // Download signed PDF
           try { updates.signed_pdf_url = await downloadAndUploadSignedPdf(base44, envelopeId, agreement.id); } catch (e) { console.error('[webhook] PDF download failed:', e.message); }
 
+          // Resolve room_id if missing on agreement
+          let resolvedRoomId = agreement.room_id;
+          if (!resolvedRoomId && agreement.deal_id) {
+            const roomLookup = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id }).catch(() => []);
+            if (roomLookup?.[0]) {
+              resolvedRoomId = roomLookup[0].id;
+              console.log('[webhook] Resolved room from deal_id:', resolvedRoomId);
+              updates.room_id = resolvedRoomId;
+            }
+          }
+
           // Determine winning agent
           const winningAgentProfileId = agreement.agent_profile_id;
-          if (agreement.room_id && winningAgentProfileId) {
-            await lockDealToWinningAgent(base44, agreement.deal_id, agreement.room_id, winningAgentProfileId);
-          } else if (agreement.room_id) {
+          if (resolvedRoomId && winningAgentProfileId) {
+            await lockDealToWinningAgent(base44, agreement.deal_id, resolvedRoomId, winningAgentProfileId);
+          } else if (resolvedRoomId) {
             // Fallback: try to get agent from room
-            const roomArr = await base44.asServiceRole.entities.Room.filter({ id: agreement.room_id });
+            const roomArr = await base44.asServiceRole.entities.Room.filter({ id: resolvedRoomId });
             const fallbackAgent = roomArr?.[0]?.agent_ids?.[0];
             if (fallbackAgent) {
-              await lockDealToWinningAgent(base44, agreement.deal_id, agreement.room_id, fallbackAgent);
+              await lockDealToWinningAgent(base44, agreement.deal_id, resolvedRoomId, fallbackAgent);
             }
           }
         }
