@@ -225,7 +225,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => canRespond && setSelectedSlotIdx(idx)}
+                    onClick={() => canRespond && setSelectedSlotIdx(prev => prev === idx ? null : idx)}
                     disabled={!canRespond}
                     className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
                       isSelected
