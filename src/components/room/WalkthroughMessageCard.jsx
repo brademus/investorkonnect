@@ -192,16 +192,41 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
       )}
 
       {canRespond && (
-        <div className="flex gap-2 mt-3">
-          <Button
-            onClick={() => respond('confirm')}
-            disabled={responding || (hasMultipleSlots && selectedSlotIdx == null)}
-            size="sm"
-            className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs"
-          >
-            {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-            {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
-          </Button>
+        <div className="space-y-2 mt-3">
+          <div className="flex gap-2">
+            <Button
+              onClick={() => respond('confirm')}
+              disabled={responding || (hasMultipleSlots && selectedSlotIdx == null)}
+              size="sm"
+              className="bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs"
+            >
+              {responding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+              {hasMultipleSlots && selectedSlotIdx == null ? "Select a Date to Confirm" : "Confirm Walk-through"}
+            </Button>
+          </div>
+          {!showProposeForm ? (
+            <button
+              onClick={() => setShowProposeForm(true)}
+              className="w-full flex items-center justify-center gap-1 text-xs text-[#808080] hover:text-[#E3C567] py-1 transition-colors"
+            >
+              <CalendarPlus className="w-3 h-3" />
+              Propose Different Dates
+            </button>
+          ) : (
+            <ProposeNewDatesForm
+              dealId={resolvedDealId}
+              roomId={roomId}
+              profileId={profile?.id}
+              compact
+              onProposed={() => {
+                setShowProposeForm(false);
+                setSelectedSlotIdx(null);
+                setLocalStatus('pending');
+                setUserActed(false);
+              }}
+              onCancel={() => setShowProposeForm(false)}
+            />
+          )}
         </div>
       )}
       {status === 'pending' && isRecipient && !isSigned && (
