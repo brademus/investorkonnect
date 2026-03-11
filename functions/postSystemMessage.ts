@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
     const profile = profiles?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    const room = await base44.asServiceRole.entities.Room.get(roomId);
+    const roomArr = await base44.asServiceRole.entities.Room.filter({ id: roomId });
+    const room = roomArr?.[0];
     if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
 
     const isParticipant = room.investorId === profile.id || (room.agent_ids || []).includes(profile.id);

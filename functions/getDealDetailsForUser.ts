@@ -13,10 +13,11 @@ Deno.serve(async (req) => {
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
 
     // Fetch profile and deal in parallel
-    const [profileArr, deal] = await Promise.all([
+    const [profileArr, dealArr] = await Promise.all([
       base44.asServiceRole.entities.Profile.filter({ user_id: user.id }),
-      base44.asServiceRole.entities.Deal.get(dealId).catch(() => null)
+      base44.asServiceRole.entities.Deal.filter({ id: dealId }).catch(() => [])
     ]);
+    const deal = dealArr?.[0] || null;
 
     const profile = profileArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });

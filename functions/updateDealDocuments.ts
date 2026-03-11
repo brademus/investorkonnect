@@ -20,12 +20,8 @@ Deno.serve(async (req) => {
     const profile = profileArr?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    let deal;
-    try {
-      deal = await base44.asServiceRole.entities.Deal.get(dealId);
-    } catch (e) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
-    }
+    const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    const deal = dealArr?.[0];
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
 
     // Access control
