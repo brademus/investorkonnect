@@ -207,7 +207,9 @@ export default function Room() {
     if (urlView === 'messages' || urlView === 'board') {
       defaultView = urlView;
     } else if (isInvestor && !cachedIsSigned) {
-      defaultView = 'pending_agents';
+      // If only 1 agent, skip pending_agents and go straight to board
+      const agentCount = enrichedRoom?.agent_ids?.length || 0;
+      defaultView = agentCount <= 1 ? 'board' : 'pending_agents';
     } else {
       defaultView = 'board';
     }
