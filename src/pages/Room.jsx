@@ -49,7 +49,7 @@ export default function Room() {
   const [hasWalkthroughAppt, setHasWalkthroughAppt] = useState(false);
   
   // Track which views have been mounted so they stay alive
-  const [mountedViews, setMountedViews] = useState(new Set(['board']));
+  const [mountedViews, setMountedViews] = useState(new Set());
 
   // Gating - redirect if not setup (admins skip all gates)
   const gateChecked = useRef(false);
