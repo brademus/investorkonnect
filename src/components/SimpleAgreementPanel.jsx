@@ -173,7 +173,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         buyer_commission_percentage: (buyerCommType === 'percentage' && dealData?.buyerCommissionPercentage) ? Number(dealData.buyerCommissionPercentage) : null,
         buyer_flat_fee: ((buyerCommType === 'flat' || buyerCommType === 'flat_fee') && dealData?.buyerFlatFee) ? Number(dealData.buyerFlatFee) : null,
         agreement_length_days: dealData?.agreementLength ? Number(dealData.agreementLength) : 180,
-        transaction_type: 'ASSIGNMENT'
+        transaction_type: dealData?.deal_type || dealData?.dealType || 'ASSIGNMENT'
       };
       // If dealData.dealId exists, this is an edit of an existing deal — use deal_id directly
       const isEditingExistingDeal = !!dealData?.dealId;
