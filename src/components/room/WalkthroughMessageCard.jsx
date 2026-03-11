@@ -17,6 +17,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   const [resolvedWtDate, setResolvedWtDate] = useState(null);
   const [resolvedWtTime, setResolvedWtTime] = useState(null);
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
+  const [showProposeForm, setShowProposeForm] = useState(false);
   const meta = message?.metadata || {};
   // If user acted, always trust localStatus — don't let meta.status revert it
   const status = userActed ? (localStatus || 'pending') : (localStatus || meta.status || 'pending');
