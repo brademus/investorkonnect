@@ -142,7 +142,7 @@ export default function UserActivityPanel({ profile, onClose }) {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="grid grid-cols-2 gap-3 p-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="text-center">
             <div className="text-xs text-[#808080]">Status</div>
             <div className="text-sm font-semibold capitalize text-[#FAFAFA]">{profile.status || "pending"}</div>
