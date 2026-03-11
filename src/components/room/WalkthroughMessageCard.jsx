@@ -213,7 +213,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
       )}
       
       {status === 'pending' && !isRecipient && (
-        <div className="mt-2 text-xs text-[#F59E0B]">{isSigned ? 'Awaiting agent response' : 'Proposed — agents can respond after signing'}</div>
+        <div className="mt-2 text-xs text-[#F59E0B]">{isSigned ? `Awaiting ${isAgent ? 'investor' : 'agent'} response` : 'Proposed — can respond after signing'}</div>
       )}
     </div>
   );
