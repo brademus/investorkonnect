@@ -240,17 +240,18 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
       if (gotAgreement) {
         toast.info('Preparing your signing session…');
-        await handleSign('investor');
+        // Pass the freshly-set agreement ID directly — React state may not have flushed yet
+        await handleSign('investor', agreement?.id);
       }
     } catch (e) { reportError(e?.response?.data?.error || 'Generation failed', { cause: e, extra: { dealId, roomId, draftId } }); }
     finally { setBusy(false); }
   };
 
   // Sign agreement
-  const handleSign = async (role) => {
+  const handleSign = async (role, overrideAgreementId) => {
     setBusy(true);
     try {
-      let targetId = agreement?.id;
+      let targetId = overrideAgreementId || agreement?.id;
 
       // AGENT FLOW: Find the investor-signed agreement and ensure agent is on the envelope
       if (role === 'agent') {
