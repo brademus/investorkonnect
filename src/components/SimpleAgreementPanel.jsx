@@ -212,6 +212,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             const ag = agreements.find(a => a.status !== 'voided' && a.status !== 'superseded' && a.docusign_envelope_id);
             if (ag) {
               setAgreement(ag);
+              freshAgreement = ag;
               gotAgreement = true;
               break;
             }
