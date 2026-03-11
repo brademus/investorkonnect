@@ -688,6 +688,12 @@ export default function Room() {
 
         {/* Content — keep views mounted once activated to avoid re-fetching */}
         <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
+          {/* Show nothing until activeView is determined */}
+          {!activeView && roomId && (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-6 h-6 border-2 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
           {/* Deal Board */}
           {mountedViews.has('board') && (
             <div style={{ display: activeView === 'board' ? 'block' : 'none' }}>
