@@ -69,15 +69,16 @@ function PipelineContent() {
   }, [loading, profile, onboarded]);
 
   // Load deals
-  const { data: dealsData = [], isLoading: loadingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
+  const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
     staleTime: 30_000,
+    gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
-      // Dedup by ID
       const map = new Map();
       deals.filter(d => d?.id && d.status !== 'archived').forEach(d => {
         const prev = map.get(d.id);
