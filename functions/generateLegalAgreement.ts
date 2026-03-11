@@ -294,21 +294,19 @@ Deno.serve(async (req) => {
     const pdfData = await pdfParse(new Uint8Array(templateBytes));
     let text = pdfData.text;
 
+    // These three tokens are handled by DocuSign anchors embedded in the PDF template body.
+    // Do NOT replace them in code — the template has [[AGENT_PRINT]], [[AGENT_BROKERAGE]],
+    // and [[AGENT_LICENSE]] at those positions which DocuSign fills automatically.
+    const DOCUSIGN_BODY_TOKENS = new Set(['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME']);
+
     // Replace tokens
     const missing = [];
     text = text.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
+      // Skip agent body fields — DocuSign anchors in the template handle these
+      if (DOCUSIGN_BODY_TOKENS.has(token)) return '';
       const val = ctx[token];
-      const isAgentField = ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME', 'AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
-
-      // Agent fields are intentionally TBD when no agent is assigned yet — allow them through
-      if (isAgentField && !fillAgent) return val || 'TBD';
-
-      // All other fields must have a real value
-      if (val && val !== 'N/A' && val !== 'TBD') return String(val);
-
-      // For agent fields when fillAgent=true, use value if present, else safe fallback (not an error)
-      if (isAgentField && fillAgent) return val && val !== 'TBD' ? String(val) : 'TBD';
-
+      const isAgentField = ['AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
+      if (val && val !== 'N/A' && (val !== 'TBD' || (isAgentField && !fillAgent))) return String(val);
       missing.push(token);
       return match;
     });
