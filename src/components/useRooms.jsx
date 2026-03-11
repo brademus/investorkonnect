@@ -8,11 +8,11 @@ import { base44 } from '@/api/base44Client';
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
-    staleTime: 30_000,
+    staleTime: 60_000,
     gcTime: 10 * 60_000,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 30_000,
+    refetchInterval: false,
     refetchIntervalInBackground: false,
     placeholderData: (prev) => prev,
     queryFn: async () => {
