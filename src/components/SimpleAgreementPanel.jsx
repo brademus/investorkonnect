@@ -187,7 +187,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           room_id: isEditingExistingDeal ? roomId : undefined,
           signer_mode: 'investor_only', exhibit_a, investor_profile_id: profile?.id,
           property_address: dealData?.propertyAddress, city: dealData?.city,
-          state: dealData?.state, zip: dealData?.zip, county: dealData?.county
+          state: dealData?.state, zip: dealData?.zip, county: dealData?.county,
+          purchase_price: dealData?.purchasePrice || dealData?.purchase_price
         });
         if (res.data?.agreement) { setAgreement(res.data.agreement); gotAgreement = true; }
         else if (res.data?.error) toast.error(res.data.error);
