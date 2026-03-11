@@ -244,7 +244,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       if (gotAgreement) {
         toast.info('Preparing your signing session…');
         // Pass the freshly-set agreement ID directly — React state may not have flushed yet
-        await handleSign('investor', agreement?.id);
+        await handleSign('investor', freshAgreement?.id);
       }
     } catch (e) { reportError(e?.response?.data?.error || 'Generation failed', { cause: e, extra: { dealId, roomId, draftId } }); }
     finally { setBusy(false); }
