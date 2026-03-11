@@ -333,8 +333,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       if (res.data?.error) { toast.error(res.data.error); setBusy(false); return; }
       if (res.data?.agreement) {
         setAgreement(res.data.agreement);
-        if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }); if (r?.[0]) setRoom(r[0]); }
-        await new Promise(r => setTimeout(r, 2000));
+        // Skip the 2s delay — go straight to signing
         const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
           agreement_id: res.data.agreement.id, role: 'investor', room_id: roomId
         });
