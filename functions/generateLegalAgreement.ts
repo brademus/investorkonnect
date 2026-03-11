@@ -227,7 +227,24 @@ Deno.serve(async (req) => {
     let deal;
     if (draft_id) {
       if (!body.state) return Response.json({ error: 'State required for draft' }, { status: 400 });
-      deal = { id: effectiveId, state: body.state, city: body.city || 'TBD', county: body.county || 'TBD', zip: body.zip || 'TBD', property_address: body.property_address || 'TBD', property_type: 'Single Family' };
+      // Try to load DealDraft from DB for complete data
+      let draftEntity = null;
+      try {
+        const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
+        draftEntity = drafts?.[0] || null;
+      } catch (_) {}
+      deal = {
+        id: effectiveId,
+        state: body.state || draftEntity?.state,
+        city: body.city || draftEntity?.city || 'TBD',
+        county: body.county || draftEntity?.county || 'TBD',
+        zip: body.zip || draftEntity?.zip || 'TBD',
+        property_address: body.property_address || draftEntity?.property_address || 'TBD',
+        purchase_price: body.purchase_price || draftEntity?.purchase_price || null,
+        property_type: draftEntity?.property_type || 'Single Family',
+        deal_type: body.deal_type || draftEntity?.deal_type || null
+      };
+      console.log(`[genAgreement] Draft deal built: price=${deal.purchase_price} addr=${deal.property_address}`);
     } else {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: effectiveId });
       if (!deals?.length) return Response.json({ error: 'Deal not found' }, { status: 404 });
