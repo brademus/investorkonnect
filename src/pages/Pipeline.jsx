@@ -69,9 +69,11 @@ function PipelineContent() {
   }, [loading, profile, onboarded]);
 
   // Load deals
-  const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
+  const { data: dealsData = [], isLoading: loadingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
     staleTime: 5_000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
