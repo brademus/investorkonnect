@@ -147,10 +147,7 @@ export default function UserActivityPanel({ profile, onClose }) {
             <div className="text-xs text-[#808080]">Status</div>
             <div className="text-sm font-semibold capitalize text-[#FAFAFA]">{profile.status || "pending"}</div>
           </div>
-          <div className="text-center">
-            <div className="text-xs text-[#808080]">KYC</div>
-            <div className="text-sm font-semibold capitalize text-[#FAFAFA]">{profile.kyc_status || "unverified"}</div>
-          </div>
+
           <div className="text-center">
             <div className="text-xs text-[#808080]">Subscription</div>
             <div className="text-sm font-semibold capitalize text-[#FAFAFA]">{profile.subscription_tier || "none"}</div>

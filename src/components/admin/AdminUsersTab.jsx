@@ -168,7 +168,7 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Type</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Onboarded</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">NDA</th>
-              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">KYC</th>
+
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Subscription</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -207,15 +207,7 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                       <XCircle className="w-4 h-4 text-[#808080]/40" />
                     )}
                   </td>
-                  <td className="px-4 py-3.5">
-                    <Badge className={`text-[10px] rounded-full ${
-                      profile.kyc_status === "approved" ? "bg-[#34D399]/15 text-[#34D399] border border-[#34D399]/30" :
-                      profile.kyc_status === "pending" ? "bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30" :
-                      "bg-[rgba(255,255,255,0.04)] text-[#808080] border border-[rgba(255,255,255,0.06)]"
-                    }`}>
-                      {profile.kyc_status || "none"}
-                    </Badge>
-                  </td>
+
                   <td className="px-4 py-3.5">
                     <Badge className="capitalize text-[10px] bg-[rgba(255,255,255,0.04)] text-[#808080] border border-[rgba(255,255,255,0.06)] rounded-full">
                       {profile.subscription_tier || "none"}
