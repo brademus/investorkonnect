@@ -148,6 +148,7 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
     PROPERTY_ADDRESS: deal.property_address || 'TBD', CITY: deal.city || 'TBD',
     STATE: deal.state || 'N/A', ZIP: deal.zip || 'N/A', COUNTY: deal.county || 'N/A', VENUE: venue,
     TRANSACTION_TYPE: exhibit_a.transaction_type || 'ASSIGNMENT',
+    SPECIAL_INSTRUCTIONS: exhibit_a.special_instructions || 'None',
     BUYER_COMP_TYPE: isBuyerFlat ? 'Flat Fee' : 'Commission Percentage',
     BUYER_COMP_VALUE: buyerCompValue,
     SELLER_COMP_TYPE: (sellerType === 'flat' || sellerType === 'flat_fee') ? 'Flat Fee' : 'Commission Percentage',

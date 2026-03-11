@@ -496,6 +496,7 @@ export default function NewDeal() {
             contract_date: contractDate
           },
           special_notes: specialNotes,
+          notes: notes || null,
           property_type: propertyType || null,
           deal_type: dealType || null,
           property_details: {
