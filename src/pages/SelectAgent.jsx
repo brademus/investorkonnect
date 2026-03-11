@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle2, Users, Briefcase, Trophy, MapPin, Star } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle2, Users, Briefcase, Trophy, MapPin, Star, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import AgentRatingStars from "@/components/AgentRatingStars";
 import { fetchAgentRatings } from "@/components/useAgentRating";
@@ -239,22 +239,8 @@ export default function SelectAgent() {
                       <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
                         {agent.full_name || "Unnamed Agent"}
                         {agent.qualification_tier === "elite" && (
-                          <span style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                            backgroundColor: "#D4AF37",
-                            color: "#000",
-                            fontSize: "10px",
-                            fontWeight: "700",
-                            padding: "2px 7px",
-                            borderRadius: "999px",
-                            letterSpacing: "0.04em",
-                            marginLeft: "6px",
-                            textTransform: "uppercase",
-                            verticalAlign: "middle"
-                          }}>
-                            ⭐ Elite Certified
+                          <span className="inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-[#E3C567]/15 text-[#E3C567] border border-[#E3C567]/30 align-middle">
+                            <ShieldCheck className="w-3 h-3" /> Elite Certified
                           </span>
                         )}
                       </h3>
