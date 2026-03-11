@@ -26,7 +26,7 @@ async function getDocuSignConnection(base44) {
 
 Deno.serve(async (req) => {
   if (!DOCUSIGN_INTEGRATION_KEY || !DOCUSIGN_CLIENT_SECRET) {
-    console.error('[docusignCreateSigningSession] CRITICAL: Missing DocuSign credentials. DOCUSIGN_INTEGRATION_KEY or DOCUSIGN_CLIENT_SECRET not set.');
+    console.error('[docusignCreateSigningSession] CRITICAL: Missing DocuSign credentials.');
     return Response.json({ error: 'DocuSign configuration error. Please contact support.', code: 'DOCUSIGN_CONFIG_MISSING' }, { status: 500 });
   }
   try {
@@ -39,8 +39,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'agreement_id and role (investor/agent) required' }, { status: 400 });
     }
 
-    // Load agreement
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    // ── PHASE 1: Load agreement + DocuSign connection in parallel ──
+    const [agreements, conn] = await Promise.all([
+      base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id }),
+      getDocuSignConnection(base44),
+    ]);
     const agreement = agreements?.[0];
     if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
     if (['superseded', 'voided'].includes(agreement.status)) {
@@ -51,91 +54,72 @@ Deno.serve(async (req) => {
 
     // Signer mode gating
     if (signerMode === 'agent_only' && role === 'investor') return Response.json({ error: 'This is an agent-only agreement' }, { status: 403 });
-    // Note: investor_only agreements get upgraded to 'both' via addAgentToEnvelope before agent signs
-    // Only block if agent has no recipient data yet (they should call addAgentToEnvelope first)
     if (signerMode === 'investor_only' && role === 'agent') {
       if (!agreement.agent_recipient_id || !agreement.agent_client_user_id) {
         return Response.json({ error: 'Agent must be added to envelope first. Please try again.' }, { status: 403 });
       }
-      // Agent was added but signer_mode wasn't updated yet — treat as 'both'
     }
 
-    // Room regenerate check
-    const effectiveRoom = room_id || agreement.room_id;
-    if (effectiveRoom && role === 'investor') {
-      const r = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoom });
-      if (r?.[0]?.requires_regenerate && r[0].current_legal_agreement_id === agreement.id && !agreement.investor_signed_at) {
-        return Response.json({ error: 'Terms changed. Regenerate agreement first.', code: 'REGENERATE_REQUIRED' }, { status: 400 });
-      }
-    }
-
-    // Deal lock check
-    const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
-    const deal = dealArr?.[0];
-    if (deal?.locked_room_id && (room_id || agreement.room_id) && deal.locked_room_id !== (room_id || agreement.room_id)) {
-      return Response.json({ error: 'Deal locked to another agent' }, { status: 403 });
-    }
-
-    // Get DocuSign connection
-    const conn = await getDocuSignConnection(base44);
-
-    // Sync signatures from DocuSign
-    const recipUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/recipients`;
-    const recipResp = await fetch(recipUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
-    if (recipResp.ok) {
-      const recipData = await recipResp.json();
-      const signers = recipData.signers || [];
-      const updates = {};
-      const inv = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-      const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-      if (inv?.status === 'completed' && !agreement.investor_signed_at) updates.investor_signed_at = inv.signedDateTime || new Date().toISOString();
-          if (ag?.status === 'completed' && !agreement.agent_signed_at) updates.agent_signed_at = ag.signedDateTime || new Date().toISOString();
-          if (Object.keys(updates).length) {
-            const invS = !!(updates.investor_signed_at || agreement.investor_signed_at);
-            const agS = !!(updates.agent_signed_at || agreement.agent_signed_at);
-            updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : agS ? 'agent_signed' : agreement.status;
-            updates.docusign_status = (invS && agS) ? 'completed' : 'sent';
-        await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
-        Object.assign(agreement, updates);
-        // Also sync room agreement_status
-        const agRoom = agreement.room_id || room_id;
-        if (agRoom && updates.status) {
-          const roomUpd = { agreement_status: updates.status };
-          if (updates.status === 'fully_signed') roomUpd.request_status = 'signed';
-          await base44.asServiceRole.entities.Room.update(agRoom, roomUpd).catch(() => {});
-        }
-      }
-    }
-
-    // Already signed check — also update room status if fully signed
+    // Quick already-signed check from local data BEFORE any DocuSign API calls
     if (role === 'investor' && agreement.investor_signed_at) return Response.json({ already_signed: true, agreement });
     if (role === 'agent' && agreement.agent_signed_at) return Response.json({ already_signed: true, agreement });
-    // Agent waits for investor to sign first (except agent_only mode which is legacy).
     if (role === 'agent' && !agreement.investor_signed_at && signerMode !== 'agent_only') {
       return Response.json({ error: 'Investor must sign first' }, { status: 403 });
     }
 
-    // Check envelope status
-    const envUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}`;
-    const envResp = await fetch(envUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
-    if (envResp.ok) {
-        const env = await envResp.json();
-        console.log('[signing] Envelope status:', env.status, 'for role:', role);
-        if (env.status === 'completed') {
-          // Envelope has both signers. If completed, both must have signed.
-          return Response.json({ already_signed: true, agreement });
-        }
-        if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
-      }
+    // Check recipient data before doing any more work
+    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
+    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
+    if (!recipientId || !clientUserId) return Response.json({ error: `Missing recipient data for ${role}. Regenerate.` }, { status: 400 });
 
-    // Build redirect URL
+    // ── PHASE 2: Run room check, deal lock check, profile lookup, and envelope status ALL in parallel ──
+    const effectiveRoom = room_id || agreement.room_id;
+    const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
+
+    const [roomResult, dealResult, profileResult, envResult] = await Promise.all([
+      // Room regen check (only needed for investor)
+      (effectiveRoom && role === 'investor')
+        ? base44.asServiceRole.entities.Room.filter({ id: effectiveRoom }).catch(() => [])
+        : Promise.resolve(null),
+      // Deal lock check
+      base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id }).catch(() => []),
+      // Profile for signing
+      base44.asServiceRole.entities.Profile.filter({ id: profileId }).catch(() => []),
+      // Envelope status from DocuSign
+      fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}`, {
+        headers: { 'Authorization': `Bearer ${conn.access_token}` }
+      }).catch(() => null),
+    ]);
+
+    // Process room regen check
+    if (roomResult && role === 'investor') {
+      const rm = roomResult[0];
+      if (rm?.requires_regenerate && rm.current_legal_agreement_id === agreement.id && !agreement.investor_signed_at) {
+        return Response.json({ error: 'Terms changed. Regenerate agreement first.', code: 'REGENERATE_REQUIRED' }, { status: 400 });
+      }
+    }
+
+    // Process deal lock check
+    const deal = dealResult?.[0];
+    if (deal?.locked_room_id && (room_id || agreement.room_id) && deal.locked_room_id !== (room_id || agreement.room_id)) {
+      return Response.json({ error: 'Deal locked to another agent' }, { status: 403 });
+    }
+
+    // Process envelope status
+    if (envResult?.ok) {
+      const env = await envResult.json();
+      console.log('[signing] Envelope status:', env.status, 'for role:', role);
+      if (env.status === 'completed') {
+        return Response.json({ already_signed: true, agreement });
+      }
+      if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
+    }
+
+    const profile = profileResult?.[0];
+
+    // ── PHASE 3: Create signing token + recipient view in parallel ──
     const publicUrl = Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin;
     const tokenValue = crypto.randomUUID();
-    await base44.asServiceRole.entities.SigningToken.create({
-      token: tokenValue, deal_id: agreement.deal_id, agreement_id: agreement.id,
-      role, return_to: redirect_url || `${publicUrl}/Room?roomId=${room_id || agreement.room_id}&signed=1`,
-      expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
-    });
 
     const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
     returnURL.searchParams.set('token', tokenValue);
@@ -143,29 +127,28 @@ Deno.serve(async (req) => {
     if (room_id || agreement.room_id) returnURL.searchParams.set('roomId', room_id || agreement.room_id);
     returnURL.searchParams.set('role', role);
 
-    // Get profile for signing
-    const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
-    const profileArr = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
-    const profile = profileArr?.[0];
-
-    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
-    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
-    if (!recipientId || !clientUserId) return Response.json({ error: `Missing recipient data for ${role}. Regenerate.` }, { status: 400 });
-
-    // Create signing view
-    const viewResp = await fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/views/recipient`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        returnUrl: returnURL.toString(),
-        authenticationMethod: 'none',
-        email: profile?.email || user.email,
-        userName: profile?.full_name || user.email,
-        recipientId: String(recipientId),
-        clientUserId: String(clientUserId),
-        frameAncestors: [publicUrl], messageOrigins: [publicUrl]
-      })
-    });
+    const [_, viewResp] = await Promise.all([
+      // Create signing token (fire and forget — don't block on it)
+      base44.asServiceRole.entities.SigningToken.create({
+        token: tokenValue, deal_id: agreement.deal_id, agreement_id: agreement.id,
+        role, return_to: redirect_url || `${publicUrl}/Room?roomId=${room_id || agreement.room_id}&signed=1`,
+        expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
+      }),
+      // Create recipient view (the actual signing URL)
+      fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/views/recipient`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          returnUrl: returnURL.toString(),
+          authenticationMethod: 'none',
+          email: profile?.email || user.email,
+          userName: profile?.full_name || user.email,
+          recipientId: String(recipientId),
+          clientUserId: String(clientUserId),
+          frameAncestors: [publicUrl], messageOrigins: [publicUrl]
+        })
+      }),
+    ]);
 
     if (!viewResp.ok) {
       const errText = await viewResp.text();
