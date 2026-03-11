@@ -139,7 +139,7 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
     PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl,
     DEAL_ID: deal.id || 'N/A', EFFECTIVE_DATE: date,
     INVESTOR_LEGAL_NAME: investor.full_name || investor.email || 'N/A',
-    INVESTOR_ENTITY_TYPE: 'Individual', INVESTOR_EMAIL: investor.email || 'N/A', INVESTOR_PHONE: investor.phone || 'N/A',
+    INVESTOR_ENTITY_TYPE: investor.investor?.company_name || investor.company || 'Individual', INVESTOR_EMAIL: investor.email || 'N/A', INVESTOR_PHONE: investor.phone || 'N/A',
     AGENT_LEGAL_NAME: fillAgent ? (agent.full_name || agent.email || 'TBD') : 'TBD',
     LICENSE_NUMBER: agentLicense,
     BROKERAGE_NAME: fillAgent ? (agent.agent?.brokerage || agent.broker || 'TBD') : 'TBD',
@@ -299,7 +299,16 @@ Deno.serve(async (req) => {
     text = text.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
       const val = ctx[token];
       const isAgentField = ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME', 'AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
-      if (val && val !== 'N/A' && (val !== 'TBD' || (isAgentField && !fillAgent))) return String(val);
+
+      // Agent fields are intentionally TBD when no agent is assigned yet — allow them through
+      if (isAgentField && !fillAgent) return val || 'TBD';
+
+      // All other fields must have a real value
+      if (val && val !== 'N/A' && val !== 'TBD') return String(val);
+
+      // For agent fields when fillAgent=true, use value if present, else safe fallback (not an error)
+      if (isAgentField && fillAgent) return val && val !== 'TBD' ? String(val) : 'TBD';
+
       missing.push(token);
       return match;
     });
