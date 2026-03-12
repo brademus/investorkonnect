@@ -9,26 +9,19 @@ import ProposeNewDatesForm from "@/components/room/ProposeNewDatesForm";
 const _wtCache = {};
 const RESOLVED_STATUSES = new Set(["SCHEDULED", "CANCELED", "COMPLETED"]);
 
-export default function InlineWalkthroughStatus({ deal, room, profile, roomId }) {
+export default function InlineWalkthroughStatus({ deal, room, profile, roomId, externalStatus, externalProposedBy, externalLoaded }) {
   const dealId = deal?.id;
-  const cached = dealId ? _wtCache[dealId] : null;
-  const [apptStatus, setApptStatus] = useState(cached?.status || null);
-  const [apptLoaded, setApptLoaded] = useState(!!cached);
-  const [proposedByProfileId, setProposedByProfileId] = useState(cached?.proposedBy || null);
+  // Use external state from DealBoard if provided (avoids duplicate subscriptions)
+  const useExternal = externalStatus !== undefined;
   const [responding, setResponding] = useState(false);
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [showProposeForm, setShowProposeForm] = useState(false);
+  const [proposedByProfileId, setProposedByProfileId] = useState(externalProposedBy || null);
 
-  const safeSetStatus = (newStatus) => {
-    setApptStatus(prev => {
-      if (RESOLVED_STATUSES.has(prev) && !RESOLVED_STATUSES.has(newStatus)) return prev;
-      return newStatus;
-    });
-  };
-
+  // Sync external proposedBy
   useEffect(() => {
-    if (dealId && apptStatus) _wtCache[dealId] = { ..._wtCache[dealId], status: apptStatus, proposedBy: proposedByProfileId };
-  }, [dealId, apptStatus, proposedByProfileId]);
+    if (externalProposedBy !== undefined) setProposedByProfileId(externalProposedBy);
+  }, [externalProposedBy]);
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
@@ -39,65 +32,10 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId })
   const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
   const dealHasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtTime || wtSlots.length > 0);
   const dealConfirmed = deal?.walkthrough_confirmed === true;
-  const hasWalkthrough = dealHasWalkthrough || (apptStatus && apptStatus !== "NOT_SET");
+  const apptLoaded = useExternal ? (externalLoaded !== false) : true;
+  const hasWalkthrough = dealHasWalkthrough || (externalStatus && externalStatus !== "NOT_SET");
 
-  useEffect(() => {
-    if (!dealId) return;
-    const freshCached = _wtCache[dealId];
-    if (freshCached?.userActionAt && (Date.now() - freshCached.userActionAt) < 30000) {
-      safeSetStatus(freshCached.status);
-      setApptLoaded(true);
-      return;
-    }
-    let cancelled = false;
-    setApptLoaded(false);
-    base44.entities.DealAppointments.filter({ dealId }).then(rows => {
-      if (cancelled) return;
-      const latestCache = _wtCache[dealId];
-      if (latestCache?.userActionAt && (Date.now() - latestCache.userActionAt) < 30000) { setApptLoaded(true); return; }
-      const s = rows?.[0]?.walkthrough?.status;
-      if (s && s !== "NOT_SET") safeSetStatus(s);
-      else if (dealHasWalkthrough) safeSetStatus("PROPOSED");
-      if (rows?.[0]?.walkthrough?.updatedByUserId) setProposedByProfileId(rows[0].walkthrough.updatedByUserId);
-      setApptLoaded(true);
-    }).catch(() => {
-      if (!cancelled && dealHasWalkthrough && !_wtCache[dealId]?.status) safeSetStatus("PROPOSED");
-      setApptLoaded(true);
-    });
-    return () => { cancelled = true; };
-  }, [dealId, dealHasWalkthrough]);
-
-  useEffect(() => {
-    if (!deal?.id) return;
-    const unsub = base44.entities.DealAppointments.subscribe(e => {
-      if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
-        const s = e.data.walkthrough.status;
-        safeSetStatus(s);
-        if (RESOLVED_STATUSES.has(s)) _wtCache[deal.id] = { status: s, userActionAt: Date.now() };
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [deal?.id]);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const unsub = base44.entities.Message.subscribe(e => {
-      const d = e?.data;
-      if (!d || d.room_id !== roomId) return;
-      if (d.metadata?.type === "walkthrough_request") {
-        if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "pending") { setApptStatus("PROPOSED"); setProposedByProfileId(d.sender_profile_id || null); delete _wtCache[dealId]; }
-      }
-      if (d.metadata?.type === "walkthrough_response") {
-        if (d.metadata.status === "confirmed") { safeSetStatus("SCHEDULED"); _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() }; }
-        else if (d.metadata.status === "denied") { safeSetStatus("CANCELED"); _wtCache[dealId] = { status: "CANCELED", userActionAt: Date.now() }; }
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [roomId, dealId]);
-
-  const status = dealConfirmed ? "SCHEDULED" : (apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null));
+  const status = dealConfirmed ? "SCHEDULED" : (externalStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null));
   // Either party can confirm proposed dates — the one who didn't propose them
   const proposedBySelf2 = proposedByProfileId === profile?.id;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;

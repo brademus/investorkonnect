@@ -14,12 +14,11 @@ import {
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 
-export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, onReviewSubmitted, inline = false }) {
+export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpdate, onOpenWalkthroughModal, onReviewSubmitted, inline = false, wtStatus: externalWtStatus, wtProposedBy }) {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [updatingStage, setUpdatingStage] = useState(false);
   const [showClosePrompt, setShowClosePrompt] = useState(false);
-  const [apptStatus, setApptStatus] = useState(null);
   const [editingListPrice, setEditingListPrice] = useState(false);
   const [listPriceInput, setListPriceInput] = useState('');
   const [savingListPrice, setSavingListPrice] = useState(false);
@@ -30,34 +29,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
 
-  // Load walkthrough appointment status
-  useEffect(() => {
-    if (!deal?.id) return;
-    base44.entities.DealAppointments.filter({ dealId: deal.id }).then(rows => {
-      const s = rows?.[0]?.walkthrough?.status || null;
-      setApptStatus(s);
-    }).catch(() => {});
-
-    const unsub = base44.entities.DealAppointments.subscribe(e => {
-      if (e?.data?.dealId === deal.id && e.data.walkthrough?.status) {
-        setApptStatus(e.data.walkthrough.status);
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [deal?.id]);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const unsub = base44.entities.Message.subscribe(e => {
-      const d = e?.data;
-      if (!d || d.room_id !== roomId) return;
-      if (d.metadata?.type === "walkthrough_request" || d.metadata?.type === "walkthrough_response") {
-        if (d.metadata.status === "confirmed") setApptStatus("SCHEDULED");
-        else if (d.metadata.status === "denied") setApptStatus("CANCELED");
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [roomId]);
+  // Use externally-managed walkthrough status from DealBoard (no internal subscriptions needed)
+  const apptStatus = externalWtStatus || null;
 
   const triggerUpload = (docKey) => {
     const input = document.createElement('input');
