@@ -117,7 +117,12 @@ export default function DocuSignReturn() {
             if (roomIdResult) {
               doRedirect(`${createPageUrl("Room")}?roomId=${roomIdResult}`, 'Deal created and sent to agents!');
             } else {
-              doRedirect(createPageUrl("Pipeline"), dealIdResult ? 'Deal created!' : 'Agreement signed!');
+              // Deal is being created by webhook. Wait briefly for it to finish.
+              setMessage('Creating your deal...');
+              await new Promise(r => setTimeout(r, 3000));
+              queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+              queryClient.invalidateQueries({ queryKey: ['rooms'] });
+              doRedirect(`${createPageUrl("Pipeline")}?refresh=1`, 'Deal created and sent to agents!');
             }
             return;
           }

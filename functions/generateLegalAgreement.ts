@@ -209,31 +209,45 @@ Deno.serve(async (req) => {
     if (!effectiveId) return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     console.log(`[genAgreement] ids: deal=${deal_id} draft=${draft_id} room=${room_id} mode=${signer_mode}`);
 
-    // Load investor profile — CRITICAL: use investor_profile_id when provided (e.g. agent triggering regen)
-    let investor = null;
-    if (investor_profile_id) {
-      const p = await base44.asServiceRole.entities.Profile.filter({ id: investor_profile_id });
-      investor = p?.[0];
-    }
-    if (!investor) {
-      const p = await base44.entities.Profile.filter({ user_id: user.id });
-      investor = p?.[0];
-    }
-    if (!investor) return Response.json({ error: 'Investor profile not found' }, { status: 404 });
+    // ── PARALLEL PHASE 1: Fire ALL lookups + PDF download + DocuSign auth at once ──
+    const [
+      investorByIdResult,
+      investorByUserResult,
+      dealResult,
+      draftResult,
+      roomResult,
+      templateBytes,
+      dsConn,
+    ] = await Promise.all([
+      investor_profile_id
+        ? base44.asServiceRole.entities.Profile.filter({ id: investor_profile_id }).catch(() => [])
+        : Promise.resolve([]),
+      !investor_profile_id
+        ? base44.entities.Profile.filter({ user_id: user.id }).catch(() => [])
+        : Promise.resolve([]),
+      (deal_id && !draft_id)
+        ? base44.asServiceRole.entities.Deal.filter({ id: effectiveId }).catch(() => [])
+        : Promise.resolve([]),
+      draft_id
+        ? base44.asServiceRole.entities.DealDraft.filter({ id: draft_id }).catch(() => [])
+        : Promise.resolve([]),
+      room_id
+        ? base44.asServiceRole.entities.Room.filter({ id: room_id }).catch(() => [])
+        : Promise.resolve([]),
+      fetch(INTERNAL_AGREEMENT_URL).then(r => r.arrayBuffer()),
+      getDocuSignConnection(base44),
+    ]);
 
-    // Resolve the authoritative investor user_id — use explicit if provided, or from the profile
+    // Resolve investor
+    let investor = investorByIdResult?.[0] || investorByUserResult?.[0] || null;
+    if (!investor) return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     const resolvedInvestorUserId = explicitInvestorUserId || investor.user_id || user.id;
 
-    // Load deal context
+    // Resolve deal
     let deal;
     if (draft_id) {
       if (!body.state) return Response.json({ error: 'State required for draft' }, { status: 400 });
-      // Try to load DealDraft from DB for complete data
-      let draftEntity = null;
-      try {
-        const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
-        draftEntity = drafts?.[0] || null;
-      } catch (_) {}
+      const draftEntity = draftResult?.[0] || null;
       deal = {
         id: effectiveId,
         state: body.state || draftEntity?.state,
@@ -247,22 +261,19 @@ Deno.serve(async (req) => {
       };
       console.log(`[genAgreement] Draft deal built: price=${deal.purchase_price} addr=${deal.property_address}`);
     } else {
-      const deals = await base44.asServiceRole.entities.Deal.filter({ id: effectiveId });
-      if (!deals?.length) return Response.json({ error: 'Deal not found' }, { status: 404 });
-      deal = deals[0];
+      if (!dealResult?.length) return Response.json({ error: 'Deal not found' }, { status: 404 });
+      deal = dealResult[0];
     }
 
-    // Load room + agent
-    let room = null, agent = { id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD', agent: { license_number: 'TBD', brokerage: 'TBD' } };
+    // Resolve room + agent
+    let room = null;
+    let agent = { id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD', agent: { license_number: 'TBD', brokerage: 'TBD' } };
     if (room_id) {
-      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-      room = rooms?.[0];
+      room = roomResult?.[0];
       if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
-      // Use explicit agent_profile_id if provided (e.g. regeneration for a specific agent)
       const agentId = body.agent_profile_id || room.agent_ids?.[0];
       if (!agentId) return Response.json({ error: 'No agent in room' }, { status: 400 });
       console.log(`[genAgreement] Resolved agentId: ${agentId} (explicit: ${!!body.agent_profile_id})`);
-      // Merge room terms
       const agentTerms = room.agent_terms?.[agentId];
       if (agentTerms) exhibit_a = { ...exhibit_a, ...agentTerms };
       const ap = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
@@ -270,29 +281,31 @@ Deno.serve(async (req) => {
     }
 
     const fillAgent = !!room_id;
-    const templateUrl = INTERNAL_AGREEMENT_URL;
+    const conn = dsConn;
 
-    // Build input hash for cache
+    // ── PARALLEL PHASE 2: Cache check + PDF parse ──
     const inputHash = await sha256Hex(JSON.stringify({ deal_id: deal.id, investor_email: investor.email, agent_email: agent.email, exhibit_a, signer_mode, v: VERSION }));
 
-    // CACHE: Check for existing active agreement with EXACT same signer_mode
-    if (room_id) {
-      const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 10);
-      const match = existing.find(a => a.signer_mode === signer_mode && a.status !== 'superseded' && a.status !== 'voided');
+    const [cacheResult, pdfData] = await Promise.all([
+      room_id
+        ? base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 10)
+        : Promise.resolve([]),
+      pdfParse(new Uint8Array(templateBytes)),
+    ]);
+
+    if (room_id && cacheResult.length > 0) {
+      const match = cacheResult.find(a => a.signer_mode === signer_mode && a.status !== 'superseded' && a.status !== 'voided');
       if (match && match.render_input_hash === inputHash && match.final_pdf_url && match.docusign_envelope_id) {
         console.log(`[genAgreement] CACHE HIT: ${match.id} mode=${match.signer_mode}`);
         return Response.json({ success: true, agreement: match, regenerated: false });
       }
-      // Void old same-mode agreement if exists
       if (match) {
-        await base44.asServiceRole.entities.LegalAgreement.update(match.id, { status: 'superseded' });
+        base44.asServiceRole.entities.LegalAgreement.update(match.id, { status: 'superseded' }).catch(() => {});
       }
     }
 
     // Generate PDFs
     const ctx = buildContext(deal, investor, agent, exhibit_a, fillAgent);
-    const templateBytes = await (await fetch(templateUrl)).arrayBuffer();
-    const pdfData = await pdfParse(new Uint8Array(templateBytes));
     let text = pdfData.text;
 
     // These three tokens are handled by DocuSign anchors embedded in the PDF template body.
@@ -316,14 +329,9 @@ Deno.serve(async (req) => {
     text = normalizeWinAnsi(addSignatureBlock(text));
     const [humanPdf, dsPdf] = await Promise.all([generatePdf(text, false), generatePdf(text, true)]);
 
-    // Upload PDFs
-    const [humanUpload, dsUpload] = await Promise.all([
-      base44.integrations.Core.UploadFile({ file: new File([new Blob([humanPdf], { type: 'application/pdf' })], `agreement_${deal.id}_human.pdf`) }),
-      base44.integrations.Core.UploadFile({ file: new File([new Blob([dsPdf], { type: 'application/pdf' })], `agreement_${deal.id}_ds.pdf`) })
-    ]);
-
-    // Create DocuSign envelope
-    const conn = await getDocuSignConnection(base44);
+    // Upload DocuSign PDF immediately (needed for envelope), start human PDF upload in background
+    const humanUploadPromise = base44.integrations.Core.UploadFile({ file: new File([new Blob([humanPdf], { type: 'application/pdf' })], `agreement_${deal.id}_human.pdf`) });
+    const dsUpload = await base44.integrations.Core.UploadFile({ file: new File([new Blob([dsPdf], { type: 'application/pdf' })], `agreement_${deal.id}_ds.pdf`) });
     const ts = Date.now();
     const investorClientId = `inv-${deal.id}-${ts}`;
     const agentClientId = `ag-${deal.id}-${ts}`;
@@ -412,6 +420,9 @@ Deno.serve(async (req) => {
     const envelope = await envResp.json();
     console.log(`[genAgreement] Envelope: ${envelope.envelopeId}`);
 
+    // Now await the human PDF upload (was running in background)
+    const humanUpload = await humanUploadPromise;
+
     // Both signers are ALWAYS in the envelope now — envelope won't complete until both sign
     const actualInvestorRecipientId = (signer_mode !== 'agent_only') ? '1' : null;
     const actualAgentRecipientId = (signer_mode === 'agent_only') ? '1' : '2';
@@ -443,17 +454,54 @@ Deno.serve(async (req) => {
       audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `created_${effectiveSignerMode}` }]
     });
 
-    // Update pointers
-    if (room_id) {
-      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
-    }
-    // Always update Deal pointer if deal_id is a real Deal (not a draft)
-    if (deal_id) {
-      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    // ── PHASE 6: Generate investor signing URL immediately (skip second server call) ──
+    let signing_url = null;
+    if (signer_mode !== 'agent_only') {
+      try {
+        const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
+        const tokenValue = crypto.randomUUID();
+        const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
+        returnURL.searchParams.set('token', tokenValue);
+        if (deal.id) returnURL.searchParams.set('dealId', deal.id);
+        if (room_id) returnURL.searchParams.set('roomId', room_id);
+        returnURL.searchParams.set('role', 'investor');
+
+        const [_, viewResp] = await Promise.all([
+          base44.asServiceRole.entities.SigningToken.create({
+            token: tokenValue, deal_id: deal.id, agreement_id: agreement.id,
+            role: 'investor',
+            return_to: `${publicUrl}/Room?roomId=${room_id || ''}&signed=1`,
+            expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
+          }),
+          fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelope.envelopeId}/views/recipient`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              returnUrl: returnURL.toString(),
+              authenticationMethod: 'none',
+              email: investor.email,
+              userName: investor.full_name || investor.email,
+              recipientId: String(actualInvestorRecipientId),
+              clientUserId: String(investorClientId),
+              frameAncestors: [publicUrl], messageOrigins: [publicUrl]
+            })
+          }),
+        ]);
+        if (viewResp.ok) {
+          const viewData = await viewResp.json();
+          signing_url = viewData.url;
+        }
+      } catch (signErr) {
+        console.warn('[genAgreement] Failed to pre-generate signing URL:', signErr.message);
+      }
     }
 
-    console.log(`[genAgreement] Created: ${agreement.id}`);
-    return Response.json({ success: true, agreement, regenerated: true });
+    // Fire-and-forget pointer updates
+    if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+
+    console.log(`[genAgreement] Created: ${agreement.id} signing_url=${!!signing_url}`);
+    return Response.json({ success: true, agreement, regenerated: true, signing_url });
   } catch (error) {
     console.error(`[genAgreement] Error:`, error);
     return Response.json({ error: error.message }, { status: 500 });

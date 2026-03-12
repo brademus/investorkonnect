@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
     const conn = await getDocuSignConnection(base44);
     let signed = false;
 
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 1000));
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 500));
       
       const recipUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/recipients`;
       const recipResp = await fetch(recipUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });

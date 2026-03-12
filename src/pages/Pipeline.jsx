@@ -72,7 +72,7 @@ function PipelineContent() {
   // Load deals
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
-    staleTime: 60_000,
+    staleTime: 30_000,
     gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
@@ -94,7 +94,7 @@ function PipelineContent() {
   // Load rooms for matching
   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, isError: roomsError, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
-    staleTime: 60_000,
+    staleTime: 30_000,
     gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
@@ -116,7 +116,7 @@ function PipelineContent() {
     refetchTimerRef.current = setTimeout(() => {
       refetchDeals();
       refetchRooms();
-    }, 5000);
+    }, 3000);
   };
 
   useEffect(() => {
@@ -143,8 +143,17 @@ function PipelineContent() {
 
   // Post-signing redirect refresh
   useEffect(() => {
-    if (new URLSearchParams(location.search).get('signed') === '1') {
-      refetchDeals(); refetchRooms();
+    const params = new URLSearchParams(location.search);
+    if (params.get('signed') === '1' || params.get('refresh') === '1') {
+      refetchDeals();
+      refetchRooms();
+      const retry1 = setTimeout(() => { refetchDeals(); refetchRooms(); }, 3000);
+      const retry2 = setTimeout(() => { refetchDeals(); refetchRooms(); }, 8000);
+      const url = new URL(window.location);
+      url.searchParams.delete('refresh');
+      url.searchParams.delete('signed');
+      window.history.replaceState({}, '', url);
+      return () => { clearTimeout(retry1); clearTimeout(retry2); };
     }
   }, [location.search]);
 
