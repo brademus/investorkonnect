@@ -136,6 +136,34 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ─── 3b. INVESTOR: AGENT SIGNED THE AGREEMENT ───
+    if (isInvestor) {
+      for (const room of userRooms) {
+        if (room.agreement_status === 'fully_signed' || room.request_status === 'locked') {
+          const deal = dealMap.get(room.deal_id);
+          if (!deal) continue;
+          const connectedAt = deal.updated_date ? new Date(deal.updated_date) : null;
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          if (connectedAt && connectedAt > sevenDaysAgo && deal.pipeline_stage === 'connected_deals') {
+            const address = (deal.property_address || '').split(',')[0] || 'a deal';
+            const lastSeenKey = `agent_signed:${room.id}`;
+            const alreadySeen = lastSeen[lastSeenKey];
+            if (!alreadySeen) {
+              notifications.push({
+                type: 'agent_signed',
+                title: 'Agent signed — deal room open',
+                description: address,
+                roomId: room.id,
+                dealId: room.deal_id,
+                timestamp: deal.updated_date,
+                priority: 'high',
+              });
+            }
+          }
+        }
+      }
+    }
+
     // ─── 4. PER-ROOM ACTION ITEMS ───
     for (const room of userRooms) {
       const deal = dealMap.get(room.deal_id);
@@ -147,6 +175,7 @@ Deno.serve(async (req) => {
       const appt = apptMap.get(room.deal_id);
       const wtStatus = appt?.walkthrough?.status || 'NOT_SET';
       const docs = deal.documents || {};
+      const hasCma = !!(docs.cma?.url);
 
       if (room.requires_regenerate) {
         notifications.push({
@@ -187,7 +216,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (isAgent && stage === 'connected_deals' && !docs.cma?.url && (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED')) {
+      if (isAgent && stage === 'connected_deals' && !hasCma && (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED')) {
         notifications.push({
           type: 'action_needed',
           title: 'Upload CMA',
@@ -199,7 +228,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (isInvestor && stage === 'connected_deals' && docs.cma?.url && !deal.list_price_confirmed) {
+      if (isInvestor && stage === 'connected_deals' && hasCma && !deal.list_price_confirmed) {
         notifications.push({
           type: 'action_needed',
           title: 'Review estimated list price',
@@ -208,6 +237,32 @@ Deno.serve(async (req) => {
           dealId: deal.id,
           timestamp: deal.updated_date,
           priority: 'medium',
+        });
+      }
+
+      // Agent: listing agreement needed (CMA done, list price confirmed, no listing agreement yet)
+      if (isAgent && stage === 'connected_deals' && hasCma && deal.list_price_confirmed && !docs.listing_agreement?.url) {
+        notifications.push({
+          type: 'action_needed',
+          title: 'Upload listing agreement',
+          description: address,
+          roomId: room.id,
+          dealId: deal.id,
+          timestamp: deal.updated_date,
+          priority: 'medium',
+        });
+      }
+
+      // Investor: listing agreement uploaded — waiting for MLS
+      if (isInvestor && stage === 'connected_deals' && docs.listing_agreement?.url && hasCma && deal.list_price_confirmed) {
+        notifications.push({
+          type: 'action_needed',
+          title: 'Listing agreement uploaded — waiting for MLS',
+          description: address,
+          roomId: room.id,
+          dealId: deal.id,
+          timestamp: deal.updated_date,
+          priority: 'low',
         });
       }
 
@@ -223,10 +278,36 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Investor: buyer contract received — move to closing
+      if (isInvestor && stage === 'active_listings' && docs.buyer_contract?.url) {
+        notifications.push({
+          type: 'action_needed',
+          title: "Buyer's contract received — move to closing",
+          description: address,
+          roomId: room.id,
+          dealId: deal.id,
+          timestamp: deal.updated_date,
+          priority: 'high',
+        });
+      }
+
       if (isInvestor && stage === 'in_closing') {
         notifications.push({
           type: 'action_needed',
           title: 'Confirm deal closed',
+          description: address,
+          roomId: room.id,
+          dealId: deal.id,
+          timestamp: deal.updated_date,
+          priority: 'medium',
+        });
+      }
+
+      // Agent: deal is in closing
+      if (isAgent && stage === 'in_closing') {
+        notifications.push({
+          type: 'action_needed',
+          title: 'Deal is in closing',
           description: address,
           roomId: room.id,
           dealId: deal.id,

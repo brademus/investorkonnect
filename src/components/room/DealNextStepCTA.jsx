@@ -79,6 +79,15 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
           documents: { [docKey]: docEntry }
         });
 
+        // Notify the other party
+        const docActionMap = { cma: 'cma_uploaded', listing_agreement: 'listing_agreement_uploaded', buyer_contract: 'buyer_contract_uploaded' };
+        const notifyAction = docActionMap[docKey];
+        if (notifyAction) {
+          base44.functions.invoke('notifyDealAction', {
+            dealId: deal.id, roomId, action: notifyAction, actorProfileId: profile?.id,
+          }).catch(() => {});
+        }
+
         // Optimistic local update
         onDealUpdate?.({ documents: { ...(deal?.documents || {}), [docKey]: docEntry } });
         toast.success('Document uploaded');
@@ -101,6 +110,15 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       await base44.functions.invoke('updateDealDocuments', { dealId: deal.id, pipeline_stage: newStage });
       toast.success('Deal updated');
       onDealUpdate?.({ pipeline_stage: newStage });
+
+      // Notify based on the stage transition
+      const stageActionMap = { active_listings: 'listing_active', in_closing: 'moved_to_closing', completed: 'deal_completed' };
+      const stageNotifyAction = stageActionMap[newStage];
+      if (stageNotifyAction) {
+        base44.functions.invoke('notifyDealAction', {
+          dealId: deal.id, roomId, action: stageNotifyAction, actorProfileId: profile?.id,
+        }).catch(() => {});
+      }
       // Review is now inline in the completed section, no navigation needed
     } catch (err) {
       reportError('Deal stage update failed', {
@@ -173,6 +191,10 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       }
       onDealUpdate?.({ list_price_confirmed: true });
       toast.success('List price confirmed');
+
+      base44.functions.invoke('notifyDealAction', {
+        dealId: deal.id, roomId, action: 'list_price_confirmed', actorProfileId: profile?.id,
+      }).catch(() => {});
     } catch (err) {
       toast.error('Failed to confirm price');
     } finally {
@@ -200,6 +222,10 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
       onDealUpdate?.({ estimated_list_price: cleaned, list_price_confirmed: true });
       toast.success('List price updated');
       setEditingListPrice(false);
+
+      base44.functions.invoke('notifyDealAction', {
+        dealId: deal.id, roomId, action: 'list_price_confirmed', actorProfileId: profile?.id,
+      }).catch(() => {});
     } catch (err) {
       toast.error('Failed to update price');
     } finally {

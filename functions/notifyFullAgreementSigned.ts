@@ -29,36 +29,41 @@ Deno.serve(async (req) => {
 
     const address = room.property_address || room.title || 'the property';
 
-    const send = async (to, name, role) => {
-      if (!to) return;
-      const opposite = role === 'investor' ? 'agent' : 'investor';
+    // --- INVESTOR EMAIL ---
+    if (investor?.email) {
+      const firstName = investor.full_name?.split(' ')[0] || 'there';
       await base44.asServiceRole.integrations.Core.SendEmail({
-        to,
+        to: investor.email,
         subject: `Agreement signed — ${address}`,
-        body: `Hi ${name || 'there'},
-
-Both parties have signed the agreement for ${address}.
-
-You can now message the ${opposite} and access the full deal room.
-
-Log in to get started: https://investorkonnect.com
-
-— Investor Konnect`,
+        body: `${firstName}, an agent has signed the agreement for ${address}. You can now message your agent and access the deal room.\n\nhttps://investorkonnect.com`,
       });
-    };
+    }
 
-    await Promise.all([
-      send(investor.email, investor.full_name?.split(' ')[0], 'investor'),
-      agent ? send(agent.email, agent.full_name?.split(' ')[0], 'agent') : Promise.resolve(),
-    ]);
+    // --- AGENT EMAIL ---
+    if (agent?.email) {
+      const firstName = agent.full_name?.split(' ')[0] || 'there';
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: agent.email,
+        subject: `Agreement signed — ${address}`,
+        body: `${firstName}, the investor has signed the agreement for ${address}. The deal room is now open — head in to review next steps.\n\nhttps://investorkonnect.com`,
+      });
+    }
 
-    const sms = `Agreement signed for ${address}. Log in to view next steps — investorkonnect.com`;
-    const sendSms = async (profile) => {
-      if (profile?.notification_preferences?.text && profile.phone) {
-        await base44.asServiceRole.functions.invoke('sendSms', { to: profile.phone, message: sms }).catch(() => {});
-      }
-    };
-    await Promise.all([sendSms(investor), agent ? sendSms(agent) : Promise.resolve()]);
+    // Investor SMS
+    if (investor?.notification_preferences?.text && investor.phone) {
+      await base44.asServiceRole.functions.invoke('sendSms', {
+        to: investor.phone,
+        message: `An agent signed the agreement for ${address}. Deal room is open — investorkonnect.com`
+      }).catch(() => {});
+    }
+
+    // Agent SMS
+    if (agent?.notification_preferences?.text && agent.phone) {
+      await base44.asServiceRole.functions.invoke('sendSms', {
+        to: agent.phone,
+        message: `Investor signed the agreement for ${address}. Deal room is open — investorkonnect.com`
+      }).catch(() => {});
+    }
 
     return Response.json({ ok: true });
   } catch (error) {

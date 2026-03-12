@@ -51,15 +51,7 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: p.email,
             subject: `New message — ${address}`,
-            body: `Hi ${firstName},
-
-${senderName} sent you a message on ${address}:
-
-"${text.length > 200 ? text.substring(0, 200) + '...' : text}"
-
-Reply here: https://investorkonnect.com
-
-— Investor Konnect`,
+            body: `${firstName}, ${senderName} sent you a message about ${address}.\n\nhttps://investorkonnect.com`,
           }).catch(() => {});
         }
 

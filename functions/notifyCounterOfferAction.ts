@@ -28,17 +28,9 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: sender.email,
       subject: `Counter offer ${action} — ${address}`,
-      body: `Hi ${firstName},
-
-Your counter offer for ${address} was ${action}.
-
-${action === 'accepted'
-  ? 'The updated terms are now in effect. Log in to review and sign.'
-  : 'You can submit a new counter offer or proceed with the original terms.'}
-
-Log in here: https://investorkonnect.com
-
-— Investor Konnect`,
+      body: action === 'accepted'
+        ? `${firstName}, your counter offer for ${address} was accepted. Log in to review the updated terms.\n\nhttps://investorkonnect.com`
+        : `${firstName}, your counter offer for ${address} was declined. You can submit a new offer or continue with the original terms.\n\nhttps://investorkonnect.com`,
     });
 
     if (sender.notification_preferences?.text && sender.phone) {

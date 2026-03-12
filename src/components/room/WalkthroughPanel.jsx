@@ -170,6 +170,10 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
         wtTime: chosenTime,
       });
       toast.success("Walk-through confirmed");
+
+      base44.functions.invoke('notifyDealAction', {
+        dealId: deal.id, roomId, action: 'walkthrough_confirmed', actorProfileId: profile?.id,
+      }).catch(() => {});
     } catch (e) {
       safeSetStatus("PROPOSED");
       delete _wtCache[dealId];

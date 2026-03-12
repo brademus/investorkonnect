@@ -86,8 +86,8 @@ async function lockDealToWinningAgent(base44, dealId, roomId, winningAgentProfil
       if (agent?.email) {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: agent.email,
-          subject: `Deal Update - ${deal.title || deal.property_address || 'Deal'}`,
-          body: `Hello ${agent.full_name || 'Agent'},\n\nAnother agent has signed the agreement first for the deal: ${deal.title || deal.property_address}.\n\nThis deal is no longer available. It will be removed from your pipeline.\n\nBest regards,\nInvestor Konnect Team`
+          subject: `Deal no longer available — ${deal.title || deal.property_address || 'Deal'}`,
+          body: `${agent.full_name?.split(' ')[0] || 'there'}, another agent signed first for ${deal.title || deal.property_address}. This deal has been removed from your pipeline.\n\nhttps://investorkonnect.com`,
         });
       }
     } catch (emailErr) {

@@ -218,19 +218,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- NOTIFY AGENTS via SMS ---
+    // --- NOTIFY AGENTS via EMAIL + SMS ---
     for (const agentId of selectedAgentIds) {
       try {
         const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
         const agent = agentProfiles?.[0];
-        const textEnabled = agent?.notification_preferences?.text !== false;
-        if (textEnabled && agent?.phone) {
-          const smsText = `Investor Konnect: New deal invitation for ${deal.title || deal.property_address || 'a property'}. Log in to review and sign to lock in your spot.`;
+        if (!agent) continue;
+
+        // Email notification
+        if (agent.email && agent.notification_preferences?.email !== false) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: agent.email,
+            subject: `New deal invitation — ${deal.title || deal.property_address || 'a property'}`,
+            body: `${agent.full_name?.split(' ')[0] || 'there'}, you've been invited to a new deal for ${deal.title || deal.property_address || 'a property'}. Log in and sign to lock in your spot.\n\nhttps://investorkonnect.com`,
+          }).catch(emailErr => {
+            console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
+          });
+        }
+
+        // SMS notification
+        const textEnabled = agent.notification_preferences?.text !== false;
+        if (textEnabled && agent.phone) {
+          const smsText = `New deal invitation for ${deal.title || deal.property_address || 'a property'}. Sign to lock in your spot — investorkonnect.com`;
           await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: smsText });
           console.log('[createInvites] SMS sent to agent:', agent.email);
         }
-      } catch (smsErr) {
-        console.warn('[createInvites] Failed to SMS agent:', agentId, smsErr.message);
+      } catch (notifyErr) {
+        console.warn('[createInvites] Failed to notify agent:', agentId, notifyErr.message);
       }
     }
 
