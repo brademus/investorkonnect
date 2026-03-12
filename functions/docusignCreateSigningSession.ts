@@ -110,6 +110,14 @@ Deno.serve(async (req) => {
       const env = await envResult.json();
       console.log('[signing] Envelope status:', env.status, 'for role:', role);
       if (env.status === 'completed') {
+        // Envelope is completed — update agreement status if it's stale
+        if (agreement.status !== 'fully_signed') {
+          const updates = { status: 'fully_signed', docusign_status: 'completed' };
+          if (!agreement.investor_signed_at) updates.investor_signed_at = new Date().toISOString();
+          if (!agreement.agent_signed_at) updates.agent_signed_at = new Date().toISOString();
+          await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates).catch(() => {});
+          Object.assign(agreement, updates);
+        }
         return Response.json({ already_signed: true, agreement });
       }
       if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
