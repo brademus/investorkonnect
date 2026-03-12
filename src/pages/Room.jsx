@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useRooms } from "@/components/useRooms";
+import { useDealCache } from "@/components/useDealCache";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2, Calendar } from "lucide-react";
@@ -29,6 +30,7 @@ export default function Room() {
   const roomId = params.get("roomId");
   const { profile, user, loading, onboarded, hasNDA, isPaidSubscriber, kycVerified } = useCurrentProfile();
   const { data: rooms = [] } = useRooms();
+  const { getDeal: getCachedDeal, patchDeal } = useDealCache(rooms, profile);
   const queryClient = useQueryClient();
 
   const [drawer, setDrawer] = useState(false);
@@ -219,8 +221,13 @@ export default function Room() {
     setPendingInvites([]);
     setSelectedInvite(null);
 
-    // CRITICAL: Always reset deal when room changes to prevent cross-deal contamination.
-    setDeal(null);
+    // INSTANT: Try to get deal from pre-fetched cache instead of showing blank
+    const cachedDeal = enrichedRoom?.deal_id ? getCachedDeal(enrichedRoom.deal_id) : null;
+    if (cachedDeal) {
+      setDeal(cachedDeal);
+    } else {
+      setDeal(null);
+    }
 
     // If we have enriched data from cache, show room shell immediately.
     // DealBoard will see deal=null and show a loader instead of stale data.
@@ -301,7 +308,14 @@ export default function Room() {
           locked_agent_id: room.locked_agent_id,
         });
         if (cancelled) return;
-        if (dealData) setDeal(dealData);
+        if (dealData) {
+          setDeal(prev => {
+            if (!prev) return dealData;
+            // Merge: full server data wins, preserve any local documents
+            return { ...prev, ...dealData, documents: { ...(prev.documents || {}), ...(dealData.documents || {}) } };
+          });
+          patchDeal(dealData.id, dealData);
+        }
         setRoomLoading(false);
 
         // NOTE: We no longer auto-persist last_seen_timestamps on room load.
@@ -538,11 +552,30 @@ export default function Room() {
           search={search}
           onSearchChange={setSearch}
           onRoomClick={(r) => {
-            // Reset both room and deal to prevent cross-contamination.
-            // The roomId effect will hydrate from cache and fetch fresh data.
+            // Try to get deal instantly from cache
+            const cachedDeal = r.deal_id ? getCachedDeal(r.deal_id) : null;
+
+            setCurrentRoom({
+              id: r.id, deal_id: r.deal_id, city: r.city, state: r.state,
+              budget: r.budget, estimated_list_price: r.estimated_list_price || null,
+              is_fully_signed: r.is_fully_signed,
+              title: r.title, property_address: r.property_address,
+              counterparty_name: r.counterparty_name, counterparty_headshot: r.counterparty_headshot,
+              request_status: r.request_status, agreement_status: r.agreement_status,
+              investorId: r.investorId, agent_ids: r.agent_ids || [],
+              locked_agent_id: r.agentId || null,
+              proposed_terms: r.proposed_terms, agent_terms: r.agent_terms,
+              files: r.files || [], photos: r.photos || [],
+            });
+
+            // Set deal from cache immediately (no blank flash)
+            if (cachedDeal) {
+              setDeal(cachedDeal);
+            } else {
+              setDeal(null);
+            }
+
             setRoomLoading(true);
-            setDeal(null);
-            setCurrentRoom(null);
             setPendingInvites([]);
             setSelectedInvite(null);
             navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
