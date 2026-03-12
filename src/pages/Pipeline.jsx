@@ -274,10 +274,9 @@ function PipelineContent() {
   const getDaysInPipeline = (d) => { if (!d) return 'N/A'; return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`; };
 
   // Only show full-page loader on the very first load (no cached data yet).
-  // On subsequent navigations, cached data renders instantly while refetching in background.
-  const hasNoData = dealsData.length === 0 && rooms.length === 0;
-  const isFirstLoad = hasNoData && (loadingDeals || loadingRooms);
-  if (loading || !profile || !ready || (isFirstLoad && !dealsError && !roomsError)) {
+  const hasNoData = dealsData.length === 0;
+  const isFirstLoad = hasNoData && loadingDeals;
+  if (loading || !profile || !ready || (isFirstLoad && !dealsError)) {
     return <div className="min-h-screen bg-transparent flex flex-col"><Header profile={profile} /><div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" /></div></div>;
   }
 
