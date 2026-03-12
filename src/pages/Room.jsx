@@ -471,31 +471,28 @@ export default function Room() {
       const now = Date.now();
       if (now - lastFetchAt < MIN_REFETCH_INTERVAL) return;
       lastFetchAt = now;
-        // Re-fetch deal from server to get full documents (subscription events may not include all fields)
-        base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
-          .then(res => {
-            if (res?.data) {
-              setDeal(prev => {
-                if (!prev) return res.data;
-                // Always merge: server data + any local docs we already have
-                const mergedDocs = { ...(prev.documents || {}), ...(res.data.documents || {}) };
-                return { ...prev, ...res.data, documents: mergedDocs };
-              });
-            }
-          })
-          .catch(() => {
-            // Fallback: merge event data preserving existing documents
+      // Re-fetch deal from server to get full documents (subscription events may not include all fields)
+      base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
+        .then(res => {
+          if (res?.data) {
             setDeal(prev => {
-              if (!prev) return e.data;
-              const merged = { ...prev, ...e.data };
-              if (prev.documents) {
-                merged.documents = { ...prev.documents, ...(e.data.documents || {}) };
-              }
-              return merged;
+              if (!prev) return res.data;
+              const mergedDocs = { ...(prev.documents || {}), ...(res.data.documents || {}) };
+              return { ...prev, ...res.data, documents: mergedDocs };
             });
+          }
+        })
+        .catch(() => {
+          setDeal(prev => {
+            if (!prev) return e.data;
+            const merged = { ...prev, ...e.data };
+            if (prev.documents) {
+              merged.documents = { ...prev.documents, ...(e.data.documents || {}) };
+            }
+            return merged;
           });
-        if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); }
-      }
+        });
+      if (e?.data?.walkthrough_scheduled) { setHasWalkthroughAppt(true); }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
