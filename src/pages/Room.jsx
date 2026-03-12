@@ -206,6 +206,16 @@ export default function Room() {
       defaultView = 'board';
     }
     setActiveView(defaultView);
+    prevActiveView.current = defaultView;
+    // If landing directly on messages, persist last-seen immediately
+    if (defaultView === 'messages' && profile?.id && roomId) {
+      const newTs = new Date().toISOString();
+      setLocalLastSeen(prev => ({ ...prev, [roomId]: newTs }));
+      const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
+      if (profile) profile.last_seen_timestamps = updated;
+      base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated })
+        .then(() => notificationEvents.emit()).catch(() => {});
+    }
     // Always include 'board' in mounted views so it renders when auto-selected
     setMountedViews(new Set([defaultView, 'board']));
     setPendingInvites([]);
