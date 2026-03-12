@@ -96,7 +96,6 @@ function PipelineContent() {
     if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
     refetchTimerRef.current = setTimeout(() => {
       refetchDeals();
-      refetchRooms();
     }, 3000);
   };
 
