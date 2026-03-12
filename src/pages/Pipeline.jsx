@@ -136,75 +136,49 @@ function PipelineContent() {
     }
   }, [location.search]);
 
-  // Merge deals with rooms
+  // Build pipeline deals from server data (room data is already inline from getPipelineDealsForUser v3)
   const deals = useMemo(() => {
-    const roomMap = new Map();
-    (rooms || []).forEach(r => {
-      if (!r?.deal_id) return;
-      if (isAgent) {
-        const agentInRoom = (r.agent_ids || []).includes(profile?.id) || r.agentId === profile?.id || r.counterparty_role === 'investor';
-        if (!agentInRoom) return;
-      }
-      const prev = roomMap.get(r.deal_id);
-      const score = (x) => (x.is_fully_signed ? 3 : x.request_status === 'accepted' ? 2 : 1);
-      if (!prev || score(r) > score(prev)) roomMap.set(r.deal_id, r);
-    });
-
     return (dealsData || []).map(deal => {
-       const room = roomMap.get(deal.id);
-       const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || deal.is_fully_signed;
-       const hasAgent = room?.request_status === 'accepted' || room?.request_status === 'signed' || room?.request_status === 'locked';
+       const hasRoom = !!deal.room_id;
+       const isSigned = deal.room_is_fully_signed || deal.is_fully_signed;
+       const hasAgent = deal.room_request_status === 'accepted' || deal.room_request_status === 'signed' || deal.room_request_status === 'locked';
 
        let counterparty = 'Not Assigned';
-       if (isSigned) counterparty = room?.counterparty_name || (isAgent ? 'Investor' : 'Agent');
+       if (isSigned) counterparty = deal.room_counterparty_name || (isAgent ? 'Investor' : 'Agent');
        else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : 'Pending Agent Signature';
-       // For investor: if deal has a locked agent, always show that agent's name
-       if (isInvestor && deal.locked_agent_id && room?.counterparty_name && room?.counterparty_id === deal.locked_agent_id) {
-         counterparty = room.counterparty_name;
+       if (isInvestor && deal.locked_agent_id && deal.room_counterparty_name && deal.room_counterparty_id === deal.locked_agent_id) {
+         counterparty = deal.room_counterparty_name;
        }
 
        return {
-         id: deal.id, deal_id: deal.id, room_id: room?.id || null,
+         id: deal.id, deal_id: deal.id, room_id: deal.room_id || null,
          title: deal.title, property_address: deal.property_address,
          city: deal.city, state: deal.state, budget: deal.purchase_price,
          estimated_list_price: deal.estimated_list_price || null,
          pipeline_stage: isSigned ? normalizeStage(deal.pipeline_stage || 'connected_deals') : normalizeStage(deal.pipeline_stage || 'new_deals'),
          customer_name: counterparty,
-         agent_request_status: room?.request_status,
-         agreement_status: room?.agreement_status,
+         agent_request_status: deal.room_request_status,
+         agreement_status: deal.room_agreement_status,
          created_date: deal.created_date, updated_date: deal.updated_date,
          closing_date: deal.key_dates?.closing_date,
          is_fully_signed: isSigned, is_orphan: !hasAgent,
          locked_agent_id: deal.locked_agent_id, locked_room_id: deal.locked_room_id,
-         investor_id: room?.investorId || deal.investor_id,
+         investor_id: deal.room_investorId || deal.investor_id,
          seller_name: deal.seller_info?.seller_name,
-          selected_agent_ids: deal.selected_agent_ids,
-           documents: deal.documents || null,
-           list_price_confirmed: deal.list_price_confirmed || false,
-           walkthrough_scheduled: deal.walkthrough_scheduled,
-          walkthrough_slots: deal.walkthrough_slots,
-          walkthrough_date: deal.walkthrough_date,
-          walkthrough_time: deal.walkthrough_time,
-         proposed_terms: (() => {
-           // Only merge agent-specific counter terms after an agent has signed the agreement
-           const base = room?.proposed_terms || deal.proposed_terms || {};
-           const agentHasSigned = room?.agreement_status === 'agent_signed' || room?.agreement_status === 'fully_signed' || isSigned;
-           if (!agentHasSigned) return base;
-           if (isAgent && room?.agent_terms?.[profile?.id]) {
-             return { ...base, ...room.agent_terms[profile.id] };
-           }
-           if (isInvestor && room?.agent_terms) {
-             const ids = Object.keys(room.agent_terms);
-             if (ids.length === 1) return { ...base, ...room.agent_terms[ids[0]] };
-           }
-           return base;
-         })(),
-         room_agent_terms: room?.agent_terms || null,
-         room_agent_ids: room?.agent_ids || [],
-         agreement: room?.agreement || null,
-         agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || room?.agreement?.exhibit_a_terms || null,
-         investor_signed_at: room?.agreement?.investor_signed_at || null,
-         pending_counter_offer: room?.pending_counter_offer || null
+         selected_agent_ids: deal.selected_agent_ids,
+         documents: deal.documents || null,
+         list_price_confirmed: deal.list_price_confirmed || false,
+         walkthrough_scheduled: deal.walkthrough_scheduled,
+         walkthrough_slots: deal.walkthrough_slots,
+         walkthrough_date: deal.walkthrough_date,
+         walkthrough_time: deal.walkthrough_time,
+         proposed_terms: deal.proposed_terms || {},
+         room_agent_terms: deal.room_agent_terms || null,
+         room_agent_ids: deal.room_agent_ids || [],
+         agreement: deal.agreement || null,
+         agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null,
+         investor_signed_at: deal.agreement?.investor_signed_at || null,
+         pending_counter_offer: deal.pending_counter_offer || null
        };
     }).filter(d => {
       if (!isAgent) return true;
@@ -212,7 +186,7 @@ function PipelineContent() {
       if (d.agent_request_status === 'rejected' || d.agent_request_status === 'voided') return false;
       return true;
     });
-  }, [dealsData, rooms, profile?.id, isAgent]);
+  }, [dealsData, profile?.id, isAgent]);
 
   const [navigating, setNavigating] = useState(false);
   const handleDealClick = async (deal) => {
