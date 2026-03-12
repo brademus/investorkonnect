@@ -7,6 +7,7 @@ import {
   RefreshCw, Zap, Loader2, ChevronRight, MessageSquare
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { notificationEvents } from "@/components/utils/notificationEvents";
 
 const ICON_MAP = {
   deal_activity: Zap,
@@ -90,6 +91,13 @@ export default function NotificationBell() {
     const interval = setInterval(fetchNotifications, 120_000);
     return () => clearInterval(interval);
   }, []);
+
+  // Refresh when Room page marks messages as read
+  useEffect(() => {
+    return notificationEvents.subscribe(() => {
+      setTimeout(fetchNotifications, 1500);
+    });
+  }, [fetchNotifications]);
 
   const debounceRef = useRef(null);
   useEffect(() => {
