@@ -136,19 +136,19 @@ export default function Room() {
     // If currently viewing messages, badge = 0
     if (activeView === 'messages') return 0;
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    const serverTs = profile?.last_seen_timestamps?.[roomId];
-    if (!serverTs) {
+    const lastTs = localLastSeen[roomId];
+    if (!lastTs) {
       // No timestamp means user has never viewed this room's messages — all non-system, non-self are unread
       return roomMessages.filter(m => m.sender_profile_id !== profile.id && m.sender_profile_id !== 'system').length;
     }
-    const serverMs = new Date(serverTs).getTime();
+    const lastMs = new Date(lastTs).getTime();
     // Count messages created AFTER the last-seen timestamp, excluding own and system messages
     return roomMessages.filter(m =>
-      new Date(m.created_date).getTime() > serverMs &&
+      new Date(m.created_date).getTime() > lastMs &&
       m.sender_profile_id !== profile.id &&
       m.sender_profile_id !== 'system'
     ).length;
-  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, activeView]);
+  }, [roomMessages, profile?.id, localLastSeen, roomId, activeView]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
