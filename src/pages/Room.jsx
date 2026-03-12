@@ -494,6 +494,7 @@ export default function Room() {
               const mergedDocs = { ...(prev.documents || {}), ...(res.data.documents || {}) };
               return { ...prev, ...res.data, documents: mergedDocs };
             });
+            patchDeal(deal.id, res.data);
           }
         })
         .catch(() => {
