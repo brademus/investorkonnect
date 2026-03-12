@@ -1,8 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
- * Get pipeline deals for current user with role-based redaction.
- * Simplified v2: no retries, no legacy fallbacks, clean logic.
+ * Get pipeline deals + room data for current user with role-based redaction.
+ * V3: Returns both deals AND enriched room data in a single call so Pipeline
+ * doesn't need a second call to listMyRoomsEnriched.
  */
 Deno.serve(async (req) => {
   try {
@@ -19,13 +20,24 @@ Deno.serve(async (req) => {
     const isInvestor = profile.user_role === 'investor';
 
     let deals = [];
+    let rooms = [];
 
     if (isAdmin) {
-      deals = await base44.asServiceRole.entities.Deal.list('-updated_date', 100);
+      const [d, r] = await Promise.all([
+        base44.asServiceRole.entities.Deal.list('-updated_date', 100),
+        base44.asServiceRole.entities.Room.list('-updated_date', 100),
+      ]);
+      deals = d;
+      rooms = r;
     } else if (isInvestor) {
-      deals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } });
+      const [d, r] = await Promise.all([
+        base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } }),
+        base44.asServiceRole.entities.Room.filter({ investorId: profile.id }),
+      ]);
+      deals = d;
+      rooms = r;
     } else if (isAgent) {
-      // Fetch invites and direct deals in parallel
+      // Use DealInvite index — no full-table scan
       const [invites, directDeals] = await Promise.all([
         base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id }),
         base44.asServiceRole.entities.Deal.filter({ agent_id: profile.id }),
@@ -33,25 +45,27 @@ Deno.serve(async (req) => {
       const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
       const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
       const directIds = directDeals.map(d => d.id);
-
       const allIds = [...new Set([...inviteDealIds, ...directIds])];
 
-      if (allIds.length > 0) {
-        // Batch fetch with service role — agents don't own deals so user-scoped queries return nothing
-        deals = await base44.asServiceRole.entities.Deal.filter({ id: { $in: allIds } });
-      }
-      // Filter out deals locked to other agents
-      deals = deals.filter(d => !d.locked_agent_id || d.locked_agent_id === profile.id);
+      // Fetch rooms from invites
+      const roomIds = [...new Set(activeInvites.map(i => i.room_id).filter(Boolean))];
+
+      const [dealRes, roomRes] = await Promise.all([
+        allIds.length > 0 ? base44.asServiceRole.entities.Deal.filter({ id: { $in: allIds } }) : Promise.resolve([]),
+        roomIds.length > 0 ? base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } }) : Promise.resolve([]),
+      ]);
+      deals = dealRes.filter(d => !d.locked_agent_id || d.locked_agent_id === profile.id);
+      rooms = roomRes;
     }
 
-    // Deduplicate by ID
+    // Deduplicate deals by ID
     const map = new Map();
     deals.filter(d => d?.id && d.status !== 'archived').forEach(d => {
       const prev = map.get(d.id);
       if (!prev || new Date(d.updated_date || 0) > new Date(prev.updated_date || 0)) map.set(d.id, d);
     });
 
-    // Deduplicate by investor_id + normalized property_address (keep most recently updated)
+    // Deduplicate by investor_id + normalized property_address
     const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
     const addrMap = new Map();
     for (const [id, deal] of map) {
@@ -59,35 +73,74 @@ Deno.serve(async (req) => {
       if (!key || key === '|') continue;
       const prev = addrMap.get(key);
       if (!prev || new Date(deal.updated_date || 0) > new Date(prev.updated_date || 0)) {
-        if (prev) map.delete(prev.id); // remove older duplicate
+        if (prev) map.delete(prev.id);
         addrMap.set(key, deal);
       } else {
-        map.delete(id); // this one is older, remove it
+        map.delete(id);
       }
     }
 
-    // Load agreements for signing status + exhibit_a_terms (authoritative compensation)
+    // Load agreements + counters + counterparty profiles in parallel
     const dealIds = [...map.keys()];
-    const agreementMap = new Map();
-    if (dealIds.length > 0) {
-      const allAg = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } });
-      // Pick the best (most advanced, non-voided) agreement per deal
-      const statusRank = s => ({ fully_signed: 5, attorney_review_pending: 4, agent_signed: 3, investor_signed: 2, sent: 1 }[s] || 0);
-      allAg.forEach(a => {
-        if (['voided', 'superseded'].includes(a.status)) return;
-        const prev = agreementMap.get(a.deal_id);
-        if (!prev || statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
-      });
-    }
+    const roomIds = rooms.map(r => r.id);
 
-    // Redact based on role
+    // Collect counterparty IDs
+    const cpIds = new Set();
+    rooms.forEach(r => {
+      if (isInvestor || isAdmin) {
+        (r.agent_ids || []).forEach(id => cpIds.add(id));
+        if (r.locked_agent_id) cpIds.add(r.locked_agent_id);
+      } else {
+        if (r.investorId) cpIds.add(r.investorId);
+      }
+    });
+
+    const [allAgreements, allCounters, cpProfiles] = await Promise.all([
+      dealIds.length > 0 ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } }) : Promise.resolve([]),
+      roomIds.length > 0 ? base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: roomIds }, status: 'pending' }).catch(() => []) : Promise.resolve([]),
+      cpIds.size > 0 ? base44.asServiceRole.entities.Profile.filter({ id: { $in: [...cpIds] } }) : Promise.resolve([]),
+    ]);
+
+    // Build agreement map (best per deal)
+    const agreementMap = new Map();
+    const statusRank = s => ({ fully_signed: 5, attorney_review_pending: 4, agent_signed: 3, investor_signed: 2, sent: 1 }[s] || 0);
+    allAgreements.forEach(a => {
+      if (['voided', 'superseded'].includes(a.status)) return;
+      const prev = agreementMap.get(a.deal_id);
+      if (!prev || statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
+    });
+
+    // Build room map (best per deal_id)
+    const roomByDeal = new Map();
+    rooms.filter(r => r.request_status !== 'expired').forEach(r => {
+      if (!r.deal_id) return;
+      const prev = roomByDeal.get(r.deal_id);
+      const score = x => (x.agreement_status === 'fully_signed' ? 3 : x.request_status === 'accepted' ? 2 : 1);
+      if (!prev || score(r) > score(prev)) roomByDeal.set(r.deal_id, r);
+    });
+
+    // Build counter map
+    const counterMap = new Map();
+    allCounters.forEach(c => { if (!counterMap.has(c.room_id)) counterMap.set(c.room_id, c); });
+
+    // Build profile map
+    const profileMap = new Map(cpProfiles.map(p => [p.id, p]));
+
+    // Redact and enrich
     const redacted = [...map.values()].map(deal => {
       const ag = agreementMap.get(deal.id);
+      const room = roomByDeal.get(deal.id);
       const isSigned = ag?.status === 'fully_signed' || ag?.status === 'attorney_review_pending';
-
-      // Use exhibit_a_terms from agreement as authoritative compensation (post-counter, post-regen)
       const exhibitTerms = ag?.exhibit_a_terms || null;
       const finalProposedTerms = exhibitTerms ? { ...(deal.proposed_terms || {}), ...exhibitTerms } : deal.proposed_terms;
+
+      // Counterparty info
+      const cpId = (isInvestor || isAdmin)
+        ? (deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0])
+        : room?.investorId;
+      const cp = cpId ? profileMap.get(cpId) : null;
+
+      const counter = room ? counterMap.get(room.id) : null;
 
       const base = {
         id: deal.id, title: deal.title, city: deal.city, state: deal.state, county: deal.county, zip: deal.zip,
@@ -98,16 +151,41 @@ Deno.serve(async (req) => {
         investor_id: deal.investor_id, agent_id: deal.agent_id,
         locked_room_id: deal.locked_room_id, locked_agent_id: deal.locked_agent_id,
         selected_agent_ids: deal.selected_agent_ids, is_fully_signed: isSigned,
-        proposed_terms: finalProposedTerms
+        proposed_terms: finalProposedTerms,
+        walkthrough_scheduled: deal.walkthrough_scheduled,
+        walkthrough_date: deal.walkthrough_date,
+        walkthrough_time: deal.walkthrough_time,
+        walkthrough_slots: deal.walkthrough_slots,
+        documents: deal.documents || null,
+        list_price_confirmed: deal.list_price_confirmed || false,
+        agreement_exhibit_a_terms: exhibitTerms,
       };
 
-      // Always include walkthrough info + documents (for next-step logic)
-      base.walkthrough_scheduled = deal.walkthrough_scheduled;
-      base.walkthrough_date = deal.walkthrough_date;
-      base.walkthrough_time = deal.walkthrough_time;
-      base.walkthrough_slots = deal.walkthrough_slots;
-      base.documents = deal.documents || null;
-      base.list_price_confirmed = deal.list_price_confirmed || false;
+      // Room data inline (eliminates need for separate listMyRoomsEnriched call)
+      if (room) {
+        base.room_id = room.id;
+        base.room_request_status = room.request_status;
+        base.room_agreement_status = room.agreement_status;
+        base.room_is_fully_signed = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || isSigned;
+        base.room_counterparty_name = cp?.full_name || null;
+        base.room_counterparty_headshot = cp?.headshotUrl || null;
+        base.room_counterparty_id = cpId || null;
+        base.room_investorId = room.investorId;
+        base.room_agent_ids = room.agent_ids || [];
+        base.room_agent_terms = room.agent_terms || null;
+        base.room_proposed_terms = room.proposed_terms || null;
+        base.room_requires_regenerate = room.requires_regenerate || false;
+        base.room_files = room.files || [];
+        base.room_photos = room.photos || [];
+        base.pending_counter_offer = counter ? { id: counter.id, from_role: counter.from_role, status: counter.status } : null;
+        // Agreement info for badges
+        base.agreement = ag ? {
+          status: ag.status,
+          investor_signed_at: ag.investor_signed_at,
+          agent_signed_at: ag.agent_signed_at,
+          exhibit_a_terms: exhibitTerms,
+        } : null;
+      }
 
       if (isAdmin || isInvestor || isSigned) {
         return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };
@@ -115,16 +193,7 @@ Deno.serve(async (req) => {
       return { ...base, property_address: null, seller_info: null, property_details: null, special_notes: null };
     });
 
-    // Attach agreement exhibit_a_terms for compensation display on pipeline cards
-    const final = redacted.map(d => {
-      const ag = agreementMap.get(d.id);
-      if (ag?.exhibit_a_terms) {
-        d.agreement_exhibit_a_terms = ag.exhibit_a_terms;
-      }
-      return d;
-    });
-
-    return Response.json({ deals: final, role: profile.user_role });
+    return Response.json({ deals: redacted, role: profile.user_role });
   } catch (error) {
     console.error('[getPipelineDeals] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
