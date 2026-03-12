@@ -129,13 +129,15 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  // When user opens the bell, mark the current set as seen
+  // When user opens the bell, mark all current notifications as seen
   useEffect(() => {
     if (!open || !notifications.length) return;
-    // Build a key from the current notification set so we know when new ones appear
-    const key = notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`).sort().join('|');
-    setLastSeenKey(key);
-    try { sessionStorage.setItem('notif_last_seen_key', key); } catch {}
+    const allKeys = new Set(notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`));
+    setSeenKeys(prev => {
+      const merged = new Set([...prev, ...allKeys]);
+      try { sessionStorage.setItem('notif_seen_keys', JSON.stringify([...merged])); } catch {}
+      return merged;
+    });
   }, [open, notifications]);
 
   const handleToggle = () => {
