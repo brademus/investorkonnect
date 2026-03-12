@@ -190,7 +190,9 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const isAgent = !isAdmin && profile?.user_role === 'agent';
 
   // Track fully-signed from both room props AND real-time agreement updates
-  const [agreementFullySigned, setAgreementFullySigned] = useState(false);
+  const [agreementFullySigned, setAgreementFullySigned] = useState(() => {
+    return room?.agreement_status === 'fully_signed' || room?.is_fully_signed || deal?.is_fully_signed || false;
+  });
   useEffect(() => {
     if (!roomId) return;
     const unsub = base44.entities.LegalAgreement.subscribe((e) => {
