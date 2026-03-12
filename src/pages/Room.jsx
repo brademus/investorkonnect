@@ -19,6 +19,7 @@ import PendingAgentsList from "@/components/PendingAgentsList";
 import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 import { useRoomMessages } from "@/components/room/useRoomMessages";
+import { notificationEvents } from "@/components/utils/notificationEvents";
 
 // Module-level cache for message-seen counts — survives component unmount/remount
 const _msgSeenCache = {};
@@ -139,7 +140,12 @@ export default function Room() {
     const newTs = new Date().toISOString();
     const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
     if (profile) profile.last_seen_timestamps = updated;
-    base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated }).catch(() => {});
+    base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated })
+      .then(() => {
+        // Tell notification/message bells to refresh
+        notificationEvents.emit();
+      })
+      .catch(() => {});
   }, [roomId, profile]);
 
   useEffect(() => {
