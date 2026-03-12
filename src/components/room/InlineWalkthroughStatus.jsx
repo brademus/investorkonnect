@@ -170,7 +170,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
               onProposed={() => {
                 setShowProposeForm(false);
                 setSelectedSlotIdx(null);
-                safeSetStatus("PROPOSED");
+                setLocalStatus(null);
                 setProposedByProfileId(profile?.id);
               }}
               onCancel={() => setShowProposeForm(false)}
