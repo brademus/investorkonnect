@@ -36,7 +36,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
   const apptLoaded = useExternal ? (externalLoaded !== false) : true;
   const hasWalkthrough = dealHasWalkthrough || (externalStatus && externalStatus !== "NOT_SET");
 
-  const status = dealConfirmed ? "SCHEDULED" : (externalStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null));
+  const status = localStatus || (dealConfirmed ? "SCHEDULED" : (externalStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null)));
   // Either party can confirm proposed dates — the one who didn't propose them
   const proposedBySelf2 = proposedByProfileId === profile?.id;
   const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
