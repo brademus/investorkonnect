@@ -116,6 +116,11 @@ export default function ProposeNewDatesForm({ dealId, roomId, profileId, onPropo
       });
 
       toast.success("New dates proposed!");
+
+      base44.functions.invoke('notifyDealAction', {
+        dealId, roomId, action: 'walkthrough_proposed', actorProfileId: profileId,
+      }).catch(() => {});
+
       onProposed?.({
         walkthrough_scheduled: true,
         walkthrough_date: firstSlot.date,

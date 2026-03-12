@@ -108,6 +108,11 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
       });
 
       toast.success("Walk-through request sent!");
+
+      base44.functions.invoke('notifyDealAction', {
+        dealId: deal.id, roomId, action: 'walkthrough_proposed', actorProfileId: profile?.id,
+      }).catch(() => {});
+
       onScheduled?.({ walkthrough_scheduled: true, walkthrough_date: firstSlot.date, walkthrough_time: firstSlot.timeStart || null, walkthrough_slots: validSlots });
       onOpenChange(false);
       setSlots([{ date: "", timeStart: "", timeEnd: "" }]);
