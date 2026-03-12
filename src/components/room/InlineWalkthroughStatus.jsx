@@ -47,7 +47,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
   const handleRespond = async () => {
     if (!deal?.id) return;
     setResponding(true);
-    safeSetStatus("SCHEDULED");
+    setLocalStatus("SCHEDULED");
     _wtCache[dealId] = { status: "SCHEDULED", userActionAt: Date.now() };
 
     let chosenDate = wtDate;
@@ -62,7 +62,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
       await respondToWalkthrough({ action: "confirm", dealId: deal.id, roomId, profileId: profile?.id, wtDate: chosenDate, wtTime: chosenTime });
       toast.success("Walk-through confirmed");
     } catch (_) {
-      safeSetStatus("PROPOSED");
+      setLocalStatus(null);
       delete _wtCache[dealId];
       toast.error("Failed to respond");
     } finally {
