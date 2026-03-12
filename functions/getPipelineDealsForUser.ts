@@ -25,13 +25,13 @@ Deno.serve(async (req) => {
     } else if (isInvestor) {
       deals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } });
     } else if (isAgent) {
-      // Only show deals where agent has an active invite (not VOIDED/EXPIRED)
-      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
+      // Fetch invites and direct deals in parallel
+      const [invites, directDeals] = await Promise.all([
+        base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id }),
+        base44.asServiceRole.entities.Deal.filter({ agent_id: profile.id }),
+      ]);
       const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
       const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
-
-      // Also check direct assignment (legacy)
-      const directDeals = await base44.asServiceRole.entities.Deal.filter({ agent_id: profile.id });
       const directIds = directDeals.map(d => d.id);
 
       const allIds = [...new Set([...inviteDealIds, ...directIds])];

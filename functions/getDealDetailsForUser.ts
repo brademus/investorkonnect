@@ -12,10 +12,12 @@ Deno.serve(async (req) => {
     const { dealId } = await req.json();
     if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
 
-    // Fetch profile and deal in parallel
-    const [profileArr, dealArr] = await Promise.all([
+    // Fetch everything in parallel — access check happens after
+    const [profileArr, dealArr, rooms, agreements] = await Promise.all([
       base44.asServiceRole.entities.Profile.filter({ user_id: user.id }),
-      base44.asServiceRole.entities.Deal.filter({ id: dealId }).catch(() => [])
+      base44.asServiceRole.entities.Deal.filter({ id: dealId }).catch(() => []),
+      base44.asServiceRole.entities.Room.filter({ deal_id: dealId }).catch(() => []),
+      base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId }).catch(() => []),
     ]);
     const deal = dealArr?.[0] || null;
 
@@ -26,12 +28,6 @@ Deno.serve(async (req) => {
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
-
-    // Fetch rooms + agreements in parallel (needed for access check AND response)
-    const [rooms, agreements] = await Promise.all([
-      base44.asServiceRole.entities.Room.filter({ deal_id: dealId }),
-      base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId })
-    ]);
 
     // Access check
     if (!isAdmin) {
@@ -51,7 +47,7 @@ Deno.serve(async (req) => {
 
     const [invP, agP] = await Promise.all([
       (showInvestorInfo && deal.investor_id) ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : Promise.resolve([]),
-      (showAgentInfo && deal.agent_id) ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : Promise.resolve([])
+      (showAgentInfo && (deal.agent_id || deal.locked_agent_id)) ? base44.asServiceRole.entities.Profile.filter({ id: deal.locked_agent_id || deal.agent_id }) : Promise.resolve([])
     ]);
 
     const inv = invP?.[0];

@@ -219,39 +219,42 @@ export default function Room() {
     setPendingInvites([]);
     setSelectedInvite(null);
 
-    // If we have enriched data, show it immediately (no blank screen)
+    // CRITICAL: Always reset deal when room changes to prevent cross-deal contamination.
+    setDeal(null);
+
+    // If we have enriched data from cache, show room shell immediately.
+    // DealBoard will see deal=null and show a loader instead of stale data.
     if (enrichedRoom) {
-      setCurrentRoom(prev => {
-        // Don't overwrite with less data if we already have richer data for this room
-        if (prev?.id === roomId && prev?.investor_contact) return prev;
-        return {
-          id: enrichedRoom.id,
-          deal_id: enrichedRoom.deal_id,
-          title: enrichedRoom.title,
-          property_address: enrichedRoom.property_address,
-          city: enrichedRoom.city,
-          state: enrichedRoom.state,
-          budget: enrichedRoom.budget || 0,
-          is_fully_signed: cachedIsSigned,
-          request_status: enrichedRoom.request_status,
-          agreement_status: enrichedRoom.agreement_status,
-          counterparty_name: enrichedRoom.counterparty_name || (isAgent ? 'Investor' : 'Agent'),
-          counterparty_headshot: enrichedRoom.counterparty_headshot || null,
-          investorId: enrichedRoom.investorId,
-          agent_ids: enrichedRoom.agent_ids || [],
-          locked_agent_id: enrichedRoom.agentId || null,
-          proposed_terms: enrichedRoom.proposed_terms || null,
-          agent_terms: enrichedRoom.agent_terms || null,
-          files: enrichedRoom.files || [],
-          photos: enrichedRoom.photos || [],
-        };
+      setCurrentRoom({
+        id: enrichedRoom.id,
+        deal_id: enrichedRoom.deal_id,
+        title: enrichedRoom.title,
+        property_address: enrichedRoom.property_address,
+        city: enrichedRoom.city,
+        state: enrichedRoom.state,
+        budget: enrichedRoom.budget || 0,
+        is_fully_signed: cachedIsSigned,
+        request_status: enrichedRoom.request_status,
+        agreement_status: enrichedRoom.agreement_status,
+        counterparty_name: enrichedRoom.counterparty_name || (isAgent ? 'Investor' : 'Agent'),
+        counterparty_headshot: enrichedRoom.counterparty_headshot || null,
+        investorId: enrichedRoom.investorId,
+        agent_ids: enrichedRoom.agent_ids || [],
+        locked_agent_id: enrichedRoom.agentId || null,
+        proposed_terms: enrichedRoom.proposed_terms || null,
+        agent_terms: enrichedRoom.agent_terms || null,
+        files: enrichedRoom.files || [],
+        photos: enrichedRoom.photos || [],
       });
-      setRoomLoading(false); // Show UI immediately
+      // Keep loading=true until deal also resolves so DealBoard shows loader
+      setRoomLoading(true);
     } else {
       setCurrentRoom(null);
-      setDeal(null);
       setRoomLoading(true);
     }
+
+    // Track whether this effect is still current (prevents stale async writes on room switch)
+    let cancelled = false;
 
     // --- Phase 1: Parallel fetch of full room + deal details ---
     const load = async () => {
@@ -271,6 +274,7 @@ export default function Room() {
         }
 
         const [room, dealData] = await Promise.all([roomPromise, dealPromise]);
+        if (cancelled) return;
         if (!room) { setRoomLoading(false); return; }
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
@@ -296,6 +300,7 @@ export default function Room() {
           investorId: room.investorId,
           locked_agent_id: room.locked_agent_id,
         });
+        if (cancelled) return;
         if (dealData) setDeal(dealData);
         setRoomLoading(false);
 
@@ -303,6 +308,7 @@ export default function Room() {
         // It's persisted only when user leaves the messages view (see prevActiveView effect).
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
+         if (cancelled) return;
          if (isInvestor && room.deal_id && !roomIsLocked) {
            base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
              const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
@@ -340,9 +346,11 @@ export default function Room() {
              }
            }).catch(() => {});
          }
-      } catch (e) { console.error('[Room] Load error:', e); setRoomLoading(false); }
+      } catch (e) { console.error('[Room] Load error:', e); if (!cancelled) setRoomLoading(false); }
     };
     load();
+
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, profile?.user_role]);
 
@@ -456,8 +464,13 @@ export default function Room() {
   // Real-time deal updates (e.g. walkthrough confirmed in chat)
   useEffect(() => {
     if (!deal?.id) return;
+    let lastFetchAt = 0;
+    const MIN_REFETCH_INTERVAL = 5000; // Don't refetch more than once per 5s
     const unsub = base44.entities.Deal.subscribe(e => {
-      if (e?.data?.id === deal.id) {
+      if (e?.data?.id !== deal.id) return;
+      const now = Date.now();
+      if (now - lastFetchAt < MIN_REFETCH_INTERVAL) return;
+      lastFetchAt = now;
         // Re-fetch deal from server to get full documents (subscription events may not include all fields)
         base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id })
           .then(res => {
@@ -528,20 +541,13 @@ export default function Room() {
           search={search}
           onSearchChange={setSearch}
           onRoomClick={(r) => {
-            // Immediately populate from enriched room data — no blank screen
-            setCurrentRoom({
-              id: r.id, deal_id: r.deal_id, city: r.city, state: r.state,
-              budget: r.budget, estimated_list_price: r.estimated_list_price || null,
-              is_fully_signed: r.is_fully_signed,
-              title: r.title, property_address: r.property_address,
-              counterparty_name: r.counterparty_name, counterparty_headshot: r.counterparty_headshot,
-              request_status: r.request_status, agreement_status: r.agreement_status,
-              investorId: r.investorId, agent_ids: r.agent_ids || [],
-              locked_agent_id: r.agentId || null,
-              proposed_terms: r.proposed_terms, agent_terms: r.agent_terms,
-              files: r.files || [], photos: r.photos || [],
-            });
+            // Reset both room and deal to prevent cross-contamination.
+            // The roomId effect will hydrate from cache and fetch fresh data.
+            setRoomLoading(true);
             setDeal(null);
+            setCurrentRoom(null);
+            setPendingInvites([]);
+            setSelectedInvite(null);
             navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
             setDrawer(false);
           }}
@@ -553,7 +559,7 @@ export default function Room() {
         {/* Header */}
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0 z-10">
           <button className="mr-4 md:hidden text-[#808080]" onClick={() => setDrawer(s => !s)}><Menu className="w-6 h-6" /></button>
-          <Button onClick={() => { queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] }); navigate(createPageUrl("Pipeline")); }} className="mr-4 bg-[#0D0D0D] border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#0D0D0D] text-[#FAFAFA] rounded-full">
+          <Button onClick={() => navigate(createPageUrl("Pipeline"))} className="mr-4 bg-[#0D0D0D] border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#0D0D0D] text-[#FAFAFA] rounded-full">
             <ArrowLeft className="w-4 h-4" /><span className="hidden md:inline ml-2">Pipeline</span>
           </Button>
           <div className="w-12 h-12 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center mr-4">

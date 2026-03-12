@@ -71,7 +71,7 @@ function PipelineContent() {
   // Load deals
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
-    staleTime: 30_000,
+    staleTime: 60_000,
     gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
@@ -93,7 +93,7 @@ function PipelineContent() {
   // Load rooms for matching
   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, isError: roomsError, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
-    staleTime: 30_000,
+    staleTime: 60_000,
     gcTime: 10 * 60_000,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
@@ -115,7 +115,7 @@ function PipelineContent() {
     refetchTimerRef.current = setTimeout(() => {
       refetchDeals();
       refetchRooms();
-    }, 2000);
+    }, 5000);
   };
 
   useEffect(() => {

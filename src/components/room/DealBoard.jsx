@@ -240,6 +240,15 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
     input.click();
   };
 
+  // Show loading skeleton while deal is being fetched (prevents stale data flash on room switch)
+  if (!deal && !localDeal) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-6 h-6 border-2 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Tab Nav */}
