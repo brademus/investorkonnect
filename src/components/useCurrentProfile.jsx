@@ -73,24 +73,12 @@ export function useCurrentProfile() {
           return;
         }
 
-        // Single profile lookup: user_id first, email fallback
+        // Profile lookup by user_id (indexed, fast)
         let profile = null;
         try {
           const p = await base44.entities.Profile.filter({ user_id: user.id });
           profile = p[0] || null;
         } catch (_) {}
-
-        if (!profile) {
-          try {
-            const emailLower = user.email.toLowerCase().trim();
-            const p = await base44.entities.Profile.filter({ email: emailLower });
-            profile = p[0] || null;
-            if (profile && profile.user_id !== user.id) {
-              base44.entities.Profile.update(profile.id, { user_id: user.id }).catch(() => {});
-              profile.user_id = user.id;
-            }
-          } catch (_) {}
-        }
 
         if (!mounted) return;
 
