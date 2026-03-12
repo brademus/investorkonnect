@@ -104,13 +104,13 @@ function PipelineContent() {
     const unsubs = [];
     unsubs.push(base44.entities.Room.subscribe(() => debouncedRefetch()));
     unsubs.push(base44.entities.Deal.subscribe(() => debouncedRefetch()));
-    unsubs.push(base44.entities.DealAppointments.subscribe(() => { queryClient.invalidateQueries({ queryKey: ['wtStatuses'] }); }));
+    unsubs.push(base44.entities.DealAppointments.subscribe(() => { queryClient.invalidateQueries({ queryKey: ['wtStatuses'] }); debouncedRefetch(); }));
     if (isAgent) unsubs.push(base44.entities.DealInvite.subscribe(() => debouncedRefetch()));
     return () => {
       if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
       unsubs.forEach(u => { try { u(); } catch (_) {} });
     };
-  }, [profile?.id, isAgent, isInvestor]);
+  }, [profile?.id, isAgent]);
 
   // Keep previous stages map in sync for detecting transitions
   useEffect(() => {
