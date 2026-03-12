@@ -112,6 +112,11 @@ export default function Room() {
   }, [roomId, profile]);
 
   useEffect(() => {
+    // Persist when ENTERING messages view (so badge clears immediately for this room)
+    if (activeView === 'messages' && prevActiveView.current !== 'messages') {
+      persistLastSeen();
+    }
+    // Also persist when LEAVING messages view (captures any messages seen during the session)
     if (prevActiveView.current === 'messages' && activeView !== 'messages') {
       persistLastSeen();
     }
