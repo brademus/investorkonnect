@@ -21,8 +21,7 @@ import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal
 import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { notificationEvents } from "@/components/utils/notificationEvents";
 
-// Module-level cache for message-seen counts — survives component unmount/remount
-const _msgSeenCache = {};
+
 
 export default function Room() {
   const navigate = useNavigate();
