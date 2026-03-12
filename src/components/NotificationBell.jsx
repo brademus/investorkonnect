@@ -66,10 +66,10 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Track which individual notifications the user has seen (by storing their keys)
+  // Track which individual notifications the user has seen (persisted in localStorage across refreshes)
   const [seenKeys, setSeenKeys] = useState(() => {
     try {
-      const stored = sessionStorage.getItem('notif_seen_keys');
+      const stored = localStorage.getItem('notif_seen_keys');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
@@ -135,7 +135,7 @@ export default function NotificationBell() {
     const allKeys = new Set(notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`));
     setSeenKeys(prev => {
       const merged = new Set([...prev, ...allKeys]);
-      try { sessionStorage.setItem('notif_seen_keys', JSON.stringify([...merged])); } catch {}
+      try { localStorage.setItem('notif_seen_keys', JSON.stringify([...merged])); } catch {}
       return merged;
     });
   }, [open, notifications]);
