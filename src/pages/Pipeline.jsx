@@ -69,7 +69,7 @@ function PipelineContent() {
     setReady(true);
   }, [loading, profile, onboarded]);
 
-  // Load deals
+  // Load deals + room data in a single call (server returns both)
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
     staleTime: 30_000,
@@ -80,30 +80,11 @@ function PipelineContent() {
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
-      const map = new Map();
-      deals.filter(d => d?.id && d.status !== 'archived').forEach(d => {
-        const prev = map.get(d.id);
-        if (!prev || new Date(d.updated_date || 0) > new Date(prev.updated_date || 0)) map.set(d.id, d);
-      });
-      return [...map.values()].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      // Server already deduplicates — just sort
+      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id && ready,
     refetchOnWindowFocus: true,
-  });
-
-  // Load rooms for matching
-  const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, isError: roomsError, refetch: refetchRooms } = useQuery({
-    queryKey: ['rooms', profile?.id],
-    staleTime: 30_000,
-    gcTime: 10 * 60_000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
-    placeholderData: (prev) => prev,
-    queryFn: async () => {
-      const res = await base44.functions.invoke('listMyRoomsEnriched');
-      return res.data?.rooms || [];
-    },
-    enabled: !!profile?.id && ready,
   });
 
   // Track previous deal stages for detecting transitions to completed/canceled
