@@ -15,16 +15,23 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor' || profile.role === 'admin';
 
-    const [investorRooms, agentRooms] = await Promise.all([
+    // For agents: use DealInvite index to find their rooms instead of scanning all rooms
+    const [investorRooms, agentInvites] = await Promise.all([
       isInvestor ? base44.asServiceRole.entities.Room.filter({ investorId: profileId }).catch(() => []) : Promise.resolve([]),
-      isAgent ? base44.asServiceRole.entities.Room.filter({}).catch(() => []) : Promise.resolve([]),
+      isAgent ? base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profileId }).catch(() => []) : Promise.resolve([]),
     ]);
 
     const roomMap = new Map();
     (investorRooms || []).forEach(r => roomMap.set(r.id, r));
-    (agentRooms || []).forEach(r => {
-      if ((r.agent_ids || []).includes(profileId)) roomMap.set(r.id, r);
-    });
+
+    // For agents: fetch only the specific rooms from their invites
+    if (isAgent && agentInvites.length > 0) {
+      const roomIds = [...new Set(agentInvites.map(inv => inv.room_id).filter(Boolean))];
+      const agentRoomResults = await Promise.all(
+        roomIds.slice(0, 10).map(rid => base44.asServiceRole.entities.Room.filter({ id: rid }).catch(() => []))
+      );
+      agentRoomResults.flat().forEach(r => roomMap.set(r.id, r));
+    }
 
     const userRooms = [...roomMap.values()];
     if (userRooms.length === 0) return Response.json({ messages: [], count: 0 });
