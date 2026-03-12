@@ -188,7 +188,25 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
   const isAgent = !isAdmin && profile?.user_role === 'agent';
-  const isSigned = room?.is_fully_signed || room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || deal?.is_fully_signed;
+
+  // Track fully-signed from both room props AND real-time agreement updates
+  const [agreementFullySigned, setAgreementFullySigned] = useState(false);
+  useEffect(() => {
+    if (!roomId) return;
+    const unsub = base44.entities.LegalAgreement.subscribe((e) => {
+      const d = e?.data;
+      if (!d) return;
+      if (d.room_id !== roomId && d.deal_id !== (deal?.id || room?.deal_id)) return;
+      if (d.status === 'fully_signed') {
+        setAgreementFullySigned(true);
+        // Also refresh room to pick up locked/fully_signed status
+        base44.entities.Room.filter({ id: roomId }).then(r => { if (r?.[0]) setLocalRoom(r[0]); }).catch(() => {});
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [roomId, deal?.id, room?.deal_id]);
+
+  const isSigned = agreementFullySigned || localRoom?.is_fully_signed || localRoom?.agreement_status === 'fully_signed' || localRoom?.request_status === 'locked' || room?.is_fully_signed || room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || deal?.is_fully_signed;
   const maskAddr = isAgent && !isSigned;
 
   const tabs = isSigned

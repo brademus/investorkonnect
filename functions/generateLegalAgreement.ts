@@ -440,7 +440,7 @@ Deno.serve(async (req) => {
       transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
       property_type: deal.property_type || 'Single Family',
       agreement_version: VERSION, signer_mode: effectiveSignerMode, status: 'sent',
-      template_url: templateUrl,
+      template_url: INTERNAL_AGREEMENT_URL,
       final_pdf_url: humanUpload.file_url, pdf_file_url: humanUpload.file_url, pdf_sha256: await sha256Hex(humanPdf),
       docusign_pdf_url: dsUpload.file_url, docusign_pdf_sha256: await sha256Hex(dsPdf),
       signing_pdf_url: dsUpload.file_url,
