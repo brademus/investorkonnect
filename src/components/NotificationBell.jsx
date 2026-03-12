@@ -66,11 +66,11 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
 
-  const [lastSeenAt, setLastSeenAt] = useState(() => {
+  // Track which notification set the user has already seen (by storing a seen key)
+  const [lastSeenKey, setLastSeenKey] = useState(() => {
     try {
-      const stored = sessionStorage.getItem('notif_last_seen');
-      return stored ? parseInt(stored, 10) : 0;
-    } catch { return 0; }
+      return sessionStorage.getItem('notif_last_seen_key') || '';
+    } catch { return ''; }
   });
 
   const fetchNotifications = useCallback(async () => {
@@ -128,12 +128,14 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  // When user opens the bell, mark the current set as seen
   useEffect(() => {
-    if (!open) return;
-    const seenTs = Date.now() + 1;
-    setLastSeenAt(seenTs);
-    try { sessionStorage.setItem('notif_last_seen', String(seenTs)); } catch {}
-  }, [open]);
+    if (!open || !notifications.length) return;
+    // Build a key from the current notification set so we know when new ones appear
+    const key = notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`).sort().join('|');
+    setLastSeenKey(key);
+    try { sessionStorage.setItem('notif_last_seen_key', key); } catch {}
+  }, [open, notifications]);
 
   const handleToggle = () => {
     if (!open) { fetchNotifications(); setOpen(true); }
@@ -151,14 +153,11 @@ export default function NotificationBell() {
     }
   };
 
-  const unseenCount = notifications.filter(n => {
-    if (!lastSeenAt) return true;
-    return (n.timestamp ? new Date(n.timestamp).getTime() : 0) > lastSeenAt;
-  }).length;
-
-  const hasHigh = notifications.some(n =>
-    n.priority === 'high' && (n.timestamp ? new Date(n.timestamp).getTime() : 0) > lastSeenAt
-  );
+  // Compare current notifications to what user last saw
+  const currentKey = notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`).sort().join('|');
+  const hasNewNotifications = notifications.length > 0 && currentKey !== lastSeenKey;
+  const unseenCount = hasNewNotifications ? notifications.length : 0;
+  const hasHigh = hasNewNotifications && notifications.some(n => n.priority === 'high');
 
   const high = notifications.filter(n => n.priority === 'high');
   const other = notifications.filter(n => n.priority !== 'high');
