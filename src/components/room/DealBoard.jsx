@@ -19,10 +19,8 @@ import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 import FileViewerModal from "@/components/room/FileViewerModal.jsx";
 
-function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus }) {
-  // Use externally-managed status from DealBoard (no internal subscriptions needed)
+function WalkthroughStatusLine({ deal, isSigned, externalStatus }) {
   const status = externalStatus || null;
-
   const dealConfirmed = deal?.walkthrough_confirmed === true;
   const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED' || dealConfirmed;
 
@@ -31,15 +29,11 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus 
   const wtTime = deal?.walkthrough_time && String(deal.walkthrough_time).length >= 3 ? deal.walkthrough_time : null;
   const hasWalkthrough = deal?.walkthrough_scheduled === true && (wtDate || wtSlots.length > 0);
 
-  // Build all display items (slots or legacy single date)
   const allSlots = wtSlots.length > 0 ? wtSlots : (wtDate ? [{ date: wtDate, timeStart: wtTime, timeEnd: null }] : []);
 
-  // Build confirmed label
   let confirmedLabel = 'Confirmed';
   if (isConfirmed) {
-    if (confirmedDate) {
-      try { confirmedLabel = new Date(confirmedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { confirmedLabel = confirmedDate; }
-    } else if (deal?.walkthrough_confirmed_date) {
+    if (deal?.walkthrough_confirmed_date) {
       const d = deal.walkthrough_confirmed_date;
       const t = deal.walkthrough_confirmed_time;
       confirmedLabel = t ? `${d} at ${t}` : d;
@@ -48,7 +42,6 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus 
 
   if (!hasWalkthrough) return null;
 
-  // If confirmed, show single line
   if (isConfirmed) {
     return (
       <div className="flex items-center gap-2 mt-3">
@@ -59,7 +52,6 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus 
     );
   }
 
-  // After signing — show "To Be Determined" (agent picks in deal progress panel)
   if (isSigned) {
     return (
       <div className="flex items-center gap-2 mt-3">
@@ -70,7 +62,6 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus 
     );
   }
 
-  // Before signing — show all proposed available times
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2">
