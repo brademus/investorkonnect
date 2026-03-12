@@ -96,7 +96,7 @@ function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus 
   );
 }
 
-export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
+export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId, patchDealCache }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [wtModalOpen, setWtModalOpen] = useState(false);
@@ -387,6 +387,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                                updated.documents = { ...(updated.documents || {}), ...localDocsRef.current };
                                return updated;
                              });
+                             // Persist to shared cache so room switches preserve the update
+                             if (deal?.id && patchDealCache) {
+                               patchDealCache(deal.id, patch);
+                             }
                            }}
                            onOpenWalkthroughModal={() => setWtModalOpen(true)}
                            onReviewSubmitted={() => {
