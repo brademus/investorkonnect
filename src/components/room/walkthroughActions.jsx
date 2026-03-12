@@ -13,81 +13,21 @@ export function formatWalkthrough(wtDate, wtTime) {
 
 /**
  * Confirm or decline a walkthrough.
- * Updates: DealAppointments status, all pending walkthrough_request messages, sends reply message.
+ * Delegates to server function (asServiceRole) so both agents and investors
+ * can write to DealAppointments, Deal, and Message entities.
  */
 export async function respondToWalkthrough({ action, dealId, roomId, profileId, wtDate, wtTime }) {
-  const isConfirm = action === 'confirm';
-  const apptStatus = isConfirm ? 'SCHEDULED' : 'CANCELED';
-  const msgStatus = isConfirm ? 'confirmed' : 'denied';
-  const now = new Date().toISOString();
-  const displayText = formatWalkthrough(wtDate, wtTime);
+  const res = await base44.functions.invoke('respondToWalkthrough', {
+    action,
+    dealId,
+    roomId,
+    wtDate: wtDate || null,
+    wtTime: wtTime || null,
+  });
 
-  // 1. Update DealAppointments (create if missing)
-  if (dealId) {
-    const apptRows = await base44.entities.DealAppointments.filter({ dealId });
-    if (apptRows?.[0]) {
-      await base44.entities.DealAppointments.update(apptRows[0].id, {
-        walkthrough: {
-          ...apptRows[0].walkthrough,
-          status: apptStatus,
-          updatedByUserId: profileId,
-          updatedAt: now,
-        },
-      });
-    } else {
-      // No DealAppointments record exists yet — create one
-      await base44.entities.DealAppointments.create({
-        dealId,
-        walkthrough: {
-          status: apptStatus,
-          datetime: null,
-          timezone: null,
-          locationType: 'ON_SITE',
-          notes: null,
-          updatedByUserId: profileId,
-          updatedAt: now,
-        },
-      });
-    }
+  if (res?.data?.error) {
+    throw new Error(res.data.error);
   }
 
-  // 1b. If confirmed, update the Deal entity with confirmed walkthrough info
-  if (isConfirm && dealId) {
-    try {
-      await base44.entities.Deal.update(dealId, {
-        walkthrough_confirmed: true,
-        walkthrough_confirmed_date: wtDate,
-        walkthrough_confirmed_time: wtTime,
-      });
-    } catch (e) {
-      console.warn('[walkthroughActions] Failed to update Deal with confirmed walkthrough:', e);
-    }
-  }
-
-  // 2. Update ALL pending walkthrough_request messages in the room
-  if (roomId) {
-    const msgs = await base44.entities.Message.filter({ room_id: roomId });
-    const pendingWt = msgs.filter(m => m.metadata?.type === 'walkthrough_request' && m.metadata?.status === 'pending');
-    for (const m of pendingWt) {
-      await base44.entities.Message.update(m.id, {
-        metadata: {
-          ...m.metadata,
-          status: msgStatus,
-          responded_by: profileId,
-          responded_at: now,
-          ...(isConfirm ? { confirmed_date: wtDate, confirmed_time: wtTime } : {}),
-        },
-      });
-    }
-
-    // 3. Send one reply message
-    const emoji = isConfirm ? '✅' : '❌';
-    const label = isConfirm ? 'Confirmed' : 'Declined';
-    await base44.entities.Message.create({
-      room_id: roomId,
-      sender_profile_id: profileId,
-      body: `${emoji} Walk-through ${label}\n\n${isConfirm ? `See you on ${displayText}` : 'Please propose a different time.'}`,
-      metadata: { type: 'walkthrough_response', walkthrough_date: wtDate, walkthrough_time: wtTime, status: msgStatus },
-    });
-  }
+  return res.data;
 }
