@@ -19,45 +19,9 @@ import DealNextStepCTA from "@/components/room/DealNextStepCTA.jsx";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal.jsx";
 import FileViewerModal from "@/components/room/FileViewerModal.jsx";
 
-function WalkthroughStatusLine({ dealId, roomId, deal, isSigned }) {
-  const [status, setStatus] = useState(null);
-  const [confirmedDate, setConfirmedDate] = useState(null);
-
-  useEffect(() => {
-    if (!dealId) return;
-    base44.entities.DealAppointments.filter({ dealId }).then(rows => {
-      const wt = rows?.[0]?.walkthrough;
-      if (wt) {
-        setStatus(wt.status);
-        if ((wt.status === 'SCHEDULED' || wt.status === 'COMPLETED') && wt.datetime) {
-          setConfirmedDate(wt.datetime);
-        }
-      }
-    }).catch(() => {});
-
-    const unsub = base44.entities.DealAppointments.subscribe(e => {
-      if (e?.data?.dealId === dealId && e.data.walkthrough) {
-        const wt = e.data.walkthrough;
-        setStatus(wt.status);
-        if ((wt.status === 'SCHEDULED' || wt.status === 'COMPLETED') && wt.datetime) {
-          setConfirmedDate(wt.datetime);
-        }
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [dealId]);
-
-  useEffect(() => {
-    if (!roomId) return;
-    const unsub = base44.entities.Message.subscribe(e => {
-      const d = e?.data;
-      if (!d || d.room_id !== roomId) return;
-      if (d.metadata?.type === "walkthrough_response" && d.metadata?.status === "confirmed") {
-        setStatus("SCHEDULED");
-      }
-    });
-    return () => { try { unsub(); } catch (_) {} };
-  }, [roomId]);
+function WalkthroughStatusLine({ dealId, roomId, deal, isSigned, externalStatus }) {
+  // Use externally-managed status from DealBoard (no internal subscriptions needed)
+  const status = externalStatus || null;
 
   const dealConfirmed = deal?.walkthrough_confirmed === true;
   const isConfirmed = status === 'SCHEDULED' || status === 'COMPLETED' || dealConfirmed;
