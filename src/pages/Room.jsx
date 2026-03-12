@@ -95,32 +95,42 @@ export default function Room() {
   // Initialize unread count from server timestamp on first load (only if not in module cache)
   const lastSeenInitialized = useRef({});
   useEffect(() => {
-    if (!roomId || !roomMessages?.length || !profile?.id) return;
+    if (!roomId || !profile?.id) return;
     if (lastSeenInitialized.current[roomId]) return;
     // If already in module cache, skip — we already know the count
     if (_msgSeenCache[roomId] !== undefined) {
       lastSeenInitialized.current[roomId] = true;
       return;
     }
-    if (activeView === 'messages') {
+    // If currently viewing messages and messages are loaded, snapshot now
+    if (activeView === 'messages' && roomMessages?.length) {
       lastSeenInitialized.current[roomId] = true;
       updateMsgCount(roomId, roomMessages.length);
       return;
     }
-    lastSeenInitialized.current[roomId] = true;
-
-    // Fetch from server to determine unread count
+    // Don't require messages to be loaded — start the server fetch regardless
+    // But don't mark initialized until the async fetch completes (fixes race condition)
     base44.entities.Profile.filter({ id: profile.id }).then(profiles => {
+      if (lastSeenInitialized.current[roomId]) return; // Another path already initialized
+      lastSeenInitialized.current[roomId] = true;
       const freshProfile = profiles?.[0];
       const serverTs = freshProfile?.last_seen_timestamps?.[roomId];
-      if (!serverTs) return;
-      const serverMs = new Date(serverTs).getTime();
-      const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
-      if (_msgSeenCache[roomId] === undefined) {
+      if (serverTs && roomMessages?.length) {
+        const serverMs = new Date(serverTs).getTime();
+        const countSeen = roomMessages.filter(m => new Date(m.created_date).getTime() <= serverMs).length;
         updateMsgCount(roomId, countSeen);
+      } else if (roomMessages?.length) {
+        // No server timestamp — treat all current messages as seen
+        updateMsgCount(roomId, roomMessages.length);
       }
-    }).catch(() => {});
-  }, [roomId, roomMessages, profile?.id, activeView, updateMsgCount]);
+    }).catch(() => {
+      // On error, treat all current messages as seen to avoid false unread counts
+      if (!lastSeenInitialized.current[roomId] && roomMessages?.length) {
+        lastSeenInitialized.current[roomId] = true;
+        updateMsgCount(roomId, roomMessages.length);
+      }
+    });
+  }, [roomId, roomMessages?.length, profile?.id, activeView, updateMsgCount]);
 
   // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
@@ -156,13 +166,12 @@ export default function Room() {
   const unreadMsgCount = useMemo(() => {
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
     const snapshotCount = msgCountWhenViewed[roomId];
-    if (snapshotCount === undefined) {
-      return roomMessages.filter(m => m.sender_profile_id !== profile.id).length;
-    }
+    // If we haven't initialized yet, show 0 (not "all messages are unread")
+    if (snapshotCount === undefined) return 0;
     const newMsgs = roomMessages.length - snapshotCount;
     if (newMsgs <= 0) return 0;
     const newest = roomMessages.slice(-newMsgs);
-    return newest.filter(m => m.sender_profile_id !== profile.id).length;
+    return newest.filter(m => m.sender_profile_id !== profile.id && m.sender_profile_id !== 'system').length;
   }, [roomMessages, profile?.id, roomId, msgCountWhenViewed]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
