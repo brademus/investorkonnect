@@ -25,7 +25,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
   // Sync external agreement/room props when they change
   useEffect(() => {
-    if (externalAgreement) setAgreement(externalAgreement);
+    if (externalAgreement) setAgreement(prev => {
+      // Don't overwrite a more-progressed status with a stale one
+      if (prev?.status === 'fully_signed' && externalAgreement.status !== 'fully_signed') return prev;
+      return externalAgreement;
+    });
   }, [externalAgreement]);
   useEffect(() => {
     if (externalRoom) setRoom(externalRoom);
@@ -325,7 +329,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         toast.success('Already signed!');
         const latestAg = res.data?.agreement;
         if (latestAg) setAgreement(latestAg);
-        if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
+        // Refresh room so isSigned updates in DealBoard
+        if (roomId) {
+          const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []);
+          if (r?.[0]) setRoom(r[0]);
+        }
+        // Also re-fetch the latest agreement from server to get accurate status
+        if (!latestAg && dealId) {
+          const freshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
+          if (freshRes?.data?.agreement) setAgreement(freshRes.data.agreement);
+        }
         if (role === 'investor' && onInvestorSigned) onInvestorSigned();
       }
       else reportError(res.data?.error || 'Failed to start signing', { extra: { dealId, roomId, role: 'unknown' } });
