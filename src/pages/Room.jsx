@@ -115,15 +115,22 @@ export default function Room() {
   }, [persistLastSeen]);
 
   const unreadMsgCount = useMemo(() => {
+    // If currently viewing messages, badge = 0
+    if (activeView === 'messages') return 0;
     if (!roomMessages?.length || !profile?.id || !roomId) return 0;
-    const snapshotCount = msgCountWhenViewed[roomId];
-    // If we haven't initialized yet, show 0 (not "all messages are unread")
-    if (snapshotCount === undefined) return 0;
-    const newMsgs = roomMessages.length - snapshotCount;
-    if (newMsgs <= 0) return 0;
-    const newest = roomMessages.slice(-newMsgs);
-    return newest.filter(m => m.sender_profile_id !== profile.id && m.sender_profile_id !== 'system').length;
-  }, [roomMessages, profile?.id, roomId, msgCountWhenViewed]);
+    const serverTs = profile?.last_seen_timestamps?.[roomId];
+    if (!serverTs) {
+      // No timestamp means user has never viewed this room's messages — all non-system, non-self are unread
+      return roomMessages.filter(m => m.sender_profile_id !== profile.id && m.sender_profile_id !== 'system').length;
+    }
+    const serverMs = new Date(serverTs).getTime();
+    // Count messages created AFTER the last-seen timestamp, excluding own and system messages
+    return roomMessages.filter(m =>
+      new Date(m.created_date).getTime() > serverMs &&
+      m.sender_profile_id !== profile.id &&
+      m.sender_profile_id !== 'system'
+    ).length;
+  }, [roomMessages, profile?.id, profile?.last_seen_timestamps, roomId, activeView]);
   // Investor must select an agent before accessing the deal board
   const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
