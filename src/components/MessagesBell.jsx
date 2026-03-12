@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
+import { notificationEvents } from "@/components/utils/notificationEvents";
 import { Mail, Loader2, User } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -14,15 +15,9 @@ export default function MessagesBell() {
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
 
-  const [lastSeenAt, setLastSeenAt] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('msg_bell_last_seen');
-      return stored ? parseInt(stored, 10) : 0;
-    } catch { return 0; }
-  });
-
   const fetchMessages = useCallback(async () => {
     setLoading(true);
+    // Primary: try getUnreadMessages
     try {
       const res = await base44.functions.invoke("getUnreadMessages", {});
       if (res.data?.messages?.length > 0 || res.data?.count >= 0) {
@@ -59,12 +54,22 @@ export default function MessagesBell() {
     }
   }, []);
 
+  // Fetch on mount + poll
   useEffect(() => {
     fetchMessages();
     const interval = setInterval(fetchMessages, 120_000);
     return () => clearInterval(interval);
   }, []);
 
+  // Refresh when Room page marks messages as read
+  useEffect(() => {
+    return notificationEvents.subscribe(() => {
+      // Small delay to let the server persist the timestamp
+      setTimeout(fetchMessages, 1500);
+    });
+  }, [fetchMessages]);
+
+  // Real-time: new messages trigger refresh
   useEffect(() => {
     const debounceRef = { current: null };
     const unsub = base44.entities.Message.subscribe(() => {
@@ -77,6 +82,7 @@ export default function MessagesBell() {
     };
   }, []);
 
+  // Close panel on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -88,23 +94,14 @@ export default function MessagesBell() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const seenTs = Date.now() + 1;
-    setLastSeenAt(seenTs);
-    try { sessionStorage.setItem('msg_bell_last_seen', String(seenTs)); } catch {}
-  }, [open]);
-
   const handleToggle = () => {
     if (!open) { fetchMessages(); setOpen(true); }
     else setOpen(false);
   };
 
   const messages = data?.messages || [];
-  const unseenCount = messages.filter(m => {
-    if (!lastSeenAt) return true;
-    return (m.timestamp ? new Date(m.timestamp).getTime() : 0) > lastSeenAt;
-  }).length;
+  // Badge count = number of rooms with unread messages (from server)
+  const unreadCount = messages.length;
 
   return (
     <div className="relative">
@@ -112,12 +109,12 @@ export default function MessagesBell() {
         ref={buttonRef}
         onClick={handleToggle}
         className="relative p-2 rounded-full border border-[#1F1F1F] bg-[#1A1A1A] hover:bg-[#222] hover:border-[#E3C567]/40 transition-all"
-        aria-label={`${unseenCount} unread messages`}
+        aria-label={`${unreadCount} unread messages`}
       >
-        <Mail className={`w-5 h-5 ${unseenCount > 0 ? 'text-[#E3C567]' : 'text-[#505050]'}`} />
-        {unseenCount > 0 && (
+        <Mail className={`w-5 h-5 ${unreadCount > 0 ? 'text-[#E3C567]' : 'text-[#505050]'}`} />
+        {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold px-1 leading-none bg-red-500 text-white">
-            {unseenCount > 9 ? '9+' : unseenCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
