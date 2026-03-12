@@ -1,0 +1,172 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/components/utils";
+import { base44 } from "@/api/base44Client";
+import { Mail, Loader2, User } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+export default function MessagesBell() {
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [fetched, setFetched] = useState(false);
+  const panelRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  const [lastSeenAt, setLastSeenAt] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('msg_bell_last_seen');
+      return stored ? parseInt(stored, 10) : 0;
+    } catch { return 0; }
+  });
+
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await base44.functions.invoke("getUnreadMessages", {});
+      setData(res.data || { messages: [], count: 0 });
+    } catch {
+      setData({ messages: [], count: 0 });
+    } finally {
+      setLoading(false);
+      setFetched(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 120_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const debounceRef = { current: null };
+    const unsub = base44.entities.Message.subscribe(() => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(fetchMessages, 3000);
+    });
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      try { unsub(); } catch (_) {}
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (panelRef.current?.contains(e.target)) return;
+      if (buttonRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const seenTs = Date.now() + 1;
+    setLastSeenAt(seenTs);
+    try { sessionStorage.setItem('msg_bell_last_seen', String(seenTs)); } catch {}
+  }, [open]);
+
+  const handleToggle = () => {
+    if (!open) { fetchMessages(); setOpen(true); }
+    else setOpen(false);
+  };
+
+  const messages = data?.messages || [];
+  const unseenCount = messages.filter(m => {
+    if (!lastSeenAt) return true;
+    return (m.timestamp ? new Date(m.timestamp).getTime() : 0) > lastSeenAt;
+  }).length;
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={handleToggle}
+        className="relative p-2 rounded-full border border-[#1F1F1F] bg-[#1A1A1A] hover:bg-[#222] hover:border-[#E3C567]/40 transition-all"
+        aria-label={`${unseenCount} unread messages`}
+      >
+        <Mail className={`w-5 h-5 ${unseenCount > 0 ? 'text-[#E3C567]' : 'text-[#505050]'}`} />
+        {unseenCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold px-1 leading-none bg-red-500 text-white">
+            {unseenCount > 9 ? '9+' : unseenCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          ref={panelRef}
+          className="absolute right-0 mt-2 w-[320px] rounded-2xl z-50 overflow-hidden"
+          style={{
+            background: '#111114',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.85)',
+          }}
+        >
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="text-[13px] font-semibold text-[#FAFAFA] tracking-wide">Messages</span>
+            {loading && <Loader2 className="w-3 h-3 text-[#E3C567] animate-spin" />}
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto">
+            {!fetched && loading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-4 h-4 text-[#E3C567] animate-spin" />
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="text-center py-10 px-4">
+                <Mail className="w-7 h-7 text-[#2A2A2A] mx-auto mb-2.5" />
+                <p className="text-[13px] text-[#505050]">No unread messages</p>
+              </div>
+            ) : (
+              <div className="p-2 space-y-0.5">
+                {messages.map((m, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setOpen(false);
+                      if (m.roomId) navigate(`${createPageUrl("Room")}?roomId=${m.roomId}&view=messages`);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#E3C567]/15 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {m.senderHeadshot ? (
+                        <img src={m.senderHeadshot} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-4 h-4 text-[#E3C567]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] leading-tight font-medium text-[#FAFAFA]">
+                        {m.senderName || 'Message'}
+                      </p>
+                      <p className="text-[11px] text-[#808080] truncate mt-0.5">
+                        {m.preview || m.address || ''}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      {m.timestamp && (
+                        <span className="text-[10px] text-[#505050]">
+                          {formatDistanceToNow(new Date(m.timestamp), { addSuffix: true })}
+                        </span>
+                      )}
+                      {m.count > 1 && (
+                        <span className="text-[9px] bg-[#E3C567] text-black px-1.5 py-0.5 rounded-full font-bold">
+                          {m.count}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

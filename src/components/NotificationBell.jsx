@@ -3,25 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import {
-  Bell, MessageSquare, ArrowRightLeft, Calendar,
-  Upload, RefreshCw, Zap, FileSignature, Loader2, ChevronRight
+  Bell, ArrowRightLeft, Calendar,
+  RefreshCw, Zap, Loader2, ChevronRight
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const ICON_MAP = {
-  unread_messages: MessageSquare,
+  deal_activity: Zap,
   counter_offer_pending: ArrowRightLeft,
-  counter_offer_accepted: ArrowRightLeft,
-  counter_offer_declined: ArrowRightLeft,
   new_deal: Zap,
-  agreement_sign: FileSignature,
-  agreement_fully_signed: FileSignature,
   agreement_regenerated: RefreshCw,
-  investor_signed: FileSignature,
-  agent_signed: FileSignature,
   walkthrough_confirm: Calendar,
-  walkthrough_scheduled: Calendar,
-  action_needed: Upload,
 };
 
 function NotificationItem({ notification, onClick }) {
@@ -42,9 +34,12 @@ function NotificationItem({ notification, onClick }) {
       <div className="flex-1 min-w-0">
         <p className={`text-[13px] leading-tight font-medium ${isHigh ? 'text-[#FAFAFA]' : 'text-[#C0C0C0]'}`}>
           {notification.title}
+          {notification.description && (
+            <span className="text-[#808080] font-normal"> — {notification.description}</span>
+          )}
         </p>
-        {notification.description && (
-          <p className="text-[11px] text-[#606060] truncate mt-0.5">{notification.description}</p>
+        {notification.subtitle && (
+          <p className="text-[11px] text-[#606060] truncate mt-0.5">{notification.subtitle}</p>
         )}
       </div>
 

@@ -21,6 +21,7 @@ import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 import NotificationBell from "@/components/NotificationBell";
+import MessagesBell from "@/components/MessagesBell";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -343,6 +344,7 @@ function PipelineContent() {
               </div>
               <div className="flex items-center gap-3">
                 <NotificationBell />
+                <MessagesBell />
                 {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-[14px] shadow-md transition-all duration-200 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
                 <Button onClick={() => setHelpOpen(true)} className="rounded-[14px] border transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Tutorials</Button>
               </div>

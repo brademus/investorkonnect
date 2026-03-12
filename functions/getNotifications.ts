@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
   try {
@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
     });
 
     const userRooms = [...roomMap.values()];
-    const userRoomIds = new Set(userRooms.map(r => r.id));
     const userDealIds = new Set(userRooms.map(r => r.deal_id).filter(Boolean));
+    const userRoomIds = new Set(userRooms.map(r => r.id));
 
     if (userRooms.length === 0 && !isInvestor) {
       return Response.json({ notifications: [] });
@@ -57,47 +57,9 @@ Deno.serve(async (req) => {
     const apptMap = new Map();
     (appointments || []).forEach(a => { if (a.dealId) apptMap.set(a.dealId, a); });
 
-    const lastSeen = profile.last_seen_timestamps || {};
     const notifications = [];
 
-    // ─── 1. UNREAD MESSAGES ───
-    const sortedRooms = [...userRooms]
-      .sort((a, b) => new Date(b.updated_date || 0) - new Date(a.updated_date || 0))
-      .slice(0, 5);
-
-    const messageResults = await Promise.all(
-      sortedRooms.map(r => base44.entities.Message.filter({ room_id: r.id }, '-created_date', 5).catch(() => []))
-    );
-
-    for (let i = 0; i < sortedRooms.length; i++) {
-      const room = sortedRooms[i];
-      const messages = messageResults[i] || [];
-      const lastSeenTs = lastSeen[room.id];
-
-      const unread = messages.filter(m => {
-        if (!m.body?.trim()) return false;
-        if (m.sender_profile_id === profileId || m.sender_profile_id === 'system') return false;
-        if (!lastSeenTs) return true;
-        return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
-      });
-
-      if (unread.length > 0) {
-        const deal = dealMap.get(room.deal_id);
-        const address = deal?.property_address || room?.property_address || 'a deal';
-        const shortAddress = address.split(',')[0];
-        notifications.push({
-          type: 'unread_messages',
-          title: unread.length === 1 ? 'New message' : `${unread.length} new messages`,
-          description: shortAddress,
-          roomId: room.id,
-          dealId: room.deal_id,
-          timestamp: unread[0].created_date,
-          priority: 'medium',
-        });
-      }
-    }
-
-    // ─── 2. COUNTER OFFER PENDING ───
+    // ─── 1. COUNTER OFFER PENDING ───
     for (const co of (counterOffers || [])) {
       const isForMe = (isInvestor && co.to_role === 'investor') ||
                       (isAgent && co.to_role === 'agent') ||
@@ -106,9 +68,10 @@ Deno.serve(async (req) => {
         const deal = dealMap.get(co.deal_id);
         const address = (deal?.property_address || '').split(',')[0] || 'a deal';
         notifications.push({
-          type: 'counter_offer_pending',
+          type: 'deal_activity',
           title: 'Counter offer received',
-          description: `Review terms — ${address}`,
+          description: 'Review and accept or counter',
+          subtitle: address,
           roomId: co.room_id,
           dealId: co.deal_id,
           timestamp: co.created_date,
@@ -117,16 +80,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ─── 3. AGENT: NEW DEAL INVITES ───
+    // ─── 2. AGENT: NEW DEAL INVITES ───
     if (isAgent) {
       for (const inv of (dealInvites || [])) {
         if (inv.status === 'PENDING_AGENT_SIGNATURE' || inv.status === 'INVITED') {
           const deal = dealMap.get(inv.deal_id);
           const address = (deal?.property_address || deal?.city || 'a deal').split(',')[0];
           notifications.push({
-            type: 'new_deal',
+            type: 'deal_activity',
             title: 'New deal invitation',
-            description: `Sign to accept — ${address}`,
+            description: 'Sign the agreement to accept',
+            subtitle: address,
             roomId: inv.room_id,
             dealId: inv.deal_id,
             timestamp: inv.created_date || inv.created_at_iso,
@@ -136,35 +100,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ─── 3b. INVESTOR: AGENT SIGNED THE AGREEMENT ───
-    if (isInvestor) {
-      for (const room of userRooms) {
-        if (room.agreement_status === 'fully_signed' || room.request_status === 'locked') {
-          const deal = dealMap.get(room.deal_id);
-          if (!deal) continue;
-          const connectedAt = deal.updated_date ? new Date(deal.updated_date) : null;
-          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-          if (connectedAt && connectedAt > sevenDaysAgo && deal.pipeline_stage === 'connected_deals') {
-            const address = (deal.property_address || '').split(',')[0] || 'a deal';
-            const lastSeenKey = `agent_signed:${room.id}`;
-            const alreadySeen = lastSeen[lastSeenKey];
-            if (!alreadySeen) {
-              notifications.push({
-                type: 'agent_signed',
-                title: 'Agent signed — deal room open',
-                description: address,
-                roomId: room.id,
-                dealId: room.deal_id,
-                timestamp: deal.updated_date,
-                priority: 'high',
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // ─── 4. PER-ROOM ACTION ITEMS ───
+    // ─── 3. DEAL ACTIVITY — "What happened → Next step" ───
     for (const room of userRooms) {
       const deal = dealMap.get(room.deal_id);
       if (!deal) continue;
@@ -175,13 +111,14 @@ Deno.serve(async (req) => {
       const appt = apptMap.get(room.deal_id);
       const wtStatus = appt?.walkthrough?.status || 'NOT_SET';
       const docs = deal.documents || {};
-      const hasCma = !!(docs.cma?.url);
 
+      // Agreement needs re-signing
       if (room.requires_regenerate) {
         notifications.push({
-          type: 'agreement_regenerated',
-          title: 'Agreement updated — re-sign required',
-          description: address,
+          type: 'deal_activity',
+          title: 'Agreement updated',
+          description: 'Review and re-sign the updated terms',
+          subtitle: address,
           roomId: room.id,
           dealId: room.deal_id,
           timestamp: room.updated_date,
@@ -189,12 +126,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Walkthrough proposed by other party
       const wt = appt?.walkthrough;
       if (wt?.status === 'PROPOSED' && wt?.updatedByUserId && wt.updatedByUserId !== profileId) {
         notifications.push({
-          type: 'walkthrough_confirm',
-          title: 'Walkthrough date proposed',
-          description: `Confirm or suggest another time — ${address}`,
+          type: 'deal_activity',
+          title: 'Walkthrough dates proposed',
+          description: 'Confirm or propose new dates',
+          subtitle: address,
           roomId: room.id,
           dealId: room.deal_id,
           timestamp: wt.updatedAt || appt.updated_date,
@@ -202,125 +141,212 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Walkthrough confirmed (within 7 days)
+      if ((wt?.status === 'SCHEDULED' || wt?.status === 'COMPLETED') && isSigned) {
+        const confirmedAt = wt?.updatedAt ? new Date(wt.updatedAt) : null;
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (confirmedAt && confirmedAt > sevenDaysAgo) {
+          if (isAgent && !docs.cma?.url) {
+            notifications.push({
+              type: 'deal_activity',
+              title: 'Walkthrough confirmed',
+              description: 'Upload the CMA',
+              subtitle: address,
+              roomId: room.id,
+              dealId: room.deal_id,
+              timestamp: wt.updatedAt,
+              priority: 'medium',
+            });
+          } else if (isInvestor) {
+            notifications.push({
+              type: 'deal_activity',
+              title: 'Walkthrough confirmed',
+              description: docs.cma?.url ? 'Review the estimated list price' : 'Waiting for agent to upload CMA',
+              subtitle: address,
+              roomId: room.id,
+              dealId: room.deal_id,
+              timestamp: wt.updatedAt,
+              priority: 'low',
+            });
+          }
+        }
+      }
+
       if (!isSigned) continue;
 
-      if (isInvestor && stage === 'connected_deals' && (wtStatus === 'NOT_SET' || wtStatus === 'CANCELED')) {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Schedule walkthrough',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
+      // ─── Connected Deals Stage ───
+      if (stage === 'connected_deals') {
+        if (isInvestor && docs.cma?.url && !deal.list_price_confirmed) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'CMA uploaded',
+            description: 'Confirm or edit the list price',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.cma.uploaded_at || deal.updated_date,
+            priority: 'high',
+          });
+        }
+        if (isAgent && docs.cma?.url && !deal.list_price_confirmed) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'CMA uploaded',
+            description: 'Waiting for investor to confirm list price',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.cma.uploaded_at || deal.updated_date,
+            priority: 'low',
+          });
+        }
+        if (isAgent && deal.list_price_confirmed && !docs.listing_agreement?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'List price confirmed',
+            description: 'Upload the listing agreement',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'high',
+          });
+        }
+        if (isInvestor && deal.list_price_confirmed && !docs.listing_agreement?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'List price confirmed',
+            description: 'Waiting for agent to upload listing agreement',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'low',
+          });
+        }
+        if (isAgent && docs.listing_agreement?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Listing agreement uploaded',
+            description: 'Mark the listing as active on MLS',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.listing_agreement.uploaded_at || deal.updated_date,
+            priority: 'high',
+          });
+        }
+        if (isInvestor && docs.listing_agreement?.url && deal.list_price_confirmed) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Listing agreement uploaded',
+            description: 'Waiting for agent to list on MLS',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.listing_agreement.uploaded_at || deal.updated_date,
+            priority: 'low',
+          });
+        }
+        if (isInvestor && (wtStatus === 'NOT_SET' || wtStatus === 'CANCELED')) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Deal connected',
+            description: 'Schedule a walkthrough',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'medium',
+          });
+        }
+        if (isAgent && (wtStatus === 'NOT_SET' || wtStatus === 'CANCELED') && !docs.cma?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Deal connected',
+            description: 'Waiting for investor to schedule walkthrough',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'low',
+          });
+        }
       }
 
-      if (isAgent && stage === 'connected_deals' && !hasCma && (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED')) {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Upload CMA',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
+      // ─── Active Listings Stage ───
+      if (stage === 'active_listings') {
+        if (isAgent && !docs.buyer_contract?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Listing is active',
+            description: "Upload the buyer's contract",
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'medium',
+          });
+        }
+        if (isInvestor && docs.buyer_contract?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: "Buyer's contract received",
+            description: 'Move deal to closing',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.buyer_contract.uploaded_at || deal.updated_date,
+            priority: 'high',
+          });
+        }
+        if (isAgent && docs.buyer_contract?.url) {
+          notifications.push({
+            type: 'deal_activity',
+            title: "Buyer's contract uploaded",
+            description: 'Waiting for investor to move to closing',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: docs.buyer_contract.uploaded_at || deal.updated_date,
+            priority: 'low',
+          });
+        }
       }
 
-      if (isInvestor && stage === 'connected_deals' && hasCma && !deal.list_price_confirmed) {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Review estimated list price',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
-      }
-
-      // Agent: listing agreement needed (CMA done, list price confirmed, no listing agreement yet)
-      if (isAgent && stage === 'connected_deals' && hasCma && deal.list_price_confirmed && !docs.listing_agreement?.url) {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Upload listing agreement',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
-      }
-
-      // Investor: listing agreement uploaded — waiting for MLS
-      if (isInvestor && stage === 'connected_deals' && docs.listing_agreement?.url && hasCma && deal.list_price_confirmed) {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Listing agreement uploaded — waiting for MLS',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'low',
-        });
-      }
-
-      if (isAgent && stage === 'active_listings' && !docs.buyer_contract?.url) {
-        notifications.push({
-          type: 'action_needed',
-          title: "Upload buyer's contract",
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
-      }
-
-      // Investor: buyer contract received — move to closing
-      if (isInvestor && stage === 'active_listings' && docs.buyer_contract?.url) {
-        notifications.push({
-          type: 'action_needed',
-          title: "Buyer's contract received — move to closing",
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'high',
-        });
-      }
-
-      if (isInvestor && stage === 'in_closing') {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Confirm deal closed',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
-      }
-
-      // Agent: deal is in closing
-      if (isAgent && stage === 'in_closing') {
-        notifications.push({
-          type: 'action_needed',
-          title: 'Deal is in closing',
-          description: address,
-          roomId: room.id,
-          dealId: deal.id,
-          timestamp: deal.updated_date,
-          priority: 'medium',
-        });
+      // ─── In Closing Stage ───
+      if (stage === 'in_closing') {
+        if (isInvestor) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Deal is in closing',
+            description: 'Confirm when the deal closes',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'medium',
+          });
+        }
+        if (isAgent) {
+          notifications.push({
+            type: 'deal_activity',
+            title: 'Deal moved to closing',
+            description: 'Waiting for investor to confirm close',
+            subtitle: address,
+            roomId: room.id,
+            dealId: deal.id,
+            timestamp: deal.updated_date,
+            priority: 'low',
+          });
+        }
       }
     }
 
     // ─── DEDUPLICATE & SORT ───
     const seen = new Set();
     const deduped = notifications.filter(n => {
-      const key = `${n.type}:${n.dealId || ''}:${n.roomId || ''}`;
+      const key = `${n.title}:${n.dealId || ''}:${n.roomId || ''}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
