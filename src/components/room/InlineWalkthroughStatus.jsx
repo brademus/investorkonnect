@@ -17,6 +17,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
   const [selectedSlotIdx, setSelectedSlotIdx] = useState(null);
   const [showProposeForm, setShowProposeForm] = useState(false);
   const [proposedByProfileId, setProposedByProfileId] = useState(externalProposedBy || null);
+  const [localStatus, setLocalStatus] = useState(null);
 
   // Sync external proposedBy
   useEffect(() => {
