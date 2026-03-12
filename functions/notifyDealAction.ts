@@ -45,57 +45,57 @@ Deno.serve(async (req) => {
     const ACTIONS = {
       walkthrough_proposed: {
         target: 'agent',
-        subject: `Walkthrough proposed — ${address}`,
-        body: (name) => `${name}, the investor proposed walkthrough dates for ${address}. Log in to confirm or suggest a new time.\n\nhttps://investorkonnect.com`,
-        sms: `Walkthrough dates proposed for ${address}. Confirm at investorkonnect.com`,
+        subject: `Walkthrough dates proposed — ${address}`,
+        body: () => `Walkthrough dates proposed for ${address}. Confirm or propose new dates.`,
+        sms: `Walkthrough dates proposed for ${address}. Confirm or propose new dates.`,
       },
       walkthrough_confirmed: {
         target: 'other',
         subject: `Walkthrough confirmed — ${address}`,
-        body: (name) => `${name}, the walkthrough for ${address} has been confirmed.\n\nhttps://investorkonnect.com`,
-        sms: `Walkthrough confirmed for ${address} — investorkonnect.com`,
+        body: () => `Walkthrough confirmed for ${address}.`,
+        sms: `Walkthrough confirmed for ${address}.`,
       },
       cma_uploaded: {
         target: 'investor',
         subject: `CMA uploaded — ${address}`,
-        body: (name) => `${name}, your agent uploaded the CMA for ${address}. Log in to review the estimated list price.\n\nhttps://investorkonnect.com`,
-        sms: `CMA uploaded for ${address}. Review list price at investorkonnect.com`,
+        body: () => `CMA uploaded for ${address}. Confirm or edit the list price.`,
+        sms: `CMA uploaded for ${address}. Confirm or edit the list price.`,
       },
       list_price_confirmed: {
         target: 'agent',
         subject: `List price confirmed — ${address}`,
-        body: (name) => `${name}, the investor confirmed the list price for ${address}. Upload the listing agreement when ready.\n\nhttps://investorkonnect.com`,
-        sms: `List price confirmed for ${address}. Upload listing agreement — investorkonnect.com`,
+        body: () => `List price confirmed for ${address}. Upload the listing agreement.`,
+        sms: `List price confirmed for ${address}. Upload the listing agreement.`,
       },
       listing_agreement_uploaded: {
         target: 'investor',
         subject: `Listing agreement uploaded — ${address}`,
-        body: (name) => `${name}, your agent uploaded the listing agreement for ${address}.\n\nhttps://investorkonnect.com`,
-        sms: `Listing agreement uploaded for ${address} — investorkonnect.com`,
+        body: () => `Listing agreement uploaded for ${address}. Waiting for agent to list on MLS.`,
+        sms: `Listing agreement uploaded for ${address}.`,
       },
       listing_active: {
         target: 'investor',
-        subject: `Listing is live — ${address}`,
-        body: (name) => `${name}, your property at ${address} is now listed on the MLS.\n\nhttps://investorkonnect.com`,
-        sms: `${address} is now live on the MLS — investorkonnect.com`,
+        subject: `Listing is active — ${address}`,
+        body: () => `Listing is active for ${address}. Waiting for buyer's contract.`,
+        sms: `Listing is active for ${address}.`,
       },
       buyer_contract_uploaded: {
         target: 'investor',
         subject: `Buyer's contract received — ${address}`,
-        body: (name) => `${name}, your agent uploaded a buyer's contract for ${address}. Log in to review and move to closing.\n\nhttps://investorkonnect.com`,
-        sms: `Buyer's contract received for ${address}. Review at investorkonnect.com`,
+        body: () => `Buyer's contract received for ${address}. Move deal to closing.`,
+        sms: `Buyer's contract received for ${address}. Move deal to closing.`,
       },
       moved_to_closing: {
         target: 'agent',
         subject: `Deal moved to closing — ${address}`,
-        body: (name) => `${name}, the investor moved ${address} to closing.\n\nhttps://investorkonnect.com`,
-        sms: `${address} moved to closing — investorkonnect.com`,
+        body: () => `Deal is in closing for ${address}. Waiting for investor to confirm close.`,
+        sms: `Deal moved to closing for ${address}.`,
       },
       deal_completed: {
         target: 'agent',
         subject: `Deal closed — ${address}`,
-        body: (name) => `${name}, the deal for ${address} has been marked as closed. Don't forget to leave a review.\n\nhttps://investorkonnect.com`,
-        sms: `Deal closed for ${address}. Leave a review at investorkonnect.com`,
+        body: () => `Deal closed for ${address}. Leave a review.`,
+        sms: `Deal closed for ${address}. Leave a review.`,
       },
     };
 
@@ -124,14 +124,12 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     for (const recipient of recipients) {
-      const firstName = recipient.full_name?.split(' ')[0] || 'there';
-
       if (recipient.email && recipient.notification_preferences?.email !== false) {
         try {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: recipient.email,
             subject: config.subject,
-            body: config.body(firstName),
+            body: config.body(),
           });
           sent++;
         } catch (e) {

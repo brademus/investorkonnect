@@ -31,21 +31,19 @@ Deno.serve(async (req) => {
 
     // --- INVESTOR EMAIL ---
     if (investor?.email) {
-      const firstName = investor.full_name?.split(' ')[0] || 'there';
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: investor.email,
         subject: `Agreement signed — ${address}`,
-        body: `${firstName}, your agent has signed the agreement for ${address}. Your deal room is now open.`,
+        body: `Agreement signed for ${address}. Your deal room is now open.`,
       });
     }
 
     // --- AGENT EMAIL ---
     if (agent?.email) {
-      const firstName = agent.full_name?.split(' ')[0] || 'there';
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: agent.email,
         subject: `Agreement signed — ${address}`,
-        body: `${firstName}, the investor has signed the agreement for ${address}. Your deal room is now open.`,
+        body: `Agreement signed for ${address}. Your deal room is now open.`,
       });
     }
 
