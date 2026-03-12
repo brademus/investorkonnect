@@ -8,8 +8,7 @@ import {
   Home, Users, MessageSquare, FileText, CreditCard, 
   User, LogOut, Menu, X, ChevronDown, ShieldCheck
 } from 'lucide-react';
-import NotificationBell from './NotificationBell';
-import MessagesBell from './MessagesBell';
+
 
 export function Header({ profile }) {
   const navigate = useNavigate();
@@ -48,9 +47,6 @@ export function Header({ profile }) {
 
           {/* Right: User Menu */}
           <div className="flex items-center gap-2 flex-1 justify-end">
-            <NotificationBell />
-            <MessagesBell />
-
             {/* Desktop User Dropdown */}
             <div className="hidden md:block relative">
               <Button 
