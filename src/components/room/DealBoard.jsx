@@ -184,6 +184,42 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   );
 
   // Track which tabs have been visited to avoid unmounting/remounting
+  // Shared walkthrough state — lifted here so sub-components don't each create their own subscriptions
+  const [wtStatus, setWtStatus] = useState(null);
+  const [wtProposedBy, setWtProposedBy] = useState(null);
+  const [wtLoaded, setWtLoaded] = useState(false);
+
+  useEffect(() => {
+    const dId = localDeal?.id || deal?.id;
+    if (!dId) return;
+    setWtLoaded(false);
+    base44.entities.DealAppointments.filter({ dealId: dId }).then(rows => {
+      const wt = rows?.[0]?.walkthrough;
+      if (wt) {
+        setWtStatus(wt.status);
+        if (wt.updatedByUserId) setWtProposedBy(wt.updatedByUserId);
+      }
+      setWtLoaded(true);
+    }).catch(() => { setWtLoaded(true); });
+
+    const unsub1 = base44.entities.DealAppointments.subscribe(e => {
+      if (e?.data?.dealId === dId && e.data.walkthrough?.status) {
+        setWtStatus(e.data.walkthrough.status);
+        if (e.data.walkthrough.updatedByUserId) setWtProposedBy(e.data.walkthrough.updatedByUserId);
+      }
+    });
+    const unsub2 = base44.entities.Message.subscribe(e => {
+      const d = e?.data;
+      if (!d || d.room_id !== roomId) return;
+      if (d.metadata?.type === "walkthrough_request" || d.metadata?.type === "walkthrough_response") {
+        if (d.metadata.status === "confirmed") setWtStatus("SCHEDULED");
+        else if (d.metadata.status === "denied") setWtStatus("CANCELED");
+        else if (d.metadata.status === "pending") { setWtStatus("PROPOSED"); setWtProposedBy(d.sender_profile_id); }
+      }
+    });
+    return () => { try { unsub1(); } catch(_){} try { unsub2(); } catch(_){} };
+  }, [localDeal?.id, deal?.id, roomId]);
+
   const [visitedTabs, setVisitedTabs] = useState(new Set(['details']));
   useEffect(() => {
     setVisitedTabs(prev => {
@@ -296,7 +332,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
               {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
             </span>
-            <WalkthroughStatusLine dealId={localDeal?.id} roomId={roomId} deal={localDeal} isSigned={isSigned} />
+            <WalkthroughStatusLine dealId={localDeal?.id} roomId={roomId} deal={localDeal} isSigned={isSigned} externalStatus={wtStatus} />
           </div>
 
           {/* Property Details (left) + Key Terms (right) side by side */}
@@ -373,6 +409,8 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                            room={localRoom}
                            profile={profile}
                            roomId={roomId}
+                           wtStatus={wtStatus}
+                           wtProposedBy={wtProposedBy}
                            inline
                            onDealUpdate={(patch) => {
                              if (!patch) return;
@@ -395,7 +433,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                         {stage.id === 'connected_deals' && (
                           <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3">
                             <p className="text-xs font-semibold text-[#FAFAFA] mb-2">Walk-through</p>
-                            <InlineWalkthroughStatus deal={localDeal} room={localRoom} profile={profile} roomId={roomId} />
+                            <InlineWalkthroughStatus deal={localDeal} room={localRoom} profile={profile} roomId={roomId} externalStatus={wtStatus} externalProposedBy={wtProposedBy} externalLoaded={wtLoaded} />
                           </div>
                         )}
                       </div>
