@@ -16,16 +16,24 @@ Deno.serve(async (req) => {
     const isAgent = !isAdmin && profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor' || isAdmin;
 
-    const [investorRooms, agentRooms] = await Promise.all([
+    // FIX: Use DealInvite index for agents instead of Room.filter({}) which scans ALL rooms
+    const [investorRooms, agentInvites] = await Promise.all([
       isInvestor ? base44.entities.Room.filter({ investorId: profileId }).catch(() => []) : Promise.resolve([]),
-      isAgent ? base44.entities.Room.filter({}).catch(() => []) : Promise.resolve([]),
+      isAgent ? base44.entities.DealInvite.filter({ agent_profile_id: profileId }).catch(() => []) : Promise.resolve([]),
     ]);
 
     const roomMap = new Map();
     (investorRooms || []).forEach(r => roomMap.set(r.id, r));
-    (agentRooms || []).forEach(r => {
-      if ((r.agent_ids || []).includes(profileId)) roomMap.set(r.id, r);
-    });
+
+    // For agents: fetch only the specific rooms from their invites
+    if (isAgent && agentInvites.length > 0) {
+      const activeInvites = agentInvites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      const roomIds = [...new Set(activeInvites.map(inv => inv.room_id).filter(Boolean))];
+      if (roomIds.length > 0) {
+        const agentRooms = await base44.entities.Room.filter({ id: { $in: roomIds } }).catch(() => []);
+        agentRooms.forEach(r => roomMap.set(r.id, r));
+      }
+    }
 
     const userRooms = [...roomMap.values()];
     const userDealIds = new Set(userRooms.map(r => r.deal_id).filter(Boolean));
@@ -45,7 +53,7 @@ Deno.serve(async (req) => {
       roomIdArray.length > 0
         ? base44.entities.CounterOffer.filter({ room_id: { $in: roomIdArray }, status: 'pending' }).catch(() => [])
         : Promise.resolve([]),
-      isAgent ? base44.entities.DealInvite.filter({ agent_profile_id: profileId }).catch(() => []) : Promise.resolve([]),
+      isAgent ? Promise.resolve(agentInvites || []) : Promise.resolve([]),
       dealIdArray.length > 0
         ? base44.entities.DealAppointments.filter({ dealId: { $in: dealIdArray } }).catch(() => [])
         : Promise.resolve([]),
@@ -177,168 +185,51 @@ Deno.serve(async (req) => {
       // ─── Connected Deals Stage ───
       if (stage === 'connected_deals') {
         if (isInvestor && docs.cma?.url && !deal.list_price_confirmed) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'CMA uploaded',
-            description: 'Confirm or edit the list price',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.cma.uploaded_at || deal.updated_date,
-            priority: 'high',
-          });
+          notifications.push({ type: 'deal_activity', title: 'CMA uploaded', description: 'Confirm or edit the list price', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.cma.uploaded_at || deal.updated_date, priority: 'high' });
         }
         if (isAgent && docs.cma?.url && !deal.list_price_confirmed) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'CMA uploaded',
-            description: 'Waiting for investor to confirm list price',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.cma.uploaded_at || deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: 'CMA uploaded', description: 'Waiting for investor to confirm list price', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.cma.uploaded_at || deal.updated_date, priority: 'low' });
         }
         if (isAgent && deal.list_price_confirmed && !docs.listing_agreement?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'List price confirmed',
-            description: 'Upload the listing agreement',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'high',
-          });
+          notifications.push({ type: 'deal_activity', title: 'List price confirmed', description: 'Upload the listing agreement', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'high' });
         }
         if (isInvestor && deal.list_price_confirmed && !docs.listing_agreement?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'List price confirmed',
-            description: 'Waiting for agent to upload listing agreement',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: 'List price confirmed', description: 'Waiting for agent to upload listing agreement', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'low' });
         }
         if (isAgent && docs.listing_agreement?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Listing agreement uploaded',
-            description: 'Mark the listing as active on MLS',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.listing_agreement.uploaded_at || deal.updated_date,
-            priority: 'high',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Listing agreement uploaded', description: 'Mark the listing as active on MLS', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.listing_agreement.uploaded_at || deal.updated_date, priority: 'high' });
         }
         if (isInvestor && docs.listing_agreement?.url && deal.list_price_confirmed) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Listing agreement uploaded',
-            description: 'Waiting for agent to list on MLS',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.listing_agreement.uploaded_at || deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Listing agreement uploaded', description: 'Waiting for agent to list on MLS', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.listing_agreement.uploaded_at || deal.updated_date, priority: 'low' });
         }
         if (isInvestor && (wtStatus === 'NOT_SET' || wtStatus === 'CANCELED')) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Deal connected',
-            description: 'Schedule a walkthrough',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'medium',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Deal connected', description: 'Schedule a walkthrough', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'medium' });
         }
         if (isAgent && (wtStatus === 'NOT_SET' || wtStatus === 'CANCELED') && !docs.cma?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Deal connected',
-            description: 'Waiting for investor to schedule walkthrough',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Deal connected', description: 'Waiting for investor to schedule walkthrough', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'low' });
         }
       }
 
       // ─── Active Listings Stage ───
       if (stage === 'active_listings') {
         if (isAgent && !docs.buyer_contract?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Listing is active',
-            description: "Upload the buyer's contract",
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'medium',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Listing is active', description: "Upload the buyer's contract", subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'medium' });
         }
         if (isInvestor && docs.buyer_contract?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: "Buyer's contract received",
-            description: 'Move deal to closing',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.buyer_contract.uploaded_at || deal.updated_date,
-            priority: 'high',
-          });
+          notifications.push({ type: 'deal_activity', title: "Buyer's contract received", description: 'Move deal to closing', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.buyer_contract.uploaded_at || deal.updated_date, priority: 'high' });
         }
         if (isAgent && docs.buyer_contract?.url) {
-          notifications.push({
-            type: 'deal_activity',
-            title: "Buyer's contract uploaded",
-            description: 'Waiting for investor to move to closing',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: docs.buyer_contract.uploaded_at || deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: "Buyer's contract uploaded", description: 'Waiting for investor to move to closing', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: docs.buyer_contract.uploaded_at || deal.updated_date, priority: 'low' });
         }
       }
 
       // ─── In Closing Stage ───
       if (stage === 'in_closing') {
         if (isInvestor) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Deal is in closing',
-            description: 'Confirm when the deal closes',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'medium',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Deal is in closing', description: 'Confirm when the deal closes', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'medium' });
         }
         if (isAgent) {
-          notifications.push({
-            type: 'deal_activity',
-            title: 'Deal moved to closing',
-            description: 'Waiting for investor to confirm close',
-            subtitle: address,
-            roomId: room.id,
-            dealId: deal.id,
-            timestamp: deal.updated_date,
-            priority: 'low',
-          });
+          notifications.push({ type: 'deal_activity', title: 'Deal moved to closing', description: 'Waiting for investor to confirm close', subtitle: address, roomId: room.id, dealId: deal.id, timestamp: deal.updated_date, priority: 'low' });
         }
       }
     }
