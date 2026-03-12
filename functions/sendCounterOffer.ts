@@ -68,6 +68,36 @@ Deno.serve(async (req) => {
 
     console.log('[sendCounterOffer] Created counter:', counter.id);
 
+    // --- Notify the other party about the counter offer ---
+    try {
+      const recipientId = toRole === 'investor' ? room.investorId : (room.locked_agent_id || room.agent_ids?.[0]);
+      if (recipientId) {
+        const recipientProfiles = await base44.asServiceRole.entities.Profile.filter({ id: recipientId });
+        const recipient = recipientProfiles?.[0];
+        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+        const deal = dealArr?.[0];
+        const address = (deal?.property_address || '').split(',')[0] || 'your deal';
+        const senderName = fromRole === 'investor' ? 'The investor' : 'Your agent';
+
+        if (recipient?.email && recipient?.notification_preferences?.email !== false) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: recipient.email,
+            subject: `Counter offer received — ${address}`,
+            body: `${recipient.full_name?.split(' ')[0] || 'there'}, ${senderName.toLowerCase()} has countered your offer for ${address}. Please review and respond.`,
+          });
+        }
+
+        if (recipient?.notification_preferences?.text && recipient?.phone) {
+          await base44.asServiceRole.functions.invoke('sendSms', {
+            to: recipient.phone,
+            message: `${senderName} countered your offer for ${address}. Please review and respond.`
+          }).catch(() => {});
+        }
+      }
+    } catch (notifyErr) {
+      console.warn('[sendCounterOffer] Notification failed (non-fatal):', notifyErr.message);
+    }
+
     return Response.json({
       success: true,
       counter_id: counter.id

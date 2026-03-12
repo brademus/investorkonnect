@@ -29,13 +29,15 @@ Deno.serve(async (req) => {
       to: sender.email,
       subject: `Counter offer ${action} — ${address}`,
       body: action === 'accepted'
-        ? `${firstName}, your counter offer for ${address} was accepted. Log in to review the updated terms.\n\nhttps://investorkonnect.com`
-        : `${firstName}, your counter offer for ${address} was declined. You can submit a new offer or continue with the original terms.\n\nhttps://investorkonnect.com`,
+        ? `${firstName}, your counter offer for ${address} was accepted.`
+        : `${firstName}, your counter offer for ${address} was declined.`,
     });
 
     if (sender.notification_preferences?.text && sender.phone) {
-      const sms = `Your counter offer for ${address} was ${action}. Log in to view — investorkonnect.com`;
-      await base44.asServiceRole.functions.invoke('sendSms', { to: sender.phone, message: sms }).catch(() => {});
+      await base44.asServiceRole.functions.invoke('sendSms', {
+        to: sender.phone,
+        message: `Your counter offer for ${address} was ${action}.`
+      }).catch(() => {});
     }
 
     return Response.json({ ok: true });

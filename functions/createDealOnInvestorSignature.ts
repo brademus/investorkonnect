@@ -242,8 +242,8 @@ Deno.serve(async (req) => {
             if (agent?.email) {
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: agent.email,
-                subject: `Updated agreement — ${existingDeal.title || existingDeal.property_address || 'Deal'}`,
-                body: `${agent.full_name?.split(' ')[0] || 'there'}, the investor updated the agreement for ${existingDeal.title || existingDeal.property_address}. Please log in to review and re-sign.\n\nhttps://investorkonnect.com`,
+                subject: `Updated agreement — ${existingDeal.property_address || existingDeal.title || 'Deal'}`,
+                body: `${agent.full_name?.split(' ')[0] || 'there'}, the investor updated the agreement for ${existingDeal.property_address || existingDeal.title}. Please review and re-sign.`,
               });
             }
           } catch (emailErr) {

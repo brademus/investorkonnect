@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: investor.email,
         subject: `Agreement signed — ${address}`,
-        body: `${firstName}, an agent has signed the agreement for ${address}. You can now message your agent and access the deal room.\n\nhttps://investorkonnect.com`,
+        body: `${firstName}, your agent has signed the agreement for ${address}. Your deal room is now open.`,
       });
     }
 
@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: agent.email,
         subject: `Agreement signed — ${address}`,
-        body: `${firstName}, the investor has signed the agreement for ${address}. The deal room is now open — head in to review next steps.\n\nhttps://investorkonnect.com`,
+        body: `${firstName}, the investor has signed the agreement for ${address}. Your deal room is now open.`,
       });
     }
 
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (investor?.notification_preferences?.text && investor.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: investor.phone,
-        message: `An agent signed the agreement for ${address}. Deal room is open — investorkonnect.com`
+        message: `Your agent signed the agreement for ${address}. Deal room is open.`
       }).catch(() => {});
     }
 
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     if (agent?.notification_preferences?.text && agent.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: agent.phone,
-        message: `Investor signed the agreement for ${address}. Deal room is open — investorkonnect.com`
+        message: `Investor signed the agreement for ${address}. Deal room is open.`
       }).catch(() => {});
     }
 

@@ -51,14 +51,14 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: p.email,
             subject: `New message — ${address}`,
-            body: `${firstName}, ${senderName} sent you a message about ${address}.\n\nhttps://investorkonnect.com`,
+            body: `${firstName}, you have a new message from ${senderName} about ${address}.`,
           }).catch(() => {});
         }
 
         if (p.notification_preferences?.text && p.phone) {
           await base44.asServiceRole.functions.invoke('sendSms', {
             to: p.phone,
-            message: `New message from ${senderName} on ${address}. Reply at investorkonnect.com`
+            message: `New message from ${senderName} about ${address}.`
           }).catch(() => {});
         }
       }

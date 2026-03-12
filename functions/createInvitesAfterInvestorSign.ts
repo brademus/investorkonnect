@@ -229,8 +229,8 @@ Deno.serve(async (req) => {
         if (agent.email && agent.notification_preferences?.email !== false) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: agent.email,
-            subject: `New deal invitation — ${deal.title || deal.property_address || 'a property'}`,
-            body: `${agent.full_name?.split(' ')[0] || 'there'}, you've been invited to a new deal for ${deal.title || deal.property_address || 'a property'}. Log in and sign to lock in your spot.\n\nhttps://investorkonnect.com`,
+            subject: `New deal invitation — ${deal.property_address || deal.title || 'a property'}`,
+            body: `${agent.full_name?.split(' ')[0] || 'there'}, you have a new deal invitation for ${deal.property_address || deal.title || 'a property'}. Sign to lock in your spot.`,
           }).catch(emailErr => {
             console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
           });
@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
         // SMS notification
         const textEnabled = agent.notification_preferences?.text !== false;
         if (textEnabled && agent.phone) {
-          const smsText = `New deal invitation for ${deal.title || deal.property_address || 'a property'}. Sign to lock in your spot — investorkonnect.com`;
+          const smsText = `You have a new deal invitation for ${deal.property_address || deal.title || 'a property'}. Sign to lock in your spot.`;
           await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: smsText });
           console.log('[createInvites] SMS sent to agent:', agent.email);
         }
