@@ -156,11 +156,10 @@ export default function NotificationBell() {
     }
   };
 
-  // Compare current notifications to what user last saw
-  const currentKey = notifications.map(n => `${n.type}:${n.roomId || n.dealId}:${n.title}`).sort().join('|');
-  const hasNewNotifications = notifications.length > 0 && currentKey !== lastSeenKey;
-  const unseenCount = hasNewNotifications ? notifications.length : 0;
-  const hasHigh = hasNewNotifications && notifications.some(n => n.priority === 'high');
+  // Count only notifications the user hasn't seen yet
+  const unseenNotifications = notifications.filter(n => !seenKeys.has(`${n.type}:${n.roomId || n.dealId}:${n.title}`));
+  const unseenCount = unseenNotifications.length;
+  const hasHigh = unseenCount > 0 && unseenNotifications.some(n => n.priority === 'high');
 
   const high = notifications.filter(n => n.priority === 'high');
   const other = notifications.filter(n => n.priority !== 'high');
