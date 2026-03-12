@@ -74,14 +74,33 @@ export default function Room() {
   // Track unread message count for the Messages button badge
   const { messages: roomMessages } = useRoomMessages(roomId);
 
-  // Compute unread count directly from profile.last_seen_timestamps (server source of truth)
-  // When user is actively viewing messages, treat count as 0
+  // Local override for last_seen timestamp — updated instantly when user views messages
+  // so the badge clears without waiting for server round-trip or profile cache refresh
+  const [localLastSeen, setLocalLastSeen] = useState(() => profile?.last_seen_timestamps || {});
+
+  // Sync from profile when it changes (e.g. initial load, hook refresh)
+  useEffect(() => {
+    if (profile?.last_seen_timestamps) {
+      setLocalLastSeen(prev => {
+        // Merge: keep whichever timestamp is newer for each room
+        const merged = { ...profile.last_seen_timestamps };
+        for (const [key, val] of Object.entries(prev)) {
+          if (!merged[key] || new Date(val) > new Date(merged[key])) {
+            merged[key] = val;
+          }
+        }
+        return merged;
+      });
+    }
+  }, [profile?.last_seen_timestamps]);
 
   // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
   const persistLastSeen = useCallback(() => {
     if (!roomId || !profile?.id) return;
     const newTs = new Date().toISOString();
+    // Update local state immediately so badge clears instantly
+    setLocalLastSeen(prev => ({ ...prev, [roomId]: newTs }));
     const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
     if (profile) profile.last_seen_timestamps = updated;
     base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated })
