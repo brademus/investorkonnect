@@ -66,11 +66,12 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Track which notification set the user has already seen (by storing a seen key)
-  const [lastSeenKey, setLastSeenKey] = useState(() => {
+  // Track which individual notifications the user has seen (by storing their keys)
+  const [seenKeys, setSeenKeys] = useState(() => {
     try {
-      return sessionStorage.getItem('notif_last_seen_key') || '';
-    } catch { return ''; }
+      const stored = sessionStorage.getItem('notif_seen_keys');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
   });
 
   const fetchNotifications = useCallback(async () => {
