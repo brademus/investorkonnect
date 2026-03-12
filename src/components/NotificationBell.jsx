@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import {
   Bell, ArrowRightLeft, Calendar,
-  RefreshCw, Zap, Loader2, ChevronRight
+  RefreshCw, Zap, Loader2, ChevronRight, MessageSquare
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -14,6 +14,7 @@ const ICON_MAP = {
   new_deal: Zap,
   agreement_regenerated: RefreshCw,
   walkthrough_confirm: Calendar,
+  unread_messages: MessageSquare,
 };
 
 function NotificationItem({ notification, onClick }) {
