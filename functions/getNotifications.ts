@@ -67,6 +67,46 @@ Deno.serve(async (req) => {
 
     const notifications = [];
 
+    // ─── 0. UNREAD MESSAGES ───
+    const lastSeen = profile.last_seen_timestamps || {};
+    const sortedRooms = [...userRooms]
+      .sort((a, b) => new Date(b.updated_date || 0) - new Date(a.updated_date || 0))
+      .slice(0, 10);
+
+    const messageResults = await Promise.all(
+      sortedRooms.map(r =>
+        base44.entities.Message.filter({ room_id: r.id }, '-created_date', 5).catch(() => [])
+      )
+    );
+
+    for (let i = 0; i < sortedRooms.length; i++) {
+      const room = sortedRooms[i];
+      const messages = messageResults[i] || [];
+      const lastSeenTs = lastSeen[room.id];
+
+      const unread = messages.filter(m => {
+        if (!m.body?.trim()) return false;
+        if (m.sender_profile_id === profileId || m.sender_profile_id === 'system') return false;
+        if (!lastSeenTs) return true;
+        return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
+      });
+
+      if (unread.length > 0) {
+        const deal = dealMap.get(room.deal_id);
+        const address = (deal?.property_address || '').split(',')[0] || 'a deal';
+        notifications.push({
+          type: 'unread_messages',
+          title: unread.length === 1 ? 'New message' : `${unread.length} new messages`,
+          description: address,
+          subtitle: address,
+          roomId: room.id,
+          dealId: room.deal_id,
+          timestamp: unread[0].created_date,
+          priority: 'medium',
+        });
+      }
+    }
+
     // ─── 1. COUNTER OFFER PENDING ───
     for (const co of (counterOffers || [])) {
       const isForMe = (isInvestor && co.to_role === 'investor') ||

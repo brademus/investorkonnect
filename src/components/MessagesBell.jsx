@@ -25,7 +25,32 @@ export default function MessagesBell() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("getUnreadMessages", {});
-      setData(res.data || { messages: [], count: 0 });
+      if (res.data?.messages?.length > 0 || res.data?.count >= 0) {
+        setData(res.data);
+        setLoading(false);
+        setFetched(true);
+        return;
+      }
+    } catch (err) {
+      console.warn('[MessagesBell] getUnreadMessages failed, using fallback:', err?.message);
+    }
+
+    // Fallback: extract unread messages from getNotifications
+    try {
+      const res = await base44.functions.invoke("getNotifications", {});
+      const allNotifs = res.data?.notifications || [];
+      const msgNotifs = allNotifs.filter(n => n.type === 'unread_messages');
+      const messages = msgNotifs.map(n => ({
+        roomId: n.roomId,
+        dealId: n.dealId,
+        senderName: n.title || 'New message',
+        senderHeadshot: null,
+        preview: n.description || '',
+        address: n.subtitle || n.description || '',
+        count: 1,
+        timestamp: n.timestamp,
+      }));
+      setData({ messages, count: messages.length });
     } catch {
       setData({ messages: [], count: 0 });
     } finally {

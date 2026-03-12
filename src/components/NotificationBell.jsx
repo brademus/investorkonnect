@@ -133,8 +133,13 @@ export default function NotificationBell() {
 
   const handleNotificationClick = (n) => {
     setOpen(false);
-    if (n.roomId) navigate(`${createPageUrl("Room")}?roomId=${n.roomId}`);
-    else if (n.dealId) navigate(`${createPageUrl("Room")}?dealId=${n.dealId}`);
+    if (n.type === 'unread_messages' && n.roomId) {
+      navigate(`${createPageUrl("Room")}?roomId=${n.roomId}&view=messages`);
+    } else if (n.roomId) {
+      navigate(`${createPageUrl("Room")}?roomId=${n.roomId}`);
+    } else if (n.dealId) {
+      navigate(`${createPageUrl("Room")}?dealId=${n.dealId}`);
+    }
   };
 
   const unseenCount = notifications.filter(n => {
