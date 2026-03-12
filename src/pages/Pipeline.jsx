@@ -126,9 +126,8 @@ function PipelineContent() {
     const params = new URLSearchParams(location.search);
     if (params.get('signed') === '1' || params.get('refresh') === '1') {
       refetchDeals();
-      refetchRooms();
-      const retry1 = setTimeout(() => { refetchDeals(); refetchRooms(); }, 3000);
-      const retry2 = setTimeout(() => { refetchDeals(); refetchRooms(); }, 8000);
+      const retry1 = setTimeout(() => { refetchDeals(); }, 3000);
+      const retry2 = setTimeout(() => { refetchDeals(); }, 8000);
       const url = new URL(window.location);
       url.searchParams.delete('refresh');
       url.searchParams.delete('signed');
