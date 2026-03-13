@@ -294,7 +294,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           {/* Deal Header */}
           <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
             <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
-            <p className="text-sm text-[#808080] mb-3">{[deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
+            <p className="text-sm text-[#808080] mb-3">{maskAddr ? (deal?.zip || '') : [deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
             {isAgent ? (
               <>
                 <div className="text-3xl font-bold text-[#34D399] mb-1">{(deal?.estimated_list_price || room?.estimated_list_price) ? `$${(deal?.estimated_list_price || room?.estimated_list_price).toLocaleString()}` : 'Not set'}</div>
