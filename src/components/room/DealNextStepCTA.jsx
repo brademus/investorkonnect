@@ -22,6 +22,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const [editingListPrice, setEditingListPrice] = useState(false);
   const [listPriceInput, setListPriceInput] = useState('');
   const [savingListPrice, setSavingListPrice] = useState(false);
+  // Keep a ref to the file input so it isn't garbage-collected before onchange fires
+  const fileInputRef = React.useRef(null);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
@@ -36,6 +38,8 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.doc,.docx,.xls,.xlsx';
+    // Store in ref to prevent garbage collection before user selects a file
+    fileInputRef.current = input;
     input.onchange = async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
