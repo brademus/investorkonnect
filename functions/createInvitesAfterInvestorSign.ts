@@ -229,8 +229,8 @@ Deno.serve(async (req) => {
         if (agent.email && agent.notification_preferences?.email !== false) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: agent.email,
-            subject: `New deal invitation — ${deal.property_address || deal.title || 'a property'}`,
-            body: `${agent.full_name?.split(' ')[0] || 'there'}, you have a new deal invitation for ${deal.property_address || deal.title || 'a property'}. Sign to lock in your spot.`,
+            subject: `You have received a new deal`,
+            body: `Hi ${agent.full_name?.split(' ')[0] || 'there'}, you have received a new deal. Log in to review and sign.`,
           }).catch(emailErr => {
             console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
           });
