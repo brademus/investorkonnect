@@ -221,10 +221,13 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
     if (p.get('tab') === 'agreement') setActiveTab(isSigned ? 'agreement' : 'details');
   }, [isSigned]);
 
+  const roomFileInputRef = useRef(null);
   const uploadToRoom = async (type) => {
     const input = document.createElement('input');
     input.type = 'file';
     if (type === 'photo') { input.accept = 'image/*'; input.multiple = true; }
+    // Store in ref to prevent garbage collection before user selects a file
+    roomFileInputRef.current = input;
     input.onchange = async (e) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
