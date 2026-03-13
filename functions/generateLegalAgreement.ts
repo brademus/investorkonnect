@@ -329,8 +329,8 @@ Deno.serve(async (req) => {
     text = normalizeWinAnsi(addSignatureBlock(text));
     const [humanPdf, dsPdf] = await Promise.all([generatePdf(text, false), generatePdf(text, true)]);
 
-    // Upload DocuSign PDF immediately (needed for envelope), start human PDF upload in background
-    const humanUploadPromise = base44.integrations.Core.UploadFile({ file: new File([new Blob([humanPdf], { type: 'application/pdf' })], `agreement_${deal.id}_human.pdf`) });
+    // Upload DocuSign PDF immediately (needed for envelope)
+    // Human PDF upload is deferred until after signing URL is returned
     const dsUpload = await base44.integrations.Core.UploadFile({ file: new File([new Blob([dsPdf], { type: 'application/pdf' })], `agreement_${deal.id}_ds.pdf`) });
     const ts = Date.now();
     const investorClientId = `inv-${deal.id}-${ts}`;
