@@ -168,9 +168,10 @@ export default function Room() {
       return roomMessages.filter(m => m.sender_profile_id !== profile.id && m.sender_profile_id !== 'system').length;
     }
     const lastMs = new Date(lastTs).getTime();
-    // Count messages created AFTER the last-seen timestamp, excluding own and system messages
+    // Count messages created AFTER the last-seen timestamp + 1s buffer (matches backend logic),
+    // excluding own and system messages
     return roomMessages.filter(m =>
-      new Date(m.created_date).getTime() > lastMs &&
+      new Date(m.created_date).getTime() > lastMs + 1000 &&
       m.sender_profile_id !== profile.id &&
       m.sender_profile_id !== 'system'
     ).length;
