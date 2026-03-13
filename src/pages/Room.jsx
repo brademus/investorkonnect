@@ -217,10 +217,13 @@ export default function Room() {
     if (defaultView === 'messages' && profile?.id && roomId) {
       const newTs = new Date().toISOString();
       setLocalLastSeen(prev => ({ ...prev, [roomId]: newTs }));
-      const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
-      if (profile) profile.last_seen_timestamps = updated;
-      base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated })
-        .then(() => notificationEvents.emit()).catch(() => {});
+      const merged = { ...(profile.last_seen_timestamps || {}), ...localLastSeenRef.current, [roomId]: newTs };
+      if (profile) profile.last_seen_timestamps = merged;
+      base44.entities.Profile.update(profile.id, { last_seen_timestamps: merged })
+        .then(() => {
+          try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+          notificationEvents.emit();
+        }).catch(() => {});
     }
     // Always include 'board' in mounted views so it renders when auto-selected
     setMountedViews(new Set([defaultView, 'board']));
