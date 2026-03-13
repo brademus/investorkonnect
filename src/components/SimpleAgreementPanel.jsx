@@ -202,12 +202,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           freshAgreement = res.data.agreement;
           gotAgreement = true;
           if (res.data.signing_url) {
+            toast.dismiss('gen-agreement');
+            toast.success('Redirecting to DocuSign…');
             window.location.assign(res.data.signing_url);
             setBusy(false);
             return;
           }
         }
-        else if (res.data?.error) toast.error(res.data.error);
+        else if (res.data?.error) { toast.dismiss('gen-agreement'); toast.error(res.data.error); }
       } catch (invokeErr) {
         // The function may have succeeded but timed out returning the response (502).
         // Wait a moment then check if the agreement was created.
