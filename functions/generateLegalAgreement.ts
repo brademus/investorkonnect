@@ -420,9 +420,6 @@ Deno.serve(async (req) => {
     const envelope = await envResp.json();
     console.log(`[genAgreement] Envelope: ${envelope.envelopeId}`);
 
-    // Now await the human PDF upload (was running in background)
-    const humanUpload = await humanUploadPromise;
-
     // Both signers are ALWAYS in the envelope now — envelope won't complete until both sign
     const actualInvestorRecipientId = (signer_mode !== 'agent_only') ? '1' : null;
     const actualAgentRecipientId = (signer_mode === 'agent_only') ? '1' : '2';
