@@ -27,11 +27,11 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, onboarded } = useCurrentProfile();
+  const { profile, loading, onboarded, role: hookRole } = useCurrentProfile();
   const [helpOpen, setHelpOpen] = useState(false);
   const [ready, setReady] = useState(false);
 
-  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
+  const isAdmin = hookRole === 'admin' || profile?.role === 'admin' || profile?.user_role === 'admin';
   const isAgent = !isAdmin && profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
 
