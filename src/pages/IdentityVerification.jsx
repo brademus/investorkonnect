@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
@@ -20,7 +20,7 @@ export default function IdentityVerification() {
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [status, setStatus] = useState('pending'); // pending, creating_session, loading_stripe, modal_open, polling, success, error
   const [statusMessage, setStatusMessage] = useState('');
-  const startedRef = React.useRef(false);
+  const startedRef = useRef(false);
 
   useEffect(() => {
     if (loading) return;
