@@ -428,8 +428,25 @@ Deno.serve(async (req) => {
 
     console.log(`[genAgreement] Storing: signer_mode=${effectiveSignerMode} inv_recip=${actualInvestorRecipientId} ag_recip=${actualAgentRecipientId} hasRealAgent=${hasRealAgent}`);
 
-    // Save agreement — use resolved investor user_id (not calling user, who may be an agent)
-    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
+    // Pre-compute hashes in parallel while we set up signing URL
+    const [humanPdfHash, dsPdfHash] = await Promise.all([sha256Hex(humanPdf), sha256Hex(dsPdf)]);
+
+    // ── Create agreement + generate signing URL + upload human PDF all in PARALLEL ──
+    const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
+    const tokenValue = crypto.randomUUID();
+
+    // Build signing URL params upfront
+    let returnURL = null;
+    if (signer_mode !== 'agent_only') {
+      returnURL = new URL(`${publicUrl}/DocuSignReturn`);
+      returnURL.searchParams.set('token', tokenValue);
+      if (deal.id) returnURL.searchParams.set('dealId', deal.id);
+      if (room_id) returnURL.searchParams.set('roomId', room_id);
+      returnURL.searchParams.set('role', 'investor');
+    }
+
+    // Fire agreement creation, signing URL, and human PDF upload all at once
+    const agreementPromise = base44.asServiceRole.entities.LegalAgreement.create({
       deal_id: effectiveId, room_id: room_id || null,
       investor_user_id: resolvedInvestorUserId, agent_user_id: agent.user_id,
       investor_profile_id: investor.id, agent_profile_id: agent.id,
@@ -438,8 +455,8 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       agreement_version: VERSION, signer_mode: effectiveSignerMode, status: 'sent',
       template_url: INTERNAL_AGREEMENT_URL,
-      final_pdf_url: humanUpload.file_url, pdf_file_url: humanUpload.file_url, pdf_sha256: await sha256Hex(humanPdf),
-      docusign_pdf_url: dsUpload.file_url, docusign_pdf_sha256: await sha256Hex(dsPdf),
+      final_pdf_url: dsUpload.file_url, pdf_file_url: dsUpload.file_url, pdf_sha256: humanPdfHash,
+      docusign_pdf_url: dsUpload.file_url, docusign_pdf_sha256: dsPdfHash,
       signing_pdf_url: dsUpload.file_url,
       render_input_hash: inputHash, render_context_json: ctx,
       exhibit_a_terms: exhibit_a,
@@ -451,51 +468,53 @@ Deno.serve(async (req) => {
       audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `created_${effectiveSignerMode}` }]
     });
 
-    // ── PHASE 6: Generate investor signing URL immediately (skip second server call) ──
-    let signing_url = null;
-    if (signer_mode !== 'agent_only') {
-      try {
-        const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
-        const tokenValue = crypto.randomUUID();
-        const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
-        returnURL.searchParams.set('token', tokenValue);
-        if (deal.id) returnURL.searchParams.set('dealId', deal.id);
-        if (room_id) returnURL.searchParams.set('roomId', room_id);
-        returnURL.searchParams.set('role', 'investor');
+    const signingViewPromise = (signer_mode !== 'agent_only' && returnURL)
+      ? fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelope.envelopeId}/views/recipient`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            returnUrl: returnURL.toString(),
+            authenticationMethod: 'none',
+            email: investor.email,
+            userName: investor.full_name || investor.email,
+            recipientId: String(actualInvestorRecipientId),
+            clientUserId: String(investorClientId),
+            frameAncestors: [publicUrl], messageOrigins: [publicUrl]
+          })
+        }).catch(e => { console.warn('[genAgreement] Signing view fetch failed:', e.message); return null; })
+      : Promise.resolve(null);
 
-        const [_, viewResp] = await Promise.all([
-          base44.asServiceRole.entities.SigningToken.create({
-            token: tokenValue, deal_id: deal.id, agreement_id: agreement.id,
-            role: 'investor',
-            return_to: `${publicUrl}/Room?roomId=${room_id || ''}&signed=1`,
-            expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
-          }),
-          fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelope.envelopeId}/views/recipient`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              returnUrl: returnURL.toString(),
-              authenticationMethod: 'none',
-              email: investor.email,
-              userName: investor.full_name || investor.email,
-              recipientId: String(actualInvestorRecipientId),
-              clientUserId: String(investorClientId),
-              frameAncestors: [publicUrl], messageOrigins: [publicUrl]
-            })
-          }),
-        ]);
-        if (viewResp.ok) {
-          const viewData = await viewResp.json();
-          signing_url = viewData.url;
-        }
-      } catch (signErr) {
-        console.warn('[genAgreement] Failed to pre-generate signing URL:', signErr.message);
-      }
+    // Human PDF upload — fire and forget, update agreement later
+    const humanUploadPromise = base44.integrations.Core.UploadFile({ file: new File([new Blob([humanPdf], { type: 'application/pdf' })], `agreement_${deal.id}_human.pdf`) })
+      .catch(e => { console.warn('[genAgreement] Human PDF upload failed:', e.message); return null; });
+
+    // Await only agreement + signing view (critical path)
+    const [agreement, viewResp] = await Promise.all([agreementPromise, signingViewPromise]);
+
+    let signing_url = null;
+    if (viewResp && viewResp.ok) {
+      const viewData = await viewResp.json();
+      signing_url = viewData.url;
     }
 
-    // Fire-and-forget pointer updates
+    // Create signing token (needed for return flow) — fire and forget
+    if (signer_mode !== 'agent_only') {
+      base44.asServiceRole.entities.SigningToken.create({
+        token: tokenValue, deal_id: deal.id, agreement_id: agreement.id,
+        role: 'investor',
+        return_to: `${publicUrl}/Room?roomId=${room_id || ''}&signed=1`,
+        expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
+      }).catch(e => console.warn('[genAgreement] SigningToken create failed:', e.message));
+    }
+
+    // Fire-and-forget: pointer updates + human PDF backfill
     if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
     if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    humanUploadPromise.then(hu => {
+      if (hu?.file_url) {
+        base44.asServiceRole.entities.LegalAgreement.update(agreement.id, { final_pdf_url: hu.file_url, pdf_file_url: hu.file_url }).catch(() => {});
+      }
+    });
 
     console.log(`[genAgreement] Created: ${agreement.id} signing_url=${!!signing_url}`);
     return Response.json({ success: true, agreement, regenerated: true, signing_url });
