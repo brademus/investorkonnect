@@ -99,9 +99,24 @@ export default function Room() {
   const localLastSeenRef = useRef(localLastSeen);
   localLastSeenRef.current = localLastSeen;
 
+  const roomMessagesRef = useRef(roomMessages);
+  roomMessagesRef.current = roomMessages;
+
   const persistLastSeen = useCallback(() => {
     if (!roomId || !profile?.id) return;
-    const newTs = new Date().toISOString();
+    // Use the latest message's created_date (server clock) to avoid client/server clock skew.
+    // Fall back to client time if no messages exist.
+    const msgs = roomMessagesRef.current || [];
+    const latestMsgTs = msgs.length > 0
+      ? msgs.reduce((max, m) => {
+          const t = new Date(m.created_date).getTime();
+          return t > max ? t : max;
+        }, 0)
+      : 0;
+    // Add 2 seconds buffer to the latest message timestamp to ensure it's always "after"
+    const newTs = latestMsgTs > 0
+      ? new Date(latestMsgTs + 2000).toISOString()
+      : new Date().toISOString();
     // Update local state immediately so badge clears instantly
     setLocalLastSeen(prev => ({ ...prev, [roomId]: newTs }));
     // Merge from localLastSeen ref (most up-to-date) + profile fallback
