@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+
 import LoadingAnimation from "@/components/LoadingAnimation";
 
 /**
