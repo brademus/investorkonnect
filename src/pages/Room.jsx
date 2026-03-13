@@ -96,15 +96,21 @@ export default function Room() {
 
   // Persist last-seen to server when leaving messages view (or on unmount/page unload)
   const prevActiveView = useRef(activeView);
+  const localLastSeenRef = useRef(localLastSeen);
+  localLastSeenRef.current = localLastSeen;
+
   const persistLastSeen = useCallback(() => {
     if (!roomId || !profile?.id) return;
     const newTs = new Date().toISOString();
     // Update local state immediately so badge clears instantly
     setLocalLastSeen(prev => ({ ...prev, [roomId]: newTs }));
-    const updated = { ...(profile.last_seen_timestamps || {}), [roomId]: newTs };
-    if (profile) profile.last_seen_timestamps = updated;
-    base44.entities.Profile.update(profile.id, { last_seen_timestamps: updated })
+    // Merge from localLastSeen ref (most up-to-date) + profile fallback
+    const merged = { ...(profile.last_seen_timestamps || {}), ...localLastSeenRef.current, [roomId]: newTs };
+    if (profile) profile.last_seen_timestamps = merged;
+    base44.entities.Profile.update(profile.id, { last_seen_timestamps: merged })
       .then(() => {
+        // Bust the sessionStorage profile cache so next page load has fresh timestamps
+        try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
         // Tell notification/message bells to refresh
         notificationEvents.emit();
       })
