@@ -11,6 +11,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import DocuSignCallback from '@/pages/DocuSignCallback';
+import AgentVideo from '@/pages/AgentVideo';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -54,6 +55,7 @@ const AuthenticatedApp = () => {
           <Route key={path} path={`/${path}`} element={<Page />} />
         ))}
         <Route path="/DocuSignCallback" element={<LayoutWrapper currentPageName="DocuSignCallback"><DocuSignCallback /></LayoutWrapper>} />
+        <Route path="/AgentVideo" element={<LayoutWrapper currentPageName="AgentVideo"><AgentVideo /></LayoutWrapper>} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>

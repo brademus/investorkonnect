@@ -435,9 +435,11 @@ export default function AgentQualification() {
         setResult({ outcome: "rejected", tier: "rejected", autoReject: !!profile.metadata?.qualification_answers?.broker_assignments && profile.metadata.qualification_answers.broker_assignments === "no" });
         setStep(3);
       } else {
-        // approved / elite — skip questionnaire, go to onboarding (or beyond if already done)
+        // approved / elite — skip questionnaire
         if (profile.onboarding_completed_at) {
           navigate(createPageUrl("IdentityVerification"), { replace: true });
+        } else if (!profile.metadata?.agent_video_watched) {
+          navigate(createPageUrl("AgentVideo"), { replace: true });
         } else {
           navigate(createPageUrl("AgentOnboarding"), { replace: true });
         }
@@ -502,7 +504,7 @@ export default function AgentQualification() {
     // Bust profile cache
     try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
     if (result?.outcome === "approved") {
-      navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      navigate(createPageUrl("AgentVideo"), { replace: true });
     } else if (result?.outcome === "conditional") {
       navigate(createPageUrl("ConditionalReview"), { replace: true });
     } else {

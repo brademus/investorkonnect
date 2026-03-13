@@ -23,6 +23,9 @@ function routeAgent(profile, navigate) {
     navigate(createPageUrl("AgentQualification"), { replace: true });
   } else if (qt === 'conditional') {
     navigate(createPageUrl("ConditionalReview"), { replace: true });
+  } else if (!profile?.metadata?.agent_video_watched) {
+    // Must watch required video before onboarding
+    navigate(createPageUrl("AgentVideo"), { replace: true });
   } else {
     // "approved", "elite", or any non-conditional/rejected tier → onboarding
     navigate(createPageUrl("AgentOnboarding"), { replace: true });

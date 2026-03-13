@@ -55,12 +55,17 @@ export default function AgentOnboarding() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [step, saving]);
 
-  // Redirect if already onboarded or if conditional
+  // Redirect if already onboarded, conditional, or hasn't watched required video
   useEffect(() => {
     if (checking || !profile) return;
     // Block conditional agents from onboarding
     if (profile.qualification_tier === 'conditional') {
       navigate(createPageUrl("ConditionalReview"), { replace: true });
+      return;
+    }
+    // Must watch required video before onboarding
+    if (!profile.metadata?.agent_video_watched) {
+      navigate(createPageUrl("AgentVideo"), { replace: true });
       return;
     }
     const done = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
