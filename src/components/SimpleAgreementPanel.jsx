@@ -166,6 +166,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   // Generate agreement (investor only, first time)
   const handleGenerate = async () => {
     setBusy(true);
+    toast.info('Generating agreement & preparing DocuSign…', { duration: 15000, id: 'gen-agreement' });
     try {
       const sellerCommType = dealData?.sellerCommissionType || 'percentage';
       const buyerCommType = dealData?.buyerCommissionType || 'percentage';
