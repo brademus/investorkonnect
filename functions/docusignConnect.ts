@@ -60,8 +60,15 @@ Deno.serve(async (req) => {
     // Build OAuth authorization URL
     const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
     
-    // Use DOCUSIGN_REDIRECT_URI if set, otherwise build from PUBLIC_APP_URL
-    const redirectUri = DOCUSIGN_REDIRECT_URI || `${Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com'}/DocuSignCallback`;
+    // IMPORTANT: The redirect URI must point to the frontend page (not the API function)
+    // because DocuSign redirects the browser there with the auth code.
+    // The frontend page then calls docusignCallback to exchange the code.
+    // If DOCUSIGN_REDIRECT_URI points to an API endpoint, override it with the frontend page URL.
+    const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
+    const configuredRedirect = DOCUSIGN_REDIRECT_URI || '';
+    const redirectUri = configuredRedirect.includes('/api/') 
+      ? `${publicUrl}/DocuSignCallback`
+      : (configuredRedirect || `${publicUrl}/DocuSignCallback`);
 
     // Store returnTo in state param so callback knows where to redirect
     const statePayload = JSON.stringify({ returnTo: returnTo || '/Admin' });
