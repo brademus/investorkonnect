@@ -28,12 +28,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse returnTo from state
+    // Parse returnTo and PKCE code_verifier from state
     let returnTo = '/Admin';
+    let codeVerifier = null;
     if (stateParam) {
       try {
         const parsed = JSON.parse(atob(stateParam));
         if (parsed.returnTo) returnTo = parsed.returnTo;
+        if (parsed.cv) codeVerifier = parsed.cv;
       } catch (_) {}
     }
 
@@ -41,17 +43,22 @@ Deno.serve(async (req) => {
       const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
       const redirectUri = DOCUSIGN_REDIRECT_URI || `${publicUrl}/DocuSignCallback`;
 
-      // Exchange authorization code for tokens
+      // Exchange authorization code for tokens (with PKCE code_verifier)
+      const tokenParams = {
+        grant_type: 'authorization_code',
+        code,
+        client_id: DOCUSIGN_INTEGRATION_KEY,
+        client_secret: DOCUSIGN_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+      };
+      if (codeVerifier) {
+        tokenParams.code_verifier = codeVerifier;
+      }
+
       const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          code,
-          client_id: DOCUSIGN_INTEGRATION_KEY,
-          client_secret: DOCUSIGN_CLIENT_SECRET,
-          redirect_uri: redirectUri,
-        }),
+        body: new URLSearchParams(tokenParams),
       });
 
       if (!tokenResp.ok) {
