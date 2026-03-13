@@ -72,8 +72,10 @@ export default function MessagesBell() {
   // Refresh when Room page marks messages as read
   useEffect(() => {
     return notificationEvents.subscribe(() => {
-      // Small delay to let the server persist the timestamp
-      setTimeout(fetchMessages, 1500);
+      // Small delay to let the server persist the timestamp, then fetch twice
+      // (first fetch catches most cases, second handles slow propagation)
+      setTimeout(fetchMessages, 1000);
+      setTimeout(fetchMessages, 3000);
     });
   }, [fetchMessages]);
 
