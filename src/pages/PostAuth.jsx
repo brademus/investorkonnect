@@ -105,7 +105,12 @@ export default function PostAuth() {
          setNavigated(true);
 
          const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
-         if (isAdmin) { navigate(createPageUrl("Pipeline"), { replace: true }); return; }
+         if (isAdmin) {
+           // Clear stale profile cache so Pipeline picks up fresh admin profile
+           try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+           navigate(createPageUrl("Pipeline"), { replace: true });
+           return;
+         }
 
          if (!hasRole) {
            if (selectedRole === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
