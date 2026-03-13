@@ -75,6 +75,7 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         });
       } finally {
         setUploading(false);
+        fileInputRef.current = null;
       }
     };
     input.click();
