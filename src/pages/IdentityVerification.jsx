@@ -18,9 +18,9 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 export default function IdentityVerification() {
   const navigate = useNavigate();
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
-  const [verifying, setVerifying] = useState(false);
-  const [status, setStatus] = useState('pending'); // pending, verifying, success, error
-  const startedRef = React.useRef(false); // Prevent double auto-start
+  const [status, setStatus] = useState('pending'); // pending, creating_session, loading_stripe, modal_open, polling, success, error
+  const [statusMessage, setStatusMessage] = useState('');
+  const startedRef = React.useRef(false);
 
   useEffect(() => {
     if (loading) return;
@@ -40,13 +40,13 @@ export default function IdentityVerification() {
   }, [loading, kycVerified]);
 
   const handleStartVerification = async () => {
-    setVerifying(true);
-    setStatus('verifying');
+    setStatus('creating_session');
+    setStatusMessage('Preparing verification...');
 
     try {
+      // 1) Create session
       const resp = await base44.functions.invoke('createStripeIdentitySession', {});
       const sessionData = resp.data;
-
       const clientSecret = sessionData?.client_secret;
       const publishableKey = sessionData?.publishable_key;
       const sessionId = sessionData?.session_id;
@@ -55,7 +55,9 @@ export default function IdentityVerification() {
         throw new Error('Could not initialize verification');
       }
 
-      // 2) Load Stripe.js and launch the Identity modal
+      // 2) Load Stripe.js
+      setStatus('loading_stripe');
+      setStatusMessage('Loading verification module...');
       await new Promise((resolve, reject) => {
         if (window.Stripe) return resolve();
         const script = document.createElement('script');
@@ -65,6 +67,9 @@ export default function IdentityVerification() {
         document.body.appendChild(script);
       });
 
+      // 3) Launch modal
+      setStatus('modal_open');
+      setStatusMessage('Complete verification in the popup window');
       const stripe = window.Stripe(publishableKey);
       const result = await stripe.verifyIdentity(clientSecret);
 
@@ -72,29 +77,32 @@ export default function IdentityVerification() {
         throw new Error(result.error.message || 'Verification was cancelled or failed');
       }
 
-      // 3) Poll backend for final status (Stripe may take a moment to finalize)
-      let attempts = 0;
-      while (attempts < 15) {
+      // 4) Poll for final status
+      setStatus('polling');
+      setStatusMessage('Confirming your verification...');
+      let finalStatus = 'processing';
+      for (let attempts = 0; attempts < 10; attempts++) {
         try {
           const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
-          const s = statusData?.status;
-          if (s === 'verified') break;
-          if (s === 'requires_input' || s === 'canceled') break;
+          finalStatus = statusData?.status;
+          if (finalStatus === 'verified' || finalStatus === 'requires_input' || finalStatus === 'canceled') break;
         } catch {}
-        await new Promise(r => setTimeout(r, 1000));
-        attempts += 1;
+        await new Promise(r => setTimeout(r, 1500));
       }
 
+      if (finalStatus === 'requires_input' || finalStatus === 'canceled') {
+        throw new Error('Verification was not completed. Please try again.');
+      }
+
+      // Success (verified or still processing — backend will finalize via webhook)
       setStatus('success');
-      toast.success('Identity verification submitted. Redirecting...');
       refresh();
-      setTimeout(() => { navigate(createPageUrl('NDA'), { replace: true }); }, 1500);
+      setTimeout(() => { navigate(createPageUrl('NDA'), { replace: true }); }, 800);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);
       setStatus('error');
-      toast.error(error?.message || 'Verification failed. Please try again.');
-      setVerifying(false);
+      setStatusMessage(error?.message || 'Verification failed. Please try again.');
     }
   };
 
