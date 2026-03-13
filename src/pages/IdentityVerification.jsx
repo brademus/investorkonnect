@@ -137,7 +137,7 @@ export default function IdentityVerification() {
                 <CheckCircle className="w-10 h-10 text-green-500" />
               </div>
               <h2 className="text-3xl font-bold text-[#E3C567] mb-4">Identity Verified!</h2>
-              <p className="text-[#808080] mb-6">Your identity has been successfully verified. Redirecting to NDA...</p>
+              <p className="text-[#808080] mb-6">Redirecting...</p>
             </div>
           ) : status === 'error' ? (
             <div className="text-center">
@@ -145,12 +145,10 @@ export default function IdentityVerification() {
                 <AlertCircle className="w-10 h-10 text-red-500" />
               </div>
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
-              <p className="text-[#808080] mb-6">Something went wrong. Please try again.</p>
+              <p className="text-[#808080] mb-6">{statusMessage || 'Something went wrong. Please try again.'}</p>
               <Button
                 onClick={() => {
-                  startedRef.current = true; // Keep true to prevent auto-start conflict
-                  setStatus('pending');
-                  setVerifying(false);
+                  startedRef.current = true;
                   handleStartVerification();
                 }}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
@@ -161,11 +159,17 @@ export default function IdentityVerification() {
           ) : (
             <div className="text-center">
               <div className="w-20 h-20 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
+                {status === 'modal_open' ? (
+                  <Shield className="w-10 h-10 text-[#E3C567]" />
+                ) : (
+                  <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
+                )}
               </div>
-              <h2 className="text-3xl font-bold text-[#E3C567] mb-4">Opening Verification...</h2>
+              <h2 className="text-3xl font-bold text-[#E3C567] mb-4">
+                {status === 'modal_open' ? 'Verification In Progress' : 'Setting Up...'}
+              </h2>
               <p className="text-[#808080] mb-6">
-                Launching Stripe Identity verification. This will open in a new window.
+                {statusMessage || 'Preparing identity verification...'}
               </p>
               <div className="bg-[#141414] rounded-xl p-6 border border-[#1F1F1F]">
                 <h3 className="font-semibold text-[#FAFAFA] mb-3">Verifying as:</h3>
