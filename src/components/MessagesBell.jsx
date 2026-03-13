@@ -54,18 +54,21 @@ export default function MessagesBell() {
     }
   }, []);
 
-  // Fetch on mount + poll + re-fetch on tab focus (user returning from Room page)
+  // Fetch on mount + poll + re-fetch on tab/page focus (user returning from Room page)
   useEffect(() => {
     fetchMessages();
+    // Second fetch on mount with delay catches just-persisted last_seen from Room unmount
+    const mountDelay = setTimeout(fetchMessages, 2000);
     const interval = setInterval(fetchMessages, 120_000);
-    const onFocus = () => { setTimeout(fetchMessages, 500); };
-    window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') onFocus();
-    });
+    const onVisibilityOrFocus = () => { setTimeout(fetchMessages, 500); };
+    window.addEventListener('focus', onVisibilityOrFocus);
+    const onVisChange = () => { if (document.visibilityState === 'visible') onVisibilityOrFocus(); };
+    document.addEventListener('visibilitychange', onVisChange);
     return () => {
+      clearTimeout(mountDelay);
       clearInterval(interval);
-      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('focus', onVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', onVisChange);
     };
   }, []);
 
