@@ -166,6 +166,7 @@ export async function ensureProfile(base44, user) {
           const newProfile = await base44.asServiceRole.entities.Profile.create({
             user_id: userId,
             email: email,
+            full_name: user.full_name || '',
             role: userRole,
             onboarding_completed_at: null,
             nda_accepted: false,
