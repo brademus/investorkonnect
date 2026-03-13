@@ -54,11 +54,19 @@ export default function MessagesBell() {
     }
   }, []);
 
-  // Fetch on mount + poll
+  // Fetch on mount + poll + re-fetch on tab focus (user returning from Room page)
   useEffect(() => {
     fetchMessages();
     const interval = setInterval(fetchMessages, 120_000);
-    return () => clearInterval(interval);
+    const onFocus = () => { setTimeout(fetchMessages, 500); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') onFocus();
+    });
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   // Refresh when Room page marks messages as read
