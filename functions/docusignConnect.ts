@@ -57,15 +57,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Build OAuth authorization URL
+    // Build OAuth authorization URL with PKCE (S256)
     const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
     
-    // Use the configured redirect URI (must match what's registered in DocuSign console)
     const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
     const redirectUri = DOCUSIGN_REDIRECT_URI || `${publicUrl}/DocuSignCallback`;
 
-    // Store returnTo in state param so callback knows where to redirect
-    const statePayload = JSON.stringify({ returnTo: returnTo || '/Admin' });
+    // Generate PKCE code_verifier (43-128 chars, URL-safe)
+    const verifierBytes = new Uint8Array(32);
+    crypto.getRandomValues(verifierBytes);
+    const codeVerifier = btoa(String.fromCharCode(...verifierBytes))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    // Generate code_challenge = BASE64URL(SHA256(code_verifier))
+    const encoder = new TextEncoder();
+    const digest = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
+    const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    // Store returnTo AND code_verifier in state so callback can use it
+    const statePayload = JSON.stringify({ returnTo: returnTo || '/Admin', cv: codeVerifier });
     const state = btoa(statePayload);
 
     const authUrl = new URL(`https://${authHost}/oauth/auth`);
@@ -74,8 +85,10 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('client_id', DOCUSIGN_INTEGRATION_KEY);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    console.log(`[docusignConnect] Auth URL generated, redirect_uri=${redirectUri}`);
+    console.log(`[docusignConnect] Auth URL generated with PKCE, redirect_uri=${redirectUri}`);
     return Response.json({ authUrl: authUrl.toString() });
   } catch (error) {
     console.error('[docusignConnect] Error:', error);
