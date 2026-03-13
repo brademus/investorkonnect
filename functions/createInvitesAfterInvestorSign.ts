@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
         // SMS notification
         const textEnabled = agent.notification_preferences?.text !== false;
         if (textEnabled && agent.phone) {
-          const smsText = `You have a new deal invitation for ${deal.property_address || deal.title || 'a property'}. Sign to lock in your spot.`;
+          const smsText = `You have received a new deal. Log in to review and sign.`;
           await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: smsText });
           console.log('[createInvites] SMS sent to agent:', agent.email);
         }
