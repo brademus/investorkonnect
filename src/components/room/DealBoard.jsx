@@ -249,6 +249,8 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           cause: err,
           extra: { type, file_count: files.length, room_id: roomId },
         });
+      } finally {
+        roomFileInputRef.current = null;
       }
     };
     input.click();
