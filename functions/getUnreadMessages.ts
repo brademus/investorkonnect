@@ -58,7 +58,10 @@ Deno.serve(async (req) => {
         if (!m.body?.trim()) return false;
         if (m.sender_profile_id === profileId || m.sender_profile_id === 'system') return false;
         if (!lastSeenTs) return true;
-        return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
+        // Use >= comparison would count messages at exact same ms as unread,
+        // so add 1-second buffer: message must be strictly AFTER lastSeen + 1s
+        // This handles clock skew between client (which sets lastSeen) and server (which sets created_date)
+        return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime() + 1000;
       });
 
       if (unread.length > 0) {
