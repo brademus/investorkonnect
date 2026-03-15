@@ -19,28 +19,46 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
+    // Team support: if this user is a team member, load the owner's deals instead
+    let effectiveProfileId = profile.id;
+    let teamRole = null; // null = owner/solo, 'admin' or 'viewer'
+    if (profile.team_owner_id) {
+      effectiveProfileId = profile.team_owner_id;
+      // Look up the team seat to get the team_role
+      try {
+        const seats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+          owner_profile_id: profile.team_owner_id, 
+          member_profile_id: profile.id, 
+          status: 'active' 
+        });
+        teamRole = seats[0]?.team_role || 'viewer';
+      } catch (_) {
+        teamRole = 'viewer';
+      }
+    }
+
     let deals = [];
     let rooms = [];
 
-    if (isAdmin) {
+    if (isAdmin && !profile.team_owner_id) {
       const [d, r] = await Promise.all([
         base44.asServiceRole.entities.Deal.list('-updated_date', 100),
         base44.asServiceRole.entities.Room.list('-updated_date', 100),
       ]);
       deals = d;
       rooms = r;
-    } else if (isInvestor) {
+    } else if (isInvestor || (profile.team_owner_id && !isAgent)) {
       const [d, r] = await Promise.all([
-        base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } }),
-        base44.asServiceRole.entities.Room.filter({ investorId: profile.id }),
+        base44.asServiceRole.entities.Deal.filter({ investor_id: effectiveProfileId, status: { $ne: 'draft' } }),
+        base44.asServiceRole.entities.Room.filter({ investorId: effectiveProfileId }),
       ]);
       deals = d;
       rooms = r;
     } else if (isAgent) {
       // Use DealInvite index — no full-table scan
       const [invites, directDeals] = await Promise.all([
-        base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id }),
-        base44.asServiceRole.entities.Deal.filter({ agent_id: profile.id }),
+        base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: effectiveProfileId }),
+        base44.asServiceRole.entities.Deal.filter({ agent_id: effectiveProfileId }),
       ]);
       const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
       const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
@@ -54,7 +72,7 @@ Deno.serve(async (req) => {
         allIds.length > 0 ? base44.asServiceRole.entities.Deal.filter({ id: { $in: allIds } }) : Promise.resolve([]),
         roomIds.length > 0 ? base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } }) : Promise.resolve([]),
       ]);
-      deals = dealRes.filter(d => !d.locked_agent_id || d.locked_agent_id === profile.id);
+      deals = dealRes.filter(d => !d.locked_agent_id || d.locked_agent_id === effectiveProfileId);
       rooms = roomRes;
     }
 
@@ -193,7 +211,7 @@ Deno.serve(async (req) => {
       return { ...base, property_address: null, seller_info: null, property_details: null, special_notes: null };
     });
 
-    return Response.json({ deals: redacted, role: profile.user_role });
+    return Response.json({ deals: redacted, role: profile.user_role, team_role: teamRole });
   } catch (error) {
     console.error('[getPipelineDeals] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
