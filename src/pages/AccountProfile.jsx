@@ -29,6 +29,7 @@ import NextStepsTemplateEditor from "@/components/NextStepsTemplateEditor";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
+import TeamManagement from "@/components/team/TeamManagement";
 
 /**
  * ACCOUNT PROFILE EDITOR
@@ -825,6 +826,11 @@ function AccountProfileContent() {
                 </div>
               </>
             )}
+
+            {/* Team Management */}
+            <div className="pt-4 border-t border-[#1F1F1F]">
+              <TeamManagement profile={profile} />
+            </div>
 
             {/* Notification Settings */}
             <div className="pt-4 border-t border-[#1F1F1F]">
