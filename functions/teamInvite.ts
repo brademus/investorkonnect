@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * TEAM INVITE — Owner invites a team member by email.
- * Validates domain match, prevents duplicates, sends invitation email.
+ * Validates domain match, prevents duplicates, invites user to app, sends invitation email.
  */
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -73,22 +73,29 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Send invitation email
+  // Invite the user to the app (this sends them a login link email automatically)
   try {
-    const appUrl = Deno.env.get('PUBLIC_APP_URL') || '';
-    await base44.integrations.Core.SendEmail({
+    await base44.users.inviteUser(normalizedEmail, 'user');
+  } catch (inviteErr) {
+    // User may already exist in the app — that's fine
+    console.log('inviteUser result:', inviteErr?.message || 'already exists');
+  }
+
+  // Send a custom notification email with team context
+  try {
+    await base44.asServiceRole.integrations.Core.SendEmail({
       to: normalizedEmail,
-      subject: `You've been invited to join ${ownerProfile.full_name}'s team on Investor Konnect`,
+      subject: `You've been invited to join ${ownerProfile.full_name || ownerProfile.email}'s team on Investor Konnect`,
       body: `
         <h2>Team Invitation</h2>
-        <p><strong>${ownerProfile.full_name}</strong> has invited you to join their team on Investor Konnect as a <strong>${role}</strong>.</p>
-        <p>As a team member, you'll have access to their shared deal board and pipeline.</p>
-        <p><a href="${appUrl}" style="display:inline-block;padding:12px 24px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;">Accept Invitation</a></p>
-        <p>If you don't have an account yet, you'll be prompted to create one when you click the link.</p>
+        <p><strong>${ownerProfile.full_name || ownerProfile.email}</strong> has invited you to join their team on Investor Konnect as a <strong>${role}</strong>.</p>
+        <p>As a team ${role}, you'll ${role === 'admin' ? 'have full access to create, edit, and manage' : 'be able to view'} all of their deals on the dashboard.</p>
+        <p>Log in to Investor Konnect to get started. If you already received a login link, use that to sign in and your invitation will be accepted automatically.</p>
       `
     });
   } catch (emailErr) {
-    console.error('Failed to send invite email:', emailErr);
+    console.error('Failed to send invite email:', emailErr?.message || emailErr);
+    // Not a blocker — user was already invited to the app
   }
 
   return Response.json({ ok: true, message: `Invitation sent to ${normalizedEmail}` });
