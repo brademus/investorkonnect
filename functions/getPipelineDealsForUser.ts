@@ -40,6 +40,21 @@ Deno.serve(async (req) => {
     let deals = [];
     let rooms = [];
 
+    // Determine the effective role: for team members, use the owner's role
+    let effectiveRole = profile.user_role; // 'investor' | 'agent'
+    if (profile.team_owner_id) {
+      try {
+        const ownerProfiles = await base44.asServiceRole.entities.Profile.filter({ id: profile.team_owner_id });
+        if (ownerProfiles.length) {
+          effectiveRole = ownerProfiles[0].user_role || 'investor';
+        }
+      } catch (_) {
+        effectiveRole = 'investor'; // safe fallback
+      }
+    }
+    const effectiveIsInvestor = effectiveRole === 'investor';
+    const effectiveIsAgent = effectiveRole === 'agent';
+
     if (isAdmin && !profile.team_owner_id) {
       const [d, r] = await Promise.all([
         base44.asServiceRole.entities.Deal.list('-updated_date', 100),
@@ -47,14 +62,14 @@ Deno.serve(async (req) => {
       ]);
       deals = d;
       rooms = r;
-    } else if (isInvestor || profile.team_owner_id) {
+    } else if (effectiveIsInvestor || (profile.team_owner_id && !effectiveIsAgent)) {
       const [d, r] = await Promise.all([
         base44.asServiceRole.entities.Deal.filter({ investor_id: effectiveProfileId, status: { $ne: 'draft' } }),
         base44.asServiceRole.entities.Room.filter({ investorId: effectiveProfileId }),
       ]);
       deals = d;
       rooms = r;
-    } else if (isAgent) {
+    } else if (effectiveIsAgent || isAgent) {
       // Use DealInvite index — no full-table scan
       const [invites, directDeals] = await Promise.all([
         base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: effectiveProfileId }),
@@ -102,8 +117,8 @@ Deno.serve(async (req) => {
     const dealIds = [...map.keys()];
     const roomIds = rooms.map(r => r.id);
 
-    // Team members viewing owner's deals are treated as investor-side
-    const isInvestorSide = isInvestor || isAdmin || !!profile.team_owner_id;
+    // Determine investor-side view based on effective role
+    const isInvestorSide = effectiveIsInvestor || (isAdmin && !profile.team_owner_id);
 
     // Collect counterparty IDs
     const cpIds = new Set();
