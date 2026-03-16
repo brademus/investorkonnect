@@ -102,10 +102,13 @@ Deno.serve(async (req) => {
     const dealIds = [...map.keys()];
     const roomIds = rooms.map(r => r.id);
 
+    // Team members viewing owner's deals are treated as investor-side
+    const isInvestorSide = isInvestor || isAdmin || !!profile.team_owner_id;
+
     // Collect counterparty IDs
     const cpIds = new Set();
     rooms.forEach(r => {
-      if (isInvestor || isAdmin) {
+      if (isInvestorSide) {
         (r.agent_ids || []).forEach(id => cpIds.add(id));
         if (r.locked_agent_id) cpIds.add(r.locked_agent_id);
       } else {
@@ -153,7 +156,7 @@ Deno.serve(async (req) => {
       const finalProposedTerms = exhibitTerms ? { ...(deal.proposed_terms || {}), ...exhibitTerms } : deal.proposed_terms;
 
       // Counterparty info
-      const cpId = (isInvestor || isAdmin)
+      const cpId = isInvestorSide
         ? (deal.locked_agent_id || room?.locked_agent_id || room?.agent_ids?.[0])
         : room?.investorId;
       const cp = cpId ? profileMap.get(cpId) : null;
@@ -205,7 +208,7 @@ Deno.serve(async (req) => {
         } : null;
       }
 
-      if (isAdmin || isInvestor || isSigned) {
+      if (isInvestorSide || isSigned) {
         return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };
       }
       return { ...base, property_address: null, seller_info: null, property_details: null, special_notes: null };
