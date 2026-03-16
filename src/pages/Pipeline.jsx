@@ -70,6 +70,19 @@ function PipelineContent() {
     setReady(true);
   }, [loading, profile, onboarded]);
 
+  // Safety: if profile is available and admin, force ready after a short delay
+  // (covers edge cases where useEffect dependencies don't re-trigger properly)
+  useEffect(() => {
+    if (ready || loading) return;
+    if (!profile) return;
+    const timer = setTimeout(() => {
+      if (!ready && profile && (hookRole === 'admin' || profile.role === 'admin' || profile.user_role === 'admin')) {
+        setReady(true);
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [loading, profile, hookRole, ready]);
+
   // Load deals + room data in a single call (server returns both)
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
