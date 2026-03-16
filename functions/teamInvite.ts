@@ -23,19 +23,13 @@ Deno.serve(async (req) => {
   if (!profiles.length) return Response.json({ error: 'Profile not found' }, { status: 404 });
   const ownerProfile = profiles[0];
 
-  // Domain validation — extract domain from owner and invitee
+  // Domain validation — invitee email must match owner's domain exactly
   const ownerDomain = user.email.split('@')[1]?.toLowerCase();
   const inviteeDomain = normalizedEmail.split('@')[1]?.toLowerCase();
-  
-  // Skip domain check for common free email providers (allow mixed teams)
-  const freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com', 'protonmail.com', 'mail.com'];
-  const ownerIsFree = freeProviders.includes(ownerDomain);
-  const inviteeIsFree = freeProviders.includes(inviteeDomain);
 
-  // If owner uses a company domain, invitee must match (unless invitee is free email)
-  if (!ownerIsFree && !inviteeIsFree && ownerDomain !== inviteeDomain) {
+  if (ownerDomain !== inviteeDomain) {
     return Response.json({ 
-      error: `Team members must use the same company email domain (@${ownerDomain}). Use a matching email or contact support.` 
+      error: `Team members must use the same email domain (@${ownerDomain}).` 
     }, { status: 400 });
   }
 
