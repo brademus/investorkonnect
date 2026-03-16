@@ -99,21 +99,18 @@ export default function PostAuth() {
           } catch {}
         }
 
-        // Auto-accept pending team invitations for this email
+        // Check for pending team invitations — redirect to AcceptInvite page
         try {
           const emailLc = (user.email || '').toLowerCase().trim();
           if (emailLc) {
             const pendingSeats = await base44.entities.TeamSeat.filter({ member_email: emailLc, status: 'invited' });
             if (pendingSeats.length > 0) {
               const seat = pendingSeats[0];
-              await base44.entities.TeamSeat.update(seat.id, {
-                status: 'active', member_profile_id: profile.id,
-                member_name: profile.full_name || user.full_name || emailLc,
-                joined_at: new Date().toISOString()
-              });
-              await base44.entities.Profile.update(profile.id, { team_owner_id: seat.owner_profile_id });
-              profile.team_owner_id = seat.owner_profile_id;
-              console.log('[PostAuth] Auto-accepted team invitation from', seat.owner_email);
+              if (mounted) {
+                setNavigated(true);
+                navigate(`${createPageUrl("AcceptInvite")}?seatId=${seat.id}`, { replace: true });
+                return;
+              }
             }
           }
         } catch (teamErr) {
