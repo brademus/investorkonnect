@@ -58,20 +58,28 @@ function TeamAccountContent() {
     setBuying(true);
     try {
       const res = await base44.functions.invoke('checkoutSeats', { count: buyCount });
+      console.log('[TeamAccount] checkoutSeats response:', JSON.stringify(res?.data));
+
       if (res?.data?.ok) {
-        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} purchased! Loading your seats...`);
+        const diag = res.data.diag || {};
+        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} purchased! Stripe mode: ${diag.stripe_key_type || 'unknown'}`);
         setBuyCount(1);
-        // Brief delay then refresh — teamManage list will expand pending seats into records
         await new Promise(r => setTimeout(r, 1500));
         fetchTeam();
       } else {
-        toast.error(res?.data?.message || 'Failed to purchase seats');
+        const diag = res?.data?.diag || {};
+        const msg = res?.data?.message || 'Failed to purchase seats';
+        console.error('[TeamAccount] checkoutSeats failed:', msg, 'diag:', JSON.stringify(diag));
+        toast.error(msg);
       }
     } catch (err) {
+      console.error('[TeamAccount] checkoutSeats exception:', err);
       let msg = 'Failed to purchase seats';
       if (err?.data?.message) msg = err.data.message;
       else if (err?.response?.data?.message) msg = err.response.data.message;
       else if (err?.message && !err.message.includes('status code')) msg = err.message;
+      const diag = err?.data?.diag || err?.response?.data?.diag;
+      if (diag) console.error('[TeamAccount] diag:', JSON.stringify(diag));
       toast.error(msg);
     }
     setBuying(false);
