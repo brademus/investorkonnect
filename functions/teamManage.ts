@@ -153,11 +153,14 @@ Deno.serve(async (req) => {
     // Mark seat as removed
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Cancel the Stripe subscription item (stop $10/mo billing)
-    if (seat.stripe_subscription_item_id) {
+    // Cancel billing — try individual item first, then decrement quantity
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
+
+    if (STRIPE_SECRET_KEY) {
       try {
-        const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-        if (STRIPE_SECRET_KEY) {
+        // If this seat has its own subscription item ID, try deleting it
+        if (seat.stripe_subscription_item_id) {
           const resp = await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
             method: 'DELETE',
             headers: {
@@ -167,14 +170,43 @@ Deno.serve(async (req) => {
             body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
           });
           const data = await resp.json();
-          if (data?.deleted) {
-            console.log('Seat billing cancelled:', seat.stripe_subscription_item_id);
-          } else {
-            console.error('Failed to cancel seat billing:', data?.error?.message);
+          console.log('Delete seat item result:', data?.deleted ? 'deleted' : data?.error?.message);
+        }
+
+        // Also check for quantity-based seat items and decrement
+        if (SEAT_PRICE_ID && myProfile.stripe_subscription_id) {
+          const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${myProfile.stripe_subscription_id}`, {
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+          });
+          const sub = await subResp.json();
+
+          if (sub?.items?.data) {
+            for (const item of sub.items.data) {
+              if (item.price?.id === SEAT_PRICE_ID && item.quantity > 0) {
+                const remainingSeats = seats.filter(s => s.id !== seat_id && s.status !== 'removed').length;
+
+                if (remainingSeats === 0) {
+                  await fetch(`https://api.stripe.com/v1/subscription_items/${item.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
+                  });
+                  console.log('Deleted seat subscription item (no seats remaining)');
+                } else if (item.quantity > remainingSeats) {
+                  await fetch(`https://api.stripe.com/v1/subscription_items/${item.id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ 'quantity': String(remainingSeats), 'proration_behavior': 'create_prorations' }).toString(),
+                  });
+                  console.log(`Decremented seat quantity to ${remainingSeats}`);
+                }
+                break;
+              }
+            }
           }
         }
       } catch (billingErr) {
-        console.error('Billing cancellation error:', billingErr?.message);
+        console.error('Billing cancellation error (non-fatal):', billingErr?.message);
       }
     }
 

@@ -196,18 +196,25 @@ Deno.serve(async (req) => {
           console.log('👤 Found profile:', profile.email);
           
           // Update profile with subscription info
-          await base44.asServiceRole.entities.Profile.update(profile.id, {
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscription.id,
-            subscription_tier: plan,
-            subscription_status: subscription.status,
-            subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
-          });
-          
-          console.log('✅ Profile updated with subscription:', {
-            tier: plan,
-            status: subscription.status
-          });
+          const subPlan = subscription.metadata?.plan;
+          if (subPlan === 'seats_only') {
+            // Seats-only subscription — store separately, don't overwrite membership
+            console.log('📋 Seats-only subscription — not overwriting membership sub');
+          } else {
+            // Membership subscription (solo or team)
+            await base44.asServiceRole.entities.Profile.update(profile.id, {
+              stripe_customer_id: customerId,
+              stripe_subscription_id: subscription.id,
+              subscription_tier: plan,
+              subscription_status: subscription.status,
+              subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+            });
+            
+            console.log('✅ Profile updated with subscription:', {
+              tier: plan,
+              status: subscription.status
+            });
+          }
 
           // === TEAM SEAT ACTIVATION ===
           // If this subscription was created via team checkout, activate pending seats
@@ -225,9 +232,13 @@ Deno.serve(async (req) => {
                 const seatId = seatIds[i];
                 const email = emails[i] || '';
 
-                // Flip status from pending_payment to invited
+                // Check if the seat has an email assigned — if yes, set to 'invited'; if no, set to 'open'
+                const seatRecords = await base44.asServiceRole.entities.TeamSeat.filter({ id: seatId });
+                const seatRecord = seatRecords[0];
+                const newStatus = (seatRecord?.member_email && seatRecord.member_email.trim()) ? 'invited' : 'open';
+                
                 await base44.asServiceRole.entities.TeamSeat.update(seatId, {
-                  status: 'invited',
+                  status: newStatus,
                 });
 
                 // Invite user to the app
@@ -257,7 +268,7 @@ Deno.serve(async (req) => {
                   console.error(`Failed to send invite email to ${email}:`, emailErr?.message);
                 }
 
-                console.log(`✅ Seat ${seatId} activated for ${email}`);
+                console.log(`✅ Seat ${seatId} set to ${newStatus} for ${email || '(unassigned)'}`);
               } catch (seatErr) {
                 console.error(`Failed to activate seat ${seatIds[i]}:`, seatErr?.message);
               }
