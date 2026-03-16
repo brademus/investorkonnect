@@ -34,8 +34,8 @@ function PipelineContent() {
   const [teamRole, setTeamRole] = useState(null); // 'admin' | 'viewer' | null
 
   const isAdmin = hookRole === 'admin' || profile?.role === 'admin' || profile?.user_role === 'admin';
-  const isAgent = !isAdmin && profile?.user_role === 'agent';
-  const isInvestor = profile?.user_role === 'investor' || isAdmin;
+  const isAgent = !isAdmin && !isTeamMember && profile?.user_role === 'agent';
+  const isInvestor = profile?.user_role === 'investor' || isAdmin || isTeamMember;
   const isViewerOnly = teamRole === 'viewer';
 
   // Gating — wait for auth to fully resolve before redirecting anywhere
