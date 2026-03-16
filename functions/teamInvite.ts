@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
 
   // Send a custom notification email with team context and accept link
   try {
+    const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
     const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seatId}`;
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: normalizedEmail,
