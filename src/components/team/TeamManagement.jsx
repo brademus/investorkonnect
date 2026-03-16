@@ -44,16 +44,20 @@ export default function TeamManagement({ profile }) {
     setInviting(true);
     try {
       const res = await base44.functions.invoke('teamInvite', { email: inviteEmail.trim(), team_role: inviteRole });
-      if (res.data.ok) {
+      if (res?.data?.ok) {
         toast.success(res.data.message);
         setInviteEmail("");
         fetchTeam();
       } else {
-        toast.error(res.data.error || 'Failed to invite');
+        toast.error(res?.data?.error || 'Failed to send invite');
       }
     } catch (err) {
-      const msg = err?.response?.data?.error || err.message || 'Failed to invite';
-      toast.error(msg);
+      const errMsg = err?.response?.data?.error 
+        || err?.data?.error 
+        || (typeof err?.response?.data === 'string' ? err.response.data : null)
+        || err?.message 
+        || 'Failed to send invite';
+      toast.error(errMsg);
     }
     setInviting(false);
   };
