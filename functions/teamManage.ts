@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, message: 'Seat cancelled' });
   }
 
-  // === LEGACY REMOVE — backwards compatibility, acts as cancel_seat ===
+  // === LEGACY REMOVE — backwards compatibility ===
   if (action === 'remove') {
     const { seat_id } = body;
     if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
@@ -232,20 +232,6 @@ Deno.serve(async (req) => {
     }
 
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
-
-    if (seat.stripe_subscription_item_id) {
-      try {
-        const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-        if (STRIPE_SECRET_KEY) {
-          await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
-          });
-        }
-      } catch (_) {}
-    }
-
     return Response.json({ ok: true, message: 'Team member removed' });
   }
 
