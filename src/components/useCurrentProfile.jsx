@@ -83,6 +83,7 @@ export function useCurrentProfile() {
         if (!mounted) return;
 
         const isAdmin = user.role === 'admin' || profile?.role === 'admin';
+        const isTeamMember = !!profile?.team_owner_id;
 
         // Role
         let role = profile?.user_role || profile?.user_type
@@ -91,20 +92,23 @@ export function useCurrentProfile() {
         if (isAdmin) role = 'admin';
         else if (role !== 'investor' && role !== 'agent') role = 'member';
 
+        // Team members bypass all onboarding/subscription/KYC/NDA gates
+        const bypassGates = isAdmin || isTeamMember;
+
         // Onboarding
         const hasLegacy = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name));
-        const onboarded = isAdmin || !!(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version || hasLegacy);
+        const onboarded = bypassGates || !!(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version || hasLegacy);
 
         // Subscription
         const subscriptionStatus = profile?.subscription_status || 'none';
-        const isPaidSubscriber = isAdmin || subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+        const isPaidSubscriber = bypassGates || subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
 
         // KYC
-        const kycStatus = isAdmin ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
-        const kycVerified = isAdmin || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified_at;
+        const kycStatus = bypassGates ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
+        const kycVerified = bypassGates || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified_at;
 
         // NDA
-        const hasNDA = isAdmin || !!profile?.nda_accepted;
+        const hasNDA = bypassGates || !!profile?.nda_accepted;
 
         const finalState = {
           loading: false, user, profile, role, onboarded,

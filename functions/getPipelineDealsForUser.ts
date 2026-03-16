@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       ]);
       deals = d;
       rooms = r;
-    } else if (isInvestor || (profile.team_owner_id && !isAgent)) {
+    } else if (isInvestor || profile.team_owner_id) {
       const [d, r] = await Promise.all([
         base44.asServiceRole.entities.Deal.filter({ investor_id: effectiveProfileId, status: { $ne: 'draft' } }),
         base44.asServiceRole.entities.Room.filter({ investorId: effectiveProfileId }),
