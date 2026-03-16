@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
       if (existing.length) {
         await base44.asServiceRole.entities.TeamSeat.update(existing[0].id, {
-          team_role: 'admin',
+          team_role: 'member',
           status: 'pending_payment',
           invited_at: new Date().toISOString(),
           member_profile_id: null,
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
           owner_profile_id: ownerProfile.id,
           owner_email: user.email.toLowerCase(),
           member_email: email,
-          team_role: 'admin',
+          team_role: 'member',
           status: 'pending_payment',
           invited_at: new Date().toISOString(),
         });

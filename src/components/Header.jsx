@@ -6,14 +6,21 @@ import { Logo } from './Logo';
 import { Button } from './ui/button';
 import { 
   Home, Users, MessageSquare, FileText, CreditCard, 
-  User, LogOut, Menu, X, ChevronDown, ShieldCheck
+  User, LogOut, Menu, X, ChevronDown, ShieldCheck, UserPlus
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 
 export function Header({ profile }) {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Pending team invite state
+  const [pendingInvite, setPendingInvite] = useState(null);
+  const [inviteOwnerName, setInviteOwnerName] = useState('');
+  const [acceptingInvite, setAcceptingInvite] = useState(false);
+  const [decliningInvite, setDecliningInvite] = useState(false);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
@@ -26,6 +33,57 @@ export function Header({ profile }) {
     } catch (err) {
       window.location.href = '/';
     }
+  };
+
+  // Check for pending team invite
+  useEffect(() => {
+    if (!profile?.email || profile?.team_owner_id) return;
+    const checkInvite = async () => {
+      try {
+        const seats = await base44.entities.TeamSeat.filter({ 
+          member_email: profile.email.toLowerCase(), 
+          status: 'invited' 
+        });
+        if (seats.length > 0) {
+          const seat = seats[0];
+          setPendingInvite(seat);
+          try {
+            const owners = await base44.entities.Profile.filter({ id: seat.owner_profile_id });
+            setInviteOwnerName(owners.length ? (owners[0].full_name || owners[0].email || seat.owner_email) : (seat.owner_email || 'a team owner'));
+          } catch (_) {
+            setInviteOwnerName(seat.owner_email || 'a team owner');
+          }
+        }
+      } catch (_) {}
+    };
+    checkInvite();
+  }, [profile?.email, profile?.team_owner_id]);
+
+  const handleAcceptInvite = async () => {
+    if (!pendingInvite) return;
+    setAcceptingInvite(true);
+    try {
+      const res = await base44.functions.invoke('teamAcceptInvite', { seat_id: pendingInvite.id, action: 'accept' });
+      if (res?.data?.ok) {
+        toast.success("You've joined the team!");
+        setPendingInvite(null);
+        try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+        window.location.reload();
+      } else {
+        toast.error(res?.data?.error || 'Failed to accept invite');
+      }
+    } catch (_) { toast.error('Failed to accept invite'); }
+    setAcceptingInvite(false);
+  };
+
+  const handleDeclineInvite = async () => {
+    if (!pendingInvite) return;
+    setDecliningInvite(true);
+    try {
+      const res = await base44.functions.invoke('teamAcceptInvite', { seat_id: pendingInvite.id, action: 'decline' });
+      if (res?.data?.ok) { toast.info('Invitation declined'); setPendingInvite(null); }
+    } catch (_) { toast.error('Failed to decline invite'); }
+    setDecliningInvite(false);
   };
   
   const navLinks = [];
@@ -45,8 +103,24 @@ export function Header({ profile }) {
             linkTo={createPageUrl("Pipeline")}
           />
 
-          {/* Right: User Menu */}
-          <div className="flex items-center gap-2 flex-1 justify-end">
+          {/* Right: Invite Banner + User Menu */}
+          <div className="flex items-center gap-3 flex-1 justify-end">
+            {/* Pending Team Invite — compact inline banner */}
+            {pendingInvite && (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E3C567]/40 bg-[#E3C567]/10">
+                <UserPlus className="w-3.5 h-3.5 text-[#E3C567] flex-shrink-0" />
+                <span className="text-xs text-[#FAFAFA] whitespace-nowrap">
+                  Join <span className="font-semibold text-[#E3C567]">{inviteOwnerName?.split(' ')[0] || 'team'}</span>'s team?
+                </span>
+                <button onClick={handleAcceptInvite} disabled={acceptingInvite} className="px-2.5 py-0.5 rounded-full bg-[#E3C567] text-black text-xs font-semibold hover:bg-[#EDD89F] transition-colors disabled:opacity-50">
+                  {acceptingInvite ? '...' : 'Join'}
+                </button>
+                <button onClick={handleDeclineInvite} disabled={decliningInvite} className="px-2 py-0.5 rounded-full text-[#808080] text-xs hover:text-red-400 transition-colors disabled:opacity-50">
+                  {decliningInvite ? '...' : 'Decline'}
+                </button>
+              </div>
+            )}
+
             {/* Desktop User Dropdown */}
             <div className="hidden md:block relative">
               <Button 
@@ -144,6 +218,28 @@ export function Header({ profile }) {
             </Button>
           </div>
         </div>
+
+        {/* Mobile: Pending invite banner */}
+        {pendingInvite && (
+          <div className="md:hidden py-2 border-t border-[#E3C567]/20">
+            <div className="flex items-center justify-between gap-3 px-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <UserPlus className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
+                <span className="text-xs text-[#FAFAFA] truncate">
+                  Join <span className="font-semibold text-[#E3C567]">{inviteOwnerName?.split(' ')[0] || 'team'}</span>'s team?
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={handleAcceptInvite} disabled={acceptingInvite} className="px-3 py-1 rounded-full bg-[#E3C567] text-black text-xs font-semibold">
+                  {acceptingInvite ? '...' : 'Join'}
+                </button>
+                <button onClick={handleDeclineInvite} disabled={decliningInvite} className="text-xs text-[#808080]">
+                  Decline
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mobile Menu */}
         {menuOpen && (

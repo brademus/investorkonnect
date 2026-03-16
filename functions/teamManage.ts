@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
   // === UPDATE ROLE ===
   if (action === 'updateRole') {
     const { seat_id, team_role } = body;
-    if (!seat_id || !['admin', 'viewer'].includes(team_role)) {
+    if (!seat_id || !['admin', 'member', 'viewer'].includes(team_role)) {
       return Response.json({ error: 'seat_id and valid team_role required' }, { status: 400 });
     }
     const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });

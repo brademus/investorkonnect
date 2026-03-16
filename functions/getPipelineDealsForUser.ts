@@ -19,11 +19,10 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
-    // Team support: if this user is a team member, load the owner's deals instead
+    // Team support: determine team role and what deals to show
     let effectiveProfileId = profile.id;
-    let teamRole = null; // null = owner/solo, 'admin' or 'viewer'
+    let teamRole = null; // null = owner/solo, 'admin' | 'member' | 'viewer'
     if (profile.team_owner_id) {
-      effectiveProfileId = profile.team_owner_id;
       // Look up the team seat to get the team_role
       try {
         const seats = await base44.asServiceRole.entities.TeamSeat.filter({ 
@@ -31,9 +30,17 @@ Deno.serve(async (req) => {
           member_profile_id: profile.id, 
           status: 'active' 
         });
-        teamRole = seats[0]?.team_role || 'viewer';
+        teamRole = seats[0]?.team_role || 'member';
       } catch (_) {
-        teamRole = 'viewer';
+        teamRole = 'member';
+      }
+
+      // Admin team members see the OWNER's deals (all team deals)
+      // Member/viewer team members see only THEIR OWN deals
+      if (teamRole === 'admin') {
+        effectiveProfileId = profile.team_owner_id;
+      } else {
+        effectiveProfileId = profile.id;
       }
     }
 

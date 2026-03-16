@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         owner_profile_id: ownerProfile.id,
         owner_email: user.email.toLowerCase(),
         member_email: '',
-        team_role: 'admin',
+        team_role: 'member',
         status: 'pending_payment',
         invited_at: new Date().toISOString(),
       });
