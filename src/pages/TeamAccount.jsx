@@ -59,8 +59,10 @@ function TeamAccountContent() {
     try {
       const res = await base44.functions.invoke('checkoutSeats', { count: buyCount });
       if (res?.data?.ok) {
-        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
+        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} purchased! Loading your seats...`);
         setBuyCount(1);
+        // Brief delay then refresh — teamManage list will expand pending seats into records
+        await new Promise(r => setTimeout(r, 1500));
         fetchTeam();
       } else {
         toast.error(res?.data?.message || 'Failed to purchase seats');

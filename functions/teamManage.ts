@@ -17,6 +17,45 @@ Deno.serve(async (req) => {
 
   // === LIST ===
   if (action === 'list') {
+    // Check for pending seats that need to be created (from checkoutSeats)
+    const pendingCount = myProfile.pending_seats_count || 0;
+    if (pendingCount > 0) {
+      console.log(`Creating ${pendingCount} pending seat records...`);
+      const stripeItemId = myProfile.stripe_seat_item_id || null;
+      const delay = (ms) => new Promise(r => setTimeout(r, ms));
+      
+      for (let i = 0; i < pendingCount; i++) {
+        if (i > 0) await delay(300);
+        try {
+          await base44.asServiceRole.entities.TeamSeat.create({
+            owner_profile_id: myProfile.id,
+            owner_email: user.email.toLowerCase(),
+            member_email: '',
+            team_role: 'member',
+            status: 'open',
+            invited_at: new Date().toISOString(),
+            stripe_subscription_item_id: stripeItemId || '',
+          });
+        } catch (err) {
+          console.error(`Failed to create pending seat ${i + 1}:`, err?.message);
+          try {
+            await base44.asServiceRole.entities.Profile.update(myProfile.id, {
+              pending_seats_count: pendingCount - i,
+            });
+          } catch (_) {}
+          break;
+        }
+      }
+
+      // Clear pending count
+      try {
+        await base44.asServiceRole.entities.Profile.update(myProfile.id, {
+          pending_seats_count: 0,
+        });
+      } catch (_) {}
+    }
+
+    // Now fetch all seats
     const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
     const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
 
