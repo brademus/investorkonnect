@@ -35,6 +35,12 @@ export default function TeamManagement({ profile }) {
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) { toast.error("Enter an email address"); return; }
+    const ownerDomain = profile?.email?.split('@')[1]?.toLowerCase();
+    const inviteeDomain = inviteEmail.trim().split('@')[1]?.toLowerCase();
+    if (ownerDomain && inviteeDomain && ownerDomain !== inviteeDomain) {
+      toast.error(`Team members must use a @${ownerDomain} email address.`);
+      return;
+    }
     setInviting(true);
     try {
       const res = await base44.functions.invoke('teamInvite', { email: inviteEmail.trim(), team_role: inviteRole });
