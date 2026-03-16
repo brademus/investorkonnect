@@ -1,17 +1,24 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile, loading } = useCurrentProfile();
+  const searchParams = new URLSearchParams(location.search);
+  const isTeam = searchParams.get("team") === "true";
 
   React.useEffect(() => {
     if (!loading && profile) {
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      if (isTeam) {
+        navigate(createPageUrl("TeamAccount"), { replace: true });
+      } else {
+        navigate(createPageUrl("IdentityVerification"), { replace: true });
+      }
     }
-  }, [loading, profile, navigate]);
+  }, [loading, profile, navigate, isTeam]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

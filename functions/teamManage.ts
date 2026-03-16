@@ -1,8 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
- * TEAM MANAGE — List team, remove member, update role.
- * Actions: list, remove, updateRole
+ * TEAM MANAGE — List, assign, remove member, cancel seat, update role, accept invite.
  */
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -12,93 +11,228 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const { action } = body;
 
-  // Get caller profile
   const profiles = await base44.entities.Profile.filter({ user_id: user.id });
   if (!profiles.length) return Response.json({ error: 'Profile not found' }, { status: 404 });
   const myProfile = profiles[0];
 
+  // === LIST ===
   if (action === 'list') {
-    // Return seats where I am the owner
     const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-
     const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
-    
-    // Also check if I'm a member of someone else's team
+
     const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });
     const activeMembership = myMembership.find(s => s.status === 'active' || s.status === 'invited');
 
-    return Response.json({ 
-      ok: true, 
+    return Response.json({
+      ok: true,
       seats: activeSeats,
       my_membership: activeMembership || null,
-      is_owner: activeSeats.length > 0 || !activeMembership
+      is_owner: activeSeats.length > 0 || !activeMembership,
     });
   }
 
-  if (action === 'remove') {
+  // === ASSIGN — assign an email to an open seat, send invite ===
+  if (action === 'assign') {
+    const { seat_id, email } = body;
+    if (!seat_id || !email) return Response.json({ error: 'seat_id and email required' }, { status: 400 });
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Verify ownership and seat is open
+    const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+    const seat = seats.find(s => s.id === seat_id);
+    if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
+    if (seat.status !== 'open') return Response.json({ error: 'This seat is not available for assignment' }, { status: 400 });
+
+    // Domain validation
+    const ownerDomain = user.email.split('@')[1]?.toLowerCase();
+    const inviteeDomain = normalizedEmail.split('@')[1]?.toLowerCase();
+    if (ownerDomain !== inviteeDomain) {
+      return Response.json({ error: `Team members must use @${ownerDomain} email addresses.` }, { status: 400 });
+    }
+    if (normalizedEmail === user.email.toLowerCase()) {
+      return Response.json({ error: 'You cannot invite yourself' }, { status: 400 });
+    }
+
+    // Check if this email is already on the team
+    const existingOnTeam = seats.find(s => s.member_email === normalizedEmail && s.status !== 'removed' && s.status !== 'open');
+    if (existingOnTeam) {
+      return Response.json({ error: 'This person is already on your team' }, { status: 400 });
+    }
+
+    // Update seat with email and set to invited
+    await base44.entities.TeamSeat.update(seat_id, {
+      member_email: normalizedEmail,
+      status: 'invited',
+      invited_at: new Date().toISOString(),
+    });
+
+    // Invite user to the app
+    try {
+      await base44.users.inviteUser(normalizedEmail, 'user');
+    } catch (_) {}
+
+    // Send invite email
+    const ownerName = myProfile.full_name || user.email;
+    try {
+      const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+      const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seat_id}`;
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: normalizedEmail,
+        subject: `${ownerName} invited you to join their team on Investor Konnect`,
+        body: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #E3C567;">Team Invitation</h2>
+            <p><strong>${ownerName}</strong> has invited you to join their team on Investor Konnect as an <strong>admin</strong>.</p>
+            <p>As a team admin, you'll have full access to create, edit, and manage all of their deals on the dashboard.</p>
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+            </div>
+            <p style="color: #808080; font-size: 13px;">Click the button above to accept or decline the invitation.</p>
+          </div>
+        `
+      });
+      console.log('Invite email sent to', normalizedEmail);
+    } catch (emailErr) {
+      console.error('Failed to send invite email:', emailErr?.message);
+    }
+
+    return Response.json({ ok: true, message: `Invite sent to ${normalizedEmail}` });
+  }
+
+  // === REMOVE MEMBER — free the seat but keep billing (seat becomes 'open') ===
+  if (action === 'remove_member') {
     const { seat_id } = body;
     if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
 
-    // Verify ownership
     const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
     const seat = seats.find(s => s.id === seat_id);
-    if (!seat) return Response.json({ error: 'Seat not found or not yours' }, { status: 404 });
+    if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
 
+    // Clear the member but keep the seat open and billed
+    await base44.entities.TeamSeat.update(seat_id, {
+      status: 'open',
+      member_email: '',
+      member_profile_id: null,
+      member_name: null,
+      joined_at: null,
+    });
+
+    // Clear team_owner_id on the member's profile so they lose access
+    if (seat.member_profile_id) {
+      try {
+        await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, {
+          team_owner_id: null,
+          subscription_status: null,
+        });
+      } catch (_) {}
+    }
+
+    return Response.json({ ok: true, message: 'Member removed — seat is now available' });
+  }
+
+  // === CANCEL SEAT — stop billing and remove the seat entirely ===
+  if (action === 'cancel_seat') {
+    const { seat_id } = body;
+    if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
+
+    const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+    const seat = seats.find(s => s.id === seat_id);
+    if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
+
+    // If there's a member on this seat, clear their access first
+    if (seat.member_profile_id) {
+      try {
+        await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, {
+          team_owner_id: null,
+          subscription_status: null,
+        });
+      } catch (_) {}
+    }
+
+    // Mark seat as removed
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Cancel the Stripe subscription item for this seat
+    // Cancel the Stripe subscription item (stop $10/mo billing)
     if (seat.stripe_subscription_item_id) {
       try {
         const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
         if (STRIPE_SECRET_KEY) {
-          const deleteResp = await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
+          const resp = await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
               'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: new URLSearchParams({
-              'proration_behavior': 'create_prorations',
-            }).toString(),
+            body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
           });
-          const deleteData = await deleteResp.json();
-          if (deleteData?.deleted) {
-            console.log('Removed seat billing item:', seat.stripe_subscription_item_id);
+          const data = await resp.json();
+          if (data?.deleted) {
+            console.log('Seat billing cancelled:', seat.stripe_subscription_item_id);
           } else {
-            console.error('Failed to remove seat billing item:', deleteData?.error?.message);
+            console.error('Failed to cancel seat billing:', data?.error?.message);
           }
         }
       } catch (billingErr) {
-        console.error('Billing removal error (non-fatal):', billingErr?.message || billingErr);
+        console.error('Billing cancellation error:', billingErr?.message);
       }
     }
-    
-    // If the member had a profile, clear their team association
+
+    return Response.json({ ok: true, message: 'Seat cancelled' });
+  }
+
+  // === LEGACY REMOVE — backwards compatibility, acts as cancel_seat ===
+  if (action === 'remove') {
+    const { seat_id } = body;
+    if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
+
+    const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+    const seat = seats.find(s => s.id === seat_id);
+    if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
+
     if (seat.member_profile_id) {
       try {
-        await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, { team_owner_id: null });
+        await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, {
+          team_owner_id: null,
+          subscription_status: null,
+        });
+      } catch (_) {}
+    }
+
+    await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
+
+    if (seat.stripe_subscription_item_id) {
+      try {
+        const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+        if (STRIPE_SECRET_KEY) {
+          await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
+          });
+        }
       } catch (_) {}
     }
 
     return Response.json({ ok: true, message: 'Team member removed' });
   }
 
+  // === UPDATE ROLE ===
   if (action === 'updateRole') {
     const { seat_id, team_role } = body;
     if (!seat_id || !['admin', 'viewer'].includes(team_role)) {
       return Response.json({ error: 'seat_id and valid team_role required' }, { status: 400 });
     }
-
     const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
     const seat = seats.find(s => s.id === seat_id);
-    if (!seat) return Response.json({ error: 'Seat not found or not yours' }, { status: 404 });
+    if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
 
     await base44.entities.TeamSeat.update(seat_id, { team_role });
     return Response.json({ ok: true, message: `Role updated to ${team_role}` });
   }
 
+  // === ACCEPT INVITE ===
   if (action === 'accept') {
-    // Accept a pending invitation
     const myMemberships = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase(), status: 'invited' });
     if (!myMemberships.length) return Response.json({ error: 'No pending invitation found' }, { status: 404 });
 
@@ -107,10 +241,9 @@ Deno.serve(async (req) => {
       status: 'active',
       member_profile_id: myProfile.id,
       member_name: myProfile.full_name || user.email,
-      joined_at: new Date().toISOString()
+      joined_at: new Date().toISOString(),
     });
 
-    // Store team_owner_id on the member's profile for quick lookup
     await base44.entities.Profile.update(myProfile.id, { team_owner_id: seat.owner_profile_id });
 
     return Response.json({ ok: true, message: 'You have joined the team!' });
