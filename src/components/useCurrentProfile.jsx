@@ -118,6 +118,8 @@ export function useCurrentProfile() {
           subscriptionPlan: profile?.subscription_tier || 'none',
           subscriptionStatus, isPaidSubscriber,
           needsSubscription: !isAdmin && role === 'investor' && onboarded && !isPaidSubscriber,
+          teamOwnerId: profile?.team_owner_id || null,
+          isTeamMember: !!profile?.team_owner_id,
           error: null
         };
 
