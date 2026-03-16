@@ -66,7 +66,8 @@ function PipelineContent() {
       return;
     }
     const isPaid = profile.subscription_status === 'active' || profile.subscription_status === 'trialing';
-    if (profile.user_role === 'investor' && !isPaid) { gateRef.current = true; navigate(createPageUrl("Pricing"), { replace: true }); return; }
+    const isTeamMemberPaid = !!profile.team_owner_id;
+    if (profile.user_role === 'investor' && !isPaid && !isTeamMemberPaid) { gateRef.current = true; navigate(createPageUrl("Pricing"), { replace: true }); return; }
     const kyc = profile.kyc_status || profile.identity_status || 'unverified';
     if (kyc !== 'approved' && kyc !== 'verified' && !profile.identity_verified_at) { gateRef.current = true; navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
     if (!profile.nda_accepted) { gateRef.current = true; navigate(createPageUrl("NDA"), { replace: true }); return; }

@@ -20,7 +20,15 @@ Deno.serve(async (req) => {
   if (action === 'list') {
     // Return seats where I am the owner
     const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-    const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
+
+    // Clean up abandoned pending_payment seats (older than 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    for (const seat of ownedSeats) {
+      if (seat.status === 'pending_payment' && seat.invited_at < oneHourAgo) {
+        try { await base44.entities.TeamSeat.update(seat.id, { status: 'removed' }); } catch (_) {}
+      }
+    }
+    const activeSeats = ownedSeats.filter(s => s.status !== 'removed' && s.status !== 'pending_payment');
     
     // Also check if I'm a member of someone else's team
     const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });

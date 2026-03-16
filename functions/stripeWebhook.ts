@@ -208,6 +208,61 @@ Deno.serve(async (req) => {
             tier: plan,
             status: subscription.status
           });
+
+          // === TEAM SEAT ACTIVATION ===
+          // If this subscription was created via team checkout, activate pending seats
+          const seatIdsStr = subscription.metadata?.seat_ids || '';
+          const seatEmails = subscription.metadata?.seat_emails || '';
+          if (seatIdsStr) {
+            const seatIds = seatIdsStr.split(',').filter(Boolean);
+            const emails = seatEmails.split(',').filter(Boolean);
+            console.log(`🏢 Activating ${seatIds.length} team seats from checkout...`);
+
+            const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+
+            for (let i = 0; i < seatIds.length; i++) {
+              try {
+                const seatId = seatIds[i];
+                const email = emails[i] || '';
+
+                // Flip status from pending_payment to invited
+                await base44.asServiceRole.entities.TeamSeat.update(seatId, {
+                  status: 'invited',
+                });
+
+                // Invite user to the app
+                try {
+                  await base44.asServiceRole.users.inviteUser(email, 'user');
+                } catch (_) {}
+
+                // Send invite email
+                try {
+                  const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seatId}`;
+                  await base44.asServiceRole.integrations.Core.SendEmail({
+                    to: email,
+                    subject: `You've been invited to join a team on Investor Konnect`,
+                    body: `
+                      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #E3C567;">Team Invitation</h2>
+                        <p>You've been invited to join a team on Investor Konnect.</p>
+                        <p>As a team member, you'll have access to shared deal pipeline and collaboration tools.</p>
+                        <div style="margin: 30px 0; text-align: center;">
+                          <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+                        </div>
+                        <p style="color: #808080; font-size: 13px;">Click above to accept or decline.</p>
+                      </div>
+                    `
+                  });
+                } catch (emailErr) {
+                  console.error(`Failed to send invite email to ${email}:`, emailErr?.message);
+                }
+
+                console.log(`✅ Seat ${seatId} activated for ${email}`);
+              } catch (seatErr) {
+                console.error(`Failed to activate seat ${seatIds[i]}:`, seatErr?.message);
+              }
+            }
+          }
         }
         break;
       }
