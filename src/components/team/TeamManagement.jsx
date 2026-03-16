@@ -33,17 +33,23 @@ export default function TeamManagement({ profile }) {
 
   useEffect(() => { fetchTeam(); }, []);
 
+  const ownerDomain = profile?.email?.split('@')[1]?.toLowerCase() || '';
+
   const handleInvite = async () => {
-    if (!inviteEmail.trim()) { toast.error("Enter an email address"); return; }
-    const ownerDomain = profile?.email?.split('@')[1]?.toLowerCase();
-    const inviteeDomain = inviteEmail.trim().split('@')[1]?.toLowerCase();
+    const trimmed = inviteEmail.trim();
+    if (!trimmed) { toast.error("Enter an email address"); return; }
+    
+    // Client-side domain check
+    const inviteeDomain = trimmed.split('@')[1]?.toLowerCase();
     if (ownerDomain && inviteeDomain && ownerDomain !== inviteeDomain) {
-      toast.error(`Team members must use a @${ownerDomain} email address.`);
+      toast.error(`Team members must use a matching @${ownerDomain} email address.`);
+      setInviting(false);
       return;
     }
+
     setInviting(true);
     try {
-      const res = await base44.functions.invoke('teamInvite', { email: inviteEmail.trim(), team_role: inviteRole });
+      const res = await base44.functions.invoke('teamInvite', { email: trimmed, team_role: inviteRole });
       if (res?.data?.ok) {
         toast.success(res.data.message);
         setInviteEmail("");
@@ -52,11 +58,15 @@ export default function TeamManagement({ profile }) {
         toast.error(res?.data?.error || 'Failed to send invite');
       }
     } catch (err) {
-      const errMsg = err?.response?.data?.error 
-        || err?.data?.error 
-        || (typeof err?.response?.data === 'string' ? err.response.data : null)
-        || err?.message 
-        || 'Failed to send invite';
+      console.error('Invite error:', err);
+      // Extract error message from various possible locations in the error object
+      let errMsg = 'Failed to send invite';
+      if (err?.response?.data?.error) errMsg = err.response.data.error;
+      else if (err?.data?.error) errMsg = err.data.error;
+      else if (err?.message && !err.message.includes('status code')) errMsg = err.message;
+      else if (ownerDomain && inviteeDomain && ownerDomain !== inviteeDomain) {
+        errMsg = `Team members must use a matching @${ownerDomain} email address.`;
+      }
       toast.error(errMsg);
     }
     setInviting(false);
