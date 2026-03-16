@@ -81,16 +81,32 @@ Deno.serve(async (req) => {
     console.log('inviteUser result:', inviteErr?.message || 'already exists');
   }
 
-  // Send a custom notification email with team context
+  // Get the seat ID for the invite link
+  let seatId = null;
+  if (existing.length && existing[0].status === 'invited') {
+    seatId = existing[0].id;
+  } else {
+    // Fetch the just-created seat
+    const newSeats = await base44.asServiceRole.entities.TeamSeat.filter({ owner_profile_id: ownerProfile.id, member_email: normalizedEmail, status: 'invited' });
+    seatId = newSeats[0]?.id;
+  }
+
+  // Send a custom notification email with team context and accept link
   try {
+    const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seatId}`;
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: normalizedEmail,
       subject: `You've been invited to join ${ownerProfile.full_name || ownerProfile.email}'s team on Investor Konnect`,
       body: `
-        <h2>Team Invitation</h2>
-        <p><strong>${ownerProfile.full_name || ownerProfile.email}</strong> has invited you to join their team on Investor Konnect as a <strong>${role}</strong>.</p>
-        <p>As a team ${role}, you'll ${role === 'admin' ? 'have full access to create, edit, and manage' : 'be able to view'} all of their deals on the dashboard.</p>
-        <p>Log in to Investor Konnect to get started. If you already received a login link, use that to sign in and your invitation will be accepted automatically.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #E3C567;">Team Invitation</h2>
+          <p><strong>${ownerProfile.full_name || ownerProfile.email}</strong> has invited you to join their team on Investor Konnect as a <strong>${role}</strong>.</p>
+          <p>As a team ${role}, you'll ${role === 'admin' ? 'have full access to create, edit, and manage' : 'be able to view'} all of their deals on the dashboard.</p>
+          <div style="margin: 30px 0; text-align: center;">
+            <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+          </div>
+          <p style="color: #808080; font-size: 13px;">Click the button above to accept or decline the invitation. If you don't have an account yet, you'll be prompted to create one first.</p>
+        </div>
       `
     });
   } catch (emailErr) {
