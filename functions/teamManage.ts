@@ -60,6 +60,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'This person is already on your team' }, { status: 400 });
     }
 
+    // Role-match validation: investors can only invite investors, agents can only invite agents
+    const ownerRole = myProfile.user_role; // 'investor' or 'agent'
+    const inviteeProfiles = await base44.asServiceRole.entities.Profile.filter({ email: normalizedEmail });
+    if (inviteeProfiles.length > 0) {
+      const inviteeRole = inviteeProfiles[0].user_role;
+      if (inviteeRole && inviteeRole !== ownerRole) {
+        const ownerLabel = ownerRole === 'investor' ? 'Investors' : 'Agents';
+        return Response.json({ 
+          error: `${ownerLabel} can only invite other ${ownerRole}s to their team. This person is an ${inviteeRole}.` 
+        }, { status: 400 });
+      }
+    }
+
     // Update seat with email and set to invited
     await base44.entities.TeamSeat.update(seat_id, {
       member_email: normalizedEmail,
@@ -153,39 +166,27 @@ Deno.serve(async (req) => {
     // Mark seat as removed
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Cancel billing — try individual item first, then decrement quantity
+    // Cancel billing — decrement quantity on the shared seat subscription item
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
 
     if (STRIPE_SECRET_KEY) {
       try {
-        // If this seat has its own subscription item ID, try deleting it
-        if (seat.stripe_subscription_item_id) {
-          const resp = await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({ 'proration_behavior': 'create_prorations' }).toString(),
-          });
-          const data = await resp.json();
-          console.log('Delete seat item result:', data?.deleted ? 'deleted' : data?.error?.message);
-        }
+        const allSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+        const remainingSeats = allSeats.filter(s => s.id !== seat_id && s.status !== 'removed').length;
 
-        // Also check for quantity-based seat items and decrement
-        if (SEAT_PRICE_ID && myProfile.stripe_subscription_id) {
-          const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${myProfile.stripe_subscription_id}`, {
+        const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
+        const subId = myProfile.stripe_subscription_id;
+
+        if (subId && SEAT_PRICE_ID) {
+          const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
             headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
           });
           const sub = await subResp.json();
 
           if (sub?.items?.data) {
             for (const item of sub.items.data) {
-              if (item.price?.id === SEAT_PRICE_ID && item.quantity > 0) {
-                const remainingSeats = seats.filter(s => s.id !== seat_id && s.status !== 'removed').length;
-
-                if (remainingSeats === 0) {
+              if (item.price?.id === SEAT_PRICE_ID) {
+                if (remainingSeats <= 0) {
                   await fetch(`https://api.stripe.com/v1/subscription_items/${item.id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },

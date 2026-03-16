@@ -43,6 +43,17 @@ Deno.serve(async (req) => {
 
   // === ACCEPT ===
 
+  // Role-match validation: member must be the same role as the team owner
+  const ownerProfiles = await base44.asServiceRole.entities.Profile.filter({ id: seat.owner_profile_id });
+  const ownerProfile = ownerProfiles[0];
+  if (ownerProfile && memberProfile.user_role && ownerProfile.user_role) {
+    if (memberProfile.user_role !== ownerProfile.user_role) {
+      return Response.json({ 
+        error: `This team is for ${ownerProfile.user_role}s only. Your account is registered as an ${memberProfile.user_role}.` 
+      }, { status: 400 });
+    }
+  }
+
   // 1) Activate the seat
   await base44.asServiceRole.entities.TeamSeat.update(seat.id, {
     status: 'active',

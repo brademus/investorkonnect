@@ -57,32 +57,22 @@ function TeamAccountContent() {
   const handleBuySeats = async () => {
     setBuying(true);
     try {
-      let response, lastError;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          response = await base44.functions.invoke('checkoutSeats', { count: buyCount });
-          if (response?.data?.ok && response.data.url) break;
-          lastError = new Error(response?.data?.message || 'Failed to create checkout session');
-          response = null;
-        } catch (err) {
-          lastError = err;
-          response = null;
-          if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
-        }
-      }
-      if (response?.data?.ok && response.data.url) {
-        window.location.href = response.data.url;
+      const res = await base44.functions.invoke('checkoutSeats', { count: buyCount });
+      if (res?.data?.ok) {
+        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
+        setBuyCount(1);
+        fetchTeam();
       } else {
-        let msg = 'Failed to purchase seats';
-        if (lastError?.data?.message) msg = lastError.data.message;
-        else if (lastError?.message) msg = lastError.message;
-        toast.error(msg);
-        setBuying(false);
+        toast.error(res?.data?.message || 'Failed to purchase seats');
       }
     } catch (err) {
-      toast.error('Failed to purchase seats');
-      setBuying(false);
+      let msg = 'Failed to purchase seats';
+      if (err?.data?.message) msg = err.data.message;
+      else if (err?.response?.data?.message) msg = err.response.data.message;
+      else if (err?.message && !err.message.includes('status code')) msg = err.message;
+      toast.error(msg);
     }
+    setBuying(false);
   };
 
   const handleAssignSeat = async (seatId) => {

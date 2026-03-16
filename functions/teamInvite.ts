@@ -53,6 +53,17 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'This person is already on another team' }, { status: 400 });
   }
 
+  // Role-match validation: investors can only invite investors, agents can only invite agents
+  const inviteeProfiles = await base44.asServiceRole.entities.Profile.filter({ email: normalizedEmail });
+  if (inviteeProfiles.length > 0) {
+    const inviteeRole = inviteeProfiles[0].user_role;
+    if (inviteeRole && inviteeRole !== ownerProfile.user_role) {
+      return Response.json({ 
+        error: `Your team is for ${ownerProfile.user_role}s only. This person is registered as an ${inviteeRole}.` 
+      }, { status: 400 });
+    }
+  }
+
   // Create or reactivate seat
   if (existing.length && existing[0].status === 'removed') {
     await base44.entities.TeamSeat.update(existing[0].id, {
