@@ -44,6 +44,33 @@ Deno.serve(async (req) => {
     if (!seat) return Response.json({ error: 'Seat not found or not yours' }, { status: 404 });
 
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
+
+    // Cancel the Stripe subscription item for this seat
+    if (seat.stripe_subscription_item_id) {
+      try {
+        const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+        if (STRIPE_SECRET_KEY) {
+          const deleteResp = await fetch(`https://api.stripe.com/v1/subscription_items/${seat.stripe_subscription_item_id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              'proration_behavior': 'create_prorations',
+            }).toString(),
+          });
+          const deleteData = await deleteResp.json();
+          if (deleteData?.deleted) {
+            console.log('Removed seat billing item:', seat.stripe_subscription_item_id);
+          } else {
+            console.error('Failed to remove seat billing item:', deleteData?.error?.message);
+          }
+        }
+      } catch (billingErr) {
+        console.error('Billing removal error (non-fatal):', billingErr?.message || billingErr);
+      }
+    }
     
     // If the member had a profile, clear their team association
     if (seat.member_profile_id) {

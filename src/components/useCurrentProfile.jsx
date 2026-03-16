@@ -93,7 +93,7 @@ export function useCurrentProfile() {
         else if (role !== 'investor' && role !== 'agent') role = 'member';
 
         // Team members bypass all onboarding/subscription/KYC/NDA gates
-        const bypassGates = isAdmin || isTeamMember;
+        const bypassGates = isAdmin;
 
         // Onboarding
         const hasLegacy = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name));

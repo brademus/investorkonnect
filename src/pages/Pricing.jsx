@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createPageUrl } from "@/components/utils";
-import { Check, Zap, Shield, ArrowRight, Sparkles, CreditCard, ChevronRight } from "lucide-react";
+import { Check, Zap, Shield, ArrowRight, Sparkles, CreditCard, ChevronRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -221,6 +221,42 @@ export default function Pricing() {
             </Button>
           </Card>
         </div>
+
+        {/* Team Seats Add-On */}
+        {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
+          <div className="max-w-lg mx-auto mt-10">
+            <div className="relative bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 text-center">
+              <div className="w-14 h-14 bg-[#E3C567]/15 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Users className="w-7 h-7 text-[#E3C567]" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Add Your Team</h3>
+              <p className="text-[#808080] mb-4">
+                Give team members access to your deal pipeline. Each additional seat is <span className="text-[#E3C567] font-semibold">$10/month</span>.
+              </p>
+              <ul className="text-left space-y-2 mb-6 max-w-xs mx-auto">
+                <li className="flex items-start text-sm">
+                  <Check className="w-4 h-4 text-[#10B981] mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-[#808080]">Shared deal pipeline view</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <Check className="w-4 h-4 text-[#10B981] mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-[#808080]">Admin or viewer access controls</span>
+                </li>
+                <li className="flex items-start text-sm">
+                  <Check className="w-4 h-4 text-[#10B981] mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-[#808080]">Same company email domain required</span>
+                </li>
+              </ul>
+              <Button
+                onClick={() => navigate(createPageUrl("TeamAccount"))}
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-11 px-8"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Manage Team
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="text-center mt-16">

@@ -110,6 +110,15 @@ export function Header({ profile }) {
                       </Link>
                     )}
                     
+                    <Link 
+                      to={createPageUrl("TeamAccount")}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#141414] transition-colors"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <Users className="w-4 h-4 text-[#808080]" />
+                      <span className="text-sm text-[#FAFAFA]">Team Account</span>
+                    </Link>
+                    
                     <div className="border-t border-[#1F1F1F] mt-2 pt-2">
                       <button
                         onClick={handleLogout}
@@ -194,6 +203,15 @@ export function Header({ profile }) {
               >
                 <User className="w-5 h-5" />
                 <span className="font-medium">My Profile</span>
+              </Link>
+
+              <Link 
+                to={createPageUrl("TeamAccount")}
+                className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Users className="w-5 h-5" />
+                <span className="font-medium">Team Account</span>
               </Link>
               
               <button

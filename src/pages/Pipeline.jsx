@@ -54,8 +54,7 @@ function PipelineContent() {
       return;
     }
     if (hookRole === 'admin' || profile.role === 'admin' || profile.user_role === 'admin') { setReady(true); return; }
-    // Team members skip all investor gates — they view the owner's data
-    if (profile.team_owner_id) { setReady(true); return; }
+    // Team members must complete full onboarding before accessing pipeline
     if (profile.user_role === 'agent' && profile.qualification_tier === 'conditional') {
       gateRef.current = true;
       navigate(createPageUrl("ConditionalReview"), { replace: true });
