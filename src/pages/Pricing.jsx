@@ -51,12 +51,20 @@ export default function Pricing() {
         
         if (response?.data?.ok) {
           const subscription = response.data.subscription;
-          setSubscriptionStatus(subscription?.status || null);
+          const liveStatus = subscription?.status || null;
+          const cachedStatus = profile?.subscription_status || null;
+          const effectiveStatus = liveStatus || cachedStatus;
+          setSubscriptionStatus(effectiveStatus);
           
-          console.log('Subscription status:', subscription?.status);
+          console.log('Subscription status — live:', liveStatus, 'cached:', cachedStatus, 'effective:', effectiveStatus);
         }
       } catch (error) {
         console.error('Subscription check failed:', error);
+        const cachedStatus = profile?.subscription_status || null;
+        if (cachedStatus) {
+          setSubscriptionStatus(cachedStatus);
+          console.log('Using cached subscription status:', cachedStatus);
+        }
       } finally {
         setCheckingSubscription(false);
       }
@@ -223,7 +231,7 @@ export default function Pricing() {
         </div>
 
         {/* Team Seats Add-On */}
-        {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
+        {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || profile?.user_role === 'agent') && (
           <div className="max-w-lg mx-auto mt-10">
             <div className="relative bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 text-center">
               <div className="w-14 h-14 bg-[#E3C567]/15 rounded-xl flex items-center justify-center mx-auto mb-4">
