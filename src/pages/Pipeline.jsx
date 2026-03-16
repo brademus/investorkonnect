@@ -29,6 +29,7 @@ function PipelineContent() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { profile, loading, onboarded, role: hookRole } = useCurrentProfile();
+  // Force rebuild v2
   const [helpOpen, setHelpOpen] = useState(false);
   const [ready, setReady] = useState(false);
 
