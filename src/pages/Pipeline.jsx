@@ -28,13 +28,15 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, onboarded, role: hookRole } = useCurrentProfile();
+  const { profile, loading, onboarded, role: hookRole, isTeamMember, teamOwnerId } = useCurrentProfile();
   const [helpOpen, setHelpOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [teamRole, setTeamRole] = useState(null); // 'admin' | 'viewer' | null
 
   const isAdmin = hookRole === 'admin' || profile?.role === 'admin' || profile?.user_role === 'admin';
   const isAgent = !isAdmin && profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor' || isAdmin;
+  const isViewerOnly = teamRole === 'viewer';
 
   // Gating — wait for auth to fully resolve before redirecting anywhere
   const gateRef = useRef(false);
@@ -52,6 +54,8 @@ function PipelineContent() {
       return;
     }
     if (hookRole === 'admin' || profile.role === 'admin' || profile.user_role === 'admin') { setReady(true); return; }
+    // Team members skip all investor gates — they view the owner's data
+    if (profile.team_owner_id) { setReady(true); return; }
     if (profile.user_role === 'agent' && profile.qualification_tier === 'conditional') {
       gateRef.current = true;
       navigate(createPageUrl("ConditionalReview"), { replace: true });
@@ -83,6 +87,8 @@ function PipelineContent() {
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
+      // Store team_role from server response
+      if (res.data?.team_role) setTeamRole(res.data.team_role);
       // Server already deduplicates — just sort
       return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
@@ -214,7 +220,7 @@ function PipelineContent() {
   };
 
   const handleDragEnd = async (result) => {
-    if (!result.destination) return;
+    if (!result.destination || isViewerOnly) return;
     const newStage = normalizeStage(result.destination.droppableId);
     const draggedDeal = deals.find(d => d.id === result.draggableId);
     if (!draggedDeal) return;
@@ -304,12 +310,14 @@ function PipelineContent() {
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-[#E3C567]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
-                <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>Manage your deals</p>
+                <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>
+                  {isViewerOnly ? 'Viewing team deals (read-only)' : 'Manage your deals'}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <NotificationBell />
                 <MessagesBell />
-                {isInvestor && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-[14px] shadow-md transition-all duration-200 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
+                {isInvestor && !isViewerOnly && <Button onClick={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-[14px] shadow-md transition-all duration-200 hover:-translate-y-0.5"><Plus className="w-4 h-4 mr-2" />New Deal</Button>}
                 <Button onClick={() => setHelpOpen(true)} className="rounded-[14px] border transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', borderColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Tutorials</Button>
               </div>
             </div>
@@ -352,7 +360,7 @@ function PipelineContent() {
                                   {snapshot.isDraggingOver ? 'Drop here' : 'No deals'}
                                 </div>
                               ) : stageDeals.map((deal, index) => (
-                                <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
+                                <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={isViewerOnly || stage.id === 'new_deals' || (!deal.is_fully_signed && stage.id === 'new_deals')}>
                                   {(provided, snapshot) => (
                                     <div
                                       ref={provided.innerRef}
@@ -430,7 +438,7 @@ function PipelineContent() {
                                      </div>
                                      <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" disabled={navigating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">{navigating ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Loading...</> : 'Open Deal Room'}</Button>
-                                      {isInvestor && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-[12px] text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Edit</Button>}
+                                      {isInvestor && !isViewerOnly && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-[12px] text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Edit</Button>}
                                      </div>
                                     </div>
                                   )}
