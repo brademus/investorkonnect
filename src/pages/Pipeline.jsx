@@ -38,7 +38,7 @@ function PipelineContent() {
   const isInvestor = profile?.user_role === 'investor' || isAdmin || isTeamMember;
   const isViewerOnly = false; // Members have full control over their own deals
   const isTeamAdmin = teamRole === 'admin';
-  const isTeamMember = teamRole === 'member' || teamRole === 'viewer';
+  const isTeamMemberRole = teamRole === 'member' || teamRole === 'viewer';
 
   // Gating — wait for auth to fully resolve before redirecting anywhere
   const gateRef = useRef(false);
@@ -313,7 +313,7 @@ function PipelineContent() {
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-[#E3C567]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
                 <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.45)', letterSpacing: '0.02em' }}>
-                  {isTeamAdmin ? 'Managing all team deals' : isTeamMember ? 'Your deals' : 'Manage your deals'}
+                  {isTeamAdmin ? 'Managing all team deals' : isTeamMemberRole ? 'Your deals' : 'Manage your deals'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
