@@ -99,6 +99,27 @@ export default function PostAuth() {
           } catch {}
         }
 
+        // Auto-accept pending team invitations for this email
+        try {
+          const emailLc = (user.email || '').toLowerCase().trim();
+          if (emailLc) {
+            const pendingSeats = await base44.entities.TeamSeat.filter({ member_email: emailLc, status: 'invited' });
+            if (pendingSeats.length > 0) {
+              const seat = pendingSeats[0];
+              await base44.entities.TeamSeat.update(seat.id, {
+                status: 'active', member_profile_id: profile.id,
+                member_name: profile.full_name || user.full_name || emailLc,
+                joined_at: new Date().toISOString()
+              });
+              await base44.entities.Profile.update(profile.id, { team_owner_id: seat.owner_profile_id });
+              profile.team_owner_id = seat.owner_profile_id;
+              console.log('[PostAuth] Auto-accepted team invitation from', seat.owner_email);
+            }
+          }
+        } catch (teamErr) {
+          console.error('[PostAuth] Team invite check failed:', teamErr);
+        }
+
          const role = profile?.user_role;
          const hasRole = role && role !== 'member';
          const hasLegacyProfile = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name) && (profile?.target_state || profile?.location || (profile?.markets?.length > 0)));
