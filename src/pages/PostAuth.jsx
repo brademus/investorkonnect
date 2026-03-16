@@ -157,7 +157,8 @@ export default function PostAuth() {
            // Post-Onboarding Gates
            const subStatus = profile?.subscription_status || 'none';
            const isPaid = subStatus === 'active' || subStatus === 'trialing';
-           if (role === 'investor' && !isPaid) { navigate(createPageUrl("Pricing"), { replace: true }); return; }
+           const isTeamMemberPaid = !!profile?.team_owner_id;
+           if (role === 'investor' && !isPaid && !isTeamMemberPaid) { navigate(createPageUrl("Pricing"), { replace: true }); return; }
 
            const kycStatus = profile?.kyc_status || profile?.identity_status || 'unverified';
            const isKycVerified = kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified_at;
