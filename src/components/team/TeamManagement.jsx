@@ -114,13 +114,13 @@ export default function TeamManagement({ profile }) {
       <div className="rounded-xl p-5 border border-[#1F1F1F] bg-[#141414]">
         <Label className="text-[#FAFAFA] text-sm font-medium mb-3 block">Invite Team Member</Label>
         <p className="text-xs text-[#808080] mb-4">
-          Team members must use the same company email domain. Each seat costs $10/month (billing coming soon).
+          Team members must use a matching <span className="text-[#E3C567] font-medium">@{profile?.email?.split('@')[1] || 'company.com'}</span> email address.
         </p>
         <div className="flex gap-3 items-end flex-wrap">
           <div className="flex-1 min-w-[200px]">
             <Input
               type="email"
-              placeholder="colleague@company.com"
+              placeholder={`colleague@${profile?.email?.split('@')[1] || 'company.com'}`}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               className="bg-[#0D0D0D] border-[#333] text-[#FAFAFA]"
