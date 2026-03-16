@@ -55,31 +55,47 @@ function TeamAccountContent() {
   const totalPaidSeats = seats.filter(s => s.status !== 'removed').length;
 
   const handleBuySeats = async () => {
+    if (!profile?.stripe_subscription_id) {
+      toast.error('You need an active subscription before adding team seats.');
+      return;
+    }
+
     setBuying(true);
     try {
-      const res = await base44.functions.invoke('checkoutSeats', { count: buyCount });
+      const res = await base44.functions.invoke('checkoutSeats', {
+        count: buyCount,
+        subscription_id: profile.stripe_subscription_id,
+        profile_id: profile.id,
+      });
       console.log('[TeamAccount] checkoutSeats response:', JSON.stringify(res?.data));
 
       if (res?.data?.ok) {
-        const diag = res.data.diag || {};
-        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} purchased! Stripe mode: ${diag.stripe_key_type || 'unknown'}`);
+        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
+
+        // Store pending seats on the profile so teamManage list can create them
+        try {
+          const currentPending = profile.pending_seats_count || 0;
+          await base44.entities.Profile.update(profile.id, {
+            pending_seats_count: currentPending + res.data.seats_purchased,
+            stripe_seat_item_id: res.data.stripe_item_id,
+          });
+        } catch (updateErr) {
+          console.warn('Could not store pending seats on profile — will retry on next load:', updateErr?.message);
+        }
+
         setBuyCount(1);
-        await new Promise(r => setTimeout(r, 1500));
+        // Wait for rate limit to cool down, then refresh
+        await new Promise(r => setTimeout(r, 3000));
         fetchTeam();
       } else {
-        const diag = res?.data?.diag || {};
-        const msg = res?.data?.message || 'Failed to purchase seats';
-        console.error('[TeamAccount] checkoutSeats failed:', msg, 'diag:', JSON.stringify(diag));
-        toast.error(msg);
+        toast.error(res?.data?.message || 'Failed to purchase seats');
       }
     } catch (err) {
-      console.error('[TeamAccount] checkoutSeats exception:', err);
+      console.error('[TeamAccount] checkoutSeats error:', err);
       let msg = 'Failed to purchase seats';
       if (err?.data?.message) msg = err.data.message;
       else if (err?.response?.data?.message) msg = err.response.data.message;
       else if (err?.message && !err.message.includes('status code')) msg = err.message;
-      const diag = err?.data?.diag || err?.response?.data?.diag;
-      if (diag) console.error('[TeamAccount] diag:', JSON.stringify(diag));
       toast.error(msg);
     }
     setBuying(false);
