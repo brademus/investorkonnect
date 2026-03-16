@@ -22,6 +22,7 @@ import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 import NotificationBell from "@/components/NotificationBell";
 import MessagesBell from "@/components/MessagesBell";
+import TeamInviteBanner from "@/components/team/TeamInviteBanner";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -296,6 +297,7 @@ function PipelineContent() {
         <div className="flex-1 overflow-auto px-6 md:px-8 pb-8 relative z-[1]">
           <div className="max-w-[1800px] mx-auto">
             {!setupDone && <div className="mb-8"><SetupChecklist profile={profile} /></div>}
+            <div className="mb-4"><TeamInviteBanner profile={profile} onAccepted={() => { window.location.reload(); }} /></div>
 
             <div className="flex items-center justify-between mb-10">
               <div>
