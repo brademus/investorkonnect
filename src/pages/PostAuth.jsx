@@ -136,6 +136,13 @@ export default function PostAuth() {
            return;
          }
 
+         // Team members go straight to Pipeline — they view the owner's deals
+         if (profile?.team_owner_id) {
+           try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
+           navigate(createPageUrl("Pipeline"), { replace: true });
+           return;
+         }
+
          if (!hasRole) {
            if (selectedRole === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
            else if (selectedRole === 'agent') routeAgent(profile, navigate);
