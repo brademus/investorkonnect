@@ -3,8 +3,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 /**
  * CHECKOUT TEAM — Creates a Stripe checkout session for membership + team seats.
  * Body: { emails: string[] }
- * Each email becomes a TeamSeat with status 'pending_payment'.
- * On successful payment (webhook), seats flip to 'invited' and emails are sent.
+ * 
+ * Flow:
+ * 1. Validate emails (domain match, no self-invite, no duplicates)
+ * 2. Get/create Stripe customer
+ * 3. Create TeamSeat records with status 'pending_payment'
+ * 4. Send invite emails immediately (before checkout)
+ * 5. Invite users to the app (Base44 login link)
+ * 6. Create Stripe checkout session with membership + seat line items
+ * 7. Return checkout URL
+ * 
+ * After payment succeeds, stripeWebhook.ts flips seats from 'pending_payment' to 'invited'.
  */
 Deno.serve(async (req) => {
   try {
@@ -35,6 +44,7 @@ Deno.serve(async (req) => {
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     if (!profiles.length) return Response.json({ ok: false, message: 'Profile not found' }, { status: 404 });
     const ownerProfile = profiles[0];
+    const ownerName = ownerProfile.full_name || user.email;
 
     // Domain validation
     const ownerDomain = user.email.split('@')[1]?.toLowerCase();
@@ -125,6 +135,46 @@ Deno.serve(async (req) => {
       }
     }
 
+    // =============================================
+    // SEND INVITE EMAILS + INVITE USERS TO THE APP
+    // Done here (not in webhook) because this runs in an
+    // authenticated user context where SendEmail works reliably.
+    // =============================================
+    for (let i = 0; i < uniqueEmails.length; i++) {
+      const email = uniqueEmails[i];
+      const seatId = seatIds[i];
+
+      // Invite the user to the app (sends them a Base44 login link automatically)
+      try {
+        await base44.users.inviteUser(email, 'user');
+      } catch (inviteErr) {
+        console.log('inviteUser result for', email, ':', inviteErr?.message || 'ok/already exists');
+      }
+
+      // Send custom invite email with owner name and accept link
+      try {
+        const inviteUrl = `${base}/AcceptInvite?seatId=${seatId}`;
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: email,
+          subject: `${ownerName} invited you to join their team on Investor Konnect`,
+          body: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #E3C567;">Team Invitation</h2>
+              <p><strong>${ownerName}</strong> has invited you to join their team on Investor Konnect as an <strong>admin</strong>.</p>
+              <p>As a team admin, you'll have full access to create, edit, and manage all of their deals on the dashboard.</p>
+              <div style="margin: 30px 0; text-align: center;">
+                <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+              </div>
+              <p style="color: #808080; font-size: 13px;">Click the button above to accept or decline the invitation. If you don't have an account yet, you'll be prompted to create one first.</p>
+            </div>
+          `
+        });
+        console.log('Invite email sent to', email);
+      } catch (emailErr) {
+        console.error('Failed to send invite email to', email, ':', emailErr?.message || emailErr);
+      }
+    }
+
     // Build Stripe checkout session with membership + seats
     const seatCount = uniqueEmails.length;
     const successUrl = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}&team=true`;
@@ -152,7 +202,7 @@ Deno.serve(async (req) => {
     };
 
     const session = await stripeApi('/checkout/sessions', checkoutParams);
-    console.log('Team checkout session created:', session.id, `(${seatCount} seats)`);
+    console.log('Team checkout session created:', session.id, `(${seatCount} seats, emails sent)`);
 
     return Response.json({
       ok: true,
