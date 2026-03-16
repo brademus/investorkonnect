@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Users, ArrowLeft, CreditCard, Loader2, Plus, Minus,
-  Mail, UserPlus, XCircle, CheckCircle, Clock
+  Mail, UserPlus, XCircle, CheckCircle, Clock, Shield, User
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import TeamInviteBanner from "@/components/team/TeamInviteBanner";
 
@@ -310,6 +311,24 @@ function TeamAccountContent() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    <Select 
+                      value={seat.team_role === 'viewer' ? 'member' : (seat.team_role || 'member')} 
+                      onValueChange={async (val) => {
+                        try {
+                          await base44.functions.invoke('teamManage', { action: 'updateRole', seat_id: seat.id, team_role: val });
+                          toast.success(`Role updated to ${val}`);
+                          fetchTeam();
+                        } catch (_) { toast.error('Failed to update role'); }
+                      }}
+                    >
+                      <SelectTrigger className="w-[110px] bg-[#0D0D0D] border-[#333] text-[#FAFAFA] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#0D0D0D] border-[#333]">
+                        <SelectItem value="admin"><div className="flex items-center gap-2 text-xs"><Shield className="w-3 h-3" /> Admin</div></SelectItem>
+                        <SelectItem value="member"><div className="flex items-center gap-2 text-xs"><User className="w-3 h-3" /> Member</div></SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(seat.id)} disabled={removingId === seat.id} className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 text-xs">
                       {removingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Remove"}
                     </Button>
