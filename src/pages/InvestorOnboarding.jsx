@@ -29,6 +29,7 @@ export default function InvestorOnboarding() {
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', company: '', headshotUrl: '',
     primary_state: selectedState || '', primary_states: selectedState ? [selectedState] : [],

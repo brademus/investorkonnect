@@ -40,6 +40,7 @@ export default function AgentOnboarding() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [countyValid, setCountyValid] = useState(null);
   const [countyChecking, setCountyChecking] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '',
