@@ -71,21 +71,9 @@ function TeamAccountContent() {
 
       if (res?.data?.ok) {
         toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
-
-        // Store pending seats on the profile so teamManage list can create them
-        try {
-          const currentPending = profile.pending_seats_count || 0;
-          await base44.entities.Profile.update(profile.id, {
-            pending_seats_count: currentPending + res.data.seats_purchased,
-            stripe_seat_item_id: res.data.stripe_item_id,
-          });
-        } catch (updateErr) {
-          console.warn('Could not store pending seats on profile — will retry on next load:', updateErr?.message);
-        }
-
         setBuyCount(1);
-        // Wait for rate limit to cool down, then refresh
-        await new Promise(r => setTimeout(r, 3000));
+        // Wait briefly, then refresh — teamManage list reconciles with Stripe directly
+        await new Promise(r => setTimeout(r, 2000));
         fetchTeam();
       } else {
         toast.error(res?.data?.message || 'Failed to purchase seats');
