@@ -68,6 +68,15 @@ export default function InvestorOnboarding() {
       phone: profile.phone || '', company: profile.company || '',
       headshotUrl: profile.headshotUrl || '',
       primary_state: existingPrimaryState,
+    }));
+    // Check if phone is already verified for the current number
+    const currentDigits = (profile.phone || '').replace(/\D/g, '');
+    if (profile.metadata?.phone_verified && profile.metadata?.phone_verified_number === currentDigits && currentDigits.length >= 10) {
+      setPhoneVerified(true);
+    }
+    // Dummy setter to satisfy linter — real merge happens above
+    setFormData(prev => ({
+      ...prev,
       primary_states: isNationwide ? [] : (existingMarkets.length > 0 ? existingMarkets : (existingPrimaryState ? [existingPrimaryState] : [])),
       nationwide: isNationwide,
       investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
