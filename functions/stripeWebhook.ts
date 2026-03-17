@@ -352,17 +352,32 @@ Deno.serve(async (req) => {
         
         const customerId = subscription.customer;
         
-        // Find user by Stripe customer ID
-        const profiles = await base44.asServiceRole.entities.Profile.filter({
+        // Find user by Stripe customer ID with fallbacks
+        let delProfiles = await base44.asServiceRole.entities.Profile.filter({
           stripe_customer_id: customerId
         });
-        
-        if (profiles.length === 0) {
-          console.warn('⚠️ No profile found for customer:', customerId);
-          return new Response('Profile not found', { status: 404 });
+        if (delProfiles.length === 0) {
+          delProfiles = await base44.asServiceRole.entities.Profile.filter({
+            stripe_subscription_id: subscription.id
+          });
+        }
+        if (delProfiles.length === 0) {
+          try {
+            const customer = await stripe.customers.retrieve(customerId);
+            if (customer?.email) {
+              delProfiles = await base44.asServiceRole.entities.Profile.filter({
+                email: customer.email.toLowerCase()
+              });
+            }
+          } catch (_) {}
         }
         
-        const profile = profiles[0];
+        if (delProfiles.length === 0) {
+          console.warn('⚠️ No profile found for customer:', customerId);
+          return new Response(JSON.stringify({ received: true, warning: 'profile_not_found' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+        
+        const profile = delProfiles[0];
         
         // Mark subscription as canceled
         await base44.asServiceRole.entities.Profile.update(profile.id, {
