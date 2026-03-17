@@ -2,6 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 /**
  * TEAM MANAGE — List, assign, remove member, cancel seat, update role, accept invite.
+ * 
+ * LIST action uses Stripe as source of truth for paid seat count,
+ * then reconciles local TeamSeat records to match.
  */
 Deno.serve(async (req) => {
   const base44 = createClientFromRequest(req);
@@ -17,14 +20,42 @@ Deno.serve(async (req) => {
 
   // === LIST ===
   if (action === 'list') {
-    // Check for pending seats that need to be created (from checkoutSeats)
-    const pendingCount = myProfile.pending_seats_count || 0;
-    if (pendingCount > 0) {
-      console.log(`Creating ${pendingCount} pending seat records...`);
-      const stripeItemId = myProfile.stripe_seat_item_id || null;
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
+    const subId = myProfile.stripe_subscription_id;
+
+    // 1. Get paid seat count from Stripe (source of truth)
+    let stripePaidSeats = 0;
+    if (STRIPE_SECRET_KEY && SEAT_PRICE_ID && subId) {
+      try {
+        const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${subId}`, {
+          headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
+        });
+        if (subResp.ok) {
+          const sub = await subResp.json();
+          const seatItem = (sub.items?.data || []).find(item => item.price?.id === SEAT_PRICE_ID);
+          if (seatItem) {
+            stripePaidSeats = seatItem.quantity || 0;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch Stripe subscription for seat count:', err?.message);
+      }
+    }
+
+    // 2. Fetch existing local seat records
+    const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+    const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
+    const localSeatCount = activeSeats.length;
+
+    // 3. Reconcile: create missing seats or mark extras as removed
+    if (stripePaidSeats > localSeatCount) {
+      const toCreate = stripePaidSeats - localSeatCount;
+      console.log(`Reconciling: Stripe has ${stripePaidSeats} paid seats, local has ${localSeatCount}. Creating ${toCreate} seats.`);
+      const stripeItemId = myProfile.stripe_seat_item_id || '';
       const delay = (ms) => new Promise(r => setTimeout(r, ms));
-      
-      for (let i = 0; i < pendingCount; i++) {
+
+      for (let i = 0; i < toCreate; i++) {
         if (i > 0) await delay(300);
         try {
           await base44.asServiceRole.entities.TeamSeat.create({
@@ -34,39 +65,46 @@ Deno.serve(async (req) => {
             team_role: 'member',
             status: 'open',
             invited_at: new Date().toISOString(),
-            stripe_subscription_item_id: stripeItemId || '',
+            stripe_subscription_item_id: stripeItemId,
           });
         } catch (err) {
-          console.error(`Failed to create pending seat ${i + 1}:`, err?.message);
-          try {
-            await base44.asServiceRole.entities.Profile.update(myProfile.id, {
-              pending_seats_count: pendingCount - i,
-            });
-          } catch (_) {}
+          console.error(`Failed to create reconciliation seat ${i + 1}:`, err?.message);
           break;
         }
       }
+    } else if (stripePaidSeats > 0 && stripePaidSeats < localSeatCount) {
+      // More local seats than Stripe has — remove unassigned open seats first
+      const excess = localSeatCount - stripePaidSeats;
+      const openSeats = activeSeats.filter(s => s.status === 'open');
+      const seatsToRemove = openSeats.slice(0, excess);
+      console.log(`Reconciling: Stripe has ${stripePaidSeats} paid seats, local has ${localSeatCount}. Removing ${seatsToRemove.length} excess open seats.`);
+      for (const seat of seatsToRemove) {
+        try {
+          await base44.entities.TeamSeat.update(seat.id, { status: 'removed' });
+        } catch (_) {}
+      }
+    }
 
-      // Clear pending count
+    // Clear any stale pending_seats_count
+    if (myProfile.pending_seats_count > 0) {
       try {
-        await base44.asServiceRole.entities.Profile.update(myProfile.id, {
-          pending_seats_count: 0,
-        });
+        await base44.asServiceRole.entities.Profile.update(myProfile.id, { pending_seats_count: 0 });
       } catch (_) {}
     }
 
-    // Now fetch all seats
-    const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-    const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
+    // 4. Re-fetch after reconciliation
+    const finalSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+    const finalActive = finalSeats.filter(s => s.status !== 'removed');
 
     const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });
     const activeMembership = myMembership.find(s => s.status === 'active' || s.status === 'invited');
 
     return Response.json({
       ok: true,
-      seats: activeSeats,
+      seats: finalActive,
+      stripe_paid_seats: stripePaidSeats,
       my_membership: activeMembership || null,
-      is_owner: activeSeats.length > 0 || !activeMembership,
+      is_owner: finalActive.length > 0 || !activeMembership,
     });
   }
 
@@ -77,13 +115,11 @@ Deno.serve(async (req) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Verify ownership and seat is open
     const seats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
     const seat = seats.find(s => s.id === seat_id);
     if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
     if (seat.status !== 'open') return Response.json({ error: 'This seat is not available for assignment' }, { status: 400 });
 
-    // Domain validation
     const ownerDomain = user.email.split('@')[1]?.toLowerCase();
     const inviteeDomain = normalizedEmail.split('@')[1]?.toLowerCase();
     if (ownerDomain !== inviteeDomain) {
@@ -93,38 +129,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'You cannot invite yourself' }, { status: 400 });
     }
 
-    // Check if this email is already on the team
     const existingOnTeam = seats.find(s => s.member_email === normalizedEmail && s.status !== 'removed' && s.status !== 'open');
     if (existingOnTeam) {
       return Response.json({ error: 'This person is already on your team' }, { status: 400 });
     }
 
-    // Role-match validation: investors can only invite investors, agents can only invite agents
-    const ownerRole = myProfile.user_role; // 'investor' or 'agent'
+    const ownerRole = myProfile.user_role;
     const inviteeProfiles = await base44.asServiceRole.entities.Profile.filter({ email: normalizedEmail });
     if (inviteeProfiles.length > 0) {
       const inviteeRole = inviteeProfiles[0].user_role;
       if (inviteeRole && inviteeRole !== ownerRole) {
         const ownerLabel = ownerRole === 'investor' ? 'Investors' : 'Agents';
-        return Response.json({ 
-          error: `${ownerLabel} can only invite other ${ownerRole}s to their team. This person is an ${inviteeRole}.` 
+        return Response.json({
+          error: `${ownerLabel} can only invite other ${ownerRole}s to their team. This person is an ${inviteeRole}.`
         }, { status: 400 });
       }
     }
 
-    // Update seat with email and set to invited
     await base44.entities.TeamSeat.update(seat_id, {
       member_email: normalizedEmail,
       status: 'invited',
       invited_at: new Date().toISOString(),
     });
 
-    // Invite user to the app
-    try {
-      await base44.users.inviteUser(normalizedEmail, 'user');
-    } catch (_) {}
+    try { await base44.users.inviteUser(normalizedEmail, 'user'); } catch (_) {}
 
-    // Send invite email
     const ownerName = myProfile.full_name || user.email;
     try {
       const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
@@ -161,7 +190,6 @@ Deno.serve(async (req) => {
     const seat = seats.find(s => s.id === seat_id);
     if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
 
-    // Clear the member but keep the seat open and billed
     await base44.entities.TeamSeat.update(seat_id, {
       status: 'open',
       member_email: '',
@@ -170,7 +198,6 @@ Deno.serve(async (req) => {
       joined_at: null,
     });
 
-    // Clear team_owner_id on the member's profile so they lose access
     if (seat.member_profile_id) {
       try {
         await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, {
@@ -192,7 +219,6 @@ Deno.serve(async (req) => {
     const seat = seats.find(s => s.id === seat_id);
     if (!seat) return Response.json({ error: 'Seat not found' }, { status: 404 });
 
-    // If there's a member on this seat, clear their access first
     if (seat.member_profile_id) {
       try {
         await base44.asServiceRole.entities.Profile.update(seat.member_profile_id, {
@@ -202,12 +228,10 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    // Mark seat as removed
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Cancel billing — decrement quantity on the shared seat subscription item
+    // Decrement Stripe quantity
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-
     if (STRIPE_SECRET_KEY) {
       try {
         const allSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
@@ -253,7 +277,7 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true, message: 'Seat cancelled' });
   }
 
-  // === LEGACY REMOVE — backwards compatibility ===
+  // === LEGACY REMOVE ===
   if (action === 'remove') {
     const { seat_id } = body;
     if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
