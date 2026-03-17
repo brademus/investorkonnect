@@ -233,7 +233,7 @@ export default function InvestorOnboarding() {
   const allDealTypesSelected = formData.deal_types.length === DEAL_TYPES.length;
 
   return (
-    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} saving={saving} onBack={() => setStep(step - 1)} onNext={handleNext} nextDisabled={nextDisabled} nextLabel={nextLabel}>
+    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} saving={saving || verifyingCode} onBack={() => setStep(step === 3 && phoneVerified ? 1 : step - 1)} onNext={handleNext} nextDisabled={nextDisabled} nextLabel={nextLabel}>
       {step === 1 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
