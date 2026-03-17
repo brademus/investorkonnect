@@ -14,6 +14,7 @@ import { getCountyCentroid } from "@/components/utils/agentScoring";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import useOnboardingAccess from "@/components/onboarding/useOnboardingAccess";
 import PhoneInput from "@/components/onboarding/PhoneInput";
+import PhoneVerification from "@/components/onboarding/PhoneVerification";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
