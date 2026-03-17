@@ -88,6 +88,7 @@ export default function PhoneVerifyStep({ phone }) {
               value={code}
               onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
               onKeyDown={handleKeyDown}
+              data-phone-code=""
               placeholder="000000"
               maxLength={6}
               inputMode="numeric"
