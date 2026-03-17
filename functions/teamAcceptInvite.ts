@@ -12,12 +12,32 @@ Deno.serve(async (req) => {
 
   const { seat_id, action } = await req.json();
   if (!seat_id) return Response.json({ error: 'seat_id required' }, { status: 400 });
-  if (!['accept', 'decline'].includes(action)) return Response.json({ error: 'action must be accept or decline' }, { status: 400 });
+  if (!['accept', 'decline', 'info'].includes(action)) return Response.json({ error: 'action must be accept, decline, or info' }, { status: 400 });
 
-  // Fetch the seat
-  const seats = await base44.asServiceRole.entities.TeamSeat.filter({ id: seat_id });
-  if (!seats.length) return Response.json({ error: 'Invitation not found' }, { status: 404 });
-  const seat = seats[0];
+  // Fetch the seat by ID using service role
+  let seat = null;
+  try {
+    seat = await base44.asServiceRole.entities.TeamSeat.get(seat_id);
+  } catch (_) {}
+  if (!seat) return Response.json({ error: 'Invitation not found' }, { status: 404 });
+
+  // === INFO action — return seat details for the AcceptInvite page ===
+  if (action === 'info') {
+    // Get owner name
+    let ownerName = seat.owner_email || 'Unknown';
+    try {
+      const owner = await base44.asServiceRole.entities.Profile.get(seat.owner_profile_id);
+      if (owner) ownerName = owner.full_name || owner.email || seat.owner_email;
+    } catch (_) {}
+
+    const alreadyHandled = seat.status === 'active' ? 'accepted' : seat.status === 'removed' ? 'declined' : null;
+    return Response.json({
+      ok: true,
+      seat: { id: seat.id, status: seat.status, team_role: seat.team_role, member_email: seat.member_email, owner_email: seat.owner_email },
+      owner_name: ownerName,
+      already_handled: alreadyHandled,
+    });
+  }
 
   // Verify this invite is for the current user
   if (seat.member_email.toLowerCase() !== user.email.toLowerCase()) {
@@ -29,12 +49,21 @@ Deno.serve(async (req) => {
   }
 
   // Get or create the member's profile
-  let memberProfiles = await base44.entities.Profile.filter({ user_id: user.id });
+  let memberProfiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
   if (!memberProfiles.length) {
-    memberProfiles = await base44.entities.Profile.filter({ email: user.email.toLowerCase() });
+    memberProfiles = await base44.asServiceRole.entities.Profile.filter({ email: user.email.toLowerCase() });
   }
-  const memberProfile = memberProfiles[0];
-  if (!memberProfile) return Response.json({ error: 'Your profile was not found. Please complete setup first.' }, { status: 404 });
+  let memberProfile = memberProfiles[0];
+
+  // Auto-create profile for brand new users
+  if (!memberProfile) {
+    memberProfile = await base44.asServiceRole.entities.Profile.create({
+      user_id: user.id,
+      email: user.email.toLowerCase(),
+      full_name: user.full_name || user.email.split('@')[0],
+    });
+    console.log('Auto-created profile for new team member:', user.email);
+  }
 
   if (action === 'decline') {
     await base44.asServiceRole.entities.TeamSeat.update(seat.id, { status: 'removed' });
