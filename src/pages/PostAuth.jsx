@@ -133,12 +133,8 @@ export default function PostAuth() {
            return;
          }
 
-         // Team members go straight to Pipeline — they view the owner's deals
-         if (profile?.team_owner_id) {
-           try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
-           navigate(createPageUrl("Pipeline"), { replace: true });
-           return;
-         }
+         // Team members still need to complete onboarding, but skip pricing.
+         // Don't short-circuit here — let the normal onboarding/gate flow below handle them.
 
          if (!hasRole) {
            if (selectedRole === 'investor') navigate(createPageUrl("InvestorOnboarding"), { replace: true });
