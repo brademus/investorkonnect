@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       const resp = await fetch(`https://api.stripe.com/v1/subscription_items/${existingSeatItem.id}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ 'quantity': String(newQty), 'proration_behavior': 'create_prorations' }).toString(),
+        body: new URLSearchParams({ 'quantity': String(newQty), 'proration_behavior': 'always_invoice' }).toString(),
       });
       const data = await resp.json();
       diag.stripe_response = { status: resp.status, ok: resp.ok, item_id: data?.id, quantity: data?.quantity, error: data?.error?.message };
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       const resp = await fetch('https://api.stripe.com/v1/subscription_items', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ 'subscription': subscription.id, 'price': SEAT_PRICE, 'quantity': String(count), 'proration_behavior': 'create_prorations' }).toString(),
+        body: new URLSearchParams({ 'subscription': subscription.id, 'price': SEAT_PRICE, 'quantity': String(count), 'proration_behavior': 'always_invoice' }).toString(),
       });
       const data = await resp.json();
       diag.stripe_response = { status: resp.status, ok: resp.ok, item_id: data?.id, quantity: data?.quantity, error: data?.error?.message };
