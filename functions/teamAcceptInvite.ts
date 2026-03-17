@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
   // === ACCEPT ===
 
   // Role-match validation: member must be the same role as the team owner
-  const ownerProfiles = await base44.asServiceRole.entities.Profile.filter({ id: seat.owner_profile_id });
-  const ownerProfile = ownerProfiles[0];
+  let ownerProfile = null;
+  try { ownerProfile = await base44.asServiceRole.entities.Profile.get(seat.owner_profile_id); } catch (_) {}
   if (ownerProfile && memberProfile.user_role && ownerProfile.user_role) {
     if (memberProfile.user_role !== ownerProfile.user_role) {
       return Response.json({ 
