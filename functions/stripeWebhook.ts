@@ -288,13 +288,44 @@ Deno.serve(async (req) => {
         const customerId = subscription.customer;
         
         // Find user by Stripe customer ID
-        const profiles = await base44.asServiceRole.entities.Profile.filter({
+        let profiles = await base44.asServiceRole.entities.Profile.filter({
           stripe_customer_id: customerId
         });
         
+        // Fallback: look up by stripe_subscription_id
+        if (profiles.length === 0) {
+          console.log('🔍 Trying fallback lookup by stripe_subscription_id:', subscription.id);
+          profiles = await base44.asServiceRole.entities.Profile.filter({
+            stripe_subscription_id: subscription.id
+          });
+        }
+        
+        // Fallback: look up by Stripe customer email
+        if (profiles.length === 0) {
+          try {
+            const customer = await stripe.customers.retrieve(customerId);
+            if (customer?.email) {
+              console.log('🔍 Trying fallback lookup by email:', customer.email);
+              profiles = await base44.asServiceRole.entities.Profile.filter({
+                email: customer.email.toLowerCase()
+              });
+              // Backfill stripe_customer_id so future lookups work
+              if (profiles.length > 0) {
+                await base44.asServiceRole.entities.Profile.update(profiles[0].id, {
+                  stripe_customer_id: customerId
+                });
+                console.log('✅ Backfilled stripe_customer_id on profile:', profiles[0].email);
+              }
+            }
+          } catch (custErr) {
+            console.warn('⚠️ Could not fetch Stripe customer for fallback:', custErr?.message);
+          }
+        }
+        
         if (profiles.length === 0) {
           console.warn('⚠️ No profile found for customer:', customerId);
-          return new Response('Profile not found', { status: 404 });
+          // Return 200 so Stripe doesn't retry endlessly
+          return new Response(JSON.stringify({ received: true, warning: 'profile_not_found' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
         
         const profile = profiles[0];
