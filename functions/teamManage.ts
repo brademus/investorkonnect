@@ -73,12 +73,14 @@ Deno.serve(async (req) => {
           break;
         }
       }
-    } else if (stripePaidSeats > 0 && stripePaidSeats < localSeatCount) {
-      // More local seats than Stripe has — remove unassigned open seats first
+    } else if (stripePaidSeats < localSeatCount) {
+      // More local seats than Stripe has — remove unassigned open seats first, then unpaid invited seats
       const excess = localSeatCount - stripePaidSeats;
       const openSeats = activeSeats.filter(s => s.status === 'open');
-      const seatsToRemove = openSeats.slice(0, excess);
-      console.log(`Reconciling: Stripe has ${stripePaidSeats} paid seats, local has ${localSeatCount}. Removing ${seatsToRemove.length} excess open seats.`);
+      const unpaidInvited = activeSeats.filter(s => s.status === 'invited' && !s.stripe_subscription_item_id);
+      const candidates = [...openSeats, ...unpaidInvited];
+      const seatsToRemove = candidates.slice(0, excess);
+      console.log(`Reconciling: Stripe has ${stripePaidSeats} paid seats, local has ${localSeatCount}. Removing ${seatsToRemove.length} excess seats.`);
       for (const seat of seatsToRemove) {
         try {
           await base44.entities.TeamSeat.update(seat.id, { status: 'removed' });
