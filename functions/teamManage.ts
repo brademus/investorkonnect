@@ -45,7 +45,8 @@ Deno.serve(async (req) => {
 
     // 2. Fetch existing local seat records
     const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-    const activeSeats = ownedSeats.filter(s => s.status !== 'removed');
+    // Only count seats that are actually usable (open, invited, active) — NOT pending_payment or removed
+    const activeSeats = ownedSeats.filter(s => s.status === 'open' || s.status === 'invited' || s.status === 'active');
     const localSeatCount = activeSeats.length;
 
     // 3. Reconcile: create missing seats or mark extras as removed
@@ -94,7 +95,7 @@ Deno.serve(async (req) => {
 
     // 4. Re-fetch after reconciliation
     const finalSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-    const finalActive = finalSeats.filter(s => s.status !== 'removed');
+    const finalActive = finalSeats.filter(s => s.status === 'open' || s.status === 'invited' || s.status === 'active');
 
     const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });
     const activeMembership = myMembership.find(s => s.status === 'active' || s.status === 'invited');
