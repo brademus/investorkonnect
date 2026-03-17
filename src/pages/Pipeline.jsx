@@ -307,8 +307,6 @@ function PipelineContent() {
         <div className="flex-1 overflow-auto px-6 md:px-8 pb-8 relative z-[1]">
           <div className="max-w-[1800px] mx-auto">
             {!setupDone && <div className="mb-8"><SetupChecklist profile={profile} /></div>}
-            <div className="mb-4"><TeamInviteBanner profile={profile} onAccepted={() => { window.location.reload(); }} /></div>
-
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-[#E3C567]" style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>Dashboard</h1>
