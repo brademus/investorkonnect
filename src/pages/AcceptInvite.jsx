@@ -64,9 +64,9 @@ export default function AcceptInvite() {
         setResult(res.data.action);
         if (res.data.action === 'accepted') {
           toast.success("You've joined the team!");
-          // Clear profile cache so Pipeline picks up new team_owner_id
+          // Clear profile cache so PostAuth picks up new team_owner_id and routes correctly
           try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {}
-          setTimeout(() => navigate(createPageUrl("Pipeline"), { replace: true }), 1500);
+          setTimeout(() => navigate(createPageUrl("PostAuth"), { replace: true }), 1500);
         } else {
           toast.info("Invitation declined.");
         }
