@@ -91,10 +91,14 @@ Deno.serve(async (req) => {
     joined_at: new Date().toISOString()
   });
 
-  // 2) Link this profile to the team owner
-  await base44.asServiceRole.entities.Profile.update(memberProfile.id, {
-    team_owner_id: seat.owner_profile_id
-  });
+  // 2) Link this profile to the team owner, and inherit owner's role if member doesn't have one
+  const profileUpdate = { team_owner_id: seat.owner_profile_id };
+  if ((!memberProfile.user_role || memberProfile.user_role === 'member') && ownerProfile?.user_role) {
+    profileUpdate.user_role = ownerProfile.user_role;
+    profileUpdate.user_type = ownerProfile.user_role;
+    console.log('Set member role to match owner:', ownerProfile.user_role);
+  }
+  await base44.asServiceRole.entities.Profile.update(memberProfile.id, profileUpdate);
 
   // 3) Add $10/mo seat to owner's Stripe subscription
   try {
