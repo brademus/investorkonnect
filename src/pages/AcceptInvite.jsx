@@ -110,10 +110,8 @@ export default function AcceptInvite() {
         <div className="ik-page-card max-w-md w-full text-center py-12">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Welcome to the Team!</h2>
-          <p className="text-[#808080] mb-6">You now have access to {ownerName || "your team's"} deal dashboard.</p>
-          <Button onClick={() => { try { sessionStorage.removeItem('__ik_profile_cache'); } catch (_) {} navigate(createPageUrl("Pipeline"), { replace: true }); }} className="bg-[#E3C567] text-black hover:bg-[#EDD89F]">
-            Go to Dashboard
-          </Button>
+          <p className="text-[#808080] mb-6">Setting up your account...</p>
+          <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin mx-auto" />
         </div>
       </div>
     );
