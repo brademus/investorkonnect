@@ -30,30 +30,26 @@ export default function AcceptInvite() {
           return;
         }
 
-        // Fetch the seat
-        const seats = await base44.entities.TeamSeat.filter({ id: seatId });
-        if (!seats.length) { setErrorMsg("Invitation not found."); setLoading(false); return; }
-        const s = seats[0];
-        setSeat(s);
-
-        // Check if it's still pending
-        if (s.status !== 'invited') {
-          setResult(s.status === 'active' ? 'accepted' : 'declined');
+        // Fetch seat info via backend (handles permissions and ID lookup)
+        const res = await base44.functions.invoke('teamAcceptInvite', { seat_id: seatId, action: 'info' });
+        if (!res.data?.ok) {
+          setErrorMsg(res.data?.error || "Invitation not found.");
           setLoading(false);
           return;
         }
 
-        // Get owner name
-        try {
-          const owners = await base44.entities.Profile.filter({ id: s.owner_profile_id });
-          if (owners.length) setOwnerName(owners[0].full_name || owners[0].email || s.owner_email);
-          else setOwnerName(s.owner_email);
-        } catch (_) {
-          setOwnerName(s.owner_email);
+        setSeat(res.data.seat);
+        setOwnerName(res.data.owner_name || res.data.seat.owner_email);
+
+        if (res.data.already_handled) {
+          setResult(res.data.already_handled);
+          setLoading(false);
+          return;
         }
       } catch (err) {
         console.error("Error loading invite:", err);
-        setErrorMsg("Could not load invitation.");
+        const msg = err?.response?.data?.error || err?.data?.error || "Could not load invitation.";
+        setErrorMsg(msg);
       }
       setLoading(false);
     };
