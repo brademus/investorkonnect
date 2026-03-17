@@ -30,6 +30,7 @@ export default function InvestorOnboarding() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', company: '', headshotUrl: '',
     primary_state: selectedState || '', primary_states: selectedState ? [selectedState] : [],
@@ -162,6 +163,12 @@ export default function InvestorOnboarding() {
   };
 
   const handleNext = async () => {
+    if (step === 1 && !phoneVerified) {
+      const digits = (formData.phone || '').replace(/\D/g, '');
+      if (digits.length < 10) { toast.error('Please enter a valid phone number'); return; }
+      setShowPhoneVerify(true);
+      return;
+    }
     if (step === 3) {
       if (formData.next_steps_template_type === 'custom' && (!formData.custom_next_steps_template || formData.custom_next_steps_template.trim().length < 50)) {
         toast.error('Please write a message for agents (minimum 50 characters)');
@@ -197,7 +204,7 @@ export default function InvestorOnboarding() {
     return <div className="min-h-screen bg-black flex items-center justify-center"><LoadingAnimation className="w-64 h-64" /></div>;
   }
 
-  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10 && phoneVerified;
+  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
   const isStep2Valid = (formData.nationwide || (formData.primary_states && formData.primary_states.length > 0)) && (formData.deal_types || []).length > 0;
   const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
   const nextLabel = step === TOTAL_STEPS ? 'Continue to Pricing →' : 'Continue →';
@@ -239,7 +246,12 @@ export default function InvestorOnboarding() {
               </div>
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
-            <PhoneVerification phone={formData.phone} verified={phoneVerified} onVerified={() => setPhoneVerified(true)} />
+            {phoneVerified && (
+              <div className="flex items-center gap-2 px-1">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400 font-medium">Phone verified</span>
+              </div>
+            )}
             <div>
               <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
               <Input id="company" value={formData.company} onChange={(e) => updateField('company', e.target.value)} placeholder="Your company name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
@@ -389,6 +401,16 @@ Sarah Johnson`}
           </Dialog>
         </div>
       )}
+      <PhoneVerification
+        phone={formData.phone}
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={() => {
+          setPhoneVerified(true);
+          setShowPhoneVerify(false);
+          setStep(2);
+        }}
+      />
     </OnboardingShell>
   );
 }

@@ -41,6 +41,7 @@ export default function AgentOnboarding() {
   const [countyValid, setCountyValid] = useState(null);
   const [countyChecking, setCountyChecking] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '',
@@ -238,6 +239,12 @@ export default function AgentOnboarding() {
   };
 
   const handleNext = async () => {
+    if (step === 1 && !phoneVerified) {
+      const digits = (formData.phone || '').replace(/\D/g, '');
+      if (digits.length < 10) { toast.error('Please enter a valid phone number'); return; }
+      setShowPhoneVerify(true);
+      return;
+    }
     if (step === TOTAL_STEPS) await handleSubmit();
     else setStep(step + 1);
   };
@@ -258,7 +265,7 @@ export default function AgentOnboarding() {
     return <div className="min-h-screen bg-black flex items-center justify-center"><LoadingAnimation className="w-64 h-64" /></div>;
   }
 
-  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10 && phoneVerified;
+  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
   const isStep2Valid = formData.markets.length > 0 && step2HasAllLicenses && formData.brokerage.trim() && formData.main_county.trim() && countyValid === true;
 
   const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
@@ -282,7 +289,12 @@ export default function AgentOnboarding() {
               </div>
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
-            <PhoneVerification phone={formData.phone} verified={phoneVerified} onVerified={() => setPhoneVerified(true)} />
+            {phoneVerified && (
+              <div className="flex items-center gap-2 px-1">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-400 font-medium">Phone verified</span>
+              </div>
+            )}
             <div>
               <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years of Experience</Label>
               <Input id="experience_years" type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} placeholder="e.g., 5" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
@@ -426,6 +438,16 @@ export default function AgentOnboarding() {
           </div>
         </div>
       )}
+      <PhoneVerification
+        phone={formData.phone}
+        open={showPhoneVerify}
+        onOpenChange={setShowPhoneVerify}
+        onVerified={() => {
+          setPhoneVerified(true);
+          setShowPhoneVerify(false);
+          setStep(2);
+        }}
+      />
     </OnboardingShell>
   );
 }
