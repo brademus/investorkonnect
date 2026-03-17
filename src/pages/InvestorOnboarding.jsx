@@ -68,20 +68,16 @@ export default function InvestorOnboarding() {
       phone: profile.phone || '', company: profile.company || '',
       headshotUrl: profile.headshotUrl || '',
       primary_state: existingPrimaryState,
+      primary_states: isNationwide ? [] : (existingMarkets.length > 0 ? existingMarkets : (existingPrimaryState ? [existingPrimaryState] : [])),
+      nationwide: isNationwide,
+      investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
+      goals: profile.goals || ''
     }));
     // Check if phone is already verified for the current number
     const currentDigits = (profile.phone || '').replace(/\D/g, '');
     if (profile.metadata?.phone_verified && profile.metadata?.phone_verified_number === currentDigits && currentDigits.length >= 10) {
       setPhoneVerified(true);
     }
-    // Dummy setter to satisfy linter — real merge happens above
-    setFormData(prev => ({
-      ...prev,
-      primary_states: isNationwide ? [] : (existingMarkets.length > 0 ? existingMarkets : (existingPrimaryState ? [existingPrimaryState] : [])),
-      nationwide: isNationwide,
-      investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
-      goals: profile.goals || ''
-    }));
   }, [profile, selectedState]);
 
   // Enforce role consistency
@@ -95,7 +91,11 @@ export default function InvestorOnboarding() {
     }
   }, [profile, navigate]);
 
-  const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Reset phone verification when phone changes
+    if (field === 'phone') setPhoneVerified(false);
+  };
 
   const toggleState = (state) => {
     setFormData(prev => {
@@ -197,7 +197,7 @@ export default function InvestorOnboarding() {
     return <div className="min-h-screen bg-black flex items-center justify-center"><LoadingAnimation className="w-64 h-64" /></div>;
   }
 
-  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
+  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10 && phoneVerified;
   const isStep2Valid = (formData.nationwide || (formData.primary_states && formData.primary_states.length > 0)) && (formData.deal_types || []).length > 0;
   const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
   const nextLabel = step === TOTAL_STEPS ? 'Continue to Pricing →' : 'Continue →';
@@ -239,6 +239,7 @@ export default function InvestorOnboarding() {
               </div>
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
+            <PhoneVerification phone={formData.phone} verified={phoneVerified} onVerified={() => setPhoneVerified(true)} />
             <div>
               <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
               <Input id="company" value={formData.company} onChange={(e) => updateField('company', e.target.value)} placeholder="Your company name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
