@@ -105,6 +105,11 @@ export default function AgentOnboarding() {
       bio: agent.bio || '',
       headshotUrl: profile.headshotUrl || ''
     }));
+    // Check if phone is already verified for the current number
+    const currentDigits = (profile.phone || '').replace(/\D/g, '');
+    if (profile.metadata?.phone_verified && profile.metadata?.phone_verified_number === currentDigits && currentDigits.length >= 10) {
+      setPhoneVerified(true);
+    }
   }, [profile]);
 
   // Enforce role consistency
@@ -133,7 +138,10 @@ export default function AgentOnboarding() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [formData.main_county, marketsKey]);
 
-  const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'phone') setPhoneVerified(false);
+  };
   const toggleArrayItem = (field, item) => {
     setFormData(prev => ({
       ...prev,
@@ -250,7 +258,7 @@ export default function AgentOnboarding() {
     return <div className="min-h-screen bg-black flex items-center justify-center"><LoadingAnimation className="w-64 h-64" /></div>;
   }
 
-  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
+  const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10 && phoneVerified;
   const isStep2Valid = formData.markets.length > 0 && step2HasAllLicenses && formData.brokerage.trim() && formData.main_county.trim() && countyValid === true;
 
   const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
@@ -274,6 +282,7 @@ export default function AgentOnboarding() {
               </div>
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
+            <PhoneVerification phone={formData.phone} verified={phoneVerified} onVerified={() => setPhoneVerified(true)} />
             <div>
               <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years of Experience</Label>
               <Input id="experience_years" type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} placeholder="e.g., 5" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
