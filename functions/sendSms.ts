@@ -31,6 +31,8 @@ Deno.serve(async (req) => {
 
     const url = `https://us.sms.api.sinch.com/xms/v1/${servicePlanId}/batches`;
 
+    console.log('[sendSms] Sending to', cleanTo, 'via Sinch plan:', servicePlanId.substring(0, 8) + '...');
+
     const res = await fetch(url, {
       method: 'POST',
       headers: {
@@ -44,11 +46,15 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const result = await res.json();
+    const responseText = await res.text();
+    console.log('[sendSms] Sinch response status:', res.status, 'body:', responseText);
+
+    let result;
+    try { result = JSON.parse(responseText); } catch (_) { result = { raw: responseText }; }
 
     if (!res.ok) {
       console.error('[sendSms] Sinch error:', JSON.stringify(result));
-      return Response.json({ error: result.text || 'Sinch error', ok: false, details: result }, { status: res.status || 400 });
+      return Response.json({ error: result.text || result.raw || 'Sinch error', ok: false, details: result }, { status: res.status || 400 });
     }
 
     console.log('[sendSms] Sent SMS to', cleanTo, 'batch_id:', result.id);
