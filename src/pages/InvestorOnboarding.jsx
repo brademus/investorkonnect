@@ -14,11 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import useOnboardingAccess from "@/components/onboarding/useOnboardingAccess";
 import PhoneInput from "@/components/onboarding/PhoneInput";
-import PhoneVerification from "@/components/onboarding/PhoneVerification";
+import PhoneVerifyStep from "@/components/onboarding/PhoneVerifyStep";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 const DEAL_TYPES = ["Wholesale", "Novation", "Whole-tail", "Fix & Flip", "Buy & Hold", "Sub-2"];
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 export default function InvestorOnboarding() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function InvestorOnboarding() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showTemplatePreview, setShowTemplatePreview] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
-  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', company: '', headshotUrl: '',
     primary_state: selectedState || '', primary_states: selectedState ? [selectedState] : [],
@@ -163,13 +163,34 @@ export default function InvestorOnboarding() {
   };
 
   const handleNext = async () => {
-    if (step === 1 && !phoneVerified) {
-      const digits = (formData.phone || '').replace(/\D/g, '');
-      if (digits.length < 10) { toast.error('Please enter a valid phone number'); return; }
-      setShowPhoneVerify(true);
+    // Step 1 → advance to step 2 (phone verify) — code auto-sends on mount
+    if (step === 1) {
+      if (phoneVerified) { setStep(3); return; } // skip verify if already verified
+      setStep(2);
       return;
     }
-    if (step === 3) {
+    // Step 2 — verify the code
+    if (step === 2) {
+      const codeEl = document.querySelector('[data-phone-code]');
+      const code = codeEl?.value?.trim();
+      if (!code || code.length !== 6) { toast.error('Please enter the 6-digit code'); return; }
+      setVerifyingCode(true);
+      try {
+        const res = await base44.functions.invoke("verifyPhoneCode", { code, phone: formData.phone });
+        if (res.data?.verified) {
+          toast.success("Phone verified!");
+          setPhoneVerified(true);
+          setStep(3);
+        } else {
+          toast.error(res.data?.error || "Invalid code. Please try again.");
+        }
+      } catch (err) {
+        toast.error(err?.response?.data?.error || "Verification failed");
+      }
+      setVerifyingCode(false);
+      return;
+    }
+    if (step === TOTAL_STEPS) {
       if (formData.next_steps_template_type === 'custom' && (!formData.custom_next_steps_template || formData.custom_next_steps_template.trim().length < 50)) {
         toast.error('Please write a message for agents (minimum 50 characters)');
         return;
@@ -205,9 +226,9 @@ export default function InvestorOnboarding() {
   }
 
   const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
-  const isStep2Valid = (formData.nationwide || (formData.primary_states && formData.primary_states.length > 0)) && (formData.deal_types || []).length > 0;
-  const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
-  const nextLabel = step === TOTAL_STEPS ? 'Continue to Pricing →' : 'Continue →';
+  const isStep3Valid = (formData.nationwide || (formData.primary_states && formData.primary_states.length > 0)) && (formData.deal_types || []).length > 0;
+  const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && verifyingCode) || (step === 3 && !isStep3Valid);
+  const nextLabel = step === 2 ? (verifyingCode ? 'Verifying...' : 'Verify & Continue →') : step === TOTAL_STEPS ? 'Continue to Pricing →' : 'Continue →';
 
   const allDealTypesSelected = formData.deal_types.length === DEAL_TYPES.length;
 
@@ -247,7 +268,7 @@ export default function InvestorOnboarding() {
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
             {phoneVerified && (
-              <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center gap-2 px-1 -mt-4">
                 <CheckCircle className="w-4 h-4 text-green-400" />
                 <span className="text-sm text-green-400 font-medium">Phone verified</span>
               </div>
@@ -261,6 +282,10 @@ export default function InvestorOnboarding() {
       )}
 
       {step === 2 && (
+        <PhoneVerifyStep phone={formData.phone} />
+      )}
+
+      {step === 3 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
           <p className="text-[18px] text-[#808080] mb-10">What are your primary states?</p>
@@ -325,7 +350,7 @@ export default function InvestorOnboarding() {
         </div>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Tell us about yourself</h3>
           <p className="text-[18px] text-[#808080] mb-10">Let agents know a little bit about you</p>
@@ -401,16 +426,6 @@ Sarah Johnson`}
           </Dialog>
         </div>
       )}
-      <PhoneVerification
-        phone={formData.phone}
-        open={showPhoneVerify}
-        onOpenChange={setShowPhoneVerify}
-        onVerified={() => {
-          setPhoneVerified(true);
-          setShowPhoneVerify(false);
-          setStep(2);
-        }}
-      />
     </OnboardingShell>
   );
 }

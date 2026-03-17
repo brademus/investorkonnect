@@ -14,11 +14,11 @@ import { getCountyCentroid } from "@/components/utils/agentScoring";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import useOnboardingAccess from "@/components/onboarding/useOnboardingAccess";
 import PhoneInput from "@/components/onboarding/PhoneInput";
-import PhoneVerification from "@/components/onboarding/PhoneVerification";
+import PhoneVerifyStep from "@/components/onboarding/PhoneVerifyStep";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const DEAL_TYPE_OPTIONS = [
   { label: 'Wholesale', value: 'Wholesale' },
@@ -41,7 +41,7 @@ export default function AgentOnboarding() {
   const [countyValid, setCountyValid] = useState(null);
   const [countyChecking, setCountyChecking] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
-  const [showPhoneVerify, setShowPhoneVerify] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
 
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '',
@@ -239,10 +239,29 @@ export default function AgentOnboarding() {
   };
 
   const handleNext = async () => {
-    if (step === 1 && !phoneVerified) {
-      const digits = (formData.phone || '').replace(/\D/g, '');
-      if (digits.length < 10) { toast.error('Please enter a valid phone number'); return; }
-      setShowPhoneVerify(true);
+    if (step === 1) {
+      if (phoneVerified) { setStep(3); return; }
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      const codeEl = document.querySelector('[data-phone-code]');
+      const code = codeEl?.value?.trim();
+      if (!code || code.length !== 6) { toast.error('Please enter the 6-digit code'); return; }
+      setVerifyingCode(true);
+      try {
+        const res = await base44.functions.invoke("verifyPhoneCode", { code, phone: formData.phone });
+        if (res.data?.verified) {
+          toast.success("Phone verified!");
+          setPhoneVerified(true);
+          setStep(3);
+        } else {
+          toast.error(res.data?.error || "Invalid code. Please try again.");
+        }
+      } catch (err) {
+        toast.error(err?.response?.data?.error || "Verification failed");
+      }
+      setVerifyingCode(false);
       return;
     }
     if (step === TOTAL_STEPS) await handleSubmit();
@@ -266,10 +285,10 @@ export default function AgentOnboarding() {
   }
 
   const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
-  const isStep2Valid = formData.markets.length > 0 && step2HasAllLicenses && formData.brokerage.trim() && formData.main_county.trim() && countyValid === true;
+  const isStep3Valid = formData.markets.length > 0 && step2HasAllLicenses && formData.brokerage.trim() && formData.main_county.trim() && countyValid === true;
 
-  const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid);
-  const nextLabel = step === TOTAL_STEPS ? 'Continue to Verification →' : 'Continue →';
+  const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && verifyingCode) || (step === 3 && !isStep3Valid);
+  const nextLabel = step === 2 ? (verifyingCode ? 'Verifying...' : 'Verify & Continue →') : step === TOTAL_STEPS ? 'Continue to Verification →' : 'Continue →';
 
   return (
     <OnboardingShell step={step} totalSteps={TOTAL_STEPS} saving={saving} onBack={() => setStep(step - 1)} onNext={handleNext} nextDisabled={nextDisabled} nextLabel={nextLabel}>
@@ -290,7 +309,7 @@ export default function AgentOnboarding() {
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
             {phoneVerified && (
-              <div className="flex items-center gap-2 px-1">
+              <div className="flex items-center gap-2 px-1 -mt-4">
                 <CheckCircle className="w-4 h-4 text-green-400" />
                 <span className="text-sm text-green-400 font-medium">Phone verified</span>
               </div>
@@ -308,6 +327,10 @@ export default function AgentOnboarding() {
       )}
 
       {step === 2 && (
+        <PhoneVerifyStep phone={formData.phone} />
+      )}
+
+      {step === 3 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
           <p className="text-[18px] text-[#808080] mb-10">Select your licensed states and enter each license number</p>
@@ -356,7 +379,7 @@ export default function AgentOnboarding() {
         </div>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your Expertise</h3>
           <p className="text-[18px] text-[#808080] mb-10">Tell investors what types of deals and properties you specialize in</p>
@@ -397,7 +420,7 @@ export default function AgentOnboarding() {
         </div>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <div>
           <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Profile Photo & Bio</h3>
           <p className="text-[18px] text-[#808080] mb-10">Add a photo and tell investors about your background</p>
@@ -438,16 +461,6 @@ export default function AgentOnboarding() {
           </div>
         </div>
       )}
-      <PhoneVerification
-        phone={formData.phone}
-        open={showPhoneVerify}
-        onOpenChange={setShowPhoneVerify}
-        onVerified={() => {
-          setPhoneVerified(true);
-          setShowPhoneVerify(false);
-          setStep(2);
-        }}
-      />
     </OnboardingShell>
   );
 }
