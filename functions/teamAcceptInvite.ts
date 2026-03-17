@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
       if (billingOwner?.stripe_subscription_id) {
         // Fetch the subscription to get its items
-        const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${ownerProfile.stripe_subscription_id}`, {
+        const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${billingOwner.stripe_subscription_id}`, {
           headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
         });
         const subscription = await subResp.json();
