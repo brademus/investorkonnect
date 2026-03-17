@@ -28,13 +28,14 @@ Deno.serve(async (req) => {
     const agent = agentProfiles?.[0];
 
     const address = room.property_address || room.title || 'the property';
+    const emailBody = `Agreement signed for ${address}. Your deal room is now open.`;
 
     // --- INVESTOR EMAIL ---
     if (investor?.email) {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: investor.email,
         subject: `Agreement signed — ${address}`,
-        body: `Agreement signed for ${address}. Your deal room is now open.`,
+        body: emailBody,
       });
     }
 
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: agent.email,
         subject: `Agreement signed — ${address}`,
-        body: `Agreement signed for ${address}. Your deal room is now open.`,
+        body: emailBody,
       });
     }
 
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     if (investor?.notification_preferences?.text && investor.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: investor.phone,
-        message: `Your agent signed the agreement for ${address}. Deal room is open.`
+        message: emailBody,
       }).catch(() => {});
     }
 
@@ -59,7 +60,7 @@ Deno.serve(async (req) => {
     if (agent?.notification_preferences?.text && agent.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: agent.phone,
-        message: `Investor signed the agreement for ${address}. Deal room is open.`
+        message: emailBody,
       }).catch(() => {});
     }
 

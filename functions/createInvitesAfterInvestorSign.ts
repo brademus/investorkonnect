@@ -225,12 +225,14 @@ Deno.serve(async (req) => {
         const agent = agentProfiles?.[0];
         if (!agent) continue;
 
+        const notifBody = `Hi ${agent.full_name?.split(' ')[0] || 'there'}, you have received a new deal. Log in to review and sign.`;
+
         // Email notification
         if (agent.email && agent.notification_preferences?.email !== false) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: agent.email,
             subject: `You have received a new deal`,
-            body: `Hi ${agent.full_name?.split(' ')[0] || 'there'}, you have received a new deal. Log in to review and sign.`,
+            body: notifBody,
           }).catch(emailErr => {
             console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
           });
@@ -239,8 +241,7 @@ Deno.serve(async (req) => {
         // SMS notification
         const textEnabled = agent.notification_preferences?.text !== false;
         if (textEnabled && agent.phone) {
-          const smsText = `You have received a new deal. Log in to review and sign.`;
-          await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: smsText });
+          await base44.asServiceRole.functions.invoke('sendSms', { to: agent.phone, message: notifBody });
           console.log('[createInvites] SMS sent to agent:', agent.email);
         }
       } catch (notifyErr) {

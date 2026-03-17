@@ -24,16 +24,18 @@ Deno.serve(async (req) => {
     const address = room.property_address || room.title || 'the property';
     const action = data.status === 'accepted' ? 'accepted' : 'declined';
 
+    const emailBody = `Counter offer ${action} for ${address}.`;
+
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: sender.email,
       subject: `Counter offer ${action} — ${address}`,
-      body: `Counter offer ${action} for ${address}.`,
+      body: emailBody,
     });
 
     if (sender.notification_preferences?.text && sender.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: sender.phone,
-        message: `Your counter offer for ${address} was ${action}.`
+        message: emailBody,
       }).catch(() => {});
     }
 

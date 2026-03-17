@@ -47,55 +47,46 @@ Deno.serve(async (req) => {
         target: 'agent',
         subject: `Walkthrough dates proposed — ${address}`,
         body: () => `Walkthrough dates proposed for ${address}. Confirm or propose new dates.`,
-        sms: `Walkthrough dates proposed for ${address}. Confirm or propose new dates.`,
       },
       walkthrough_confirmed: {
         target: 'other',
         subject: `Walkthrough confirmed — ${address}`,
         body: () => `Walkthrough confirmed for ${address}.`,
-        sms: `Walkthrough confirmed for ${address}.`,
       },
       cma_uploaded: {
         target: 'investor',
         subject: `CMA uploaded — ${address}`,
         body: () => `CMA uploaded for ${address}. Confirm or edit the list price.`,
-        sms: `CMA uploaded for ${address}. Confirm or edit the list price.`,
       },
       list_price_confirmed: {
         target: 'agent',
         subject: `List price confirmed — ${address}`,
         body: () => `List price confirmed for ${address}. Upload the listing agreement.`,
-        sms: `List price confirmed for ${address}. Upload the listing agreement.`,
       },
       listing_agreement_uploaded: {
         target: 'investor',
         subject: `Listing agreement uploaded — ${address}`,
         body: () => `Listing agreement uploaded for ${address}. Waiting for agent to list on MLS.`,
-        sms: `Listing agreement uploaded for ${address}.`,
       },
       listing_active: {
         target: 'investor',
         subject: `Listing is active — ${address}`,
         body: () => `Listing is active for ${address}. Waiting for buyer's contract.`,
-        sms: `Listing is active for ${address}.`,
       },
       buyer_contract_uploaded: {
         target: 'investor',
         subject: `Buyer's contract received — ${address}`,
         body: () => `Buyer's contract received for ${address}. Move deal to closing.`,
-        sms: `Buyer's contract received for ${address}. Move deal to closing.`,
       },
       moved_to_closing: {
         target: 'agent',
         subject: `Deal moved to closing — ${address}`,
         body: () => `Deal is in closing for ${address}. Waiting for investor to confirm close.`,
-        sms: `Deal moved to closing for ${address}.`,
       },
       deal_completed: {
         target: 'agent',
         subject: `Deal closed — ${address}`,
         body: () => `Deal closed for ${address}. Leave a review.`,
-        sms: `Deal closed for ${address}. Leave a review.`,
       },
     };
 
@@ -141,7 +132,7 @@ Deno.serve(async (req) => {
         try {
           await base44.asServiceRole.functions.invoke('sendSms', {
             to: recipient.phone,
-            message: config.sms,
+            message: config.body(),
           });
         } catch (e) {
           console.warn(`[notifyDealAction] SMS failed for ${recipient.phone}:`, e.message);

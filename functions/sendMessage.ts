@@ -47,18 +47,20 @@ Deno.serve(async (req) => {
         const senderName = profile.full_name || 'Your counterpart';
         const firstName = p.full_name?.split(' ')[0] || 'there';
 
+        const notifBody = `${firstName}, you have a new message from ${senderName} about ${address}.`;
+
         if (p.notification_preferences?.email !== false) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: p.email,
             subject: `New message — ${address}`,
-            body: `${firstName}, you have a new message from ${senderName} about ${address}.`,
+            body: notifBody,
           }).catch(() => {});
         }
 
         if (p.notification_preferences?.text && p.phone) {
           await base44.asServiceRole.functions.invoke('sendSms', {
             to: p.phone,
-            message: `New message from ${senderName} about ${address}.`
+            message: notifBody,
           }).catch(() => {});
         }
       }
