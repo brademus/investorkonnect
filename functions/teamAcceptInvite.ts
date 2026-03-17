@@ -102,11 +102,13 @@ Deno.serve(async (req) => {
     const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
 
     if (STRIPE_SECRET_KEY && SEAT_PRICE_ID) {
-      // Get owner profile to find their Stripe subscription
-      const ownerProfiles = await base44.asServiceRole.entities.Profile.filter({ id: seat.owner_profile_id });
-      const ownerProfile = ownerProfiles[0];
+      // Get owner profile to find their Stripe subscription (reuse if already fetched)
+      let billingOwner = ownerProfile;
+      if (!billingOwner) {
+        try { billingOwner = await base44.asServiceRole.entities.Profile.get(seat.owner_profile_id); } catch (_) {}
+      }
 
-      if (ownerProfile?.stripe_subscription_id) {
+      if (billingOwner?.stripe_subscription_id) {
         // Fetch the subscription to get its items
         const subResp = await fetch(`https://api.stripe.com/v1/subscriptions/${ownerProfile.stripe_subscription_id}`, {
           headers: { 'Authorization': `Bearer ${STRIPE_SECRET_KEY}` },
