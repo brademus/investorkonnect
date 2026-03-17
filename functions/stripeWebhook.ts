@@ -331,12 +331,13 @@ Deno.serve(async (req) => {
         const profile = profiles[0];
         
         // Update subscription info
-        await base44.asServiceRole.entities.Profile.update(profile.id, {
+        const subUpdate = {
           stripe_subscription_id: subscription.id,
           subscription_tier: plan,
           subscription_status: subscription.status,
-          subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
-        });
+          stripe_customer_id: customerId,
+        };
+        await base44.asServiceRole.entities.Profile.update(profile.id, subUpdate);
         
         console.log('✅ Profile subscription updated:', {
           email: profile.email,
