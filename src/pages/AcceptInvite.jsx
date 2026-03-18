@@ -86,19 +86,22 @@ export default function AcceptInvite() {
 
   const saveInfoAndContinue = async () => {
     if (!info.firstName?.trim() || !info.lastName?.trim()) { toast.error("Please enter your full name"); return; }
-    if (!info.licenseNumber?.trim()) { toast.error("Please enter your license number"); return; }
+    if (ownerRole === "agent" && !info.licenseNumber?.trim()) { toast.error("Please enter your license number"); return; }
     setSaving(true);
     try {
       const user = await base44.auth.me();
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       const profile = profiles[0];
       if (profile) {
-        await base44.entities.Profile.update(profile.id, {
+        const updateData = {
           full_name: `${info.firstName.trim()} ${info.lastName.trim()}`,
           onboarding_first_name: info.firstName.trim(),
           onboarding_last_name: info.lastName.trim(),
-          agent: { ...(profile.agent || {}), license_number: info.licenseNumber.trim() },
-        });
+        };
+        if (ownerRole === "agent" && info.licenseNumber?.trim()) {
+          updateData.agent = { ...(profile.agent || {}), license_number: info.licenseNumber.trim() };
+        }
+        await base44.entities.Profile.update(profile.id, updateData);
       }
       setStep("phone");
     } catch (err) {
@@ -347,7 +350,7 @@ export default function AcceptInvite() {
             {/* STEP: Basic info */}
             {step === "info" && (
               <>
-                <TeamMemberInfoStep data={info} onChange={setInfo} />
+                <TeamMemberInfoStep data={info} onChange={setInfo} isAgent={ownerRole === "agent"} />
                 <div className="flex justify-end mt-8">
                   <Button onClick={saveInfoAndContinue} disabled={saving} className="bg-[#E3C567] text-black hover:bg-[#EDD89F] font-semibold px-8 h-12 rounded-xl">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     const effectiveIsInvestor = effectiveRole === 'investor';
     const effectiveIsAgent = effectiveRole === 'agent';
 
-    if (isAdmin && !profile.team_owner_id) {
+    if (isAdmin && !profile.team_owner_id && !isTeamOwner) {
       const [d, r] = await Promise.all([
         base44.asServiceRole.entities.Deal.list('-updated_date', 100),
         base44.asServiceRole.entities.Room.list('-updated_date', 100),
@@ -84,31 +84,44 @@ Deno.serve(async (req) => {
       deals = d;
       rooms = r;
     } else if (effectiveIsInvestor || (profile.team_owner_id && !effectiveIsAgent)) {
-      const [d, r] = await Promise.all([
-        base44.asServiceRole.entities.Deal.filter({ investor_id: effectiveProfileId, status: { $ne: 'draft' } }),
-        base44.asServiceRole.entities.Room.filter({ investorId: effectiveProfileId }),
+      // Fetch deals for ALL team profile IDs (owner + members share a pipeline)
+      const [dealResults, roomResults] = await Promise.all([
+        Promise.all(teamProfileIds.map(pid => 
+          base44.asServiceRole.entities.Deal.filter({ investor_id: pid, status: { $ne: 'draft' } })
+        )),
+        Promise.all(teamProfileIds.map(pid => 
+          base44.asServiceRole.entities.Room.filter({ investorId: pid })
+        )),
       ]);
-      deals = d;
-      rooms = r;
+      deals = dealResults.flat();
+      rooms = roomResults.flat();
     } else if (effectiveIsAgent || isAgent) {
-      // Use DealInvite index — no full-table scan
-      const [invites, directDeals] = await Promise.all([
-        base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: effectiveProfileId }),
-        base44.asServiceRole.entities.Deal.filter({ agent_id: effectiveProfileId }),
-      ]);
-      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      // Fetch deals for ALL team profile IDs (agent teams share a pipeline)
+      const allInvites = [];
+      const allDirectDeals = [];
+      await Promise.all(teamProfileIds.map(async (pid) => {
+        const [invites, directDeals] = await Promise.all([
+          base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: pid }),
+          base44.asServiceRole.entities.Deal.filter({ agent_id: pid }),
+        ]);
+        allInvites.push(...invites);
+        allDirectDeals.push(...directDeals);
+      }));
+
+      const activeInvites = allInvites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
       const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
-      const directIds = directDeals.map(d => d.id);
+      const directIds = allDirectDeals.map(d => d.id);
       const allIds = [...new Set([...inviteDealIds, ...directIds])];
 
-      // Fetch rooms from invites
       const roomIds = [...new Set(activeInvites.map(i => i.room_id).filter(Boolean))];
 
       const [dealRes, roomRes] = await Promise.all([
         allIds.length > 0 ? base44.asServiceRole.entities.Deal.filter({ id: { $in: allIds } }) : Promise.resolve([]),
         roomIds.length > 0 ? base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } }) : Promise.resolve([]),
       ]);
-      deals = dealRes.filter(d => !d.locked_agent_id || d.locked_agent_id === effectiveProfileId);
+      // For agent teams, show all deals where any team member is the locked agent (or not locked yet)
+      const teamIdSet = new Set(teamProfileIds);
+      deals = dealRes.filter(d => !d.locked_agent_id || teamIdSet.has(d.locked_agent_id));
       rooms = roomRes;
     }
 
