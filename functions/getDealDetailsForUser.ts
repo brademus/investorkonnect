@@ -29,13 +29,28 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
+    // Build team profile IDs for access checks
+    let teamProfileIds = [profile.id];
+    if (profile.team_owner_id) {
+      // Team member — gather owner + all members
+      const allSeats = await base44.asServiceRole.entities.TeamSeat.filter({ owner_profile_id: profile.team_owner_id, status: 'active' });
+      teamProfileIds = [profile.team_owner_id, ...allSeats.map(s => s.member_profile_id).filter(Boolean)];
+    } else {
+      // Possible team owner — gather all members
+      const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ owner_profile_id: profile.id, status: 'active' });
+      if (ownedSeats.length > 0) {
+        teamProfileIds = [profile.id, ...ownedSeats.map(s => s.member_profile_id).filter(Boolean)];
+      }
+    }
+    const teamIdSet = new Set(teamProfileIds.filter(Boolean));
+
     // Access check
     if (!isAdmin) {
-      if (isInvestor && deal.investor_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
+      if (isInvestor && !teamIdSet.has(deal.investor_id)) return Response.json({ error: 'Access denied' }, { status: 403 });
       if (isAgent) {
-        const hasAccess = rooms.some(r => r.agentId === profile.id || r.agent_ids?.includes(profile.id));
-        const inSelected = deal.selected_agent_ids?.includes(profile.id);
-        if (!hasAccess && !inSelected && deal.agent_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
+        const hasAccess = rooms.some(r => teamIdSet.has(r.agentId) || r.agent_ids?.some(id => teamIdSet.has(id)));
+        const inSelected = deal.selected_agent_ids?.some(id => teamIdSet.has(id));
+        if (!hasAccess && !inSelected && !teamIdSet.has(deal.agent_id)) return Response.json({ error: 'Access denied' }, { status: 403 });
       }
     }
 

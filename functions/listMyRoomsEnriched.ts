@@ -15,33 +15,41 @@ Deno.serve(async (req) => {
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
     const isAdmin = profile.role === 'admin' || user.role === 'admin';
-    // For room fetching: admins get all rooms
-    // For counterparty resolution: use actual user_role, not admin status
     const isInvestor = profile.user_role === 'investor';
     const isAgent = profile.user_role === 'agent';
+
+    // Build team profile IDs for fetching all team rooms
+    let teamProfileIds = [profile.id];
+    if (profile.team_owner_id) {
+      const allSeats = await base44.asServiceRole.entities.TeamSeat.filter({ owner_profile_id: profile.team_owner_id, status: 'active' });
+      teamProfileIds = [profile.team_owner_id, ...allSeats.map(s => s.member_profile_id).filter(Boolean)];
+    } else {
+      const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ owner_profile_id: profile.id, status: 'active' });
+      if (ownedSeats.length > 0) {
+        teamProfileIds = [profile.id, ...ownedSeats.map(s => s.member_profile_id).filter(Boolean)];
+      }
+    }
+    teamProfileIds = [...new Set(teamProfileIds.filter(Boolean))];
 
     // Get rooms - limit scope to avoid timeouts
     let rooms = [];
     if (isAdmin && !isInvestor && !isAgent) {
-      // Pure admin (no investor/agent role): get recent rooms only (small batch)
       rooms = await base44.asServiceRole.entities.Room.list('-updated_date', 30);
-    } else if (isAdmin && isInvestor) {
-      // Admin who is also an investor
-      rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
-    } else if (isAdmin && isAgent) {
-      // Admin who is also an agent
-      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
-      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
-      const roomIds = activeInvites.map(i => i.room_id).filter(Boolean);
-      if (roomIds.length > 0) {
-        rooms = await base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } });
-      }
-    } else if (isInvestor) {
-      rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
-    } else if (isAgent) {
-      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
-      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
-      const roomIds = activeInvites.map(i => i.room_id).filter(Boolean);
+    } else if (isInvestor || (isAdmin && isInvestor)) {
+      // Fetch rooms for all team members (investor side)
+      const roomResults = await Promise.all(teamProfileIds.map(pid =>
+        base44.asServiceRole.entities.Room.filter({ investorId: pid })
+      ));
+      rooms = roomResults.flat();
+    } else if (isAgent || (isAdmin && isAgent)) {
+      // Fetch rooms for all team members (agent side)
+      const allInvites = [];
+      await Promise.all(teamProfileIds.map(async (pid) => {
+        const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: pid });
+        allInvites.push(...invites);
+      }));
+      const activeInvites = allInvites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      const roomIds = [...new Set(activeInvites.map(i => i.room_id).filter(Boolean))];
       if (roomIds.length > 0) {
         rooms = await base44.asServiceRole.entities.Room.filter({ id: { $in: roomIds } });
       }
