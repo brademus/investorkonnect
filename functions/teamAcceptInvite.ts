@@ -31,10 +31,16 @@ Deno.serve(async (req) => {
     } catch (_) {}
 
     const alreadyHandled = seat.status === 'active' ? 'accepted' : seat.status === 'removed' ? 'declined' : null;
+    let ownerRole = 'agent';
+    try {
+      const ownerProf = await base44.asServiceRole.entities.Profile.get(seat.owner_profile_id);
+      if (ownerProf?.user_role) ownerRole = ownerProf.user_role;
+    } catch (_) {}
     return Response.json({
       ok: true,
       seat: { id: seat.id, status: seat.status, team_role: seat.team_role, member_email: seat.member_email, owner_email: seat.owner_email },
       owner_name: ownerName,
+      owner_role: ownerRole,
       already_handled: alreadyHandled,
     });
   }
