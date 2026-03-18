@@ -117,6 +117,9 @@ export default function PostAuth() {
           console.error('[PostAuth] Team invite check failed:', teamErr);
         }
 
+        // Team members who completed mini-onboarding via AcceptInvite go straight through gates
+        // (their onboarding_version will be "team-1.0")
+
          const role = profile?.user_role;
          const hasRole = role && role !== 'member';
          const hasLegacyProfile = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name) && (profile?.target_state || profile?.location || (profile?.markets?.length > 0)));
