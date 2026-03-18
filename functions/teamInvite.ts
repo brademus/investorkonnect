@@ -84,14 +84,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Invite the user to the app (this sends them a login link email automatically)
-  try {
-    await base44.users.inviteUser(normalizedEmail, 'user');
-  } catch (inviteErr) {
-    // User may already exist in the app — that's fine
-    console.log('inviteUser result:', inviteErr?.message || 'already exists');
-  }
-
   // Get the seat ID for the invite link
   let seatId = null;
   if (existing.length && existing[0].status === 'invited') {
@@ -102,28 +94,46 @@ Deno.serve(async (req) => {
     seatId = newSeats[0]?.id;
   }
 
-  // Send a custom notification email with team context and accept link
+  const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+  const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seatId}`;
+
+  // Send custom invitation email with direct accept link
   try {
-    const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
-    const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seatId}`;
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: normalizedEmail,
-      subject: `You've been invited to join ${ownerProfile.full_name || ownerProfile.email}'s team on Investor Konnect`,
+      from_name: 'Investor Konnect',
+      subject: `${ownerProfile.full_name || ownerProfile.email} invited you to their team on Investor Konnect`,
       body: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #E3C567;">Team Invitation</h2>
-          <p><strong>${ownerProfile.full_name || ownerProfile.email}</strong> has invited you to join their team on Investor Konnect as a <strong>${role}</strong>.</p>
-          <p>As a team ${role}, you'll ${role === 'admin' ? 'have full access to create, edit, and manage' : 'be able to view'} all of their deals on the dashboard.</p>
-          <div style="margin: 30px 0; text-align: center;">
-            <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+        <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0D0D0D; border-radius: 16px; overflow: hidden;">
+          <div style="padding: 40px 32px; text-align: center;">
+            <h1 style="color: #E3C567; font-size: 24px; margin: 0 0 8px 0;">You're Invited</h1>
+            <p style="color: #FAFAFA; font-size: 16px; margin: 0 0 24px 0;">
+              <strong>${ownerProfile.full_name || ownerProfile.email}</strong> has invited you to join their team on Investor Konnect as a <strong style="color: #E3C567;">${role === 'admin' ? 'Admin' : 'Viewer'}</strong>.
+            </p>
+            <p style="color: #808080; font-size: 14px; margin: 0 0 32px 0;">
+              ${role === 'admin' ? 'You\'ll have full access to create, edit, and manage all deals.' : 'You\'ll be able to view all deals and activity on the dashboard.'}
+            </p>
+            <a href="${inviteUrl}" style="display: inline-block; padding: 16px 40px; background: #E3C567; color: #000; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+              Accept or Decline Invitation
+            </a>
+            <p style="color: #666; font-size: 12px; margin-top: 24px;">
+              You'll be asked to create an account (or log in), then complete a quick setup: verify your identity, and sign the platform agreement.
+            </p>
           </div>
-          <p style="color: #808080; font-size: 13px;">Click the button above to accept or decline the invitation. If you don't have an account yet, you'll be prompted to create one first.</p>
         </div>
       `
     });
   } catch (emailErr) {
     console.error('Failed to send invite email:', emailErr?.message || emailErr);
-    // Not a blocker — user was already invited to the app
+  }
+
+  // Invite the user to the app platform (creates their auth account if needed).
+  // This may send a separate generic email — but our custom email above is the primary one.
+  try {
+    await base44.users.inviteUser(normalizedEmail, 'user');
+  } catch (inviteErr) {
+    // User may already exist in the app — that's fine
+    console.log('inviteUser result:', inviteErr?.message || 'already exists');
   }
 
   return Response.json({ ok: true, message: `Invitation sent to ${normalizedEmail}` });
