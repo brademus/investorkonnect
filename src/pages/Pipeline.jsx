@@ -196,6 +196,8 @@ function PipelineContent() {
        };
     }).filter(d => {
       if (!isAgent) return true;
+      // Team members: the server already filtered deals for the whole team, don't filter by locked_agent_id here
+      if (isTeamMember) return true;
       if (d.locked_agent_id && d.locked_agent_id !== profile.id) return false;
       if (d.agent_request_status === 'rejected' || d.agent_request_status === 'voided') return false;
       return true;
