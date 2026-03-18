@@ -102,24 +102,17 @@ Deno.serve(async (req) => {
   //    We do this BEFORE our custom email so the account exists when they click our link.
   //    The platform may send its own generic "Access App" email — we can't prevent that,
   //    but our custom email below is the one with the correct team invite link.
-  let userAlreadyExists = false;
+  // Always call inviteUser to ensure the user has an app account.
+  // SendEmail only works for users who have an account in the app.
   try {
-    // Check if user already has a profile — if so, they already have an account
-    const existingProfiles = await base44.asServiceRole.entities.Profile.filter({ email: normalizedEmail });
-    if (existingProfiles.length > 0) {
-      userAlreadyExists = true;
-    }
-  } catch (_) {}
-
-  if (!userAlreadyExists) {
-    try {
-      await base44.users.inviteUser(normalizedEmail, 'user');
-      console.log('Invited new user to app platform:', normalizedEmail);
-    } catch (inviteErr) {
-      // User may already exist — that's fine
-      console.log('inviteUser:', inviteErr?.message || 'already exists');
-    }
+    await base44.users.inviteUser(normalizedEmail, 'user');
+    console.log('inviteUser succeeded for:', normalizedEmail);
+  } catch (inviteErr) {
+    console.log('inviteUser:', inviteErr?.message || 'already exists');
   }
+
+  // Wait for account to propagate before sending custom email
+  await new Promise(r => setTimeout(r, 2000));
 
   // 2) Send our custom team invitation email — this is the REAL email they should act on.
   //    The button links directly to the AcceptInvite page.
