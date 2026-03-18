@@ -19,11 +19,13 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
-    // Team support: determine team role and what deals to show
-    let effectiveProfileId = profile.id;
+    // Team support: show all team deals (owner + all members) to everyone on the team
+    let teamProfileIds = [profile.id]; // all profile IDs whose deals should be visible
     let teamRole = null; // null = owner/solo, 'admin' | 'member' | 'viewer'
+    let isTeamOwner = false;
+
     if (profile.team_owner_id) {
-      // Look up the team seat to get the team_role
+      // Current user is a TEAM MEMBER — look up their role
       try {
         const seats = await base44.asServiceRole.entities.TeamSeat.filter({ 
           owner_profile_id: profile.team_owner_id, 
@@ -35,14 +37,26 @@ Deno.serve(async (req) => {
         teamRole = 'member';
       }
 
-      // Admin team members see the OWNER's deals (all team deals)
-      // Member/viewer team members see only THEIR OWN deals
-      if (teamRole === 'admin') {
-        effectiveProfileId = profile.team_owner_id;
-      } else {
-        effectiveProfileId = profile.id;
+      // Gather all team profile IDs (owner + all active members)
+      const allTeamSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+        owner_profile_id: profile.team_owner_id, status: 'active' 
+      });
+      const memberIds = allTeamSeats.map(s => s.member_profile_id).filter(Boolean);
+      teamProfileIds = [profile.team_owner_id, ...memberIds];
+    } else {
+      // Check if current user is a TEAM OWNER
+      const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+        owner_profile_id: profile.id, status: 'active' 
+      });
+      if (ownedSeats.length > 0) {
+        isTeamOwner = true;
+        const memberIds = ownedSeats.map(s => s.member_profile_id).filter(Boolean);
+        teamProfileIds = [profile.id, ...memberIds];
       }
     }
+
+    // Deduplicate
+    teamProfileIds = [...new Set(teamProfileIds.filter(Boolean))];
 
     let deals = [];
     let rooms = [];
