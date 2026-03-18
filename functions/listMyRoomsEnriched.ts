@@ -128,8 +128,9 @@ Deno.serve(async (req) => {
       const counter = counterMap.get(room.id);
       const isSigned = room.agreement_status === 'fully_signed' || room.request_status === 'signed' || ag?.status === 'fully_signed';
 
-      // For agents: filter out deals locked to another agent
-      if (isAgent && deal?.locked_agent_id && deal.locked_agent_id !== profile.id) return null;
+      // For agents: filter out deals locked to another agent (but keep if locked to any team member)
+      const teamIdSet = new Set(teamProfileIds);
+      if (isAgent && deal?.locked_agent_id && !teamIdSet.has(deal.locked_agent_id)) return null;
 
       // Get the best agreement for this room to extract exhibit_a_terms (authoritative after regen)
       const bestAg = bestAgreementByRoom.get(room.id) || bestAgreementByRoom.get(room.deal_id);
