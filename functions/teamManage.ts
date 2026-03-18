@@ -155,30 +155,57 @@ Deno.serve(async (req) => {
       invited_at: new Date().toISOString(),
     });
 
-    try { await base44.users.inviteUser(normalizedEmail, 'user'); } catch (_) {}
+    // 1) Ensure user has an app account first (required before SendEmail works)
+    try {
+      await base44.users.inviteUser(normalizedEmail, 'user');
+      console.log('inviteUser succeeded for', normalizedEmail);
+    } catch (inviteErr) {
+      console.log('inviteUser:', inviteErr?.message || 'already exists');
+    }
 
+    // Small delay to ensure account is propagated before sending custom email
+    await new Promise(r => setTimeout(r, 2000));
+
+    // 2) Send custom team invitation email with direct AcceptInvite link
     const ownerName = myProfile.full_name || user.email;
     try {
       const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
       const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seat_id}`;
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: normalizedEmail,
-        subject: `${ownerName} invited you to join their team on Investor Konnect`,
+        from_name: 'Investor Konnect',
+        subject: `${ownerName} invited you to join their team`,
         body: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #E3C567;">Team Invitation</h2>
-            <p><strong>${ownerName}</strong> has invited you to join their team on Investor Konnect as an <strong>admin</strong>.</p>
-            <p>As a team admin, you'll have full access to create, edit, and manage all of their deals on the dashboard.</p>
-            <div style="margin: 30px 0; text-align: center;">
-              <a href="${inviteUrl}" style="display:inline-block;padding:14px 32px;background:#E3C567;color:#000;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">View Invitation</a>
+          <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0D0D0D; border-radius: 16px; overflow: hidden; border: 1px solid #1F1F1F;">
+            <div style="padding: 40px 32px; text-align: center;">
+              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2a5ae75f8_616CA829-4C69-40A9-8555-BE50375B7FC6.png" alt="Investor Konnect" width="48" height="48" style="margin-bottom: 16px;" />
+              <h1 style="color: #E3C567; font-size: 26px; margin: 0 0 16px 0; font-family: Georgia, serif;">Team Invitation</h1>
+              <p style="color: #FAFAFA; font-size: 16px; line-height: 1.5; margin: 0 0 8px 0;">
+                <strong>${ownerName}</strong> has invited you to join their team on Investor Konnect.
+              </p>
+              <div style="background: #141414; border: 1px solid #1F1F1F; border-radius: 12px; padding: 16px; margin: 20px 0;">
+                <p style="color: #808080; font-size: 13px; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 1px;">Your Role</p>
+                <p style="color: #E3C567; font-size: 18px; font-weight: bold; margin: 0;">🔑 Team Member — Full deal access</p>
+              </div>
+              <a href="${inviteUrl}" style="display: inline-block; padding: 16px 48px; background: #E3C567; color: #000; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 8px 0 24px 0;">
+                Accept or Decline Invitation
+              </a>
+              <p style="color: #666; font-size: 12px; line-height: 1.5;">
+                Click the button above to review and respond to this invitation.<br/>
+                You'll complete a quick setup: verify your identity and sign the platform agreement.
+              </p>
+              <hr style="border: none; border-top: 1px solid #1F1F1F; margin: 24px 0 16px 0;" />
+              <p style="color: #444; font-size: 11px;">
+                If you received this email by mistake, you can safely ignore it.
+              </p>
             </div>
-            <p style="color: #808080; font-size: 13px;">Click the button above to accept or decline the invitation.</p>
           </div>
         `
       });
-      console.log('Invite email sent to', normalizedEmail);
+      console.log('Custom team invite email sent to', normalizedEmail);
     } catch (emailErr) {
       console.error('Failed to send invite email:', emailErr?.message);
+      console.error('Error data:', JSON.stringify(emailErr?.response?.data || emailErr));
     }
 
     return Response.json({ ok: true, message: `Invite sent to ${normalizedEmail}` });
