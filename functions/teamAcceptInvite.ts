@@ -97,8 +97,11 @@ Deno.serve(async (req) => {
     joined_at: new Date().toISOString()
   });
 
-  // 2) Link this profile to the team owner, and inherit owner's role if member doesn't have one
+  // 2) Link this profile to the team owner, inherit owner's role, and ensure user_id is set
   const profileUpdate = { team_owner_id: seat.owner_profile_id };
+  if (!memberProfile.user_id || memberProfile.user_id !== user.id) {
+    profileUpdate.user_id = user.id;
+  }
   if ((!memberProfile.user_role || memberProfile.user_role === 'member') && ownerProfile?.user_role) {
     profileUpdate.user_role = ownerProfile.user_role;
     profileUpdate.user_type = ownerProfile.user_role;
