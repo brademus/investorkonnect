@@ -60,6 +60,7 @@ export default function Room() {
     if (loading || gateChecked.current) return;
     gateChecked.current = true;
     if (isAdmin) return; // Admins bypass all onboarding gates
+    if (profile?.team_owner_id) return; // Team members bypass all gates (completed team onboarding)
     if (!profile || !onboarded) { navigate(createPageUrl("PostAuth"), { replace: true }); return; }
     if (profile.user_role === 'investor' && !isPaidSubscriber) { navigate(createPageUrl("Pricing"), { replace: true }); return; }
     if (!kycVerified) { navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
