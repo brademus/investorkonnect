@@ -21,11 +21,11 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min expiry
 
     // Store code on profile metadata
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profiles?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
-    await base44.entities.Profile.update(profile.id, {
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
       metadata: {
         ...(profile.metadata || {}),
         phone_verification: {

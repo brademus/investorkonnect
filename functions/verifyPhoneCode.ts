@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
 
     const digits = phone.replace(/\D/g, '');
 
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const profile = profiles?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     // Increment attempts
-    await base44.entities.Profile.update(profile.id, {
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
       metadata: {
         ...(profile.metadata || {}),
         phone_verification: {
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     }
 
     // Success — mark phone as verified
-    await base44.entities.Profile.update(profile.id, {
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
       metadata: {
         ...(profile.metadata || {}),
         phone_verified: true,
