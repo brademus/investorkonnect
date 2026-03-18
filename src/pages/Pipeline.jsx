@@ -67,12 +67,15 @@ function PipelineContent() {
       navigate(createPageUrl(profile.user_role === 'agent' ? "AgentOnboarding" : "InvestorOnboarding"), { replace: true });
       return;
     }
-    const isPaid = profile.subscription_status === 'active' || profile.subscription_status === 'trialing';
-    const isTeamMemberPaid = !!profile.team_owner_id;
-    if (profile.user_role === 'investor' && !isPaid && !isTeamMemberPaid) { gateRef.current = true; navigate(createPageUrl("Pricing"), { replace: true }); return; }
-    const kyc = profile.kyc_status || profile.identity_status || 'unverified';
-    if (kyc !== 'approved' && kyc !== 'verified' && !profile.identity_verified_at) { gateRef.current = true; navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
-    if (!profile.nda_accepted) { gateRef.current = true; navigate(createPageUrl("NDA"), { replace: true }); return; }
+    // Team members bypass subscription/KYC/NDA gates (they completed team onboarding)
+    const isTeamMemberAccount = !!profile.team_owner_id;
+    if (!isTeamMemberAccount) {
+      const isPaid = profile.subscription_status === 'active' || profile.subscription_status === 'trialing';
+      if (profile.user_role === 'investor' && !isPaid) { gateRef.current = true; navigate(createPageUrl("Pricing"), { replace: true }); return; }
+      const kyc = profile.kyc_status || profile.identity_status || 'unverified';
+      if (kyc !== 'approved' && kyc !== 'verified' && !profile.identity_verified_at) { gateRef.current = true; navigate(createPageUrl("IdentityVerification"), { replace: true }); return; }
+      if (!profile.nda_accepted) { gateRef.current = true; navigate(createPageUrl("NDA"), { replace: true }); return; }
+    }
     setReady(true);
   }, [loading, profile, onboarded]);
 

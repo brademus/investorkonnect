@@ -92,8 +92,8 @@ export function useCurrentProfile() {
         if (isAdmin) role = 'admin';
         else if (role !== 'investor' && role !== 'agent') role = 'member';
 
-        // Team members bypass all onboarding/subscription/KYC/NDA gates
-        const bypassGates = isAdmin;
+        // Team members and admins bypass subscription/KYC/NDA gates
+        const bypassGates = isAdmin || isTeamMember;
 
         // Onboarding
         const hasLegacy = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name));
