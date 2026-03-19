@@ -234,7 +234,10 @@ Deno.serve(async (req) => {
       room_id
         ? base44.asServiceRole.entities.Room.filter({ id: room_id }).catch(() => [])
         : Promise.resolve([]),
-      fetch(INTERNAL_AGREEMENT_URL).then(r => r.arrayBuffer()),
+      fetch(INTERNAL_AGREEMENT_URL).then(r => {
+        if (!r.ok) throw new Error(`Template PDF download failed: ${r.status}`);
+        return r.arrayBuffer();
+      }),
       getDocuSignConnection(base44),
     ]);
 
