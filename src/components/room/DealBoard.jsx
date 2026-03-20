@@ -186,8 +186,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   }, [activeTab]);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
-  const isInvestor = profile?.user_role === 'investor' || isAdmin;
-  const isAgent = !isAdmin && profile?.user_role === 'agent';
+  const isTeamMember = !!profile?.team_owner_id;
+  // Team members can view the deal board but cannot take actions — treat as viewer
+  const isInvestor = (profile?.user_role === 'investor' || isAdmin) && !isTeamMember;
+  const isAgent = !isAdmin && !isTeamMember && profile?.user_role === 'agent';
 
   // Track fully-signed from both room props AND real-time agreement updates
   const [agreementFullySigned, setAgreementFullySigned] = useState(() => {
