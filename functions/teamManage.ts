@@ -306,9 +306,9 @@ Deno.serve(async (req) => {
 
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Decrement Stripe quantity
+    // Decrement Stripe quantity (investors only — agents have free seats)
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    if (STRIPE_SECRET_KEY) {
+    if (STRIPE_SECRET_KEY && myProfile.user_role !== 'agent') {
       try {
         const allSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
         const remainingSeats = allSeats.filter(s => s.id !== seat_id && s.status !== 'removed').length;
