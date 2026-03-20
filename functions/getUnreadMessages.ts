@@ -13,11 +13,15 @@ Deno.serve(async (req) => {
 
     const profileId = profile.id;
     const isAgent = profile.user_role === 'agent';
-    const isInvestor = profile.user_role === 'investor' || profile.role === 'admin';
+    const isTeamMember = !!profile.team_owner_id;
+    const isInvestor = profile.user_role === 'investor' || profile.role === 'admin' || isTeamMember;
+
+    // Team members see messages for the owner's deals
+    const investorProfileId = isTeamMember ? profile.team_owner_id : profileId;
 
     // For agents: use DealInvite index to find their rooms instead of scanning all rooms
     const [investorRooms, agentInvites] = await Promise.all([
-      isInvestor ? base44.asServiceRole.entities.Room.filter({ investorId: profileId }).catch(() => []) : Promise.resolve([]),
+      isInvestor ? base44.asServiceRole.entities.Room.filter({ investorId: investorProfileId }).catch(() => []) : Promise.resolve([]),
       isAgent ? base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profileId }).catch(() => []) : Promise.resolve([]),
     ]);
 

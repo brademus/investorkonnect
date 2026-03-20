@@ -14,11 +14,15 @@ Deno.serve(async (req) => {
     const profileId = profile.id;
     const isAdmin = profile.role === 'admin' || profile.user_role === 'admin';
     const isAgent = !isAdmin && profile.user_role === 'agent';
-    const isInvestor = profile.user_role === 'investor' || isAdmin;
+    const isTeamMember = !!profile.team_owner_id;
+    const isInvestor = profile.user_role === 'investor' || isAdmin || isTeamMember;
+
+    // Team members see notifications for the owner's deals
+    const investorProfileId = isTeamMember ? profile.team_owner_id : profileId;
 
     // FIX: Use DealInvite index for agents instead of Room.filter({}) which scans ALL rooms
     const [investorRooms, agentInvites] = await Promise.all([
-      isInvestor ? base44.entities.Room.filter({ investorId: profileId }).catch(() => []) : Promise.resolve([]),
+      isInvestor ? base44.entities.Room.filter({ investorId: investorProfileId }).catch(() => []) : Promise.resolve([]),
       isAgent ? base44.entities.DealInvite.filter({ agent_profile_id: profileId }).catch(() => []) : Promise.resolve([]),
     ]);
 
