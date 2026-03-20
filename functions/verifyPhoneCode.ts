@@ -1,73 +1,75 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
- * Verifies a 6-digit phone verification code.
- * Payload: { code: string, phone: string }
+ * Reports/verifies a Sinch Verification SMS code.
+ * Payload: { phone: string, code: string }
  */
 Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { code, phone } = await req.json();
-    if (!code || !phone) return Response.json({ error: 'code and phone required' }, { status: 400 });
+  const { phone, code } = await req.json();
+  if (!phone || !code) return Response.json({ error: 'phone and code required' }, { status: 400 });
 
-    const digits = phone.replace(/\D/g, '');
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 10) return Response.json({ error: 'Invalid phone number' }, { status: 400 });
 
-    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles?.[0];
-    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+  const e164 = digits.startsWith('1') && digits.length === 11 ? `+${digits}` : `+1${digits}`;
+  // URL-encode the + sign for the path
+  const encodedPhone = encodeURIComponent(e164);
 
-    const verification = profile.metadata?.phone_verification;
-    if (!verification) return Response.json({ error: 'No verification pending', verified: false }, { status: 400 });
+  const appKey = Deno.env.get('Sinch_KEY_verification');
+  const appSecret = Deno.env.get('Sinch_secret_verification');
 
-    // Check attempts (max 5)
-    if (verification.attempts >= 5) {
-      return Response.json({ error: 'Too many attempts. Please request a new code.', verified: false }, { status: 429 });
-    }
-
-    // Increment attempts
-    await base44.asServiceRole.entities.Profile.update(profile.id, {
-      metadata: {
-        ...(profile.metadata || {}),
-        phone_verification: {
-          ...verification,
-          attempts: (verification.attempts || 0) + 1,
-        }
-      }
-    });
-
-    // Check expiry
-    if (new Date(verification.expires_at) < new Date()) {
-      return Response.json({ error: 'Code expired. Please request a new one.', verified: false }, { status: 400 });
-    }
-
-    // Check phone matches
-    if (verification.phone !== digits) {
-      return Response.json({ error: 'Phone number mismatch. Please request a new code.', verified: false }, { status: 400 });
-    }
-
-    // Check code
-    if (verification.code !== code.trim()) {
-      return Response.json({ error: 'Incorrect code. Please try again.', verified: false }, { status: 400 });
-    }
-
-    // Success — mark phone as verified
-    await base44.asServiceRole.entities.Profile.update(profile.id, {
-      metadata: {
-        ...(profile.metadata || {}),
-        phone_verified: true,
-        phone_verified_number: digits,
-        phone_verified_at: new Date().toISOString(),
-        phone_verification: null, // clear pending verification
-      }
-    });
-
-    console.log('[verifyPhoneCode] Phone verified for user:', user.id);
-    return Response.json({ ok: true, verified: true });
-  } catch (error) {
-    console.error('[verifyPhoneCode] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+  if (!appKey || !appSecret) {
+    return Response.json({ error: 'Sinch Verification not configured' }, { status: 500 });
   }
+
+  const basicAuth = btoa(`${appKey}:${appSecret}`);
+
+  console.log('[verifyPhoneCode] Reporting code for', e164);
+
+  const res = await fetch(`https://verification.api.sinch.com/verification/v1/verifications/number/${encodedPhone}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Basic ${basicAuth}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      method: 'sms',
+      sms: { code: code.trim() },
+    }),
+  });
+
+  const body = await res.text();
+  console.log('[verifyPhoneCode] Sinch response:', res.status, body);
+
+  let result;
+  try { result = JSON.parse(body); } catch (_) { result = { raw: body }; }
+
+  if (!res.ok) {
+    console.error('[verifyPhoneCode] Sinch error:', JSON.stringify(result));
+    return Response.json({ ok: false, error: result.message || 'Verification failed' }, { status: 400 });
+  }
+
+  // Check if Sinch says it's verified
+  if (result.status !== 'SUCCESSFUL') {
+    return Response.json({ ok: false, error: 'Invalid code. Please try again.' }, { status: 400 });
+  }
+
+  // Mark phone as verified on profile
+  const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+  const profile = profiles?.[0];
+  if (profile) {
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
+      phone: e164,
+      metadata: {
+        ...(profile.metadata || {}),
+        phone_verification: { phone: e164, verified: true, verified_at: new Date().toISOString() }
+      }
+    });
+  }
+
+  return Response.json({ ok: true, verified: true });
 });
