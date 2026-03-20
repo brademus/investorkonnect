@@ -247,7 +247,7 @@ export default function AgentOnboarding() {
     if (step === 2) {
       const codeEl = document.querySelector('[data-phone-code]');
       const code = codeEl?.value?.trim();
-      if (!code || code.length !== 6) { toast.error('Please enter the 6-digit code'); return; }
+      if (!code || code.length !== 4) { toast.error('Please enter the 4-digit code'); return; }
       setVerifyingCode(true);
       try {
         const res = await base44.functions.invoke("verifyPhoneCode", { code, phone: formData.phone });
