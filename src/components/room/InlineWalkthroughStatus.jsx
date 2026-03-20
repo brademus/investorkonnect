@@ -26,6 +26,7 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
+  const isTeamMember = !!profile?.team_owner_id;
   const isSigned = room?.agreement_status === "fully_signed" || room?.request_status === "locked" || room?.is_fully_signed === true;
 
   const wtSlots = deal?.walkthrough_slots?.filter(s => s.date && s.date.length >= 8) || [];
@@ -39,8 +40,8 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
   const status = localStatus || (dealConfirmed ? "SCHEDULED" : (externalStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null)));
   // Either party can confirm proposed dates — the one who didn't propose them
   const proposedBySelf2 = proposedByProfileId === profile?.id;
-  const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
-  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canAgentRespond = isAgent && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canInvestorRespond = isInvestor && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const hasSlots = wtSlots.length > 0;
 

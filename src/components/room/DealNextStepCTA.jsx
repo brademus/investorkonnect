@@ -26,8 +26,10 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
   const fileInputRef = React.useRef(null);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
-  const isInvestor = profile?.user_role === 'investor' || isAdmin;
-  const isAgent = !isAdmin && profile?.user_role === 'agent';
+  const isTeamMember = !!profile?.team_owner_id;
+  // Team members can view but not take actions — treat them as neither investor nor agent for action purposes
+  const isInvestor = (profile?.user_role === 'investor' || isAdmin) && !isTeamMember;
+  const isAgent = !isAdmin && !isTeamMember && profile?.user_role === 'agent';
   const stage = normalizeStage(deal?.pipeline_stage);
   const isSigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || room?.is_fully_signed === true;
 
