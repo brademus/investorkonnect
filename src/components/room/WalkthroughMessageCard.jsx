@@ -108,7 +108,8 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
     }
   };
 
-  const canRespond = isRecipient && isSigned && status === 'pending';
+  const isTeamMember = !!profile?.team_owner_id;
+  const canRespond = isRecipient && !isTeamMember && isSigned && status === 'pending';
 
   return (
     <div className="bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-4 max-w-[85%]">

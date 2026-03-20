@@ -48,6 +48,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
 
   const isInvestor = profile?.user_role === "investor";
   const isAgent = profile?.user_role === "agent";
+  const isTeamMember = !!profile?.team_owner_id;
   const isSigned =
     room?.agreement_status === "fully_signed" ||
     room?.request_status === "locked" ||
@@ -140,8 +141,8 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   const status = apptStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null);
   const hasSlots = wtSlots.length > 0;
   const proposedBySelf2 = proposedByProfileId === profile?.id;
-  const canAgentRespond = isAgent && isSigned && status === "PROPOSED" && !proposedBySelf2;
-  const canInvestorRespond = isInvestor && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canAgentRespond = isAgent && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
+  const canInvestorRespond = isInvestor && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
   const displayText = formatWalkthrough(wtDate, wtTime);
 

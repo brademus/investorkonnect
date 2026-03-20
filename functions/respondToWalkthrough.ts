@@ -24,6 +24,11 @@ Deno.serve(async (req) => {
     const profile = profiles?.[0];
     if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
 
+    // Team members cannot confirm/decline walkthroughs — only the actual agent or investor account owner can
+    if (profile.team_owner_id) {
+      return Response.json({ error: 'Team members cannot confirm or decline walkthroughs' }, { status: 403 });
+    }
+
     const profileId = profile.id;
     const isConfirm = action === 'confirm';
     const apptStatus = isConfirm ? 'SCHEDULED' : 'CANCELED';
