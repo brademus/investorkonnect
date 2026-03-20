@@ -91,6 +91,8 @@ Deno.serve(async (req) => {
       const unread = messages.filter(m => {
         if (!m.body?.trim()) return false;
         if (m.sender_profile_id === profileId || m.sender_profile_id === 'system') return false;
+        // Team members: also exclude messages from the owner
+        if (isTeamMember && m.sender_profile_id === investorProfileId) return false;
         if (!lastSeenTs) return true;
         return new Date(m.created_date).getTime() > new Date(lastSeenTs).getTime();
       });

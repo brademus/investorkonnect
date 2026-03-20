@@ -61,6 +61,8 @@ Deno.serve(async (req) => {
       const unread = messages.filter(m => {
         if (!m.body?.trim()) return false;
         if (m.sender_profile_id === profileId || m.sender_profile_id === 'system') return false;
+        // Team members: also exclude messages from the owner
+        if (isTeamMember && m.sender_profile_id === investorProfileId) return false;
         if (!lastSeenTs) return true;
         // Use >= comparison would count messages at exact same ms as unread,
         // so add 1-second buffer: message must be strictly AFTER lastSeen + 1s
