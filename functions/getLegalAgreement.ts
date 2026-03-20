@@ -101,16 +101,32 @@ Deno.serve(async (req) => {
       if (p) {
         // Check profile ID matches
         if (agreement.investor_profile_id === p.id || agreement.agent_profile_id === p.id) hasAccess = true;
+        // Team member: check if the team owner has access
+        if (!hasAccess && p.team_owner_id) {
+          const ownerProfiles = await base44.asServiceRole.entities.Profile.filter({ id: p.team_owner_id });
+          const owner = ownerProfiles?.[0];
+          if (owner) {
+            if (agreement.investor_user_id === owner.user_id || agreement.investor_profile_id === owner.id) hasAccess = true;
+          }
+        }
         // Check deal participants
         if (!hasAccess) {
           const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
           if (deals?.[0]?.selected_agent_ids?.includes(p.id)) hasAccess = true;
           if (deals?.[0]?.investor_id === p.id) hasAccess = true;
+          // Team member: check if owner is the investor
+          if (!hasAccess && p.team_owner_id) {
+            if (deals?.[0]?.investor_id === p.team_owner_id) hasAccess = true;
+          }
         }
         if (!hasAccess && room_id) {
           const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
           if (rooms?.[0]?.agent_ids?.includes(p.id)) hasAccess = true;
           if (rooms?.[0]?.investorId === p.id) hasAccess = true;
+          // Team member: check if owner is the room investor
+          if (!hasAccess && p.team_owner_id) {
+            if (rooms?.[0]?.investorId === p.team_owner_id) hasAccess = true;
+          }
         }
       }
     }
