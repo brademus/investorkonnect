@@ -304,7 +304,7 @@ function TeamAccountContent() {
                   <Button onClick={() => handleAssignSeat(seat.id)} disabled={invitingId === seat.id} size="sm" className="bg-[#E3C567] text-black hover:bg-[#EDD89F] flex-shrink-0">
                     {invitingId === seat.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Mail className="w-4 h-4 mr-1" /> Invite</>}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 flex-shrink-0" title="Cancel seat (stop billing)">
+                  <Button variant="ghost" size="icon" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 flex-shrink-0" title={freeSeats ? "Remove seat" : "Cancel seat (stop billing)"}>
                     {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-4 h-4" />}
                   </Button>
                 </div>
@@ -368,7 +368,7 @@ function TeamAccountContent() {
                       {removingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Remove"}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs">
-                      {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Cancel Seat"}
+                      {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : (freeSeats ? "Remove Seat" : "Cancel Seat")}
                     </Button>
                   </div>
                 </div>
