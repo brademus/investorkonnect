@@ -22,7 +22,7 @@ const TOTAL_STEPS = 4;
 
 export default function InvestorOnboarding() {
   const navigate = useNavigate();
-  const { profile, user, isPaidSubscriber } = useCurrentProfile();
+  const { profile, user, isPaidSubscriber, isTeamMember } = useCurrentProfile();
   const { selectedState } = useWizard();
   const { checking } = useOnboardingAccess();
   const [step, setStep] = useState(1);
@@ -50,7 +50,7 @@ export default function InvestorOnboarding() {
     if (checking || !profile) return;
     const done = !!(profile.onboarding_completed_at || profile.onboarding_step === 'basic_complete' || profile.onboarding_version);
     if (done) {
-      navigate(createPageUrl(isPaidSubscriber ? "IdentityVerification" : "Pricing"), { replace: true });
+      navigate(createPageUrl((isPaidSubscriber || isTeamMember) ? "IdentityVerification" : "Pricing"), { replace: true });
     }
   }, [checking, profile, isPaidSubscriber, navigate]);
 
@@ -153,8 +153,13 @@ export default function InvestorOnboarding() {
         }
       });
 
-      toast.success("Profile saved! Let's choose your plan.");
-      window.location.href = createPageUrl("Pricing");
+      if (isTeamMember) {
+        toast.success("Profile saved! Continuing setup...");
+        window.location.href = createPageUrl("IdentityVerification");
+      } else {
+        toast.success("Profile saved! Let's choose your plan.");
+        window.location.href = createPageUrl("Pricing");
+      }
     } catch (error) {
       toast.error(error?.message || "Failed to save. Please try again.");
     } finally {
@@ -228,7 +233,7 @@ export default function InvestorOnboarding() {
   const isStep1Valid = formData.first_name.trim() && formData.last_name.trim() && (formData.phone || '').replace(/\D/g, '').length >= 10;
   const isStep3Valid = (formData.nationwide || (formData.primary_states && formData.primary_states.length > 0)) && (formData.deal_types || []).length > 0;
   const nextDisabled = (step === 1 && !isStep1Valid) || (step === 2 && verifyingCode) || (step === 3 && !isStep3Valid);
-  const nextLabel = step === 2 ? (verifyingCode ? 'Verifying...' : 'Verify & Continue →') : step === TOTAL_STEPS ? 'Continue to Pricing →' : 'Continue →';
+  const nextLabel = step === 2 ? (verifyingCode ? 'Verifying...' : 'Verify & Continue →') : step === TOTAL_STEPS ? (isTeamMember ? 'Continue →' : 'Continue to Pricing →') : 'Continue →';
 
   const allDealTypesSelected = formData.deal_types.length === DEAL_TYPES.length;
 
@@ -396,7 +401,7 @@ export default function InvestorOnboarding() {
             </div>
             <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
               <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
-              <p className="text-sm text-[#E3C567]">Next, you'll choose a subscription plan to unlock agent matching and deal rooms.</p>
+              <p className="text-sm text-[#E3C567]">{isTeamMember ? "Next, we'll verify your identity to complete your account setup." : "Next, you'll choose a subscription plan to unlock agent matching and deal rooms."}</p>
             </div>
           </div>
           <Dialog open={showTemplatePreview} onOpenChange={setShowTemplatePreview}>
