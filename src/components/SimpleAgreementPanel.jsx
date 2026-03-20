@@ -455,6 +455,21 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
               </div>
             </div>
 
+            {/* Team member read-only investor view */}
+            {isTeamMember && !fullySigned && (
+              <>
+                {investorSigned && !agentSigned && relevantCounters.length === 0 && (
+                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center"><p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p></div>
+                )}
+                {!investorSigned && !needsRegen && (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center"><p className="text-sm text-[#FAFAFA]">Waiting for investor to sign</p></div>
+                )}
+                {needsRegen && (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center"><p className="text-sm text-[#FAFAFA]">Agreement needs regeneration after counter offer</p></div>
+                )}
+              </>
+            )}
+
             {/* Investor actions */}
             {isInvestor && !fullySigned && (
               <>
