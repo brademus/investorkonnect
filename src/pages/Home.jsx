@@ -20,8 +20,9 @@ export default function Home() {
         const authed = await base44.auth.isAuthenticated();
         if (!mounted) return;
         if (authed) {
-          // Authenticated user — skip role selection entirely
-          navigate(createPageUrl("Pipeline"), { replace: true });
+          // Authenticated user — route through PostAuth which handles
+          // team invites, onboarding gates, pricing, etc.
+          navigate(createPageUrl("PostAuth"), { replace: true });
         } else {
           navigate(createPageUrl("RoleLanding"), { replace: true });
         }
