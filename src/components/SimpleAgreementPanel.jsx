@@ -20,8 +20,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const isInvestor = profile?.user_role === 'investor' || profile?.role === 'admin' || profile?.user_type === 'investor';
-  const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
+  const isTeamMember = !!profile?.team_owner_id;
+  const isInvestorView = profile?.user_role === 'investor' || profile?.role === 'admin' || profile?.user_type === 'investor' || isTeamMember;
+  // Team members see investor view but cannot take actions
+  const isInvestor = isInvestorView && !isTeamMember;
+  const isAgent = (profile?.user_role === 'agent' || profile?.user_type === 'agent') && !isTeamMember;
+  // For display purposes (status labels, badges), use the investor perspective for team members
+  const isInvestorDisplay = isInvestorView;
 
   // Sync external agreement/room props when they change
   useEffect(() => {
