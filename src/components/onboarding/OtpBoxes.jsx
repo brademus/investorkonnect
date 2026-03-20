@@ -60,6 +60,7 @@ export default function OtpBoxes({ value = "", onChange, autoFocus = false }) {
 
   return (
     <div className="flex justify-center gap-3">
+      <input type="hidden" data-phone-code="" value={value} />
       {digits.map((d, i) => (
         <input
           key={i}
