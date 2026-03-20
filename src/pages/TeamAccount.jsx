@@ -216,15 +216,24 @@ function TeamAccountContent() {
           <div className="rounded-2xl p-5 mb-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <CreditCard className="w-5 h-5 text-[#E3C567]" />
+                {freeSeats ? <Users className="w-5 h-5 text-[#E3C567]" /> : <CreditCard className="w-5 h-5 text-[#E3C567]" />}
                 <div>
                   <p className="text-sm font-semibold text-[#FAFAFA]">{totalPaidSeats} seat{totalPaidSeats !== 1 ? 's' : ''}</p>
                   <p className="text-xs text-[#808080]">{openSeats.length} open · {assignedSeats.length} assigned</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-[#E3C567]">${totalPaidSeats * 10}/mo</p>
-                <p className="text-xs text-[#808080]">added to subscription</p>
+                {freeSeats ? (
+                  <>
+                    <p className="text-lg font-bold text-green-400">Free</p>
+                    <p className="text-xs text-[#808080]">no charge for agents</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-[#E3C567]">${totalPaidSeats * 10}/mo</p>
+                    <p className="text-xs text-[#808080]">added to subscription</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -234,9 +243,13 @@ function TeamAccountContent() {
         <div className="rounded-2xl p-6 mb-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Plus className="w-5 h-5 text-[#E3C567]" />
-            <h3 className="text-lg font-semibold text-[#FAFAFA]">Buy Team Seats</h3>
+            <h3 className="text-lg font-semibold text-[#FAFAFA]">{freeSeats ? 'Add Team Seats' : 'Buy Team Seats'}</h3>
           </div>
-          <p className="text-sm text-[#808080] mb-5">Each seat is $10/month. Purchase seats first, then assign them to team members.</p>
+          <p className="text-sm text-[#808080] mb-5">
+            {freeSeats
+              ? 'Add seats for free, then assign them to your team members.'
+              : 'Each seat is $10/month. Purchase seats first, then assign them to team members.'}
+          </p>
 
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-3">
@@ -250,11 +263,16 @@ function TeamAccountContent() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            <div className="text-sm text-[#808080]">
-              <span className="text-[#E3C567] font-bold text-lg">${buyCount * 10}</span>/mo
-            </div>
+            {!freeSeats && (
+              <div className="text-sm text-[#808080]">
+                <span className="text-[#E3C567] font-bold text-lg">${buyCount * 10}</span>/mo
+              </div>
+            )}
+            {freeSeats && (
+              <div className="text-sm text-green-400 font-semibold">Free</div>
+            )}
             <Button onClick={handleBuySeats} disabled={buying} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-11 px-6 ml-auto">
-              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Buy {buyCount} Seat{buyCount !== 1 ? 's' : ''}</>}
+              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserPlus className="w-4 h-4 mr-2" />{freeSeats ? 'Add' : 'Buy'} {buyCount} Seat{buyCount !== 1 ? 's' : ''}</>}
             </Button>
           </div>
         </div>
