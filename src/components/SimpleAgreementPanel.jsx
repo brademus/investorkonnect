@@ -559,9 +559,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             <Badge className="bg-transparent border-[#1F1F1F]">
               {fullySigned ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Signed</span>
                 : relevantCounters.length > 0 ? <span className="text-[#E3C567] flex items-center gap-1"><Clock className="w-3 h-3" /> Counter Pending</span>
-                : needsRegen ? <span className="text-[#F59E0B] flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Action Required'}</span>
-                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Ready to Sign' : 'Waiting for Agent'}</span>
-                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Pending'}</span>}
+                : needsRegen ? <span className="text-[#F59E0B] flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Waiting for Investor' : 'Action Required'}</span>
+                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Ready to Sign' : 'Waiting for Agent'}</span>
+                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Waiting for Investor' : 'Pending'}</span>}
             </Badge>
           )}
         </div>
@@ -579,9 +579,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             <Badge className="bg-transparent border-[#1F1F1F]">
               {fullySigned ? <span className="text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Signed</span>
                 : relevantCounters.length > 0 ? <span className="text-[#E3C567] flex items-center gap-1"><Clock className="w-3 h-3" /> Counter Pending</span>
-                : needsRegen ? <span className="text-[#F59E0B] flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Action Required'}</span>
-                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Ready to Sign' : 'Waiting for Agent'}</span>
-                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {isAgent ? 'Waiting for Investor' : 'Pending'}</span>}
+                : needsRegen ? <span className="text-[#F59E0B] flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Waiting for Investor' : 'Action Required'}</span>
+                : investorSigned ? <span className="text-yellow-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Ready to Sign' : 'Waiting for Agent'}</span>
+                : <span className="text-blue-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {!isInvestorDisplay ? 'Waiting for Investor' : 'Pending'}</span>}
             </Badge>
           )}
         </div>
