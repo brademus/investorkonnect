@@ -16,22 +16,6 @@ Deno.serve(async (req) => {
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 10) return Response.json({ error: 'Invalid phone number' }, { status: 400 });
 
-    // Test bypass numbers — skip SMS, use fixed code "000000"
-    const TEST_BYPASS_NUMBERS = ['9206361628'];
-    if (TEST_BYPASS_NUMBERS.includes(digits.slice(-10))) {
-      const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
-      const profile = profiles?.[0];
-      if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
-      await base44.asServiceRole.entities.Profile.update(profile.id, {
-        metadata: {
-          ...(profile.metadata || {}),
-          phone_verification: { code: '000000', phone: digits.slice(-10), expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), attempts: 0 }
-        }
-      });
-      console.log('[sendVerificationCode] Test bypass for', digits.slice(-4));
-      return Response.json({ ok: true, message: 'Verification code sent' });
-    }
-
     // Generate 6-digit code
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min expiry
