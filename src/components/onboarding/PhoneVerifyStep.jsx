@@ -1,28 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { Input } from "@/components/ui/input";
-import { Loader2, CheckCircle, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import OtpBoxes from "./OtpBoxes";
 
 /**
  * Full-page phone verification step for onboarding.
- * Auto-sends code on mount. User enters 6-digit code to verify.
- *
- * Props:
- *   phone: string
- *   onVerified: () => void   — called after successful verification
+ * Auto-sends code on mount. User enters 4-digit code to verify.
  */
 export default function PhoneVerifyStep({ phone }) {
   const [sending, setSending] = useState(true);
   const [codeSent, setCodeSent] = useState(false);
-  const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState("");
-  const inputRef = useRef(null);
   const sentOnce = useRef(false);
 
-  // Auto-send on mount
   useEffect(() => {
     if (!sentOnce.current) {
       sentOnce.current = true;
@@ -30,17 +22,11 @@ export default function PhoneVerifyStep({ phone }) {
     }
   }, []);
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [cooldown]);
-
-  // Focus input after code sent
-  useEffect(() => {
-    if (codeSent) setTimeout(() => inputRef.current?.focus(), 200);
-  }, [codeSent]);
 
   const sendCode = async () => {
     setSending(true);
@@ -59,18 +45,12 @@ export default function PhoneVerifyStep({ phone }) {
     setSending(false);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && code.length === 6) {
-      // Parent handles verify via the Next button
-    }
-  };
-
   return (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Verify your phone</h3>
       <p className="text-[18px] text-[#808080] mb-10">
         {codeSent
-          ? <>Enter the 6-digit code we sent to <span className="text-[#FAFAFA] font-medium">{phone}</span></>
+          ? <>Enter the 4-digit code we sent to <span className="text-[#FAFAFA] font-medium">{phone}</span></>
           : "Sending verification code..."
         }
       </p>
@@ -82,19 +62,11 @@ export default function PhoneVerifyStep({ phone }) {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex justify-center">
-            <Input
-              ref={inputRef}
-              value={code}
-              onChange={(e) => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
-              onKeyDown={handleKeyDown}
-              data-phone-code=""
-              placeholder="000000"
-              maxLength={6}
-              inputMode="numeric"
-              className="h-20 text-center text-4xl tracking-[0.5em] font-mono bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 max-w-[320px]"
-            />
-          </div>
+          <OtpBoxes
+            value={code}
+            onChange={(val) => { setCode(val); setError(""); }}
+            autoFocus={codeSent}
+          />
 
           {error && (
             <p className="text-red-400 text-sm text-center">{error}</p>
