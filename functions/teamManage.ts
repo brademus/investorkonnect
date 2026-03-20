@@ -18,25 +18,24 @@ Deno.serve(async (req) => {
   if (!profiles.length) return Response.json({ error: 'Profile not found' }, { status: 404 });
   const myProfile = profiles[0];
 
+  // Team accounts are investors-only (agents who are team MEMBERS can still accept/list their membership)
+  if (myProfile.user_role === 'agent' && action !== 'accept' && action !== 'list') {
+    return Response.json({ error: 'Team accounts are only available for investors' }, { status: 403 });
+  }
+
   // === LIST ===
   if (action === 'list') {
-    const isAgent = myProfile.user_role === 'agent';
-
-    // Agents get free seats — no Stripe reconciliation needed
-    if (isAgent) {
-      const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
-      const activeSeats = ownedSeats.filter(s => s.status === 'open' || s.status === 'invited' || s.status === 'active');
-
+    // Agents can only see their own membership (if they were invited by an investor)
+    if (myProfile.user_role === 'agent') {
       const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });
       const activeMembership = myMembership.find(s => s.status === 'active' || s.status === 'invited');
-
       return Response.json({
         ok: true,
-        seats: activeSeats,
+        seats: [],
         stripe_paid_seats: 0,
-        free_seats: true,
+        free_seats: false,
         my_membership: activeMembership || null,
-        is_owner: activeSeats.length > 0 || !activeMembership,
+        is_owner: false,
       });
     }
 
@@ -131,30 +130,6 @@ Deno.serve(async (req) => {
       my_membership: activeMembership || null,
       is_owner: finalActive.length > 0 || !activeMembership,
     });
-  }
-
-  // === ADD FREE SEATS (agents only) ===
-  if (action === 'add_free_seats') {
-    if (myProfile.user_role !== 'agent') {
-      return Response.json({ error: 'Free seats are only available for agents' }, { status: 403 });
-    }
-    const count = parseInt(body.count) || 0;
-    if (count < 1 || count > 10) return Response.json({ error: 'Select between 1 and 10 seats' }, { status: 400 });
-
-    const delay = (ms) => new Promise(r => setTimeout(r, ms));
-    for (let i = 0; i < count; i++) {
-      if (i > 0) await delay(300);
-      await base44.asServiceRole.entities.TeamSeat.create({
-        owner_profile_id: myProfile.id,
-        owner_email: user.email.toLowerCase(),
-        member_email: '',
-        team_role: 'member',
-        status: 'open',
-        invited_at: new Date().toISOString(),
-      });
-    }
-
-    return Response.json({ ok: true, seats_added: count });
   }
 
   // === ASSIGN — assign an email to an open seat, send invite ===
@@ -306,9 +281,9 @@ Deno.serve(async (req) => {
 
     await base44.entities.TeamSeat.update(seat_id, { status: 'removed' });
 
-    // Decrement Stripe quantity (investors only — agents have free seats)
+    // Decrement Stripe quantity
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    if (STRIPE_SECRET_KEY && myProfile.user_role !== 'agent') {
+    if (STRIPE_SECRET_KEY) {
       try {
         const allSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
         const remainingSeats = allSeats.filter(s => s.id !== seat_id && s.status !== 'removed').length;

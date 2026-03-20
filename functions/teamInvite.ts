@@ -23,6 +23,11 @@ Deno.serve(async (req) => {
   if (!profiles.length) return Response.json({ error: 'Profile not found' }, { status: 404 });
   const ownerProfile = profiles[0];
 
+  // Team accounts are investors-only
+  if (ownerProfile.user_role === 'agent') {
+    return Response.json({ error: 'Team accounts are only available for investors' }, { status: 403 });
+  }
+
   // Domain validation — invitee email must match owner's domain exactly
   const ownerDomain = user.email.split('@')[1]?.toLowerCase();
   const inviteeDomain = normalizedEmail.split('@')[1]?.toLowerCase();

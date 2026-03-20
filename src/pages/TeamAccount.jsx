@@ -21,7 +21,6 @@ function TeamAccountContent() {
   const [seats, setSeats] = useState([]);
   const [myMembership, setMyMembership] = useState(null);
   const [isOwner, setIsOwner] = useState(true);
-  const [freeSeats, setFreeSeats] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Buy seats state
@@ -43,58 +42,51 @@ function TeamAccountContent() {
       setSeats(res.data?.seats || []);
       setMyMembership(res.data?.my_membership || null);
       setIsOwner(res.data?.is_owner);
-      setFreeSeats(res.data?.free_seats || false);
     } catch (err) {
       console.error('Failed to load team:', err);
     }
     setLoading(false);
   };
 
-  useEffect(() => { if (profile?.id) fetchTeam(); }, [profile?.id]);
+  useEffect(() => {
+    if (profile?.id) {
+      // Agents cannot own teams — redirect to dashboard
+      if (profile.user_role === 'agent') {
+        navigate(createPageUrl("Pipeline"), { replace: true });
+        return;
+      }
+      fetchTeam();
+    }
+  }, [profile?.id]);
 
   const openSeats = seats.filter(s => s.status === 'open');
   const assignedSeats = seats.filter(s => s.status === 'invited' || s.status === 'active');
   const totalPaidSeats = seats.filter(s => s.status !== 'removed').length;
 
   const handleBuySeats = async () => {
+    if (!profile?.stripe_subscription_id) {
+      toast.error('You need an active subscription before adding team seats.');
+      return;
+    }
     setBuying(true);
     try {
-      if (freeSeats) {
-        // Agents: add free seats directly
-        const res = await base44.functions.invoke('teamManage', { action: 'add_free_seats', count: buyCount });
-        if (res?.data?.ok) {
-          toast.success(`${res.data.seats_added} seat${res.data.seats_added !== 1 ? 's' : ''} added!`);
-          setBuyCount(1);
-          fetchTeam();
-        } else {
-          toast.error(res?.data?.error || 'Failed to add seats');
-        }
+      const res = await base44.functions.invoke('checkoutSeats', {
+        count: buyCount,
+        subscription_id: profile.stripe_subscription_id,
+        profile_id: profile.id,
+      });
+      if (res?.data?.ok) {
+        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
+        setBuyCount(1);
+        await new Promise(r => setTimeout(r, 2000));
+        fetchTeam();
       } else {
-        // Investors: Stripe billing
-        if (!profile?.stripe_subscription_id) {
-          toast.error('You need an active subscription before adding team seats.');
-          setBuying(false);
-          return;
-        }
-        const res = await base44.functions.invoke('checkoutSeats', {
-          count: buyCount,
-          subscription_id: profile.stripe_subscription_id,
-          profile_id: profile.id,
-        });
-        if (res?.data?.ok) {
-          toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
-          setBuyCount(1);
-          await new Promise(r => setTimeout(r, 2000));
-          fetchTeam();
-        } else {
-          toast.error(res?.data?.message || 'Failed to purchase seats');
-        }
+        toast.error(res?.data?.message || 'Failed to purchase seats');
       }
     } catch (err) {
       console.error('[TeamAccount] seat error:', err);
-      let msg = 'Failed to add seats';
+      let msg = 'Failed to purchase seats';
       if (err?.data?.message) msg = err.data.message;
-      else if (err?.data?.error) msg = err.data.error;
       else if (err?.response?.data?.message) msg = err.response.data.message;
       else if (err?.message && !err.message.includes('status code')) msg = err.message;
       toast.error(msg);
@@ -216,24 +208,15 @@ function TeamAccountContent() {
           <div className="rounded-2xl p-5 mb-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {freeSeats ? <Users className="w-5 h-5 text-[#E3C567]" /> : <CreditCard className="w-5 h-5 text-[#E3C567]" />}
+                <CreditCard className="w-5 h-5 text-[#E3C567]" />
                 <div>
                   <p className="text-sm font-semibold text-[#FAFAFA]">{totalPaidSeats} seat{totalPaidSeats !== 1 ? 's' : ''}</p>
                   <p className="text-xs text-[#808080]">{openSeats.length} open · {assignedSeats.length} assigned</p>
                 </div>
               </div>
               <div className="text-right">
-                {freeSeats ? (
-                  <>
-                    <p className="text-lg font-bold text-green-400">Free</p>
-                    <p className="text-xs text-[#808080]">no charge for agents</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-lg font-bold text-[#E3C567]">${totalPaidSeats * 10}/mo</p>
-                    <p className="text-xs text-[#808080]">added to subscription</p>
-                  </>
-                )}
+                <p className="text-lg font-bold text-[#E3C567]">${totalPaidSeats * 10}/mo</p>
+                <p className="text-xs text-[#808080]">added to subscription</p>
               </div>
             </div>
           </div>
@@ -243,12 +226,10 @@ function TeamAccountContent() {
         <div className="rounded-2xl p-6 mb-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <div className="flex items-center gap-2 mb-4">
             <Plus className="w-5 h-5 text-[#E3C567]" />
-            <h3 className="text-lg font-semibold text-[#FAFAFA]">{freeSeats ? 'Add Team Seats' : 'Buy Team Seats'}</h3>
+            <h3 className="text-lg font-semibold text-[#FAFAFA]">Buy Team Seats</h3>
           </div>
           <p className="text-sm text-[#808080] mb-5">
-            {freeSeats
-              ? 'Add seats for free, then assign them to your team members.'
-              : 'Each seat is $10/month. Purchase seats first, then assign them to team members.'}
+            Each seat is $10/month. Purchase seats first, then assign them to team members.
           </p>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -263,16 +244,11 @@ function TeamAccountContent() {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            {!freeSeats && (
-              <div className="text-sm text-[#808080]">
-                <span className="text-[#E3C567] font-bold text-lg">${buyCount * 10}</span>/mo
-              </div>
-            )}
-            {freeSeats && (
-              <div className="text-sm text-green-400 font-semibold">Free</div>
-            )}
+            <div className="text-sm text-[#808080]">
+              <span className="text-[#E3C567] font-bold text-lg">${buyCount * 10}</span>/mo
+            </div>
             <Button onClick={handleBuySeats} disabled={buying} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-11 px-6 ml-auto">
-              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserPlus className="w-4 h-4 mr-2" />{freeSeats ? 'Add' : 'Buy'} {buyCount} Seat{buyCount !== 1 ? 's' : ''}</>}
+              {buying ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CreditCard className="w-4 h-4 mr-2" />Buy {buyCount} Seat{buyCount !== 1 ? 's' : ''}</>}
             </Button>
           </div>
         </div>
@@ -304,8 +280,8 @@ function TeamAccountContent() {
                   <Button onClick={() => handleAssignSeat(seat.id)} disabled={invitingId === seat.id} size="sm" className="bg-[#E3C567] text-black hover:bg-[#EDD89F] flex-shrink-0">
                     {invitingId === seat.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Mail className="w-4 h-4 mr-1" /> Invite</>}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 flex-shrink-0" title={freeSeats ? "Remove seat" : "Cancel seat (stop billing)"}>
-                    {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                  <Button variant="ghost" size="icon" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 w-8 flex-shrink-0" title="Cancel seat (stop billing)">
+                   {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-4 h-4" />}
                   </Button>
                 </div>
               ))}
@@ -368,7 +344,7 @@ function TeamAccountContent() {
                       {removingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Remove"}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => handleCancelSeat(seat.id)} disabled={cancellingId === seat.id} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs">
-                      {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : (freeSeats ? "Remove Seat" : "Cancel Seat")}
+                      {cancellingId === seat.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Cancel Seat"}
                     </Button>
                   </div>
                 </div>
