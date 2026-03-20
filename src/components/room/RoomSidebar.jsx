@@ -31,7 +31,7 @@ export default function RoomSidebar({ rooms, activeRoomId, userRole, onRoomClick
           const isActive = room.id === activeRoomId;
           const canSeeAddress = userRole === 'investor' || room.is_fully_signed;
           const compLabel = getSellerCompLabel(room.agreement?.exhibit_a_terms, room.proposed_terms);
-          const badge = getAgreementStatusLabel({ room, agreement: room.agreement, role: userRole });
+          const badge = getAgreementStatusLabel({ room, agreement: room.agreement, negotiation: null, role: userRole });
 
           return (
             <button key={room.id} onClick={() => onRoomClick(room)} className={`w-full text-left px-5 py-4 border-b border-[#1F1F1F]/60 flex items-center gap-4 transition-all ${isActive ? "border-l-[3px] border-l-[#E3C567]" : "hover:bg-[#141414] border-l-[3px] border-l-transparent"}`} style={isActive ? { background: 'linear-gradient(90deg, rgba(227,197,103,0.10), transparent)' } : {}}>

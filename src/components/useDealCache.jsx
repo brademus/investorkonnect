@@ -59,10 +59,10 @@ export function useDealCache(rooms, profile) {
   const patchDeal = useCallback((dealId, patch) => {
     if (!dealId) return;
     queryClient.setQueryData(['dealDetails', dealId], (prev) => {
-      if (!prev) return patch;
+      if (!prev || typeof prev !== 'object') return patch;
       const merged = { ...prev, ...patch };
       if (patch.documents) {
-        merged.documents = { ...(prev.documents || {}), ...patch.documents };
+        merged.documents = { ...((prev).documents || {}), ...patch.documents };
       }
       return merged;
     });

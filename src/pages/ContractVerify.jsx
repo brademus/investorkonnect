@@ -159,7 +159,7 @@ export default function ContractVerify() {
 
       setVerifying(false);
 
-      if (aiResult) {
+      if (aiResult && typeof aiResult === 'object') {
         const matches = [];
         const mismatches = [];
 

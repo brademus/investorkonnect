@@ -88,7 +88,7 @@ export default function UserActivityPanel({ profile, onClose }) {
       events.push({ type: "messages_summary", label: `${messages.length} Messages Sent`, detail: `Last: "${(messages[0]?.body || "").substring(0, 80)}${(messages[0]?.body || "").length > 80 ? "..." : ""}"`, date: messages[0]?.created_date, icon: MessageSquare, color: "bg-[#A78BFA]/15 text-[#A78BFA]" });
     }
 
-    events.sort((a, b) => new Date(b.date) - new Date(a.date));
+    events.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
     setTimeline(events);
     setLoading(false);
   };

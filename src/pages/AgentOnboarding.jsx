@@ -245,7 +245,7 @@ export default function AgentOnboarding() {
       return;
     }
     if (step === 2) {
-      const codeEl = document.querySelector('[data-phone-code]');
+      const codeEl = /** @type {HTMLInputElement} */ (document.querySelector('[data-phone-code]'));
       const code = codeEl?.value?.trim();
       if (!code || code.length !== 4) { toast.error('Please enter the 4-digit code'); return; }
       setVerifyingCode(true);

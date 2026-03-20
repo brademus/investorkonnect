@@ -74,12 +74,13 @@ export default function MessagesBell() {
 
   // Refresh when Room page marks messages as read
   useEffect(() => {
-    return notificationEvents.subscribe(() => {
+    const unsub = notificationEvents.subscribe(() => {
       // Small delay to let the server persist the timestamp, then fetch twice
       // (first fetch catches most cases, second handles slow propagation)
       setTimeout(fetchMessages, 1000);
       setTimeout(fetchMessages, 3000);
     });
+    return () => { if (typeof unsub === 'function') unsub(); };
   }, [fetchMessages]);
 
   // Real-time: new messages trigger refresh

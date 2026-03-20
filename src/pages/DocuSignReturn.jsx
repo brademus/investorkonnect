@@ -43,7 +43,7 @@ export default function DocuSignReturn() {
       const signingRole = searchParams.get('role') || 'investor';
       const token = searchParams.get('token');
 
-      console.log('[DocuSignReturn]', { event, dealId, roomId, signingRole, allParams: Object.fromEntries(searchParams.entries()) });
+      console.log('[DocuSignReturn]', { event, dealId, roomId, signingRole, allParams: Object.fromEntries([...searchParams]) });
 
       // Handle cancel/decline quickly
       if (event === 'decline' || event === 'cancel') {

@@ -176,7 +176,7 @@ export default function InvestorOnboarding() {
     }
     // Step 2 — verify the code
     if (step === 2) {
-      const codeEl = document.querySelector('[data-phone-code]');
+      const codeEl = /** @type {HTMLInputElement} */ (document.querySelector('[data-phone-code]'));
       const code = codeEl?.value?.trim();
       if (!code || code.length !== 4) { toast.error('Please enter the 4-digit code'); return; }
       setVerifyingCode(true);

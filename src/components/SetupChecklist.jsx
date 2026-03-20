@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import {
 export function SetupChecklist({ profile, onRefresh }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
-  const refreshCalledRef = useState(false);
+  const refreshCalledRef = useRef(false);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   // Admins never see the setup checklist

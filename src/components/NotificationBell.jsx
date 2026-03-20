@@ -95,9 +95,10 @@ export default function NotificationBell() {
 
   // Refresh when Room page marks messages as read
   useEffect(() => {
-    return notificationEvents.subscribe(() => {
+    const unsub = notificationEvents.subscribe(() => {
       setTimeout(fetchNotifications, 1500);
     });
+    return () => { if (typeof unsub === 'function') unsub(); };
   }, [fetchNotifications]);
 
   const debounceRef = useRef(null);

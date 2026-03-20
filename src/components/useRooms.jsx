@@ -27,7 +27,7 @@ export function useRooms() {
         const score = (x) => (x.is_fully_signed ? 3 : x.request_status === 'accepted' ? 2 : 1);
         if (score(r) > score(prev)) byDeal.set(r.deal_id, r);
       }
-      return [...byDeal.values()].sort((a, b) => new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
+      return [...byDeal.values()].sort((a, b) => new Date(b.updated_date || b.created_date || 0).getTime() - new Date(a.updated_date || a.created_date || 0).getTime());
     },
   });
 }

@@ -42,7 +42,7 @@ export default function PipelineStage() {
         });
       
       return Array.from(dealsMap.values())
-        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: true, // Enable refetch on window focus

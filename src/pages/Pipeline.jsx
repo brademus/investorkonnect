@@ -96,7 +96,7 @@ function PipelineContent() {
       // Store team_role from server response
       if (res.data?.team_role) setTeamRole(res.data.team_role);
       // Server already deduplicates — just sort
-      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      return deals.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     },
     enabled: !!profile?.id && ready,
     refetchOnWindowFocus: true,

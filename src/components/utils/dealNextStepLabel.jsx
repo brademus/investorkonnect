@@ -9,6 +9,8 @@ import { normalizeStage } from "@/components/pipelineStages";
  * @param {boolean} opts.isAgent
  * @param {boolean} opts.isInvestor
  * @param {string|null} opts.wtStatus - walkthrough appointment status (from DealAppointments)
+ * @param {string|null} [opts.wtProposedByProfileId] - Profile ID of who proposed walkthrough
+ * @param {string|null} [opts.myProfileId] - Current user's profile ID
  * @returns {{ label: string, color: string } | null}
  */
 export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtProposedByProfileId, myProfileId }) {

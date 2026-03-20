@@ -17,7 +17,7 @@ export default function Logout() {
     console.log('[Logout] Signing out...');
     
     try {
-      await base44.auth.signOut();
+      await base44.auth.logout();
       console.log('[Logout] Sign out complete');
     } catch (error) {
       console.error('[Logout] Sign out error:', error);

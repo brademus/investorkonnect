@@ -80,6 +80,7 @@ export function validatePDF(file) {
   return validateFile({
     file,
     allowedMimeTypes: ALLOWED_TYPES.PDF,
+    allowedExtensions: [],
     maxBytes: FILE_LIMITS.PDF_MAX_BYTES,
   });
 }
@@ -91,6 +92,7 @@ export function validateImage(file) {
   return validateFile({
     file,
     allowedMimeTypes: ALLOWED_TYPES.IMAGE,
+    allowedExtensions: [],
     maxBytes: FILE_LIMITS.IMAGE_MAX_BYTES,
   });
 }
@@ -102,6 +104,7 @@ export function validateSafeDocument(file) {
   return validateFile({
     file,
     allowedMimeTypes: ALLOWED_TYPES.SAFE_DOCUMENTS,
+    allowedExtensions: [],
     maxBytes: FILE_LIMITS.PDF_MAX_BYTES,
   });
 }

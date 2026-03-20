@@ -54,7 +54,7 @@ export default function DealActivityTab({ dealId, roomId }) {
     const inviteCount = (invites || []).length;
     if (inviteCount > 0) {
       const firstInvite = [...invites].sort((a, b) =>
-        new Date(a.created_at_iso || a.created_date) - new Date(b.created_at_iso || b.created_date)
+        new Date(a.created_at_iso || a.created_date || 0).getTime() - new Date(b.created_at_iso || b.created_date || 0).getTime()
       )[0];
       events.push({
         icon: Send, color: 'muted',
@@ -66,7 +66,7 @@ export default function DealActivityTab({ dealId, roomId }) {
     // 3. Agreement signing events (use the active/latest agreement)
     const activeAgreement = (agreements || [])
       .filter(a => !['voided', 'superseded'].includes(a.status))
-      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+      .sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime())[0];
 
     if (activeAgreement?.investor_signed_at) {
       events.push({ icon: Pen, color: 'gold', message: 'Investor signed agreement', date: activeAgreement.investor_signed_at });
@@ -119,7 +119,7 @@ export default function DealActivityTab({ dealId, roomId }) {
     }
 
     // Sort oldest first (chronological)
-    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+    events.sort((a, b) => new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime());
 
     // Dedup
     const seen = new Set();

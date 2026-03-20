@@ -128,7 +128,7 @@ export default function AcceptInvite() {
   };
 
   const handleVerifyCode = async () => {
-    const codeInput = document.querySelector("[data-phone-code]");
+    const codeInput = /** @type {HTMLInputElement} */ (document.querySelector("[data-phone-code]"));
     const code = codeInput?.value?.trim();
     if (!code || code.length !== 4) { toast.error("Please enter the 4-digit code"); return; }
     setSaving(true);
