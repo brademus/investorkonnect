@@ -130,7 +130,7 @@ export default function AcceptInvite() {
   const handleVerifyCode = async () => {
     const codeInput = document.querySelector("[data-phone-code]");
     const code = codeInput?.value?.trim();
-    if (!code || code.length !== 6) { toast.error("Please enter the 6-digit code"); return; }
+    if (!code || code.length !== 4) { toast.error("Please enter the 4-digit code"); return; }
     setSaving(true);
     try {
       const res = await base44.functions.invoke("verifyPhoneCode", { code, phone });
