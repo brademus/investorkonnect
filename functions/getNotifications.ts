@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     const [deals, counterOffers, dealInvites, appointments] = await Promise.all([
       dealIdArray.length > 0
         ? base44.entities.Deal.filter({ id: { $in: dealIdArray } }).catch(() => [])
-        : isInvestor ? base44.entities.Deal.filter({ investor_id: profileId }).catch(() => []) : Promise.resolve([]),
+        : isInvestor ? base44.entities.Deal.filter({ investor_id: investorProfileId }).catch(() => []) : Promise.resolve([]),
       roomIdArray.length > 0
         ? base44.entities.CounterOffer.filter({ room_id: { $in: roomIdArray }, status: 'pending' }).catch(() => [])
         : Promise.resolve([]),
