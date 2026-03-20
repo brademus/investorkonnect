@@ -116,12 +116,13 @@ Deno.serve(async (req) => {
     console.log('inviteUser:', inviteErr?.message || 'already exists');
   }
 
-  // Wait for account to propagate before sending custom email, then retry if needed
-  let emailSent = false;
-  for (let attempt = 0; attempt < 3 && !emailSent; attempt++) {
-    await new Promise(r => setTimeout(r, attempt === 0 ? 3000 : 4000));
-    try {
-      await base44.asServiceRole.integrations.Core.SendEmail({
+  // Wait for account to propagate before sending custom email
+  await new Promise(r => setTimeout(r, 2000));
+
+  // 2) Send our custom team invitation email — this is the REAL email they should act on.
+  //    The button links directly to the AcceptInvite page.
+  try {
+    await base44.asServiceRole.integrations.Core.SendEmail({
       to: normalizedEmail,
       from_name: 'Investor Konnect',
       subject: `${ownerProfile.full_name || ownerProfile.email} invited you to join their team`,
@@ -153,14 +154,11 @@ Deno.serve(async (req) => {
           </div>
         </div>
       `
-      });
-      emailSent = true;
-      console.log('Custom team invite email sent to:', normalizedEmail, 'on attempt', attempt + 1);
-    } catch (emailErr) {
-      console.error(`Invite email attempt ${attempt + 1} failed:`, emailErr?.message || emailErr);
-    }
+    });
+    console.log('Custom team invite email sent to:', normalizedEmail);
+  } catch (emailErr) {
+    console.error('Failed to send invite email:', emailErr?.message || emailErr);
   }
-  if (!emailSent) console.error('All invite email attempts failed for:', normalizedEmail);
 
   return Response.json({ ok: true, message: `Invitation sent to ${normalizedEmail}` });
 });
