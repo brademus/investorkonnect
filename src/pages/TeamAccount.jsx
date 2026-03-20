@@ -21,6 +21,7 @@ function TeamAccountContent() {
   const [seats, setSeats] = useState([]);
   const [myMembership, setMyMembership] = useState(null);
   const [isOwner, setIsOwner] = useState(true);
+  const [freeSeats, setFreeSeats] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Buy seats state
@@ -42,6 +43,7 @@ function TeamAccountContent() {
       setSeats(res.data?.seats || []);
       setMyMembership(res.data?.my_membership || null);
       setIsOwner(res.data?.is_owner);
+      setFreeSeats(res.data?.free_seats || false);
     } catch (err) {
       console.error('Failed to load team:', err);
     }
@@ -55,33 +57,44 @@ function TeamAccountContent() {
   const totalPaidSeats = seats.filter(s => s.status !== 'removed').length;
 
   const handleBuySeats = async () => {
-    if (!profile?.stripe_subscription_id) {
-      toast.error('You need an active subscription before adding team seats.');
-      return;
-    }
-
     setBuying(true);
     try {
-      const res = await base44.functions.invoke('checkoutSeats', {
-        count: buyCount,
-        subscription_id: profile.stripe_subscription_id,
-        profile_id: profile.id,
-      });
-      console.log('[TeamAccount] checkoutSeats response:', JSON.stringify(res?.data));
-
-      if (res?.data?.ok) {
-        toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
-        setBuyCount(1);
-        // Wait briefly, then refresh — teamManage list reconciles with Stripe directly
-        await new Promise(r => setTimeout(r, 2000));
-        fetchTeam();
+      if (freeSeats) {
+        // Agents: add free seats directly
+        const res = await base44.functions.invoke('teamManage', { action: 'add_free_seats', count: buyCount });
+        if (res?.data?.ok) {
+          toast.success(`${res.data.seats_added} seat${res.data.seats_added !== 1 ? 's' : ''} added!`);
+          setBuyCount(1);
+          fetchTeam();
+        } else {
+          toast.error(res?.data?.error || 'Failed to add seats');
+        }
       } else {
-        toast.error(res?.data?.message || 'Failed to purchase seats');
+        // Investors: Stripe billing
+        if (!profile?.stripe_subscription_id) {
+          toast.error('You need an active subscription before adding team seats.');
+          setBuying(false);
+          return;
+        }
+        const res = await base44.functions.invoke('checkoutSeats', {
+          count: buyCount,
+          subscription_id: profile.stripe_subscription_id,
+          profile_id: profile.id,
+        });
+        if (res?.data?.ok) {
+          toast.success(`${res.data.seats_purchased} seat${res.data.seats_purchased !== 1 ? 's' : ''} added to your subscription!`);
+          setBuyCount(1);
+          await new Promise(r => setTimeout(r, 2000));
+          fetchTeam();
+        } else {
+          toast.error(res?.data?.message || 'Failed to purchase seats');
+        }
       }
     } catch (err) {
-      console.error('[TeamAccount] checkoutSeats error:', err);
-      let msg = 'Failed to purchase seats';
+      console.error('[TeamAccount] seat error:', err);
+      let msg = 'Failed to add seats';
       if (err?.data?.message) msg = err.data.message;
+      else if (err?.data?.error) msg = err.data.error;
       else if (err?.response?.data?.message) msg = err.response.data.message;
       else if (err?.message && !err.message.includes('status code')) msg = err.message;
       toast.error(msg);
