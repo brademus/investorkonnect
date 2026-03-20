@@ -184,15 +184,15 @@ Deno.serve(async (req) => {
       console.log('inviteUser:', inviteErr?.message || 'already exists');
     }
 
-    // Small delay to ensure account is propagated before sending custom email
-    await new Promise(r => setTimeout(r, 2000));
-
-    // 2) Send custom team invitation email with direct AcceptInvite link
+    // Wait for account to propagate, then retry custom email if needed
     const ownerName = myProfile.full_name || user.email;
-    try {
-      const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
-      const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seat_id}`;
-      await base44.asServiceRole.integrations.Core.SendEmail({
+    const appUrl = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+    const inviteUrl = `${appUrl}/AcceptInvite?seatId=${seat_id}`;
+    let emailSent = false;
+    for (let attempt = 0; attempt < 3 && !emailSent; attempt++) {
+      await new Promise(r => setTimeout(r, attempt === 0 ? 3000 : 4000));
+      try {
+        await base44.asServiceRole.integrations.Core.SendEmail({
         to: normalizedEmail,
         from_name: 'Investor Konnect',
         subject: `${ownerName} invited you to join their team`,
@@ -222,12 +222,14 @@ Deno.serve(async (req) => {
             </div>
           </div>
         `
-      });
-      console.log('Custom team invite email sent to', normalizedEmail);
-    } catch (emailErr) {
-      console.error('Failed to send invite email:', emailErr?.message);
-      console.error('Error data:', JSON.stringify(emailErr?.response?.data || emailErr));
+        });
+        emailSent = true;
+        console.log('Custom team invite email sent to', normalizedEmail, 'on attempt', attempt + 1);
+      } catch (emailErr) {
+        console.error(`Invite email attempt ${attempt + 1} failed:`, emailErr?.message);
+      }
     }
+    if (!emailSent) console.error('All invite email attempts failed for:', normalizedEmail);
 
     return Response.json({ ok: true, message: `Invite sent to ${normalizedEmail}` });
   }
