@@ -211,6 +211,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         }
         else if (res.data?.error) { toast.dismiss('gen-agreement'); toast.error(res.data.error); }
       } catch (invokeErr) {
+        const serverError = invokeErr?.response?.data?.error;
+        const statusCode = invokeErr?.response?.status;
+        // If the server returned a clear error (not a timeout/502), show it and stop
+        if (serverError && statusCode && statusCode !== 502 && statusCode !== 504) {
+          toast.dismiss('gen-agreement');
+          toast.error(serverError);
+          setBusy(false);
+          return;
+        }
         // The function may have succeeded but timed out returning the response (502).
         // Wait a moment then check if the agreement was created.
         console.warn('[SimpleAgreementPanel] Generate invoke error (may be timeout), checking for created agreement...', invokeErr?.message);
