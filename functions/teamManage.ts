@@ -20,6 +20,27 @@ Deno.serve(async (req) => {
 
   // === LIST ===
   if (action === 'list') {
+    const isAgent = myProfile.user_role === 'agent';
+
+    // Agents get free seats — no Stripe reconciliation needed
+    if (isAgent) {
+      const ownedSeats = await base44.entities.TeamSeat.filter({ owner_profile_id: myProfile.id });
+      const activeSeats = ownedSeats.filter(s => s.status === 'open' || s.status === 'invited' || s.status === 'active');
+
+      const myMembership = await base44.entities.TeamSeat.filter({ member_email: user.email.toLowerCase() });
+      const activeMembership = myMembership.find(s => s.status === 'active' || s.status === 'invited');
+
+      return Response.json({
+        ok: true,
+        seats: activeSeats,
+        stripe_paid_seats: 0,
+        free_seats: true,
+        my_membership: activeMembership || null,
+        is_owner: activeSeats.length > 0 || !activeMembership,
+      });
+    }
+
+    // Investors: Stripe is source of truth for paid seats
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
     const SEAT_PRICE_ID = Deno.env.get('STRIPE_PRICE_TEAM_SEAT');
     const subId = myProfile.stripe_subscription_id;
@@ -106,9 +127,34 @@ Deno.serve(async (req) => {
       ok: true,
       seats: finalActive,
       stripe_paid_seats: stripePaidSeats,
+      free_seats: false,
       my_membership: activeMembership || null,
       is_owner: finalActive.length > 0 || !activeMembership,
     });
+  }
+
+  // === ADD FREE SEATS (agents only) ===
+  if (action === 'add_free_seats') {
+    if (myProfile.user_role !== 'agent') {
+      return Response.json({ error: 'Free seats are only available for agents' }, { status: 403 });
+    }
+    const count = parseInt(body.count) || 0;
+    if (count < 1 || count > 10) return Response.json({ error: 'Select between 1 and 10 seats' }, { status: 400 });
+
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+    for (let i = 0; i < count; i++) {
+      if (i > 0) await delay(300);
+      await base44.asServiceRole.entities.TeamSeat.create({
+        owner_profile_id: myProfile.id,
+        owner_email: user.email.toLowerCase(),
+        member_email: '',
+        team_role: 'member',
+        status: 'open',
+        invited_at: new Date().toISOString(),
+      });
+    }
+
+    return Response.json({ ok: true, seats_added: count });
   }
 
   // === ASSIGN — assign an email to an open seat, send invite ===
