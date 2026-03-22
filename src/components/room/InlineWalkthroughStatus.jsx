@@ -38,8 +38,11 @@ export default function InlineWalkthroughStatus({ deal, room, profile, roomId, e
   const hasWalkthrough = dealHasWalkthrough || (externalStatus && externalStatus !== "NOT_SET");
 
   const status = localStatus || (dealConfirmed ? "SCHEDULED" : (externalStatus || (apptLoaded && hasWalkthrough ? "PROPOSED" : null)));
-  // Either party can confirm proposed dates — the one who didn't propose them
-  const proposedBySelf2 = proposedByProfileId === profile?.id;
+  // Either party can confirm proposed dates — the one who didn't propose them.
+  // If proposedByProfileId is null/undefined (e.g. initial creation from deal draft),
+  // we treat it as proposed by the investor, so agent can confirm and vice versa.
+  const proposedBySelf2 = proposedByProfileId ? (proposedByProfileId === profile?.id) : false;
+  // When proposedByProfileId is unknown, allow the agent to respond (investor created it during deal setup)
   const canAgentRespond = isAgent && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canInvestorRespond = isInvestor && !isTeamMember && isSigned && status === "PROPOSED" && !proposedBySelf2;
   const canRespond = (canAgentRespond || canInvestorRespond) && status === "PROPOSED";
