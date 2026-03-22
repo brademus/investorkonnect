@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.210.8.20';
 
 /**
  * Get pipeline deals + room data for current user with role-based redaction.

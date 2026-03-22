@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.210.8.6';
 
 /**
  * Get all DealInvites for a deal with enriched agent profile data

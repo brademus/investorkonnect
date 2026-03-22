@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.210.8.6';
 
 /**
  * After investor signs initial agreement, create ONE room with all selected agents.
