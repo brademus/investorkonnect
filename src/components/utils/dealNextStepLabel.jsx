@@ -18,7 +18,7 @@ export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtPr
   const listPriceConfirmed = !!deal?.list_price_confirmed;
   const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
   const stage = normalizeStage(deal?.pipeline_stage);
-  const isSigned = deal?.is_fully_signed;
+  const isSigned = isSgnParam !== undefined ? isSgnParam : deal?.is_fully_signed;
 
   if (stage === 'new_deals') {
     if (!isSigned) return { label: 'Agreement needs signing', color: 'text-[#F59E0B]' };
