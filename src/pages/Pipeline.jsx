@@ -414,7 +414,7 @@ function PipelineContent() {
                                        </div>
                                        {(() => {
                                          const wtInfo = wtStatusMap[deal.deal_id] || null;
-                                         const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id });
+                                         const step = getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus: wtInfo?.status || wtInfo || null, wtProposedByProfileId: wtInfo?.updatedBy || null, myProfileId: profile?.id, isSigned: deal.is_fully_signed });
                                          if (!step) return null;
                                          return (
                                            <div className="flex items-center justify-between rounded-lg p-2" style={{ background: 'rgba(10,10,14,0.60)', border: '1px solid rgba(255,255,255,0.04)' }}>
