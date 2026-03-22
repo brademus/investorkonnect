@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 Deno.serve(async (req) => {
   try {
@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
 
     // Get investor profiles
     const investorIds = requests.map(r => r.investorId);
-    const investors = await base44.entities.Profile.filter({});
+    const investors = investorIds.length > 0
+      ? await base44.entities.Profile.filter({ id: { $in: investorIds } })
+      : [];
     const investorsMap = {};
     investors.forEach(i => investorsMap[i.id] = i);
 

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 Deno.serve(async (req) => {
   try {
@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
     }
     const profile = profiles[0];
 
-    // Get room
-    const rooms = await base44.entities.Room.filter({ id: roomId });
+    // Get room (service role for LegalAgreement lookup below)
+    const rooms = await base44.asServiceRole.entities.Room.filter({ id: roomId });
     if (rooms.length === 0) {
       return Response.json({ error: 'Room not found' }, { status: 404 });
     }
@@ -39,6 +39,14 @@ Deno.serve(async (req) => {
     if (room.investorId !== profile.id && room.agentId !== profile.id) {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
+
+    // Chat-lock gate: require fully signed agreement
+    let canChat = room.agreement_status === 'fully_signed' || room.request_status === 'signed';
+    if (!canChat && room.deal_id) {
+      const ags = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: room.deal_id });
+      canChat = ags?.some((a) => a.status === 'fully_signed');
+    }
+    if (!canChat) return Response.json({ error: 'Chat unlocks after both parties sign.', ok: false }, { status: 403 });
 
     // Check NDA requirement for files
     if (kind === 'file' && (!room.ndaAcceptedInvestor || !room.ndaAcceptedAgent)) {
