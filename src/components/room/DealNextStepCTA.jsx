@@ -229,8 +229,19 @@ export default function DealNextStepCTA({ deal, room, profile, roomId, onDealUpd
         cta = { type: 'waiting', icon: Clock, label: 'Waiting for Walkthrough', description: 'The investor hasn\'t scheduled a walkthrough yet.' };
       }
     } else if (wtStatus === 'PROPOSED') {
-      // No CTA here — the InlineWalkthroughStatus panel handles confirmation
-      cta = null;
+      // Show role-appropriate message about the proposed walkthrough
+      const proposedBySelf = wtProposedBy && wtProposedBy === profile?.id;
+      if (proposedBySelf) {
+        // I proposed it — waiting for the other party
+        cta = { type: 'waiting', icon: Clock, label: isAgent ? 'Waiting for Investor to Confirm Walkthrough' : 'Waiting for Agent to Confirm Walkthrough', description: 'The other party needs to confirm the proposed walkthrough dates.' };
+      } else {
+        // The other party proposed it — I need to confirm (handled by InlineWalkthroughStatus below)
+        if (!isSigned) {
+          cta = { type: 'waiting', icon: Clock, label: 'Sign Agreement to Confirm Walkthrough', description: 'The agreement must be fully signed before you can confirm walkthrough dates.' };
+        } else {
+          cta = null; // InlineWalkthroughStatus panel below handles the confirm UI
+        }
+      }
     } else if (wtStatus === 'SCHEDULED' || wtStatus === 'COMPLETED') {
       if (!hasCma) {
         if (isAgent) {
