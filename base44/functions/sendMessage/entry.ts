@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 Deno.serve(async (req) => {
   try {
@@ -57,11 +57,29 @@ Deno.serve(async (req) => {
           }).catch(() => {});
         }
 
+        // Rate limit: max 1 SMS per recipient per room per 5 minutes
         if (p.notification_preferences?.text && p.phone) {
-          await base44.asServiceRole.functions.invoke('sendSms', {
-            to: p.phone,
-            message: notifBody,
-          }).catch(() => {});
+          let recentlySent = false;
+          try {
+            const recentSms = await base44.asServiceRole.entities.NotificationLog
+              .filter({ profile_id: pid, room_id, channel: 'sms' });
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+            recentlySent = recentSms?.some(n => n.sent_at > fiveMinutesAgo);
+          } catch (_) {}
+
+          if (!recentlySent) {
+            await base44.asServiceRole.functions.invoke('sendSms', {
+              to: p.phone,
+              message: notifBody,
+            }).catch(() => {});
+
+            await base44.asServiceRole.entities.NotificationLog.create({
+              profile_id: pid,
+              room_id,
+              channel: 'sms',
+              sent_at: new Date().toISOString(),
+            }).catch(() => {});
+          }
         }
       }
     } catch (notifyErr) {

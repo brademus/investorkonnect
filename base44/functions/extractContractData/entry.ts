@@ -1,4 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+
+const ALLOWED_FILE_DOMAINS = [
+  'storage.googleapis.com',
+  'firebasestorage.googleapis.com',
+  'base44.com',
+  'supabase.co',
+  'qtrypzzcjebvfcihiynt.supabase.co',
+];
 
 Deno.serve(async (req) => {
   try {
@@ -13,6 +21,19 @@ Deno.serve(async (req) => {
 
     if (!fileUrl) {
       return Response.json({ error: 'File URL is required' }, { status: 400 });
+    }
+
+    // Domain allowlist to prevent SSRF
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(fileUrl);
+    } catch {
+      return Response.json({ error: 'Invalid file URL' }, { status: 400 });
+    }
+
+    const isAllowed = ALLOWED_FILE_DOMAINS.some(domain => parsedUrl.hostname.endsWith(domain));
+    if (!isAllowed) {
+      return Response.json({ error: 'File URL domain not permitted' }, { status: 400 });
     }
 
     console.log('[extractContractData] Processing file:', fileUrl);

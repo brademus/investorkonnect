@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 Deno.serve(async (req) => {
   try {
@@ -13,6 +13,22 @@ Deno.serve(async (req) => {
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
     const agreement = agreements?.[0];
     if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
+
+    // Ownership check — caller must be a party to the deal or admin
+    const callerProfiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    const caller = callerProfiles?.[0];
+    if (!caller) return Response.json({ error: 'Profile not found' }, { status: 403 });
+
+    const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id });
+    const isParty = rooms?.some(r =>
+      r.investorId === caller.id ||
+      r.agentId === caller.id ||
+      r.agent_ids?.includes(caller.id)
+    );
+    const isAdmin = caller.role === 'admin';
+    if (!isParty && !isAdmin) {
+      return Response.json({ error: 'Access denied' }, { status: 403 });
+    }
 
     // If signed PDF already exists, return it
     if (agreement.signed_pdf_url) {

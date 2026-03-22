@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 // LITE CHECKOUT - Uses direct fetch to Stripe API (no heavy SDK import = no cold-start 502)
 Deno.serve(async (req) => {

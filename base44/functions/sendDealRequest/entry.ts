@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
  * sendDealRequest - Investor sends a deal request to ONE agent
@@ -42,17 +42,19 @@ Deno.serve(async (req) => {
 
     // Check if deal already has an active agent (requested/accepted/signed)
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
-    const activeRoom = existingRooms.find(r => 
-      r.request_status === 'requested' || 
-      r.request_status === 'accepted' || 
-      r.request_status === 'signed'
+    const activeRoom = existingRooms.find(r =>
+      ['requested', 'accepted', 'signed'].includes(r.request_status)
     );
 
-    if (activeRoom) {
-      return Response.json({ 
-        error: 'Deal already has an active request', 
-        room_id: activeRoom.id,
-        status: activeRoom.request_status
+    // Secondary check: catch race — any room created in the last 10 seconds for this deal
+    const tenSecondsAgo = new Date(Date.now() - 10_000).toISOString();
+    const recentRoom = existingRooms.find(r => r.created_date > tenSecondsAgo);
+
+    if (activeRoom || recentRoom) {
+      return Response.json({
+        error: 'Deal already has an active request',
+        room_id: (activeRoom || recentRoom).id,
+        status: (activeRoom || recentRoom).request_status
       }, { status: 409 });
     }
 

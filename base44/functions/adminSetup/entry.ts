@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
  * One-time admin setup function
@@ -10,6 +10,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Buffer body early to avoid double-read
+    const rawBody = await req.text();
+    
+    // Auth guard
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const adminProfiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    if (!adminProfiles.length || adminProfiles[0].role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
     
     console.log('🔧 [AdminSetup] Starting...');
     
@@ -77,7 +89,7 @@ Deno.serve(async (req) => {
     // STEP 3: Parse request to see if we should set admin
     let adminEmail = null;
     try {
-      const body = await req.json();
+      const body = JSON.parse(rawBody);
       adminEmail = body.adminEmail;
     } catch (e) {
       // No body or invalid JSON - that's okay

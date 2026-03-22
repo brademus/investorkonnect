@@ -1,5 +1,5 @@
 import Stripe from 'npm:stripe@14.11.0';
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 // STRIPE WEBHOOK HANDLER
 // Handles subscription lifecycle events AND milestone payments
