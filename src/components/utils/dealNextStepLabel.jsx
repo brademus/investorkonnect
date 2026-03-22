@@ -13,7 +13,7 @@ import { normalizeStage } from "@/components/pipelineStages";
  * @param {string|null} [opts.myProfileId] - Current user's profile ID
  * @returns {{ label: string, color: string } | null}
  */
-export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtProposedByProfileId, myProfileId }) {
+export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtProposedByProfileId, myProfileId, isSigned: isSgnParam }) {
   const hasCma = !!(deal?.documents?.cma?.url);
   const listPriceConfirmed = !!deal?.list_price_confirmed;
   const hasListingAgreement = !!(deal?.documents?.listing_agreement?.url);
