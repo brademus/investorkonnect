@@ -1,11 +1,16 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || user.role !== 'admin') {
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const adminProfiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    if (!adminProfiles.length || adminProfiles[0].role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
@@ -43,8 +48,11 @@ Deno.serve(async (req) => {
 
     // 1. Delete Messages for these rooms
     if (roomIds.length > 0) {
-      const messages = await base44.asServiceRole.entities.Message.filter({});
-      const roomMessagesToDelete = messages.filter(m => roomIds.includes(m.room_id));
+      const roomMessagesToDelete = [];
+      for (const rid of roomIds) {
+        const msgs = await base44.asServiceRole.entities.Message.filter({ room_id: rid });
+        roomMessagesToDelete.push(...msgs);
+      }
       for (const msg of roomMessagesToDelete) {
         try {
           await base44.asServiceRole.entities.Message.delete(msg.id);
