@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.210.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 // Returns lightweight pending deal requests for the current agent
 // Minimizes round trips by batching with $in filters and simple projections

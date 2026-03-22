@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.210.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
  * sendDealRequest - Investor sends a deal request to ONE agent
