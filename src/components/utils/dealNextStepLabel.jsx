@@ -38,9 +38,14 @@ export function getDealNextStepLabel({ deal, isAgent, isInvestor, wtStatus, wtPr
     }
 
     if (effectiveWtStatus === 'PROPOSED') {
+      // If proposedBy is null/unknown (e.g. initial deal creation), treat as proposed by investor
       const proposedBySelf = wtProposedByProfileId && myProfileId && wtProposedByProfileId === myProfileId;
       if (proposedBySelf) {
         return { label: isAgent ? 'Waiting for investor to confirm' : 'Waiting for agent to confirm', color: 'text-[#808080]' };
+      }
+      // The other party proposed — I need to confirm (or sign first if not yet signed)
+      if (!isSigned) {
+        return { label: 'Sign agreement to confirm walkthrough', color: 'text-[#F59E0B]' };
       }
       return { label: 'Confirm walkthrough date & time', color: 'text-[#E3C567]' };
     }
