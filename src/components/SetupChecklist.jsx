@@ -27,7 +27,7 @@ export function SetupChecklist({ profile, onRefresh }) {
   );
   
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
-  const kycComplete = !!profile?.identity_verified || profile?.kyc_status === 'approved';
+  const kycComplete = profile?.identity_status === 'verified' || profile?.identity_status === 'approved' || profile?.kyc_status === 'approved' || !!profile?.identity_verified_at;
   const ndaComplete = !!profile?.nda_accepted;
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
 
