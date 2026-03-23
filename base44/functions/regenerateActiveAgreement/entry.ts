@@ -80,9 +80,11 @@ Deno.serve(async (req) => {
     }
     if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
 
-    // Determine signer mode — always 'both' so investor and agent sign the SAME envelope.
-    // The agent is added as routingOrder 2, so they can only sign after the investor.
-    const signerMode = 'both';
+    // Determine signer mode.
+    // For counter-offer regen: investor already approved the counter terms by accepting,
+    // so only the agent needs to sign this new envelope → agent_only.
+    // For normal regen (non-counter): both parties sign.
+    const signerMode = isCounterRegen ? 'agent_only' : 'both';
 
     // CRITICAL: Always resolve the correct investor profile ID from the room/deal, NOT from the caller.
     // When an agent triggers regeneration, caller.id would be the agent — that's wrong for investor_profile_id.
