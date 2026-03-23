@@ -305,7 +305,18 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, agreement: match, regenerated: false });
       }
       if (match) {
-        base44.asServiceRole.entities.LegalAgreement.update(match.id, { status: 'superseded' }).catch(() => {});
+        // ONLY supersede the existing agreement if it was NOT already signed by
+        // the investor — investor-signed agreements are shared across all agents
+        // in the room and must stay active so other agents can sign them.
+        // Only supersede draft/pending agreements that haven't been signed yet.
+        const isSigned = match.investor_signed_at || match.agent_signed_at ||
+          match.status === 'fully_signed' || match.status === 'investor_signed' ||
+          match.is_shared_base === true;
+        if (!isSigned) {
+          base44.asServiceRole.entities.LegalAgreement.update(match.id, { status: 'superseded' }).catch(() => {});
+        } else {
+          console.log('[genAgreement] Skipping supersede — agreement already signed:', match.id);
+        }
       }
     }
 

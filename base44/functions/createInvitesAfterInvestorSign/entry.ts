@@ -147,6 +147,12 @@ Deno.serve(async (req) => {
       current_legal_agreement_id: baseAgreement.id
     });
 
+    // Mark the base agreement as the canonical shared agreement so regeneration
+    // logic knows not to supersede it when one agent counter-offers.
+    await base44.asServiceRole.entities.LegalAgreement.update(baseAgreement.id, {
+      is_shared_base: true
+    }).catch(() => {});
+
     // Ensure deal is active and visible — ONLY update status fields
     // ALSO: backfill proposed_terms from exhibit_a_terms if missing on the deal
     const dealStatusUpdate = { status: 'active' };

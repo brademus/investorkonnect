@@ -95,8 +95,13 @@ Deno.serve(async (req) => {
       investorUserId = investorProfiles?.[0]?.user_id || null;
     }
 
+    // For counter offer regen, do NOT pass room_id to generateLegalAgreement.
+    // Passing room_id causes it to cache-check against the shared room and
+    // supersede the original agreement that other agents still need to sign.
+    // Instead pass null so it creates a fresh agreement without touching the shared one.
+    const isCounterRegen = !!(room && targetAgentId && room.agent_terms?.[targetAgentId]?.counter_offer_id);
     const payload = {
-      deal_id, room_id: room_id || null,
+      deal_id, room_id: isCounterRegen ? null : (room_id || null),
       signer_mode: signerMode,
       agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
       exhibit_a: {

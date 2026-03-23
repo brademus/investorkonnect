@@ -120,6 +120,20 @@ Deno.serve(async (req) => {
       agreement = list.find(a => !['superseded', 'voided'].includes(a.status)) || null;
     }
 
+    // Last resort: find ANY active agreement for this deal (handles legacy cases)
+    if (!agreement) {
+      const allAg = await base44.asServiceRole.entities.LegalAgreement.filter(
+        { deal_id }, '-created_date', 20
+      );
+      agreement = allAg.find(a =>
+        !['superseded', 'voided'].includes(a.status) &&
+        a.docusign_envelope_id
+      ) || null;
+      if (agreement) {
+        console.log('[getLegalAgreement] Last resort agreement found:', agreement.id);
+      }
+    }
+
     if (!agreement) return Response.json({ agreement: null });
 
     // Access check — also check profile IDs (not just user IDs, since agent_only agreements
