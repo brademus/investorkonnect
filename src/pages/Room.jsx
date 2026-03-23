@@ -367,9 +367,11 @@ export default function Room() {
         // It's persisted only when user leaves the messages view (see prevActiveView effect).
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
-         // When the URL has an `address` param, load invites from ALL sibling deals for that address
+         // Skip if we already restored invites from a sibling room switch
+         const alreadyHasInvites = pendingInvitesRef.current.length > 0 && 
+           pendingInvitesRef.current.some(i => i.room_id === roomId || i.deal_id === room.deal_id);
          if (cancelled) return;
-         if (isInvestor && room.deal_id && !roomIsLocked) {
+         if (isInvestor && room.deal_id && !roomIsLocked && !alreadyHasInvites) {
            (async () => {
              try {
                // Always try to find ALL sibling invites for this property address
