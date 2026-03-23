@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     sessionParams.append('mode', 'subscription');
     sessionParams.append('customer', customerId);
     const appBase = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '') || 'https://investorkonnect.com';
-    sessionParams.append('success_url', success_url || `${appBase}/account/billing?sub=active`);
-    sessionParams.append('cancel_url', cancel_url || `${appBase}/pricing`);
+    sessionParams.append('success_url', success_url || `${appBase}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`);
+    sessionParams.append('cancel_url', cancel_url || `${appBase}/pricing?cancelled=true`);
     sessionParams.append('line_items[0][price]', price);
     sessionParams.append('line_items[0][quantity]', '1');
     sessionParams.append('metadata[user_id]', profiles[0]?.id || user.id);
