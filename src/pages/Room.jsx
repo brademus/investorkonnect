@@ -239,9 +239,27 @@ export default function Room() {
       persistLastSeen();
     }
     // Always include 'board' in mounted views so it renders when auto-selected
-    setMountedViews(new Set([defaultView, 'board']));
-    setPendingInvites([]);
-    setSelectedInvite(null);
+    setMountedViews(prev => {
+      const next = new Set([defaultView, 'board']);
+      // Preserve pending_agents if it was already mounted
+      if (prev.has('pending_agents')) next.add('pending_agents');
+      return next;
+    });
+
+    // Check if we're switching between sibling rooms (same property address)
+    const incomingAddress = enrichedRoom?.property_address || new URLSearchParams(window.location.search).get('address');
+    const isSiblingSwitch = incomingAddress && incomingAddress === prevPropertyAddressRef.current && pendingInvitesRef.current.length > 0;
+
+    if (isSiblingSwitch) {
+      // Preserve pending invites — just update selectedInvite based on new roomId
+      setPendingInvites(pendingInvitesRef.current);
+      const matchingInvite = pendingInvitesRef.current.find(i => i.room_id === roomId);
+      if (matchingInvite) setSelectedInvite(matchingInvite);
+    } else {
+      setPendingInvites([]);
+      setSelectedInvite(null);
+    }
+    prevPropertyAddressRef.current = incomingAddress;
 
     // INSTANT: Try to get deal from pre-fetched cache instead of showing blank
     const cachedDeal = enrichedRoom?.deal_id ? getCachedDeal(enrichedRoom.deal_id) : null;
