@@ -57,6 +57,11 @@ export default function Room() {
   const pendingInvitesRef = useRef([]);
   const prevPropertyAddressRef = useRef(null);
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    if (pendingInvites.length > 0) pendingInvitesRef.current = pendingInvites;
+  }, [pendingInvites]);
+
   // Gating - redirect if not setup (admins skip all gates)
   const gateChecked = useRef(false);
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
