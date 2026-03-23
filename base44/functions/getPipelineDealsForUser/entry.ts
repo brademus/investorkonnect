@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
           base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: pid }),
           base44.asServiceRole.entities.Deal.filter({ agent_id: pid }),
         ]);
-        allInvites.push(...invites);
+        allInvites.push(...invites); // shared outer scope — reused for agreement mapping
         allDirectDeals.push(...directDeals);
       }));
 
