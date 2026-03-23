@@ -280,7 +280,9 @@ Deno.serve(async (req) => {
       if (!agentId) return Response.json({ error: 'No agent in room' }, { status: 400 });
       console.log(`[genAgreement] Resolved agentId: ${agentId} (explicit: ${!!body.agent_profile_id})`);
       const agentTerms = room.agent_terms?.[agentId];
-      if (agentTerms) exhibit_a = { ...exhibit_a, ...agentTerms };
+      if (agentTerms && !body.skip_agent_terms_merge) {
+        exhibit_a = { ...exhibit_a, ...agentTerms };
+      }
       const ap = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
       if (ap?.length) agent = ap[0];
     }
