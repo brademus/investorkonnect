@@ -169,14 +169,11 @@ Deno.serve(async (req) => {
     
     // Build a set of agent-specific agreement IDs from DealInvites
     const agentSpecificAgreementIds = new Set();
+    // Reuse invites already loaded in the agent path (avoid redundant API call)
+    const _cachedAgentInvites = typeof allInvites !== 'undefined' ? allInvites : [];
     if (effectiveIsAgent) {
-      // We already loaded allInvites above — collect legal_agreement_ids for this agent's invites
-      // Re-query to get the invite data (it's in scope for agent path)
-      const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({ 
-        agent_profile_id: { $in: teamProfileIds } 
-      }).catch(() => []);
       const inviteAgreementByDeal = new Map();
-      for (const inv of agentInvites) {
+      for (const inv of _cachedAgentInvites) {
         if (inv.legal_agreement_id && inv.deal_id) {
           inviteAgreementByDeal.set(inv.deal_id, inv.legal_agreement_id);
         }
