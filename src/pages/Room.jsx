@@ -345,19 +345,19 @@ export default function Room() {
          if (isInvestor && room.deal_id && !roomIsLocked) {
            (async () => {
              try {
+               // Always try to find ALL sibling invites for this property address
                const urlAddress = new URLSearchParams(window.location.search).get('address');
+               const propertyAddress = urlAddress || room.property_address || dealData?.property_address;
                let rawInvites = [];
 
-               if (urlAddress) {
-                 // Load ALL deals for this investor + address to get all sibling invites
+               if (propertyAddress) {
                  const investorId = room.investorId || profile?.id;
                  const siblingDeals = investorId
-                   ? await base44.entities.Deal.filter({ investor_id: investorId, property_address: urlAddress }).catch(() => [])
+                   ? await base44.entities.Deal.filter({ investor_id: investorId, property_address: propertyAddress }).catch(() => [])
                    : [];
                  const siblingDealIds = siblingDeals.map(d => d.id).filter(Boolean);
                  if (siblingDealIds.length > 0) {
-                   const allInvites = await base44.entities.DealInvite.filter({ deal_id: { $in: siblingDealIds } }).catch(() => []);
-                   rawInvites = allInvites;
+                   rawInvites = await base44.entities.DealInvite.filter({ deal_id: { $in: siblingDealIds } }).catch(() => []);
                  } else {
                    rawInvites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => []);
                  }
