@@ -446,6 +446,11 @@ function PipelineContent() {
                                              return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
                                            })()}
                                            {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#2D8A6E] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
+                                          {isInvestor && deal._agentCount > 1 && !deal.is_fully_signed && (
+                                            <div className="text-xs text-[#E3C567] flex items-center gap-1 font-semibold">
+                                              <Users className="w-3 h-3" />{deal._agentCount} pending agents
+                                            </div>
+                                          )}
                                          </div>
                                        </div>
                                        {(() => {
