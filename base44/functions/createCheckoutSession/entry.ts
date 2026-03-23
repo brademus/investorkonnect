@@ -98,7 +98,16 @@ Deno.serve(async (req) => {
       console.log('Using existing Stripe customer:', customerId);
     }
 
-    const tier = 'starter';
+    // Detect tier from price ID
+    let tier = 'starter';
+    const PRICE_STARTER = Deno.env.get('STRIPE_PRICE_STARTER');
+    const PRICE_PRO = Deno.env.get('STRIPE_PRICE_PRO');
+    const PRICE_ENTERPRISE = Deno.env.get('STRIPE_PRICE_ENTERPRISE');
+    const PRICE_MEMBERSHIP = Deno.env.get('STRIPE_PRICE_MEMBERSHIP');
+    if (price === PRICE_PRO) tier = 'pro';
+    else if (price === PRICE_ENTERPRISE) tier = 'enterprise';
+    else if (price === PRICE_MEMBERSHIP) tier = 'pro';
+    else if (price === PRICE_STARTER) tier = 'starter';
 
     console.log('Detected tier:', tier, 'for price:', price);
 
