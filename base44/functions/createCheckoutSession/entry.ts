@@ -106,8 +106,9 @@ Deno.serve(async (req) => {
     const sessionParams = new URLSearchParams();
     sessionParams.append('mode', 'subscription');
     sessionParams.append('customer', customerId);
-    sessionParams.append('success_url', success_url || 'https://agent-vault-da3d088b.base44.app/account/billing?sub=active');
-    sessionParams.append('cancel_url', cancel_url || 'https://agent-vault-da3d088b.base44.app/pricing');
+    const appBase = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '') || 'https://investorkonnect.com';
+    sessionParams.append('success_url', success_url || `${appBase}/account/billing?sub=active`);
+    sessionParams.append('cancel_url', cancel_url || `${appBase}/pricing`);
     sessionParams.append('line_items[0][price]', price);
     sessionParams.append('line_items[0][quantity]', '1');
     sessionParams.append('metadata[user_id]', profiles[0]?.id || user.id);
