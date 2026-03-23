@@ -75,9 +75,9 @@ Deno.serve(async (req) => {
       }
     }
     
-    // FALLBACK 2: Check by investor + property_address to catch edits where pointers were cleared
+    // FALLBACK 2: Check by investor + property_address + agent_id to catch edits where pointers were cleared
+    // Since each deal is now per-agent, match the specific agent's deal
     if (!existingDeal && agreementData.investor_profile_id) {
-      // Load the agreement's deal context to get property address
       let propAddr = null;
       if (agreementData.render_context_json?.PROPERTY_ADDRESS) {
         propAddr = agreementData.render_context_json.PROPERTY_ADDRESS;
@@ -87,10 +87,14 @@ Deno.serve(async (req) => {
           investor_id: agreementData.investor_profile_id,
           property_address: propAddr
         });
-        const activeDeal = dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed');
+        // Prefer matching the specific agent if the agreement has one
+        const agentId = agreementData.agent_profile_id;
+        const activeDeal = agentId
+          ? dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed' && d.agent_id === agentId)
+          : dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed');
         if (activeDeal) {
           existingDeal = activeDeal;
-          console.log('[createDealOnInvestorSignature] Found existing deal by investor+address:', existingDeal.id);
+          console.log('[createDealOnInvestorSignature] Found existing deal by investor+address+agent:', existingDeal.id);
         }
       }
     }
