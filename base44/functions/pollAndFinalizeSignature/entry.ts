@@ -158,20 +158,19 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Lock deal to winning agent
+        // Lock deal to the agent (each deal is per-agent now, so just update status)
         const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id }).catch(() => []);
         const deal = dealArr?.[0];
-        if (deal && !deal.locked_agent_id && agreement.agent_profile_id) {
+        if (deal) {
           const now = new Date().toISOString();
           await base44.asServiceRole.entities.Deal.update(deal.id, {
             locked_room_id: roomId,
-            locked_agent_id: agreement.agent_profile_id,
-            agent_id: agreement.agent_profile_id,
+            locked_agent_id: agreement.agent_profile_id || deal.agent_id,
+            agent_id: agreement.agent_profile_id || deal.agent_id,
             connected_at: now,
-            pipeline_stage: 'connected_deals',
-            selected_agent_ids: [agreement.agent_profile_id]
+            pipeline_stage: 'connected_deals'
           }).catch(e => console.error('[pollAndFinalize] Deal lock error:', e.message));
-          console.log('[pollAndFinalize] Deal locked to agent', agreement.agent_profile_id);
+          console.log('[pollAndFinalize] Deal locked to agent', agreement.agent_profile_id || deal.agent_id);
         }
       }
     }
