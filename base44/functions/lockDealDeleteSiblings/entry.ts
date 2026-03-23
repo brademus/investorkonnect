@@ -15,8 +15,11 @@ Deno.serve(async (req) => {
 
     if (!deal_id) return Response.json({ ok: true, reason: 'no_deal_id' });
 
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-    const winningDeal = deals?.[0];
+    let winningDeal;
+    try {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+      winningDeal = deals?.[0];
+    } catch (_) {}
     if (!winningDeal) return Response.json({ ok: true, reason: 'deal_not_found' });
 
     const investorId = winningDeal.investor_id;
