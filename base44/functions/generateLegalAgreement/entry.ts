@@ -280,10 +280,17 @@ Deno.serve(async (req) => {
       if (!agentId) return Response.json({ error: 'No agent in room' }, { status: 400 });
       console.log(`[genAgreement] Resolved agentId: ${agentId} (explicit: ${!!body.agent_profile_id})`);
       const agentTerms = room.agent_terms?.[agentId];
-      if (agentTerms && !body.skip_agent_terms_merge) {
+      if (agentTerms) {
         exhibit_a = { ...exhibit_a, ...agentTerms };
       }
       const ap = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
+      if (ap?.length) agent = ap[0];
+    }
+
+    // For counter regen: room_id is null but agent_profile_id is provided explicitly.
+    // Load agent profile so DocuSign envelope has real agent info (not TBD placeholder).
+    if (!room && body.agent_profile_id) {
+      const ap = await base44.asServiceRole.entities.Profile.filter({ id: body.agent_profile_id });
       if (ap?.length) agent = ap[0];
     }
 

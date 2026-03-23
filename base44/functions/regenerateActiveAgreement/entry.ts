@@ -95,9 +95,10 @@ Deno.serve(async (req) => {
       investorUserId = investorProfiles?.[0]?.user_id || null;
     }
 
+    const isCounterRegen = !!(room && targetAgentId && room.agent_terms?.[targetAgentId]?.counter_offer_id);
     const payload = {
-      deal_id, room_id: room_id || null,
-      skip_agent_terms_merge: true,
+      deal_id, room_id: isCounterRegen ? null : (room_id || null),
+
       signer_mode: signerMode,
       agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
       exhibit_a: {
