@@ -811,8 +811,21 @@ export default function Room() {
                 invites={pendingInvites}
                 selectedInviteId={selectedInvite?.id}
                 onSelectAgent={(invite) => {
+                  // If this invite belongs to a different deal/room, navigate there
+                  if (invite.room_id && invite.room_id !== roomId) {
+                    navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board`);
+                    return;
+                  }
                   setSelectedInvite(invite);
                   setActiveView('board');
+                }}
+                onNavigateToRoom={(targetRoomId, invite) => {
+                  if (targetRoomId === roomId) {
+                    setSelectedInvite(invite);
+                    setActiveView('board');
+                  } else {
+                    navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board`);
+                  }
                 }}
               />
             ) : (
