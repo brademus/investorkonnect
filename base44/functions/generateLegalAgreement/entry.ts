@@ -467,8 +467,9 @@ Deno.serve(async (req) => {
     }
 
     // Fire agreement creation, signing URL, and human PDF upload all at once
+    const isAgentSpecific = !!body.agent_profile_id;
     const agreementPromise = base44.asServiceRole.entities.LegalAgreement.create({
-      deal_id: effectiveId, room_id: room_id || null,
+      deal_id: effectiveId, room_id: isAgentSpecific ? null : (room_id || null),
       investor_user_id: resolvedInvestorUserId, agent_user_id: agent.user_id,
       investor_profile_id: investor.id, agent_profile_id: agent.id,
       governing_state: deal.state, property_zip: deal.zip,
@@ -533,7 +534,6 @@ Deno.serve(async (req) => {
     // the shared room/deal agreement pointers. Those should stay pointing to the original
     // base agreement so other agents who didn't counter-offer still see the original.
     // The caller (regenerateActiveAgreement) handles updating the agent-specific DealInvite.
-    const isAgentSpecific = !!body.agent_profile_id;
     if (!isAgentSpecific) {
       if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
       if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
