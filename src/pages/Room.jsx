@@ -38,7 +38,7 @@ export default function Room() {
   // activeView: 'board' | 'messages' | 'pending_agents'
   const [activeView, setActiveView] = useState(() => {
     const urlView = new URLSearchParams(window.location.search).get('view');
-    if (urlView === 'messages' || urlView === 'board') return urlView;
+    if (urlView === 'messages' || urlView === 'board' || urlView === 'pending_agents') return urlView;
     // Default to null (show nothing) until we know the right view
     return null;
   });
@@ -177,8 +177,8 @@ export default function Room() {
       m.sender_profile_id !== 'system'
     ).length;
   }, [roomMessages, profile?.id, localLastSeen, roomId, activeView]);
-  // Investor must select an agent before accessing the deal board
-  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
+  // Investor must select an agent before accessing the deal board (only when actively on pending_agents view)
+  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite && activeView === 'pending_agents';
 
   // Keep views mounted once activated + sync view to URL so refresh preserves it
   useEffect(() => {
@@ -219,7 +219,7 @@ export default function Room() {
     // Respect URL ?view= param if present (so refresh preserves current view)
     const urlView = new URLSearchParams(window.location.search).get('view');
     let defaultView;
-    if (urlView === 'messages' || urlView === 'board') {
+    if (urlView === 'messages' || urlView === 'board' || urlView === 'pending_agents') {
       defaultView = urlView;
     } else if (isInvestor && !cachedIsSigned) {
       // If only 1 agent, skip pending_agents and go straight to board
@@ -804,35 +804,36 @@ export default function Room() {
             </div>
           )}
 
-          {/* Pending Agents */}
-          {activeView === 'pending_agents' && isInvestor && !isSigned && (
-            pendingInvites.length > 0 ? (
-              <PendingAgentsList
-                invites={pendingInvites}
-                selectedInviteId={selectedInvite?.id}
-                onSelectAgent={(invite) => {
-                  // If this invite belongs to a different deal/room, navigate there
-                  if (invite.room_id && invite.room_id !== roomId) {
-                    navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board`);
-                    return;
-                  }
-                  setSelectedInvite(invite);
-                  setActiveView('board');
-                }}
-                onNavigateToRoom={(targetRoomId, invite) => {
-                  if (targetRoomId === roomId) {
+          {/* Pending Agents — keep mounted so agents persist when switching to board */}
+          {(activeView === 'pending_agents' || mountedViews.has('pending_agents')) && isInvestor && !isSigned && (
+            <div style={{ display: activeView === 'pending_agents' ? 'block' : 'none' }}>
+              {pendingInvites.length > 0 ? (
+                <PendingAgentsList
+                  invites={pendingInvites}
+                  selectedInviteId={selectedInvite?.id}
+                  onSelectAgent={(invite) => {
+                    if (invite.room_id && invite.room_id !== roomId) {
+                      navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board`);
+                      return;
+                    }
                     setSelectedInvite(invite);
                     setActiveView('board');
-                  } else {
-                    navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board`);
-                  }
-                }}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-[#808080]">No pending agents — switching to deal board...</p>
-              </div>
-            )
+                  }}
+                  onNavigateToRoom={(targetRoomId, invite) => {
+                    if (targetRoomId === roomId) {
+                      setSelectedInvite(invite);
+                      setActiveView('board');
+                    } else {
+                      navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board`);
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-[#808080]">No pending agents — switching to deal board...</p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Messages */}
