@@ -152,7 +152,7 @@ function PipelineContent() {
   }, [location.search]);
 
   // Build pipeline deals from server data (room data is already inline from getPipelineDealsForUser v3)
-  const deals = useMemo(() => {
+  const allDeals = useMemo(() => {
     return (dealsData || []).map(deal => {
        const hasRoom = !!deal.room_id;
        const isSigned = deal.room_is_fully_signed || deal.is_fully_signed;
@@ -193,17 +193,42 @@ function PipelineContent() {
          agreement: deal.agreement || null,
          agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null,
          investor_signed_at: deal.agreement?.investor_signed_at || null,
-         pending_counter_offer: deal.pending_counter_offer || null
+         pending_counter_offer: deal.pending_counter_offer || null,
+         source_deal_id: deal.source_deal_id || null,
+         room_counterparty_name: deal.room_counterparty_name || null,
        };
     }).filter(d => {
       if (!isAgent) return true;
-      // Team members: the server already filtered deals for the whole team, don't filter by locked_agent_id here
       if (isTeamMember) return true;
       if (d.locked_agent_id && d.locked_agent_id !== profile.id) return false;
       if (d.agent_request_status === 'rejected' || d.agent_request_status === 'voided') return false;
       return true;
     });
   }, [dealsData, profile?.id, isAgent]);
+
+  // For investors: group deals by property address so multiple agent-deals show as one card
+  const deals = useMemo(() => {
+    if (!isInvestor || isAgent) return allDeals;
+
+    const grouped = new Map();
+    for (const deal of allDeals) {
+      // If deal is fully signed (locked), show it standalone
+      if (deal.is_fully_signed || deal.locked_agent_id) {
+        grouped.set(deal.id, { ...deal, _siblingDeals: [deal], _agentCount: 1 });
+        continue;
+      }
+      const key = (deal.property_address || '').toLowerCase().trim();
+      if (!key) { grouped.set(deal.id, { ...deal, _siblingDeals: [deal], _agentCount: 1 }); continue; }
+      if (grouped.has(key)) {
+        const existing = grouped.get(key);
+        existing._siblingDeals.push(deal);
+        existing._agentCount = existing._siblingDeals.length;
+      } else {
+        grouped.set(key, { ...deal, _siblingDeals: [deal], _agentCount: 1 });
+      }
+    }
+    return [...grouped.values()];
+  }, [allDeals, isInvestor, isAgent]);
 
   const [navigating, setNavigating] = useState(false);
   const handleDealClick = async (deal) => {
