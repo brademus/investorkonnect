@@ -57,21 +57,27 @@ Deno.serve(async (req) => {
     }
     console.log('[regenerate] targetAgentId:', targetAgentId);
 
-    // Priority: agent-specific terms > room.proposed_terms > deal.proposed_terms
-    // Merge agent-specific counter terms (seller commission) with base terms (buyer commission)
-    let terms = {};
-    const baseTerms = room?.proposed_terms || deal?.proposed_terms || {};
-    if (targetAgentId && room?.agent_terms?.[targetAgentId]) {
-      const agentSpecific = room.agent_terms[targetAgentId];
-      // Merge: agent counter terms override base terms, but keep buyer commission from base if not in counter
-      terms = { ...baseTerms, ...agentSpecific };
-      console.log('[regenerate] Using merged agent-specific + base terms for', targetAgentId, ':', JSON.stringify(terms));
-    } else {
-      terms = baseTerms;
-      console.log('[regenerate] Using room/deal proposed_terms:', JSON.stringify(terms));
+    // Resolve agent-specific counter terms from room.agent_terms if available
+    // Fall back to deal.proposed_terms only if no agent-specific counter terms exist
+    let terms = deal.proposed_terms || {};
+    if (room && targetAgentId && room.agent_terms?.[targetAgentId]) {
+      const agentTermEntry = room.agent_terms[targetAgentId];
+      // Only use agent_terms if this agent has a counter that was accepted
+      if (agentTermEntry.requires_regenerate || agentTermEntry.counter_offer_id) {
+        terms = {
+          ...terms,               // start with original deal terms
+          ...agentTermEntry,      // overlay agent-specific counter terms
+        };
+        // Strip internal flags from terms object before using
+        delete terms.requires_regenerate;
+        delete terms.counter_offer_id;
+        console.log('[regenerate] Using agent-specific counter terms for:', targetAgentId);
+      }
     }
-    if (!terms.buyer_commission_type && !terms.seller_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
-    // Ensure buyer_commission_type exists (may come from base terms)
+
+    if (!terms.buyer_commission_type && !terms.seller_commission_type) {
+      return Response.json({ error: 'Missing commission terms' }, { status: 400 });
+    }
     if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
 
     // Determine signer mode — always 'both' so investor and agent sign the SAME envelope.
@@ -132,24 +138,26 @@ Deno.serve(async (req) => {
     // who didn't counter-offer still see (and can sign) the original agreement.
     // Instead, update the specific agent's DealInvite.legal_agreement_id.
     if (room_id && room) {
-      const update = {};
-      if (room.requires_regenerate) update.requires_regenerate = false;
-      
-      // Clear per-agent requires_regenerate flag and update ONLY this agent's agreement status
-      // Do NOT change room.agreement_status — it's shared across all agents
+      const roomUpdate = { requires_regenerate: false };
       if (targetAgentId) {
         const updatedTerms = { ...(room.agent_terms || {}) };
         if (updatedTerms[targetAgentId]) {
-          updatedTerms[targetAgentId] = { ...updatedTerms[targetAgentId], requires_regenerate: false };
+          updatedTerms[targetAgentId] = {
+            ...updatedTerms[targetAgentId],
+            requires_regenerate: false,
+            counter_offer_id: null,
+            regenerated_agreement_id: agreement.id
+          };
         }
-        update.agent_terms = updatedTerms;
-        
+        roomUpdate.agent_terms = updatedTerms;
+
         const updatedStatus = { ...(room.agent_agreement_status || {}) };
-        updatedStatus[targetAgentId] = 'draft';
-        update.agent_agreement_status = updatedStatus;
+        updatedStatus[targetAgentId] = 'sent';
+        roomUpdate.agent_agreement_status = updatedStatus;
       }
-      
-      await base44.asServiceRole.entities.Room.update(room_id, update);
+      // NOTE: Do NOT set roomUpdate.current_legal_agreement_id here.
+      // That keeps the original agreement accessible for other pending agents.
+      await base44.asServiceRole.entities.Room.update(room_id, roomUpdate);
       
       // Update the specific agent's DealInvite to point to the new agreement
       if (targetAgentId) {
