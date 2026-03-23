@@ -8,7 +8,7 @@ import { createPageUrl } from '@/components/utils';
 import AgentRatingStars from '@/components/AgentRatingStars';
 import { fetchAgentRatings } from '@/components/useAgentRating';
 
-export default function PendingAgentsList({ invites, onSelectAgent, selectedInviteId }) {
+export default function PendingAgentsList({ invites, onSelectAgent, selectedInviteId, onNavigateToRoom }) {
   const navigate = useNavigate();
   const [ratings, setRatings] = useState(new Map());
   const [headshots, setHeadshots] = useState({});
