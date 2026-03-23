@@ -68,6 +68,32 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 1b. For INVESTORS: if this room has an agent with a regenerated counter agreement,
+    // show them the regenerated agreement so they can complete signing.
+    if (!callerIsAgent && callerProfile && room_id && !agreement) {
+      const invRooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      const invRoom = invRooms?.[0];
+      if (invRoom && invRoom.agent_terms) {
+        for (const [agId, agTerms] of Object.entries(invRoom.agent_terms)) {
+          if (agTerms.regenerated_agreement_id && !agTerms.requires_regenerate) {
+            const arr = await base44.asServiceRole.entities.LegalAgreement.filter({
+              id: agTerms.regenerated_agreement_id
+            });
+            const regen = arr?.[0];
+            if (regen && !['superseded', 'voided'].includes(regen.status)) {
+              const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+              if (deals?.[0]?.investor_id === callerProfile.id ||
+                  invRoom.investorId === callerProfile.id) {
+                agreement = regen;
+                console.log('[getLegalAgreement] Investor sees regenerated counter agreement:', regen.id);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
     // 2. Try room pointer (for investors or if agent invite didn't yield a result)
     if (!agreement && room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });

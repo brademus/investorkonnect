@@ -36,46 +36,51 @@ Deno.serve(async (req) => {
       responded_by_role: counter.to_role,
     });
 
-    // When counter is accepted, update the DEAL's proposed_terms directly
-    // Each deal is now single-agent, so this only affects the one deal
+    // When counter is accepted, store counter terms per-agent in room.agent_terms
+    // Do NOT overwrite deal.proposed_terms — those hold the original investor terms
+    // that other pending agents still need to sign against
     if (action === "accept" && counter.deal_id) {
       try {
         const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
         const deal = dealArr?.[0];
-        
+
         if (deal) {
-          // Merge counter terms into deal's proposed_terms
-          const updatedTerms = {
-            ...(deal.proposed_terms || {}),
-            ...(counter.terms_delta || {})
-          };
-          
-          // Mark deal as requiring agreement regeneration
+          // Mark deal as needing regeneration, but do NOT overwrite proposed_terms
           await base44.asServiceRole.entities.Deal.update(deal.id, {
-            proposed_terms: updatedTerms,
             requires_regenerate: true,
-            requires_regenerate_reason: 'counter_offer_accepted'
+            requires_regenerate_reason: 'counter_offer_accepted',
+            pending_counter_agent_id: counter.from_profile_id || null
           });
-          console.log("[respondToCounterOffer] Updated deal", deal.id, "proposed_terms with counter terms");
-          
-          // Also update room agent_terms for backward compatibility
+          console.log('[respondToCounterOffer] Marked deal', deal.id, 'requires_regenerate');
+
           if (counter.room_id) {
             const rooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
             const room = rooms?.[0];
             if (room) {
-              const targetAgentId = deal.agent_id || room.agent_ids?.[0];
-              if (targetAgentId) {
+              const counterAgentId = counter.from_profile_id ||
+                deal.agent_id ||
+                room.agent_ids?.[0];
+
+              if (counterAgentId) {
+                // Store counter terms per-agent in agent_terms — isolated from other agents
                 const updatedAgentTerms = { ...(room.agent_terms || {}) };
-                updatedAgentTerms[targetAgentId] = {
-                  ...(updatedAgentTerms[targetAgentId] || room.proposed_terms || {}),
+                const originalTerms = deal.proposed_terms || {};
+                updatedAgentTerms[counterAgentId] = {
+                  ...(updatedAgentTerms[counterAgentId] || originalTerms),
                   ...(counter.terms_delta || {}),
-                  requires_regenerate: true
+                  requires_regenerate: true,
+                  counter_offer_id: counter.id
                 };
+
+                // Update agent_agreement_status only for this specific agent
+                const updatedAgentStatus = { ...(room.agent_agreement_status || {}) };
+                updatedAgentStatus[counterAgentId] = 'counter_accepted';
+
                 await base44.asServiceRole.entities.Room.update(counter.room_id, {
                   agent_terms: updatedAgentTerms,
-                  requires_regenerate: true
+                  agent_agreement_status: updatedAgentStatus,
                 });
-                console.log("[respondToCounterOffer] Updated room agent_terms for", targetAgentId);
+                console.log('[respondToCounterOffer] Stored counter terms for agent', counterAgentId);
               }
             }
           }

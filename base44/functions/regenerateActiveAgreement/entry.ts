@@ -37,14 +37,30 @@ Deno.serve(async (req) => {
     const targetAgentId = deal.agent_id || room?.agent_ids?.[0] || null;
     console.log('[regenerate] targetAgentId:', targetAgentId, 'deal:', deal_id);
 
-    // Terms come directly from deal.proposed_terms (already updated by respondToCounterOffer)
-    const terms = deal.proposed_terms || {};
+    // Resolve agent-specific counter terms from room.agent_terms if available
+    // Fall back to deal.proposed_terms only if no agent-specific counter terms exist
+    let terms = deal.proposed_terms || {};
+    if (room && targetAgentId && room.agent_terms?.[targetAgentId]) {
+      const agentTermEntry = room.agent_terms[targetAgentId];
+      // Only use agent_terms if this agent has a counter that was accepted
+      if (agentTermEntry.requires_regenerate || agentTermEntry.counter_offer_id) {
+        terms = {
+          ...terms,               // start with original deal terms
+          ...agentTermEntry,      // overlay agent-specific counter terms
+        };
+        // Strip internal flags from terms object before using
+        delete terms.requires_regenerate;
+        delete terms.counter_offer_id;
+        console.log('[regenerate] Using agent-specific counter terms for:', targetAgentId);
+      }
+    }
+
     if (!terms.buyer_commission_type && !terms.seller_commission_type) {
       return Response.json({ error: 'Missing commission terms' }, { status: 400 });
     }
     if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
     
-    console.log('[regenerate] Using deal.proposed_terms:', JSON.stringify(terms));
+    console.log('[regenerate] Using terms:', JSON.stringify(terms));
 
     // Signer mode — always 'both' so investor and agent sign the SAME envelope
     const signerMode = 'both';
@@ -101,21 +117,26 @@ Deno.serve(async (req) => {
       requires_regenerate_reason: null
     });
 
-    // Update room if it exists
+    // Update room if it exists — do NOT set current_legal_agreement_id
+    // That keeps the original agreement accessible for other pending agents
     if (room_id && room) {
       const roomUpdate = { requires_regenerate: false };
       if (targetAgentId) {
         const updatedTerms = { ...(room.agent_terms || {}) };
         if (updatedTerms[targetAgentId]) {
-          updatedTerms[targetAgentId] = { ...updatedTerms[targetAgentId], requires_regenerate: false };
+          updatedTerms[targetAgentId] = {
+            ...updatedTerms[targetAgentId],
+            requires_regenerate: false,
+            counter_offer_id: null,
+            regenerated_agreement_id: agreement.id
+          };
         }
         roomUpdate.agent_terms = updatedTerms;
-        
+
         const updatedStatus = { ...(room.agent_agreement_status || {}) };
-        updatedStatus[targetAgentId] = 'draft';
+        updatedStatus[targetAgentId] = 'sent';
         roomUpdate.agent_agreement_status = updatedStatus;
       }
-      roomUpdate.current_legal_agreement_id = agreement.id;
       await base44.asServiceRole.entities.Room.update(room_id, roomUpdate);
     }
     
