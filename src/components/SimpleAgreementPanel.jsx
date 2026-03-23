@@ -543,12 +543,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
                 <div className="text-sm text-[#FAFAFA] mb-3">
                   {(() => {
                     const td = counter.terms_delta || {};
-                    // Support both old (buyer_*) and new (seller_*) counter offer formats
-                    const type = td.seller_commission_type || td.buyer_commission_type;
-                    const pct = td.seller_commission_percentage ?? td.buyer_commission_percentage;
-                    const flat = td.seller_flat_fee ?? td.buyer_flat_fee;
+                    // Support both new (buyer_*) and old (seller_*) counter offer formats
+                    const type = td.buyer_commission_type || td.seller_commission_type;
+                    const pct = td.buyer_commission_percentage ?? td.seller_commission_percentage;
+                    const flat = td.buyer_flat_fee ?? td.seller_flat_fee;
                     const display = type === 'percentage' ? `${pct ?? 0}%` : `$${(flat ?? 0).toLocaleString()}`;
-                    return <p>Seller's Agent Commission: {display}</p>;
+                    return <p>Buyer's Agent Commission: {display}</p>;
                   })()}
                 </div>
                 {((counter.from_role === 'agent' && isInvestor) || (counter.from_role === 'investor' && isAgent)) && (
