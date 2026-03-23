@@ -145,6 +145,17 @@ Deno.serve(async (req) => {
     if (seat.status !== 'open') return Response.json({ error: 'This seat is not available for assignment' }, { status: 400 });
 
     const ownerDomain = user.email.split('@')[1]?.toLowerCase();
+    const FREE_EMAIL_DOMAINS = new Set([
+      'gmail.com', 'yahoo.com', 'yahoo.co.uk', 'hotmail.com', 'outlook.com',
+      'aol.com', 'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+      'ymail.com', 'mail.com', 'protonmail.com', 'proton.me', 'zoho.com',
+      'gmx.com', 'gmx.net', 'fastmail.com', 'tutanota.com', 'inbox.com',
+      'comcast.net', 'att.net', 'verizon.net', 'sbcglobal.net', 'cox.net',
+      'charter.net', 'earthlink.net', 'juno.com', 'bellsouth.net',
+    ]);
+    if (FREE_EMAIL_DOMAINS.has(ownerDomain)) {
+      return Response.json({ error: 'Team accounts require a company email. Please update your email in Account Settings.' }, { status: 400 });
+    }
     const inviteeDomain = normalizedEmail.split('@')[1]?.toLowerCase();
     if (ownerDomain !== inviteeDomain) {
       return Response.json({ error: `Team members must use @${ownerDomain} email addresses.` }, { status: 400 });

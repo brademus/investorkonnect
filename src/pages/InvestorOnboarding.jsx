@@ -282,6 +282,9 @@ export default function InvestorOnboarding() {
               <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
               <Input id="company" value={formData.company} onChange={(e) => updateField('company', e.target.value)} placeholder="Your company name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
             </div>
+            <p className="text-xs text-[#808080] -mt-3 px-1">
+              If you plan to add team members later, sign up with your <span className="text-[#E3C567]">company email</span> — team members must share the same email domain.
+            </p>
           </div>
         </div>
       )}

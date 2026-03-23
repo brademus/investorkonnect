@@ -33,6 +33,20 @@ Deno.serve(async (req) => {
 
     diag.sub_id = subscriptionId || 'NOT_SET';
 
+    // Company email gate
+    const FREE_EMAIL_DOMAINS = new Set([
+      'gmail.com', 'yahoo.com', 'yahoo.co.uk', 'hotmail.com', 'outlook.com',
+      'aol.com', 'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+      'ymail.com', 'mail.com', 'protonmail.com', 'proton.me', 'zoho.com',
+      'gmx.com', 'gmx.net', 'fastmail.com', 'tutanota.com', 'inbox.com',
+      'comcast.net', 'att.net', 'verizon.net', 'sbcglobal.net', 'cox.net',
+      'charter.net', 'earthlink.net', 'juno.com', 'bellsouth.net',
+    ]);
+    const ownerDomain = user.email?.split('@')[1]?.toLowerCase() || '';
+    if (FREE_EMAIL_DOMAINS.has(ownerDomain)) {
+      return Response.json({ ok: false, message: 'Team accounts require a company email address. Please update your email in Account Settings before purchasing team seats.' }, { status: 400 });
+    }
+
     if (count < 1 || count > 10) return Response.json({ ok: false, message: 'Select between 1 and 10 seats', diag }, { status: 400 });
     if (!subscriptionId) return Response.json({ ok: false, message: 'Missing subscription ID. Do you have an active subscription?', diag }, { status: 400 });
 

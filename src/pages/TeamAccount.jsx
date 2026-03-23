@@ -35,6 +35,16 @@ function TeamAccountContent() {
 
   const ownerDomain = user?.email?.split('@')[1]?.toLowerCase() || '';
 
+  const FREE_EMAIL_DOMAINS = new Set([
+    'gmail.com', 'yahoo.com', 'yahoo.co.uk', 'hotmail.com', 'outlook.com',
+    'aol.com', 'icloud.com', 'me.com', 'mac.com', 'live.com', 'msn.com',
+    'ymail.com', 'mail.com', 'protonmail.com', 'proton.me', 'zoho.com',
+    'gmx.com', 'gmx.net', 'fastmail.com', 'tutanota.com', 'inbox.com',
+    'comcast.net', 'att.net', 'verizon.net', 'sbcglobal.net', 'cox.net',
+    'charter.net', 'earthlink.net', 'juno.com', 'bellsouth.net',
+  ]);
+  const isPersonalEmail = FREE_EMAIL_DOMAINS.has(ownerDomain);
+
   const fetchTeam = async () => {
     setLoading(true);
     try {
@@ -149,6 +159,35 @@ function TeamAccountContent() {
   }
 
   if (!user) return null;
+
+  // Block if personal email (owner view only)
+  if (isOwner && isPersonalEmail) {
+    return (
+      <div className="min-h-screen bg-transparent py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <Link to={createPageUrl("Pipeline")} className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4">
+              <ArrowLeft className="w-4 h-4" /> Back to Pipeline
+            </Link>
+            <h1 className="text-3xl font-bold text-[#FAFAFA]">Team Accounts</h1>
+          </div>
+          <div className="rounded-2xl p-8 text-center" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+            <Users className="w-12 h-12 text-[#E3C567] mx-auto mb-4 opacity-60" />
+            <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Company Email Required</h3>
+            <p className="text-sm text-[#808080] mb-6 max-w-md mx-auto">
+              Team accounts require a company email address. You're currently signed in with a personal email (<span className="text-[#E3C567]">@{ownerDomain}</span>).
+              Please update your account to use your company email to enable team management.
+            </p>
+            <Link to={createPageUrl("AccountProfile")}>
+              <Button className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-11 px-6">
+                Update Email in Account Settings
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Team member view (not owner)
   if (!isOwner && myMembership) {
