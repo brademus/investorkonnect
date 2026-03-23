@@ -284,6 +284,8 @@ Deno.serve(async (req) => {
         } : null;
       }
 
+      base.source_deal_id = deal.source_deal_id || null;
+
       if (isInvestorSide || isSigned) {
         return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };
       }
