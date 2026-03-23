@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       }
 
       console.log('✅ Checkout session created successfully:', sessionData.id);
-      return Response.json({ id: sessionData.id });
+      return Response.json({ ok: true, url: sessionData.url, session_id: sessionData.id });
 
     } catch (sessionError) {
       console.error('Session creation fetch error:', sessionError);
