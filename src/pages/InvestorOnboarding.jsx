@@ -133,24 +133,44 @@ export default function InvestorOnboarding() {
       if (!currentProfile?.id) throw new Error('Unable to load profile. Please refresh the page.');
 
       const combinedName = `${formData.first_name.trim()} ${formData.last_name.trim()}`.trim();
-      await base44.entities.Profile.update(currentProfile.id, {
-        full_name: combinedName,
+      const payload = {
         onboarding_first_name: formData.first_name.trim(),
         onboarding_last_name: formData.last_name.trim(),
-        phone: formData.phone, company: formData.company,
-        headshotUrl: formData.headshotUrl, goals: formData.goals,
-        user_role: 'investor', user_type: 'investor',
-        target_state: formData.nationwide ? 'Nationwide' : (formData.primary_states[0] || formData.primary_state),
+        full_name: combinedName,
+        phone: formData.phone,
+        company: formData.company,
+        headshotUrl: formData.headshotUrl,
+        goals: formData.goals,
+        primary_state: formData.nationwide ? 'Nationwide' : (formData.primary_states[0] || formData.primary_state),
         markets: formData.nationwide ? ['Nationwide'] : (formData.primary_states.length > 0 ? formData.primary_states : [formData.primary_state]).filter(Boolean),
-        onboarding_step: 'basic_complete',
-        onboarding_completed_at: new Date().toISOString(),
-        onboarding_version: 'investor-v1',
+        target_state: formData.nationwide ? 'Nationwide' : (formData.primary_states[0] || formData.primary_state),
+        investment_experience: formData.investment_experience,
+        deal_types: formData.deal_types,
         next_steps_template_type: formData.next_steps_template_type,
         custom_next_steps_template: formData.next_steps_template_type === 'custom' ? formData.custom_next_steps_template : null,
+      };
+      await base44.entities.Profile.update(currentProfile.id, {
+        full_name: [payload.onboarding_first_name, payload.onboarding_last_name].filter(Boolean).join(' ').trim() || payload.full_name || currentProfile.full_name,
+        phone: payload.phone || currentProfile.phone,
+        company: payload.company || currentProfile.company,
+        headshotUrl: payload.headshotUrl || currentProfile.headshotUrl,
+        goals: payload.goals || currentProfile.goals,
+        markets: payload.markets || [payload.primary_state],
+        target_state: payload.target_state || payload.primary_state,
+        user_role: 'investor',
+        user_type: 'investor',
+        onboarding_version: 'v2',
+        onboarding_completed_at: new Date().toISOString(),
+        next_steps_template_type: payload.next_steps_template_type || null,
+        custom_next_steps_template: payload.next_steps_template_type === 'custom' ? payload.custom_next_steps_template : null,
         metadata: {
           ...(currentProfile.metadata || {}),
-          basicProfile: { investment_experience: formData.investment_experience, deal_types: formData.deal_types }
-        }
+          basicProfile: {
+            ...(currentProfile.metadata?.basicProfile || {}),
+            investment_experience: payload.investment_experience || null,
+            deal_types: payload.deal_types || [],
+          },
+        },
       });
 
       if (isTeamMember) {
