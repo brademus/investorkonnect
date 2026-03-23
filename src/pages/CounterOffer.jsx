@@ -35,7 +35,7 @@ export default function CounterOfferPage() {
   
   const [commissionType, setCommissionType] = useState('percentage');
   const [commissionAmount, setCommissionAmount] = useState('');
-  // Counter offers now target seller's agent commission
+  // Counter offers now target buyer's agent commission
   const [error, setError] = useState(null);
 
   const isInvestor = profile?.user_role === 'investor';
@@ -72,20 +72,20 @@ export default function CounterOfferPage() {
         }
         
         // Pre-fill commission from current terms (agent-specific > room > deal > agreement)
-        // Counter offers target SELLER's agent commission
+        // Counter offers target BUYER's agent commission
         if (!respondingTo) {
           const agentId = isAgent ? profile?.id : null;
           const agentTerms = agentId && loadedRoom?.agent_terms?.[agentId];
-          const terms = agentTerms?.seller_commission_type ? agentTerms 
-            : (loadedRoom?.proposed_terms?.seller_commission_type ? loadedRoom.proposed_terms 
+          const terms = agentTerms?.buyer_commission_type ? agentTerms 
+            : (loadedRoom?.proposed_terms?.buyer_commission_type ? loadedRoom.proposed_terms 
             : loadedDeal?.proposed_terms);
-          if (terms?.seller_commission_type) {
-            const normalizedType = terms.seller_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
+          if (terms?.buyer_commission_type) {
+            const normalizedType = terms.buyer_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
             setCommissionType(normalizedType);
-            if (terms.seller_commission_type === 'percentage' && terms.seller_commission_percentage) {
-              setCommissionAmount(String(terms.seller_commission_percentage));
-            } else if (terms.seller_flat_fee) {
-              setCommissionAmount(String(terms.seller_flat_fee));
+            if (terms.buyer_commission_type === 'percentage' && terms.buyer_commission_percentage) {
+              setCommissionAmount(String(terms.buyer_commission_percentage));
+            } else if (terms.buyer_flat_fee) {
+              setCommissionAmount(String(terms.buyer_flat_fee));
             }
           }
         }
@@ -94,14 +94,14 @@ export default function CounterOfferPage() {
           const c = await base44.entities.CounterOffer.filter({ id: respondingTo });
           if (c[0]) {
             setCounterToRespond(c[0]);
-            // Pre-fill form with inverse terms — seller commission
-            if (c[0].terms_delta?.seller_commission_type) {
-              const normalizedType = c[0].terms_delta.seller_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
+            // Pre-fill form with inverse terms — buyer commission
+            if (c[0].terms_delta?.buyer_commission_type) {
+              const normalizedType = c[0].terms_delta.buyer_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
               setCommissionType(normalizedType);
-              if (c[0].terms_delta.seller_commission_type === 'percentage') {
-                setCommissionAmount(String(c[0].terms_delta.seller_commission_percentage || ''));
+              if (c[0].terms_delta.buyer_commission_type === 'percentage') {
+                setCommissionAmount(String(c[0].terms_delta.buyer_commission_percentage || ''));
               } else {
-                setCommissionAmount(String(c[0].terms_delta.seller_flat_fee || ''));
+                setCommissionAmount(String(c[0].terms_delta.buyer_flat_fee || ''));
               }
             }
           }
@@ -133,9 +133,9 @@ export default function CounterOfferPage() {
       // Counter offers now target SELLER's agent commission
       const normalizedType = commissionType === 'percentage' ? 'percentage' : 'flat';
       const counterTerms = {
-        seller_commission_type: normalizedType,
-        seller_commission_percentage: normalizedType === 'percentage' ? parseFloat(commissionAmount) : null,
-        seller_flat_fee: normalizedType !== 'percentage' ? parseFloat(commissionAmount) : null,
+        buyer_commission_type: normalizedType,
+        buyer_commission_percentage: normalizedType === 'percentage' ? parseFloat(commissionAmount) : null,
+        buyer_flat_fee: normalizedType !== 'percentage' ? parseFloat(commissionAmount) : null,
       };
 
       if (isResponding && respondingTo) {
@@ -229,20 +229,20 @@ export default function CounterOfferPage() {
         )}
 
         <div className="space-y-4 py-4">
-          {/* Current Terms Display - resolve from best source — seller commission */}
+          {/* Current Terms Display - resolve from best source — buyer commission */}
           {(() => {
             const agentId = isAgent ? profile?.id : null;
             const agentTerms = agentId && room?.agent_terms?.[agentId];
-            const terms = agentTerms?.seller_commission_type ? agentTerms 
-              : (room?.proposed_terms?.seller_commission_type ? room.proposed_terms 
+            const terms = agentTerms?.buyer_commission_type ? agentTerms 
+              : (room?.proposed_terms?.buyer_commission_type ? room.proposed_terms 
               : deal?.proposed_terms);
-            if (!terms?.seller_commission_type) return null;
-            const commDisplay = terms.seller_commission_type === 'percentage'
-              ? `${terms.seller_commission_percentage ?? 0}%`
-              : `$${(terms.seller_flat_fee ?? 0).toLocaleString()}`;
+            if (!terms?.buyer_commission_type) return null;
+            const commDisplay = terms.buyer_commission_type === 'percentage'
+              ? `${terms.buyer_commission_percentage ?? 0}%`
+              : `$${(terms.buyer_flat_fee ?? 0).toLocaleString()}`;
             return (
               <div className="bg-[#141414] rounded-lg p-4 text-sm space-y-2">
-                <p className="text-[#808080]">Current Seller's Agent Commission</p>
+                <p className="text-[#808080]">Current Buyer's Agent Commission</p>
                 <p className="text-[#FAFAFA] font-semibold">{commDisplay}</p>
               </div>
             );
@@ -250,7 +250,7 @@ export default function CounterOfferPage() {
 
           {/* Commission Type Selector */}
           <div>
-            <label className="text-xs text-[#808080] mb-2 block">Seller's Agent Commission Type</label>
+            <label className="text-xs text-[#808080] mb-2 block">Buyer's Agent Commission Type</label>
             <Select value={commissionType} onValueChange={setCommissionType}>
               <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                 <SelectValue />
@@ -265,7 +265,7 @@ export default function CounterOfferPage() {
           {/* Amount Input */}
           <div>
             <label className="text-xs text-[#808080] mb-2 block">
-              {commissionType === 'percentage' ? 'Seller\'s Agent Commission (%)' : 'Seller\'s Agent Commission ($)'}
+              {commissionType === 'percentage' ? 'Buyer\'s Agent Commission (%)' : 'Buyer\'s Agent Commission ($)'}
             </label>
             <Input
               type="number"

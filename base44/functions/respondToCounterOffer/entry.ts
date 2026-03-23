@@ -52,9 +52,11 @@ Deno.serve(async (req) => {
             const room = rooms?.[0];
             if (room) {
               // Determine which agent this counter belongs to
-              const counterAgentId = counter.from_profile_id ||
-                deal.agent_id ||
-                room.agent_ids?.[0];
+              // If agent sent the counter, from_profile_id is the agent's ID
+              // If investor sent the counter, the agent is the recipient (in the room)
+              const counterAgentId = counter.from_role === 'agent'
+                ? (counter.from_profile_id || deal.agent_id || room.agent_ids?.[0])
+                : (deal.agent_id || room.agent_ids?.[0] || counter.from_profile_id);
 
               if (counterAgentId) {
                 // Store counter terms per-agent in agent_terms — isolated from other agents

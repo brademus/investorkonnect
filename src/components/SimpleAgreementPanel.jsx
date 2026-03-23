@@ -377,7 +377,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
           agreement_id: res.data.agreement.id, role: 'investor', room_id: roomId
         });
-        if (signRes.data?.signing_url) { window.location.assign(signRes.data.signing_url); return; }
+        if (signRes.data?.signing_url) {
+          // Clear local regen state so agent sees updated status on return
+          try {
+            const rr = await base44.entities.Room.filter({ id: roomId }).catch(() => []);
+            if (rr?.[0]) setRoom(rr[0]);
+          } catch (_) {}
+          window.location.assign(signRes.data.signing_url);
+          return;
+        }
         if (signRes.data?.already_signed) {
           toast.success('Agreement already signed');
           setAgreement(signRes.data.agreement || res.data.agreement);
@@ -400,7 +408,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       if (res.data?.success) {
         toast.success(`Counter ${action}ed`);
         setPendingCounters(prev => prev.filter(c => c.id !== counterId));
-        if (action === 'accept') setRoom(prev => ({ ...prev, requires_regenerate: true }));
+        if (action === 'accept') {
+          // Re-fetch room so agent_terms[agentId].requires_regenerate is reflected locally
+          try {
+            const updatedRoom = await base44.entities.Room.filter({ id: roomId }).catch(() => []);
+            if (updatedRoom?.[0]) setRoom(updatedRoom[0]);
+          } catch (_) {
+            // Fallback to local flag if fetch fails
+            setRoom(prev => ({ ...prev, requires_regenerate: true }));
+          }
+        }
       } else toast.error(res.data?.error || 'Failed');
     } catch (e) { reportError('Failed to respond to counter offer', { cause: e, extra: { dealId, roomId, counterId } }); }
     finally { setRespondingCounterId(null); }
