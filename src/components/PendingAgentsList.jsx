@@ -51,8 +51,9 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
   return (
     <div className="max-w-4xl mx-auto w-full">
       <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Select an Agent</h2>
-        <p className="text-sm text-[#808080]">Choose an agent to view their deal board and agreement</p>
+        <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Pending Agents</h2>
+        <p className="text-sm text-[#808080]">The first agent to sign gets the deal. Select an agent to view their deal board.</p>
+        <p className="text-xs text-[#666] mt-1">{invites.length} agent{invites.length !== 1 ? 's' : ''} pending</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
