@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       if (ap?.length) agent = ap[0];
     }
 
-    const fillAgent = !!room_id;
+    const fillAgent = !!room_id || !!body.fill_agent;
     const conn = dsConn;
 
     // ── PARALLEL PHASE 2: Cache check + PDF parse ──

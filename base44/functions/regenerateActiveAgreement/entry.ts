@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     const isCounterRegen = !!(room && targetAgentId && room.agent_terms?.[targetAgentId]?.counter_offer_id);
     const payload = {
       deal_id, room_id: isCounterRegen ? null : (room_id || null),
+      fill_agent: true,
 
       signer_mode: signerMode,
       agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
@@ -139,7 +140,7 @@ Deno.serve(async (req) => {
     // The room pointer should stay on the original investor-signed agreement so other agents
     // who didn't counter-offer still see (and can sign) the original agreement.
     // Instead, update the specific agent's DealInvite.legal_agreement_id.
-    if (room_id && room) {
+    if (room) {
       const roomUpdate = { requires_regenerate: false };
       if (targetAgentId) {
         const updatedTerms = { ...(room.agent_terms || {}) };
