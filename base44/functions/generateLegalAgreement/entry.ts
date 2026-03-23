@@ -511,8 +511,17 @@ Deno.serve(async (req) => {
     }
 
     // Fire-and-forget: pointer updates + human PDF backfill
-    if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
-    if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    // CRITICAL: When generating for a specific agent (counter-offer regen), do NOT overwrite
+    // the shared room/deal agreement pointers. Those should stay pointing to the original
+    // base agreement so other agents who didn't counter-offer still see the original.
+    // The caller (regenerateActiveAgreement) handles updating the agent-specific DealInvite.
+    const isAgentSpecific = !!body.agent_profile_id;
+    if (!isAgentSpecific) {
+      if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+      if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    } else {
+      console.log(`[genAgreement] Agent-specific regen — skipping shared pointer updates for room/deal`);
+    }
     humanUploadPromise.then(hu => {
       if (hu?.file_url) {
         base44.asServiceRole.entities.LegalAgreement.update(agreement.id, { final_pdf_url: hu.file_url, pdf_file_url: hu.file_url }).catch(() => {});
