@@ -142,7 +142,12 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSelectAgent(invite);
+                    // If invite is for a different deal/room, navigate to that room
+                    if (onNavigateToRoom && invite.room_id) {
+                      onNavigateToRoom(invite.room_id, invite);
+                    } else {
+                      onSelectAgent(invite);
+                    }
                   }}
                   size="sm"
                   className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
