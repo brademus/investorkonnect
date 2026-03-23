@@ -813,7 +813,8 @@ export default function Room() {
                   selectedInviteId={selectedInvite?.id}
                   onSelectAgent={(invite) => {
                     if (invite.room_id && invite.room_id !== roomId) {
-                      navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board`);
+                      const addr = currentRoom?.property_address || deal?.property_address || new URLSearchParams(window.location.search).get('address') || '';
+                      navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board${addr ? '&address=' + encodeURIComponent(addr) : ''}`);
                       return;
                     }
                     setSelectedInvite(invite);
@@ -824,7 +825,8 @@ export default function Room() {
                       setSelectedInvite(invite);
                       setActiveView('board');
                     } else {
-                      navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board`);
+                      const addr = currentRoom?.property_address || deal?.property_address || new URLSearchParams(window.location.search).get('address') || '';
+                      navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board${addr ? '&address=' + encodeURIComponent(addr) : ''}`);
                     }
                   }}
                 />
