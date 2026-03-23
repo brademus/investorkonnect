@@ -232,6 +232,16 @@ function PipelineContent() {
 
   const [navigating, setNavigating] = useState(false);
   const handleDealClick = async (deal) => {
+    // For grouped investor deals with multiple agents, navigate to first room with pending_agents view
+    if (isInvestor && deal._agentCount > 1 && !deal.is_fully_signed) {
+      const firstSibling = deal._siblingDeals?.[0];
+      const rid = firstSibling?.room_id;
+      if (rid) {
+        navigate(`${createPageUrl("Room")}?roomId=${rid}&view=pending_agents&address=${encodeURIComponent(deal.property_address || '')}`);
+        return;
+      }
+    }
+
     if (deal.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
       return;
