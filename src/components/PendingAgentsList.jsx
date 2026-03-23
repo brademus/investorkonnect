@@ -63,7 +63,13 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
           return (
             <div
               key={invite.id}
-              onClick={() => onSelectAgent(invite)}
+              onClick={() => {
+                if (onNavigateToRoom && invite.room_id) {
+                  onNavigateToRoom(invite.room_id, invite);
+                } else {
+                  onSelectAgent(invite);
+                }
+              }}
               className={`bg-[#0D0D0D] border-2 rounded-2xl p-5 cursor-pointer transition-all ${
                 isSelected
                   ? 'border-[#E3C567] shadow-lg shadow-[#E3C567]/20'
