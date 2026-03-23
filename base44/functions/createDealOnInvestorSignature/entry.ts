@@ -276,7 +276,9 @@ Deno.serve(async (req) => {
         }
 
         // Notify agents about updated agreement
-        for (const agentId of (room.agent_ids || [])) {
+        // For agent-specific regens, only notify the counter-offering agent
+        const agentsToNotify = isAgentSpecificRegen ? [regenAgentId] : (room.agent_ids || []);
+        for (const agentId of agentsToNotify) {
           try {
             const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
             const agent = agentProfiles?.[0];
