@@ -478,7 +478,7 @@ Deno.serve(async (req) => {
     const agreementPromise = base44.asServiceRole.entities.LegalAgreement.create({
       deal_id: effectiveId, room_id: isAgentSpecific ? null : (room_id || null),
       investor_user_id: resolvedInvestorUserId, agent_user_id: agent.user_id,
-      investor_profile_id: investor.id, agent_profile_id: agent.id,
+      investor_profile_id: investor.id, agent_profile_id: body.agent_profile_id || agent.id,
       governing_state: deal.state, property_zip: deal.zip,
       transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
       property_type: deal.property_type || 'Single Family',
