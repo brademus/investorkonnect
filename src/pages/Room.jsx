@@ -760,7 +760,7 @@ export default function Room() {
                 profile={profile}
                 roomId={roomId}
                 patchDealCache={patchDeal}
-                selectedAgentProfileId={selectedInvite?.agent_profile_id}
+                selectedAgentProfileId={isAgent ? profile?.id : selectedInvite?.agent_profile_id}
                 onInvestorSigned={async () => {
                   if (!currentRoom?.deal_id) return;
                   try {

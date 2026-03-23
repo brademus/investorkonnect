@@ -153,8 +153,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       const agentTerms = room?.agent_terms?.[selectedAgentProfileId];
       return agentTerms?.requires_regenerate === true;
     }
-    // Investor with no specific agent — show room-level flag
-    return room?.requires_regenerate === true;
+    // Do NOT fall back to room-level requires_regenerate — that flag is
+    // deal-level and would show regen for ALL agents when only one countered.
+    return false;
   })();
   
   // For agents who DIDN'T counter: they see the original agreement which IS investor-signed

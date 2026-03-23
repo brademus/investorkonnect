@@ -43,7 +43,13 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
 
       try {
         // CRITICAL: Determine which agent we're showing terms for
-        const targetAgentId = selectedAgentId || room.agent_ids?.[0];
+        // For agents: always use their own profile ID so they see their own terms.
+        // For investors: use the selectedAgentId prop (the agent they're viewing).
+        // Never fall back to room.agent_ids?.[0] — that's ambiguous in multi-agent rooms.
+        const isViewerAgent = profile?.user_role === 'agent';
+        const targetAgentId = isViewerAgent
+          ? profile?.id
+          : (selectedAgentId || null);
         
         // Helper: merge multiple term sources, preferring the first non-null value for each field
         const mergeTerms = (...sources) => {
