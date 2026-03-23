@@ -177,13 +177,50 @@ Deno.serve(async (req) => {
     ]);
 
     // Build agreement map (best per deal)
+    // For agents: prefer the agreement linked to their specific DealInvite
+    // For investors/admins: pick the highest-status agreement (original behavior)
     const agreementMap = new Map();
     const statusRank = s => ({ fully_signed: 5, attorney_review_pending: 4, agent_signed: 3, investor_signed: 2, sent: 1 }[s] || 0);
-    allAgreements.forEach(a => {
-      if (['voided', 'superseded'].includes(a.status)) return;
-      const prev = agreementMap.get(a.deal_id);
-      if (!prev || statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
-    });
+    
+    // Build a set of agent-specific agreement IDs from DealInvites
+    const agentSpecificAgreementIds = new Set();
+    if (effectiveIsAgent) {
+      // We already loaded allInvites above — collect legal_agreement_ids for this agent's invites
+      // Re-query to get the invite data (it's in scope for agent path)
+      const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({ 
+        agent_profile_id: { $in: teamProfileIds } 
+      }).catch(() => []);
+      const inviteAgreementByDeal = new Map();
+      for (const inv of agentInvites) {
+        if (inv.legal_agreement_id && inv.deal_id) {
+          inviteAgreementByDeal.set(inv.deal_id, inv.legal_agreement_id);
+        }
+      }
+      
+      // For agent view: prefer the agreement from their DealInvite
+      allAgreements.forEach(a => {
+        if (['voided', 'superseded'].includes(a.status)) return;
+        const inviteAgId = inviteAgreementByDeal.get(a.deal_id);
+        if (inviteAgId && a.id === inviteAgId) {
+          // This is the agent's specific agreement — always use it
+          agreementMap.set(a.deal_id, a);
+        } else if (!agreementMap.has(a.deal_id)) {
+          // Fallback: use best available if no invite-specific match yet
+          agreementMap.set(a.deal_id, a);
+        } else if (!inviteAgId) {
+          // No invite-specific agreement — use highest status rank
+          const prev = agreementMap.get(a.deal_id);
+          if (statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
+        }
+      });
+    } else {
+      // Investor/admin: original behavior — pick highest status
+      allAgreements.forEach(a => {
+        if (['voided', 'superseded'].includes(a.status)) return;
+        const prev = agreementMap.get(a.deal_id);
+        if (!prev || statusRank(a.status) > statusRank(prev.status)) agreementMap.set(a.deal_id, a);
+      });
+    }
 
     // Build room map (best per deal_id)
     const roomByDeal = new Map();
