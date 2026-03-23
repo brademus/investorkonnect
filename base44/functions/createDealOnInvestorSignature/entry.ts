@@ -112,43 +112,53 @@ Deno.serve(async (req) => {
         }
       }
 
-      const dealUpdate = { current_legal_agreement_id: agreementData.id };
-      const exhibitTerms = agreementData.exhibit_a_terms || {};
+      // CRITICAL: If this is an agent-specific counter-offer regeneration, do NOT overwrite
+      // the shared deal.current_legal_agreement_id or deal.proposed_terms.
+      // Those are shared across all agents. The counter terms only live in agent_terms on the room.
+      const isAgentSpecificAgreement = !!agreementData.agent_profile_id;
+      
+      if (isAgentSpecificAgreement) {
+        // Agent-specific counter-offer regen — skip deal-level updates entirely
+        console.log('[createDealOnInvestorSignature] Agent-specific agreement for', agreementData.agent_profile_id, '— skipping deal proposed_terms update');
+      } else {
+        const dealUpdate = { current_legal_agreement_id: agreementData.id };
+        const exhibitTerms = agreementData.exhibit_a_terms || {};
 
-      if (draftForUpdate) {
-        const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
-        dealUpdate.walkthrough_scheduled = draftWtScheduled;
-        dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
-        dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
-        dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
-        if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
-        const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
-        const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
-        dealUpdate.proposed_terms = {
-          seller_commission_type: exhibitTerms.seller_commission_type || dSellerType,
-          seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draftForUpdate.seller_commission_percentage ?? null,
-          seller_flat_fee: exhibitTerms.seller_flat_fee ?? draftForUpdate.seller_flat_fee ?? null,
-          buyer_commission_type: exhibitTerms.buyer_commission_type || dBuyerType,
-          buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draftForUpdate.buyer_commission_percentage ?? null,
-          buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
-          agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
-        };
-      } else if (Object.keys(exhibitTerms).length > 0) {
-        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+        if (draftForUpdate) {
+          const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
+          dealUpdate.walkthrough_scheduled = draftWtScheduled;
+          dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
+          dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
+          dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
+          if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
+          const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
+          const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
           dealUpdate.proposed_terms = {
-            seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
-            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
-            seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
-            buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
-            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
-            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
-            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+            seller_commission_type: exhibitTerms.seller_commission_type || dSellerType,
+            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draftForUpdate.seller_commission_percentage ?? null,
+            seller_flat_fee: exhibitTerms.seller_flat_fee ?? draftForUpdate.seller_flat_fee ?? null,
+            buyer_commission_type: exhibitTerms.buyer_commission_type || dBuyerType,
+            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draftForUpdate.buyer_commission_percentage ?? null,
+            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
+            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
           };
+        } else if (Object.keys(exhibitTerms).length > 0) {
+          if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+            dealUpdate.proposed_terms = {
+              seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
+              seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
+              seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
+              buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
+              buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
+              buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
+              agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+            };
+          }
         }
-      }
 
-      // Update Deal
-      await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
+        // Update Deal
+        await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
+      }
 
       // Sync DealAppointments — reset to NOT_SET when walkthrough is not scheduled
       try {
