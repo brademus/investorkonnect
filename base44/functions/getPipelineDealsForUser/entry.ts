@@ -49,14 +49,17 @@ Deno.serve(async (req) => {
         teamProfileIds = [profile.id];
       }
     } else {
-      // Check if current user is a TEAM OWNER
-      const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
-        owner_profile_id: profile.id, status: 'active' 
-      });
-      if (ownedSeats.length > 0) {
-        isTeamOwner = true;
-        const memberIds = ownedSeats.map(s => s.member_profile_id).filter(Boolean);
-        teamProfileIds = [profile.id, ...memberIds];
+      // Check if current user is a TEAM OWNER (skip if pending_seats_count is 0 and no stripe_seat_item_id — common solo case)
+      const mayHaveTeam = profile.pending_seats_count > 0 || profile.stripe_seat_item_id;
+      if (mayHaveTeam) {
+        const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+          owner_profile_id: profile.id, status: 'active' 
+        });
+        if (ownedSeats.length > 0) {
+          isTeamOwner = true;
+          const memberIds = ownedSeats.map(s => s.member_profile_id).filter(Boolean);
+          teamProfileIds = [profile.id, ...memberIds];
+        }
       }
     }
 
