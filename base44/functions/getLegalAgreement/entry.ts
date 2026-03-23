@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
         const arr = await base44.asServiceRole.entities.LegalAgreement.filter({ id: myInvite.legal_agreement_id });
         const inviteAgreement = arr?.[0];
         if (inviteAgreement && !['superseded', 'voided'].includes(inviteAgreement.status)) {
-          // Only use this if it has investor signature or is mode 'both' — never use stale agent_only
-          if (inviteAgreement.investor_signed_at || inviteAgreement.signer_mode === 'both') {
+          // Use this if it has investor signature, is mode 'both', or is agent_only (counter-offer regen)
+          if (inviteAgreement.investor_signed_at || inviteAgreement.signer_mode === 'both' || inviteAgreement.signer_mode === 'agent_only') {
             agreement = inviteAgreement;
             console.log('[getLegalAgreement] Agent-specific agreement from invite:', agreement.id, 'status:', agreement.status);
           } else {
