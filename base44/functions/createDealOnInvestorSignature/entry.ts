@@ -196,80 +196,41 @@ Deno.serve(async (req) => {
         console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
       }
 
-      // Update existing Room agreement pointer and status
+      // Update existing Room agreement pointer and status (each deal has one room, one agent)
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
       if (existingRooms?.length) {
         const room = existingRooms[0];
         
-        // CRITICAL: Determine if this is a counter-offer regeneration (agent-specific)
-        // by checking if the agreement has an agent_profile_id set.
-        // If so, only update that specific agent's status — leave other agents untouched.
-        const isAgentSpecificRegen = !!agreementData.agent_profile_id;
-        const regenAgentId = agreementData.agent_profile_id;
-        
         const updatedAgentStatus = { ...(room.agent_agreement_status || {}) };
-        if (isAgentSpecificRegen) {
-          // Only reset the specific counter-offering agent's status
-          updatedAgentStatus[regenAgentId] = 'sent';
-          console.log('[createDealOnInvestorSignature] Agent-specific regen for:', regenAgentId);
-        } else {
-          // Full deal re-sign: reset all agents
-          for (const agentId of (room.agent_ids || [])) {
-            updatedAgentStatus[agentId] = 'sent';
-          }
+        for (const agentId of (room.agent_ids || [])) {
+          updatedAgentStatus[agentId] = 'sent';
         }
 
-        // Build room update
-        const roomUpdatePayload = {
+        await base44.asServiceRole.entities.Room.update(room.id, {
+          current_legal_agreement_id: agreementData.id,
+          agreement_status: 'investor_signed',
           requires_regenerate: false,
           agent_agreement_status: updatedAgentStatus
-        };
-        
-        if (!isAgentSpecificRegen) {
-          // Full deal re-sign: update shared room agreement pointer and status
-          roomUpdatePayload.current_legal_agreement_id = agreementData.id;
-          roomUpdatePayload.agreement_status = 'investor_signed';
-        }
-        // For agent-specific regen, do NOT change current_legal_agreement_id or agreement_status
-        // Those stay pointing to the original base agreement for other agents
-        
-        await base44.asServiceRole.entities.Room.update(room.id, roomUpdatePayload);
-        console.log('[createDealOnInvestorSignature] Updated room:', room.id, isAgentSpecificRegen ? '(agent-specific)' : '(full re-sign)');
+        });
+        console.log('[createDealOnInvestorSignature] Updated room:', room.id);
 
-        // CRITICAL: Link the agreement to the room so Room-page subscriptions can find it
+        // Link the agreement to the room
         if (!agreementData.room_id) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
-            room_id: room.id
-          });
-          console.log('[createDealOnInvestorSignature] Linked agreement', agreementData.id, 'to room', room.id);
+          await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: room.id });
         }
 
         // Update DealInvites
         const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: existingDeal.id });
         for (const invite of existingInvites) {
           if (invite.status === 'LOCKED') continue;
-          
-          if (isAgentSpecificRegen && invite.agent_profile_id === regenAgentId) {
-            // Only update the counter-offering agent's invite
-            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
-              legal_agreement_id: agreementData.id,
-              status: 'PENDING_AGENT_SIGNATURE'
-            });
-            console.log('[createDealOnInvestorSignature] Updated invite for counter agent:', invite.id);
-          } else if (!isAgentSpecificRegen) {
-            // Full deal re-sign: update all non-locked invites
-            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
-              legal_agreement_id: agreementData.id,
-              status: 'PENDING_AGENT_SIGNATURE'
-            });
-            console.log('[createDealOnInvestorSignature] Updated invite:', invite.id);
-          }
+          await base44.asServiceRole.entities.DealInvite.update(invite.id, {
+            legal_agreement_id: agreementData.id,
+            status: 'PENDING_AGENT_SIGNATURE'
+          });
         }
 
-        // Notify agents about updated agreement
-        // For agent-specific regens, only notify the counter-offering agent
-        const agentsToNotify = isAgentSpecificRegen ? [regenAgentId] : (room.agent_ids || []);
-        for (const agentId of agentsToNotify) {
+        // Notify the deal's agent
+        for (const agentId of (room.agent_ids || [])) {
           try {
             const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
             const agent = agentProfiles?.[0];
