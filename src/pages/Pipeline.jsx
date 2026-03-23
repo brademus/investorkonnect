@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Users } from "lucide-react";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
