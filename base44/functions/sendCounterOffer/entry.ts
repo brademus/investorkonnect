@@ -70,7 +70,9 @@ Deno.serve(async (req) => {
 
     // --- Notify the other party about the counter offer ---
     try {
-      const recipientId = toRole === 'investor' ? room.investorId : (room.locked_agent_id || room.agent_ids?.[0]);
+      const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: deal_id }).catch(() => []);
+      const deal = dealArr?.[0];
+      const recipientId = toRole === 'investor' ? room.investorId : (deal?.agent_id || room.locked_agent_id || room.agent_ids?.[0]);
       if (recipientId) {
         const recipientProfiles = await base44.asServiceRole.entities.Profile.filter({ id: recipientId });
         const recipient = recipientProfiles?.[0];
