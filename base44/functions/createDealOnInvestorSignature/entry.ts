@@ -199,20 +199,41 @@ Deno.serve(async (req) => {
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
       if (existingRooms?.length) {
         const room = existingRooms[0];
-        // Reset agent agreement statuses to 'sent' for all agents
-        const updatedAgentStatus = {};
-        for (const agentId of (room.agent_ids || [])) {
-          updatedAgentStatus[agentId] = 'sent';
+        
+        // CRITICAL: Determine if this is a counter-offer regeneration (agent-specific)
+        // by checking if the agreement has an agent_profile_id set.
+        // If so, only update that specific agent's status — leave other agents untouched.
+        const isAgentSpecificRegen = !!agreementData.agent_profile_id;
+        const regenAgentId = agreementData.agent_profile_id;
+        
+        const updatedAgentStatus = { ...(room.agent_agreement_status || {}) };
+        if (isAgentSpecificRegen) {
+          // Only reset the specific counter-offering agent's status
+          updatedAgentStatus[regenAgentId] = 'sent';
+          console.log('[createDealOnInvestorSignature] Agent-specific regen for:', regenAgentId);
+        } else {
+          // Full deal re-sign: reset all agents
+          for (const agentId of (room.agent_ids || [])) {
+            updatedAgentStatus[agentId] = 'sent';
+          }
         }
-        // Build room update - include walkthrough if set on deal
+
+        // Build room update
         const roomUpdatePayload = {
-          current_legal_agreement_id: agreementData.id,
-          agreement_status: 'investor_signed',
           requires_regenerate: false,
           agent_agreement_status: updatedAgentStatus
         };
+        
+        if (!isAgentSpecificRegen) {
+          // Full deal re-sign: update shared room agreement pointer and status
+          roomUpdatePayload.current_legal_agreement_id = agreementData.id;
+          roomUpdatePayload.agreement_status = 'investor_signed';
+        }
+        // For agent-specific regen, do NOT change current_legal_agreement_id or agreement_status
+        // Those stay pointing to the original base agreement for other agents
+        
         await base44.asServiceRole.entities.Room.update(room.id, roomUpdatePayload);
-        console.log('[createDealOnInvestorSignature] Updated room:', room.id, 'with new agreement');
+        console.log('[createDealOnInvestorSignature] Updated room:', room.id, isAgentSpecificRegen ? '(agent-specific)' : '(full re-sign)');
 
         // CRITICAL: Link the agreement to the room so Room-page subscriptions can find it
         if (!agreementData.room_id) {
@@ -222,10 +243,20 @@ Deno.serve(async (req) => {
           console.log('[createDealOnInvestorSignature] Linked agreement', agreementData.id, 'to room', room.id);
         }
 
-        // Update existing DealInvites to point to the new agreement and reset status
+        // Update DealInvites
         const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: existingDeal.id });
         for (const invite of existingInvites) {
-          if (invite.status !== 'LOCKED') {
+          if (invite.status === 'LOCKED') continue;
+          
+          if (isAgentSpecificRegen && invite.agent_profile_id === regenAgentId) {
+            // Only update the counter-offering agent's invite
+            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
+              legal_agreement_id: agreementData.id,
+              status: 'PENDING_AGENT_SIGNATURE'
+            });
+            console.log('[createDealOnInvestorSignature] Updated invite for counter agent:', invite.id);
+          } else if (!isAgentSpecificRegen) {
+            // Full deal re-sign: update all non-locked invites
             await base44.asServiceRole.entities.DealInvite.update(invite.id, {
               legal_agreement_id: agreementData.id,
               status: 'PENDING_AGENT_SIGNATURE'

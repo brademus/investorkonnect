@@ -132,10 +132,11 @@ Deno.serve(async (req) => {
     // who didn't counter-offer still see (and can sign) the original agreement.
     // Instead, update the specific agent's DealInvite.legal_agreement_id.
     if (room_id && room) {
-      const update = { agreement_status: 'draft' };
+      const update = {};
       if (room.requires_regenerate) update.requires_regenerate = false;
       
-      // Clear per-agent requires_regenerate flag and update agreement status
+      // Clear per-agent requires_regenerate flag and update ONLY this agent's agreement status
+      // Do NOT change room.agreement_status — it's shared across all agents
       if (targetAgentId) {
         const updatedTerms = { ...(room.agent_terms || {}) };
         if (updatedTerms[targetAgentId]) {
