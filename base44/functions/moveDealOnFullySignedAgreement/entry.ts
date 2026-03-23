@@ -39,6 +39,14 @@ Deno.serve(async (req) => {
       pipeline_stage: 'connected_deals'
     });
 
+    // Delete sibling deals (other agents for same address) — first agent to sign wins
+    try {
+      await base44.asServiceRole.functions.invoke('lockDealDeleteSiblings', { deal_id: dealId });
+      console.log('[moveDeal] Sibling cleanup invoked for deal', dealId);
+    } catch (cleanupErr) {
+      console.error('[moveDeal] Sibling cleanup error (non-fatal):', cleanupErr.message);
+    }
+
     return Response.json({ ok: true });
   } catch (error) {
     console.error('[moveDeal] Error:', error);
