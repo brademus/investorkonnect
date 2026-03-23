@@ -671,7 +671,7 @@ export default function Room() {
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                {isInvestor && pendingInvites.length > 1 && !isSigned && (
+                {isInvestor && pendingInvites.length > 0 && !isSigned && (
                    <Button onClick={() => setActiveView('pending_agents')} className={`rounded-full font-semibold ${activeView === 'pending_agents' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                      <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                    </Button>
