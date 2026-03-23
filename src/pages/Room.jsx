@@ -53,6 +53,10 @@ export default function Room() {
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set());
 
+  // Persist pending invites across sibling room switches (same property)
+  const pendingInvitesRef = useRef([]);
+  const prevPropertyAddressRef = useRef(null);
+
   // Gating - redirect if not setup (admins skip all gates)
   const gateChecked = useRef(false);
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
