@@ -8,7 +8,6 @@ Deno.serve(async (req) => {
 
     const { room_id, body } = await req.json();
     const text = (body || '').trim();
-    if (text.length > 4000) return Response.json({ error: 'Message too long (max 4000 characters)', ok: false }, { status: 400 });
     if (!room_id || !text) return Response.json({ error: 'room_id and body required' }, { status: 400 });
 
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });

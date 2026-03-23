@@ -1,12 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
- * Regenerate agreement for a deal (after counter offer accepted, or agent needs to sign).
- * Since each deal is now per-agent, terms come directly from deal.proposed_terms.
- * No complex agent_terms resolution needed.
+ * Regenerate agreement for a room (after counter offer accepted, or agent needs to sign).
+ * Resolves terms from room, determines signer_mode, then calls generateLegalAgreement via HTTP.
  */
 Deno.serve(async (req) => {
-  console.log('[regenerate v7] START');
+  console.log('[regenerate v6] START');
   const rawBody = await req.text();
   const originalHeaders = new Headers(req.headers);
 
@@ -17,56 +16,73 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = JSON.parse(rawBody);
-    const { deal_id, room_id } = body;
+    const { deal_id, room_id, target_agent_id: explicitTargetAgentId } = body;
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
 
-    // Load deal + room + caller profile
-    const [deals, rooms, profiles] = await Promise.all([
-      base44.asServiceRole.entities.Deal.filter({ id: deal_id }),
+    // Load room + deal
+    const [rooms, deals, profiles] = await Promise.all([
       room_id ? base44.asServiceRole.entities.Room.filter({ id: room_id }) : Promise.resolve([]),
+      base44.asServiceRole.entities.Deal.filter({ id: deal_id }),
       base44.asServiceRole.entities.Profile.filter({ user_id: user.id })
     ]);
 
-    const deal = deals?.[0];
     const room = rooms?.[0];
+    const deal = deals?.[0];
     const caller = profiles?.[0];
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
     if (!caller) return Response.json({ error: 'Profile not found' }, { status: 403 });
 
-    // The agent is the deal's assigned agent
-    const targetAgentId = deal.agent_id || room?.agent_ids?.[0] || null;
-    console.log('[regenerate] targetAgentId:', targetAgentId, 'deal:', deal_id);
-
-    // Resolve agent-specific counter terms from room.agent_terms if available
-    // Fall back to deal.proposed_terms only if no agent-specific counter terms exist
-    let terms = deal.proposed_terms || {};
-    if (room && targetAgentId && room.agent_terms?.[targetAgentId]) {
-      const agentTermEntry = room.agent_terms[targetAgentId];
-      // Only use agent_terms if this agent has a counter that was accepted
-      if (agentTermEntry.requires_regenerate || agentTermEntry.counter_offer_id) {
-        terms = {
-          ...terms,               // start with original deal terms
-          ...agentTermEntry,      // overlay agent-specific counter terms
-        };
-        // Strip internal flags from terms object before using
-        delete terms.requires_regenerate;
-        delete terms.counter_offer_id;
-        console.log('[regenerate] Using agent-specific counter terms for:', targetAgentId);
+    // Resolve terms: prefer agent-specific terms over room.proposed_terms
+    // Determine which agent this regeneration is for
+    let targetAgentId = explicitTargetAgentId || null;
+    if (!targetAgentId && room_id && room) {
+      // Find agents whose counter was accepted (requires_regenerate flag in agent_terms)
+      const agTerms = room.agent_terms || {};
+      for (const [agId, terms] of Object.entries(agTerms)) {
+        if (terms?.requires_regenerate) {
+          targetAgentId = agId;
+          break;
+        }
       }
+      // Fallback: Find the DealInvite for this room to get the specific agent
+      if (!targetAgentId) {
+        const invites = await base44.asServiceRole.entities.DealInvite.filter({
+          deal_id: deal_id,
+          room_id: room_id
+        });
+        if (invites?.length === 1) targetAgentId = invites[0].agent_profile_id;
+      }
+      // Fallback: single agent in room
+      if (!targetAgentId && room.agent_ids?.length === 1) targetAgentId = room.agent_ids[0];
     }
+    console.log('[regenerate] targetAgentId:', targetAgentId);
 
-    if (!terms.buyer_commission_type && !terms.seller_commission_type) {
-      return Response.json({ error: 'Missing commission terms' }, { status: 400 });
+    // Priority: agent-specific terms > room.proposed_terms > deal.proposed_terms
+    // Merge agent-specific counter terms (seller commission) with base terms (buyer commission)
+    let terms = {};
+    const baseTerms = room?.proposed_terms || deal?.proposed_terms || {};
+    if (targetAgentId && room?.agent_terms?.[targetAgentId]) {
+      const agentSpecific = room.agent_terms[targetAgentId];
+      // Merge: agent counter terms override base terms, but keep buyer commission from base if not in counter
+      terms = { ...baseTerms, ...agentSpecific };
+      console.log('[regenerate] Using merged agent-specific + base terms for', targetAgentId, ':', JSON.stringify(terms));
+    } else {
+      terms = baseTerms;
+      console.log('[regenerate] Using room/deal proposed_terms:', JSON.stringify(terms));
     }
+    if (!terms.buyer_commission_type && !terms.seller_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
+    // Ensure buyer_commission_type exists (may come from base terms)
     if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
-    
-    console.log('[regenerate] Using terms:', JSON.stringify(terms));
 
-    // Signer mode — always 'both' so investor and agent sign the SAME envelope
+    // Determine signer mode — always 'both' so investor and agent sign the SAME envelope.
+    // The agent is added as routingOrder 2, so they can only sign after the investor.
     const signerMode = 'both';
 
-    // Resolve investor profile ID from deal
-    const investorId = deal.investor_id || room?.investorId || caller.id;
+    // CRITICAL: Always resolve the correct investor profile ID from the room/deal, NOT from the caller.
+    // When an agent triggers regeneration, caller.id would be the agent — that's wrong for investor_profile_id.
+    const investorId = room?.investorId || deal?.investor_id || caller.id;
+
+    // Also resolve the correct investor user_id for the agreement record
     let investorUserId = null;
     if (investorId) {
       const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: investorId });
@@ -76,7 +92,7 @@ Deno.serve(async (req) => {
     const payload = {
       deal_id, room_id: room_id || null,
       signer_mode: signerMode,
-      agent_profile_id: targetAgentId || null,
+      agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
       exhibit_a: {
         seller_commission_type: terms.seller_commission_type || 'percentage',
         seller_commission_percentage: terms.seller_commission_percentage ?? null,
@@ -88,7 +104,7 @@ Deno.serve(async (req) => {
         transaction_type: terms.transaction_type || 'ASSIGNMENT'
       },
       investor_profile_id: investorId,
-      investor_user_id: investorUserId,
+      investor_user_id: investorUserId, // Pass explicit investor user_id
       property_address: deal.property_address, city: deal.city, state: deal.state, zip: deal.zip, county: deal.county
     };
 
@@ -110,47 +126,43 @@ Deno.serve(async (req) => {
     const agreement = data?.agreement;
     if (!agreement?.id) return Response.json({ error: 'No agreement returned' }, { status: 500 });
 
-    // Update deal: clear regenerate flag, point to new agreement
-    await base44.asServiceRole.entities.Deal.update(deal_id, {
-      current_legal_agreement_id: agreement.id,
-      requires_regenerate: false,
-      requires_regenerate_reason: null
-    });
-
-    // Update room if it exists — do NOT set current_legal_agreement_id
-    // That keeps the original agreement accessible for other pending agents
+    // Update room + clear regenerate flag
+    // CRITICAL: Do NOT update room.current_legal_agreement_id to the regenerated agreement.
+    // The room pointer should stay on the original investor-signed agreement so other agents
+    // who didn't counter-offer still see (and can sign) the original agreement.
+    // Instead, update the specific agent's DealInvite.legal_agreement_id.
     if (room_id && room) {
-      const roomUpdate = { requires_regenerate: false };
+      const update = {};
+      if (room.requires_regenerate) update.requires_regenerate = false;
+      
+      // Clear per-agent requires_regenerate flag and update ONLY this agent's agreement status
+      // Do NOT change room.agreement_status — it's shared across all agents
       if (targetAgentId) {
         const updatedTerms = { ...(room.agent_terms || {}) };
         if (updatedTerms[targetAgentId]) {
-          updatedTerms[targetAgentId] = {
-            ...updatedTerms[targetAgentId],
-            requires_regenerate: false,
-            counter_offer_id: null,
-            regenerated_agreement_id: agreement.id
-          };
+          updatedTerms[targetAgentId] = { ...updatedTerms[targetAgentId], requires_regenerate: false };
         }
-        roomUpdate.agent_terms = updatedTerms;
-
+        update.agent_terms = updatedTerms;
+        
         const updatedStatus = { ...(room.agent_agreement_status || {}) };
-        updatedStatus[targetAgentId] = 'sent';
-        roomUpdate.agent_agreement_status = updatedStatus;
+        updatedStatus[targetAgentId] = 'draft';
+        update.agent_agreement_status = updatedStatus;
       }
-      await base44.asServiceRole.entities.Room.update(room_id, roomUpdate);
-    }
-    
-    // Update DealInvite to point to new agreement
-    if (targetAgentId) {
-      const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({
-        deal_id: deal_id,
-        agent_profile_id: targetAgentId
-      });
-      if (agentInvites?.[0]) {
-        await base44.asServiceRole.entities.DealInvite.update(agentInvites[0].id, {
-          legal_agreement_id: agreement.id
+      
+      await base44.asServiceRole.entities.Room.update(room_id, update);
+      
+      // Update the specific agent's DealInvite to point to the new agreement
+      if (targetAgentId) {
+        const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({
+          deal_id: deal_id,
+          agent_profile_id: targetAgentId
         });
-        console.log('[regenerate] Updated DealInvite', agentInvites[0].id, 'legal_agreement_id to', agreement.id);
+        if (agentInvites?.[0]) {
+          await base44.asServiceRole.entities.DealInvite.update(agentInvites[0].id, {
+            legal_agreement_id: agreement.id
+          });
+          console.log('[regenerate] Updated DealInvite', agentInvites[0].id, 'legal_agreement_id to', agreement.id);
+        }
       }
     }
 

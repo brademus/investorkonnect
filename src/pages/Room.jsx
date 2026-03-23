@@ -38,7 +38,7 @@ export default function Room() {
   // activeView: 'board' | 'messages' | 'pending_agents'
   const [activeView, setActiveView] = useState(() => {
     const urlView = new URLSearchParams(window.location.search).get('view');
-    if (urlView === 'messages' || urlView === 'board' || urlView === 'pending_agents') return urlView;
+    if (urlView === 'messages' || urlView === 'board') return urlView;
     // Default to null (show nothing) until we know the right view
     return null;
   });
@@ -52,15 +52,6 @@ export default function Room() {
   
   // Track which views have been mounted so they stay alive
   const [mountedViews, setMountedViews] = useState(new Set());
-
-  // Persist pending invites across sibling room switches (same property)
-  const pendingInvitesRef = useRef([]);
-  const prevPropertyAddressRef = useRef(null);
-
-  // Keep ref in sync with state
-  useEffect(() => {
-    if (pendingInvites.length > 0) pendingInvitesRef.current = pendingInvites;
-  }, [pendingInvites]);
 
   // Gating - redirect if not setup (admins skip all gates)
   const gateChecked = useRef(false);
@@ -186,8 +177,8 @@ export default function Room() {
       m.sender_profile_id !== 'system'
     ).length;
   }, [roomMessages, profile?.id, localLastSeen, roomId, activeView]);
-  // Investor must select an agent before accessing the deal board (only when actively on pending_agents view)
-  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite && activeView === 'pending_agents';
+  // Investor must select an agent before accessing the deal board
+  const investorNeedsAgentSelection = isInvestor && !isSigned && pendingInvites.length > 0 && !selectedInvite;
 
   // Keep views mounted once activated + sync view to URL so refresh preserves it
   useEffect(() => {
@@ -228,7 +219,7 @@ export default function Room() {
     // Respect URL ?view= param if present (so refresh preserves current view)
     const urlView = new URLSearchParams(window.location.search).get('view');
     let defaultView;
-    if (urlView === 'messages' || urlView === 'board' || urlView === 'pending_agents') {
+    if (urlView === 'messages' || urlView === 'board') {
       defaultView = urlView;
     } else if (isInvestor && !cachedIsSigned) {
       // If only 1 agent, skip pending_agents and go straight to board
@@ -244,27 +235,9 @@ export default function Room() {
       persistLastSeen();
     }
     // Always include 'board' in mounted views so it renders when auto-selected
-    setMountedViews(prev => {
-      const next = new Set([defaultView, 'board']);
-      // Preserve pending_agents if it was already mounted
-      if (prev.has('pending_agents')) next.add('pending_agents');
-      return next;
-    });
-
-    // Check if we're switching between sibling rooms (same property address)
-    const incomingAddress = enrichedRoom?.property_address || new URLSearchParams(window.location.search).get('address');
-    const isSiblingSwitch = incomingAddress && incomingAddress === prevPropertyAddressRef.current && pendingInvitesRef.current.length > 0;
-
-    if (isSiblingSwitch) {
-      // Preserve pending invites — just update selectedInvite based on new roomId
-      setPendingInvites(pendingInvitesRef.current);
-      const matchingInvite = pendingInvitesRef.current.find(i => i.room_id === roomId);
-      if (matchingInvite) setSelectedInvite(matchingInvite);
-    } else {
-      setPendingInvites([]);
-      setSelectedInvite(null);
-    }
-    prevPropertyAddressRef.current = incomingAddress;
+    setMountedViews(new Set([defaultView, 'board']));
+    setPendingInvites([]);
+    setSelectedInvite(null);
 
     // INSTANT: Try to get deal from pre-fetched cache instead of showing blank
     const cachedDeal = enrichedRoom?.deal_id ? getCachedDeal(enrichedRoom.deal_id) : null;
@@ -362,86 +335,48 @@ export default function Room() {
           patchDeal(dealData.id, dealData);
         }
         setRoomLoading(false);
-        // Update property address ref from server data
-        if (room.property_address || dealData?.property_address) {
-          prevPropertyAddressRef.current = room.property_address || dealData?.property_address;
-        }
 
         // NOTE: We no longer auto-persist last_seen_timestamps on room load.
         // It's persisted only when user leaves the messages view (see prevActiveView effect).
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
-         // Skip if we already restored invites from a sibling room switch
-         const alreadyHasInvites = pendingInvitesRef.current.length > 0 && 
-           pendingInvitesRef.current.some(i => i.room_id === roomId || i.deal_id === room.deal_id);
          if (cancelled) return;
-         if (isInvestor && room.deal_id && !roomIsLocked && !alreadyHasInvites) {
-           (async () => {
-             try {
-               // Always try to find ALL sibling invites for this property address
-               const urlAddress = new URLSearchParams(window.location.search).get('address');
-               const propertyAddress = urlAddress || room.property_address || dealData?.property_address;
-               let rawInvites = [];
-
-               if (propertyAddress) {
-                 const investorId = room.investorId || profile?.id;
-                 const siblingDeals = investorId
-                   ? await base44.entities.Deal.filter({ investor_id: investorId, property_address: propertyAddress }).catch(() => [])
-                   : [];
-                 const siblingDealIds = siblingDeals.map(d => d.id).filter(Boolean);
-                 if (siblingDealIds.length > 0) {
-                   rawInvites = await base44.entities.DealInvite.filter({ deal_id: { $in: siblingDealIds } }).catch(() => []);
-                 } else {
-                   rawInvites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => []);
-                 }
-               } else {
-                 rawInvites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => []);
-               }
-
-               const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-               if (activeInvites.length === 0) {
-                 setActiveView(prev => prev === 'pending_agents' ? 'board' : prev);
-                 return;
-               }
-               const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
-               const agentProfiles = agentIds.length > 0
-                 ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
-                 : [];
-               const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
-
-               // Also fetch rooms for each invite's deal to get agent_agreement_status
-               const inviteDealIds = [...new Set(activeInvites.map(i => i.deal_id))];
-               const siblingRooms = inviteDealIds.length > 0
-                 ? await base44.entities.Room.filter({ deal_id: { $in: inviteDealIds } }).catch(() => [])
-                 : [];
-               const roomByDealId = new Map(siblingRooms.map(r => [r.deal_id, r]));
-
-               const enriched = activeInvites.map(inv => {
-                 const agent = profileMap.get(inv.agent_profile_id);
-                 const invRoom = roomByDealId.get(inv.deal_id) || room;
-                 return {
-                   ...inv,
-                   agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
-                   agreement_status: invRoom.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
-                 };
-               });
-               if (cancelled) return;
-               setPendingInvites(enriched);
-               if (enriched.length === 1 && !selectedInvite) {
-                 setSelectedInvite(enriched[0]);
-                 setActiveView('board');
-               } else if (enriched.length > 1 && !selectedInvite) {
-                 setActiveView('pending_agents');
-                 setMountedViews(prev => {
-                   const next = new Set(prev);
-                   next.add('pending_agents');
-                   return next;
-                 });
-               }
-             } catch (err) {
-               console.error('[Room] Invite fetch error:', err);
+         if (isInvestor && room.deal_id && !roomIsLocked) {
+           base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
+             const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
+             if (activeInvites.length === 0) {
+               // No pending agents — switch to board
+               setActiveView(prev => prev === 'pending_agents' ? 'board' : prev);
+               return;
              }
-           })();
+             // Batch-fetch all agent profiles at once instead of one-by-one
+             const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
+             const agentProfiles = agentIds.length > 0
+               ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
+               : [];
+             const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
+             const enriched = activeInvites.map(inv => {
+               const agent = profileMap.get(inv.agent_profile_id);
+               return {
+                 ...inv,
+                 agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                 agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
+               };
+             });
+             setPendingInvites(enriched);
+             // If only 1 agent, auto-select them and show board. If multiple, show selection list
+             if (enriched.length === 1 && !selectedInvite) {
+               setSelectedInvite(enriched[0]);
+               setActiveView('board');
+             } else if (enriched.length > 1 && !selectedInvite) {
+               setActiveView('pending_agents');
+               setMountedViews(prev => {
+                 const next = new Set(prev);
+                 next.add('pending_agents');
+                 return next;
+               });
+             }
+           }).catch(() => {});
          }
       } catch (e) { console.error('[Room] Load error:', e); if (!cancelled) setRoomLoading(false); }
     };
@@ -704,7 +639,7 @@ export default function Room() {
                 >
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                {isInvestor && pendingInvites.length > 0 && !isSigned && (
+                {isInvestor && pendingInvites.length > 1 && !isSigned && (
                    <Button onClick={() => setActiveView('pending_agents')} className={`rounded-full font-semibold ${activeView === 'pending_agents' ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                      <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                    </Button>
@@ -837,38 +772,22 @@ export default function Room() {
             </div>
           )}
 
-          {/* Pending Agents — keep mounted so agents persist when switching to board */}
-          {(activeView === 'pending_agents' || mountedViews.has('pending_agents')) && isInvestor && !isSigned && (
-            <div style={{ display: activeView === 'pending_agents' ? 'block' : 'none' }}>
-              {pendingInvites.length > 0 ? (
-                <PendingAgentsList
-                  invites={pendingInvites}
-                  selectedInviteId={selectedInvite?.id}
-                  onSelectAgent={(invite) => {
-                    if (invite.room_id && invite.room_id !== roomId) {
-                      const addr = currentRoom?.property_address || deal?.property_address || new URLSearchParams(window.location.search).get('address') || '';
-                      navigate(`${createPageUrl("Room")}?roomId=${invite.room_id}&view=board${addr ? '&address=' + encodeURIComponent(addr) : ''}`);
-                      return;
-                    }
-                    setSelectedInvite(invite);
-                    setActiveView('board');
-                  }}
-                  onNavigateToRoom={(targetRoomId, invite) => {
-                    if (targetRoomId === roomId) {
-                      setSelectedInvite(invite);
-                      setActiveView('board');
-                    } else {
-                      const addr = currentRoom?.property_address || deal?.property_address || new URLSearchParams(window.location.search).get('address') || '';
-                      navigate(`${createPageUrl("Room")}?roomId=${targetRoomId}&view=board${addr ? '&address=' + encodeURIComponent(addr) : ''}`);
-                    }
-                  }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-[#808080]">No pending agents — switching to deal board...</p>
-                </div>
-              )}
-            </div>
+          {/* Pending Agents */}
+          {activeView === 'pending_agents' && isInvestor && !isSigned && (
+            pendingInvites.length > 0 ? (
+              <PendingAgentsList
+                invites={pendingInvites}
+                selectedInviteId={selectedInvite?.id}
+                onSelectAgent={(invite) => {
+                  setSelectedInvite(invite);
+                  setActiveView('board');
+                }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-[#808080]">No pending agents — switching to deal board...</p>
+              </div>
+            )
           )}
 
           {/* Messages */}

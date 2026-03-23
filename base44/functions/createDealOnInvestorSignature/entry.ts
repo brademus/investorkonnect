@@ -75,9 +75,9 @@ Deno.serve(async (req) => {
       }
     }
     
-    // FALLBACK 2: Check by investor + property_address + agent_id to catch edits where pointers were cleared
-    // Since each deal is now per-agent, match the specific agent's deal
+    // FALLBACK 2: Check by investor + property_address to catch edits where pointers were cleared
     if (!existingDeal && agreementData.investor_profile_id) {
+      // Load the agreement's deal context to get property address
       let propAddr = null;
       if (agreementData.render_context_json?.PROPERTY_ADDRESS) {
         propAddr = agreementData.render_context_json.PROPERTY_ADDRESS;
@@ -87,14 +87,10 @@ Deno.serve(async (req) => {
           investor_id: agreementData.investor_profile_id,
           property_address: propAddr
         });
-        // Prefer matching the specific agent if the agreement has one
-        const agentId = agreementData.agent_profile_id;
-        const activeDeal = agentId
-          ? dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed' && d.agent_id === agentId)
-          : dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed');
+        const activeDeal = dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed');
         if (activeDeal) {
           existingDeal = activeDeal;
-          console.log('[createDealOnInvestorSignature] Found existing deal by investor+address+agent:', existingDeal.id);
+          console.log('[createDealOnInvestorSignature] Found existing deal by investor+address:', existingDeal.id);
         }
       }
     }
@@ -116,44 +112,53 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Each deal is now per-agent, so always safe to update deal directly
-      const dealUpdate = { current_legal_agreement_id: agreementData.id };
-      const exhibitTerms = agreementData.exhibit_a_terms || {};
+      // CRITICAL: If this is an agent-specific counter-offer regeneration, do NOT overwrite
+      // the shared deal.current_legal_agreement_id or deal.proposed_terms.
+      // Those are shared across all agents. The counter terms only live in agent_terms on the room.
+      const isAgentSpecificAgreement = !!agreementData.agent_profile_id;
+      
+      if (isAgentSpecificAgreement) {
+        // Agent-specific counter-offer regen — skip deal-level updates entirely
+        console.log('[createDealOnInvestorSignature] Agent-specific agreement for', agreementData.agent_profile_id, '— skipping deal proposed_terms update');
+      } else {
+        const dealUpdate = { current_legal_agreement_id: agreementData.id };
+        const exhibitTerms = agreementData.exhibit_a_terms || {};
 
-      if (draftForUpdate) {
-        const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
-        dealUpdate.walkthrough_scheduled = draftWtScheduled;
-        dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
-        dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
-        dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
-        if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
-        const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
-        const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
-        dealUpdate.proposed_terms = {
-          seller_commission_type: exhibitTerms.seller_commission_type || dSellerType,
-          seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draftForUpdate.seller_commission_percentage ?? null,
-          seller_flat_fee: exhibitTerms.seller_flat_fee ?? draftForUpdate.seller_flat_fee ?? null,
-          buyer_commission_type: exhibitTerms.buyer_commission_type || dBuyerType,
-          buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draftForUpdate.buyer_commission_percentage ?? null,
-          buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
-          agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
-        };
-      } else if (Object.keys(exhibitTerms).length > 0) {
-        if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+        if (draftForUpdate) {
+          const draftWtScheduled = draftForUpdate.walkthrough_scheduled === true;
+          dealUpdate.walkthrough_scheduled = draftWtScheduled;
+          dealUpdate.walkthrough_date = draftWtScheduled ? (draftForUpdate.walkthrough_date || null) : null;
+          dealUpdate.walkthrough_time = draftWtScheduled ? (draftForUpdate.walkthrough_time || null) : null;
+          dealUpdate.walkthrough_slots = (draftWtScheduled && draftForUpdate.walkthrough_slots?.length > 0) ? draftForUpdate.walkthrough_slots : [];
+          if (draftForUpdate.deal_type) dealUpdate.deal_type = draftForUpdate.deal_type;
+          const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
+          const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
           dealUpdate.proposed_terms = {
-            seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
-            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
-            seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
-            buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
-            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
-            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
-            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+            seller_commission_type: exhibitTerms.seller_commission_type || dSellerType,
+            seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draftForUpdate.seller_commission_percentage ?? null,
+            seller_flat_fee: exhibitTerms.seller_flat_fee ?? draftForUpdate.seller_flat_fee ?? null,
+            buyer_commission_type: exhibitTerms.buyer_commission_type || dBuyerType,
+            buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draftForUpdate.buyer_commission_percentage ?? null,
+            buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
+            agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
           };
+        } else if (Object.keys(exhibitTerms).length > 0) {
+          if (!existingDeal.proposed_terms || !Object.values(existingDeal.proposed_terms).some(v => v != null)) {
+            dealUpdate.proposed_terms = {
+              seller_commission_type: exhibitTerms.seller_commission_type || 'percentage',
+              seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? null,
+              seller_flat_fee: exhibitTerms.seller_flat_fee ?? null,
+              buyer_commission_type: exhibitTerms.buyer_commission_type || 'percentage',
+              buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? null,
+              buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? null,
+              agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || null,
+            };
+          }
         }
-      }
 
-      // Update Deal
-      await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
+        // Update Deal
+        await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
+      }
 
       // Sync DealAppointments — reset to NOT_SET when walkthrough is not scheduled
       try {
@@ -200,41 +205,80 @@ Deno.serve(async (req) => {
         console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
       }
 
-      // Update existing Room agreement pointer and status (each deal has one room, one agent)
+      // Update existing Room agreement pointer and status
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
       if (existingRooms?.length) {
         const room = existingRooms[0];
         
+        // CRITICAL: Determine if this is a counter-offer regeneration (agent-specific)
+        // by checking if the agreement has an agent_profile_id set.
+        // If so, only update that specific agent's status — leave other agents untouched.
+        const isAgentSpecificRegen = !!agreementData.agent_profile_id;
+        const regenAgentId = agreementData.agent_profile_id;
+        
         const updatedAgentStatus = { ...(room.agent_agreement_status || {}) };
-        for (const agentId of (room.agent_ids || [])) {
-          updatedAgentStatus[agentId] = 'sent';
+        if (isAgentSpecificRegen) {
+          // Only reset the specific counter-offering agent's status
+          updatedAgentStatus[regenAgentId] = 'sent';
+          console.log('[createDealOnInvestorSignature] Agent-specific regen for:', regenAgentId);
+        } else {
+          // Full deal re-sign: reset all agents
+          for (const agentId of (room.agent_ids || [])) {
+            updatedAgentStatus[agentId] = 'sent';
+          }
         }
 
-        await base44.asServiceRole.entities.Room.update(room.id, {
-          current_legal_agreement_id: agreementData.id,
-          agreement_status: 'investor_signed',
+        // Build room update
+        const roomUpdatePayload = {
           requires_regenerate: false,
           agent_agreement_status: updatedAgentStatus
-        });
-        console.log('[createDealOnInvestorSignature] Updated room:', room.id);
+        };
+        
+        if (!isAgentSpecificRegen) {
+          // Full deal re-sign: update shared room agreement pointer and status
+          roomUpdatePayload.current_legal_agreement_id = agreementData.id;
+          roomUpdatePayload.agreement_status = 'investor_signed';
+        }
+        // For agent-specific regen, do NOT change current_legal_agreement_id or agreement_status
+        // Those stay pointing to the original base agreement for other agents
+        
+        await base44.asServiceRole.entities.Room.update(room.id, roomUpdatePayload);
+        console.log('[createDealOnInvestorSignature] Updated room:', room.id, isAgentSpecificRegen ? '(agent-specific)' : '(full re-sign)');
 
-        // Link the agreement to the room
+        // CRITICAL: Link the agreement to the room so Room-page subscriptions can find it
         if (!agreementData.room_id) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: room.id });
+          await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
+            room_id: room.id
+          });
+          console.log('[createDealOnInvestorSignature] Linked agreement', agreementData.id, 'to room', room.id);
         }
 
         // Update DealInvites
         const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: existingDeal.id });
         for (const invite of existingInvites) {
           if (invite.status === 'LOCKED') continue;
-          await base44.asServiceRole.entities.DealInvite.update(invite.id, {
-            legal_agreement_id: agreementData.id,
-            status: 'PENDING_AGENT_SIGNATURE'
-          });
+          
+          if (isAgentSpecificRegen && invite.agent_profile_id === regenAgentId) {
+            // Only update the counter-offering agent's invite
+            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
+              legal_agreement_id: agreementData.id,
+              status: 'PENDING_AGENT_SIGNATURE'
+            });
+            console.log('[createDealOnInvestorSignature] Updated invite for counter agent:', invite.id);
+          } else if (!isAgentSpecificRegen) {
+            // Full deal re-sign: update all non-locked invites
+            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
+              legal_agreement_id: agreementData.id,
+              status: 'PENDING_AGENT_SIGNATURE'
+            });
+            console.log('[createDealOnInvestorSignature] Updated invite:', invite.id);
+          }
         }
 
-        // Notify the deal's agent
-        for (const agentId of (room.agent_ids || [])) {
+        // Notify agents about updated agreement
+        // For agent-specific regens, only notify the counter-offering agent
+        const agentsToNotify = isAgentSpecificRegen ? [regenAgentId] : (room.agent_ids || []);
+        for (const agentId of agentsToNotify) {
           try {
             const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
             const agent = agentProfiles?.[0];
@@ -320,8 +364,107 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // NOTE: Multiple deals per investor + address is now NORMAL (one deal per agent).
-    // No duplicate check needed.
+    // DUPLICATE CHECK: Prevent creating a second Deal for the same investor + property address
+    // Use broad search by investor_id, then normalize addresses for comparison
+    if (draft.investor_profile_id && draft.property_address) {
+      const allInvestorDeals = await base44.asServiceRole.entities.Deal.filter({
+        investor_id: draft.investor_profile_id
+      });
+      const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+      const draftAddr = normAddr(draft.property_address);
+      const activeDupe = allInvestorDeals.find(d => 
+        d.status !== 'archived' && d.status !== 'closed' && normAddr(d.property_address) === draftAddr
+      );
+      if (activeDupe) {
+        console.log('[createDealOnInvestorSignature] DUPLICATE detected! Existing deal:', activeDupe.id, 'for address:', draft.property_address);
+        // Update existing deal's agreement pointer instead of creating a new one
+        // Build update for the duplicate deal - include walkthrough and terms from draft
+           const dupeExhibitTerms = agreementData.exhibit_a_terms || {};
+           const dupeBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
+           const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
+           const dupeUpdate = {
+             current_legal_agreement_id: agreementData.id,
+             walkthrough_scheduled: shouldMarkWalkthroughScheduled,
+             walkthrough_date: draftWalkthroughDate,
+             walkthrough_time: draftWalkthroughTime,
+             walkthrough_slots: draftWalkthroughSlots,
+          proposed_terms: {
+            seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
+            seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
+            seller_flat_fee: dupeExhibitTerms.seller_flat_fee ?? draft.seller_flat_fee ?? null,
+            buyer_commission_type: dupeExhibitTerms.buyer_commission_type || dupeBuyerType,
+            buyer_commission_percentage: dupeExhibitTerms.buyer_commission_percentage ?? draft.buyer_commission_percentage ?? null,
+            buyer_flat_fee: dupeExhibitTerms.buyer_flat_fee ?? draft.buyer_flat_fee ?? null,
+            agreement_length: dupeExhibitTerms.agreement_length_days || dupeExhibitTerms.agreement_length || draft.agreement_length || null,
+          }
+        };
+        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { walkthrough: dupeUpdate.walkthrough_scheduled, terms: dupeUpdate.proposed_terms });
+        await base44.asServiceRole.entities.Deal.update(activeDupe.id, dupeUpdate);
+        await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
+          deal_id: activeDupe.id
+        });
+        // Update room if exists
+        const dupeRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: activeDupe.id });
+        if (dupeRooms?.length) {
+          await base44.asServiceRole.entities.Room.update(dupeRooms[0].id, {
+            current_legal_agreement_id: agreementData.id,
+            agreement_status: 'investor_signed',
+            requires_regenerate: false
+          });
+          if (!agreementData.room_id) {
+            await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: dupeRooms[0].id });
+          }
+        }
+        // Sync DealAppointments for the duplicate deal — reset to NOT_SET if not scheduled
+        try {
+          const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
+          if (draftWalkthroughScheduled && (draftWalkthroughDate || draftWalkthroughTime || draftWalkthroughSlots.length > 0)) {
+            const apptPatch = {
+              walkthrough: {
+                status: 'PROPOSED',
+                datetime: null,
+                timezone: null,
+                locationType: 'ON_SITE',
+                notes: null,
+                updatedByUserId: draft.investor_profile_id || null,
+                updatedAt: new Date().toISOString()
+              }
+            };
+            if (apptRows?.[0]) {
+              await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+            } else {
+              await base44.asServiceRole.entities.DealAppointments.create({
+                dealId: activeDupe.id,
+                ...apptPatch,
+                inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+                rescheduleRequests: []
+              });
+            }
+          } else if (apptRows?.[0]) {
+            await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, {
+              walkthrough: {
+                status: 'NOT_SET',
+                datetime: null,
+                timezone: null,
+                locationType: null,
+                notes: null,
+                updatedByUserId: draft.investor_profile_id || null,
+                updatedAt: new Date().toISOString()
+              }
+            });
+          }
+        } catch (apptErr) {
+          console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments for dupe:', apptErr.message);
+        }
+        // Clean up the draft
+        try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (e) { console.warn('Failed to delete draft:', e.message); }
+        // Create invites if needed
+        try {
+          await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', { deal_id: activeDupe.id });
+        } catch (e) { console.warn('Failed to create invites:', e.message); }
+        return Response.json({ status: 'success', deal_id: activeDupe.id, reason: 'linked_to_existing_deal_duplicate_prevented' });
+      }
+    }
 
     // CRITICAL: Use agreement exhibit_a_terms as source of truth for ALL commission terms
     // The agreement was generated with correct values; the draft may have stale/wrong values

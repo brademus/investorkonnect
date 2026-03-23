@@ -98,7 +98,18 @@ Deno.serve(async (req) => {
       console.log('Using existing Stripe customer:', customerId);
     }
 
-    const tier = 'starter';
+    // Determine tier from price ID (supports both LIVE and TEST prices)
+    let tier = 'starter';
+    
+    // LIVE price IDs
+    if (price === 'price_1SOpHB0nQRABXxQy0EOkgWYP') tier = 'pro';
+    if (price === 'price_1SOpGm0nQRABXxQy3uESqqPJ') tier = 'enterprise';
+    if (price === 'price_1SOpHa0nQRABXxQyK1W6nUoq') tier = 'starter';
+    
+    // TEST price IDs
+    if (price === 'price_1SP74d0nQRABXxQy19OnQqPv') tier = 'pro';
+    if (price === 'price_1SP75b0nQRABXxQyz40CXB32') tier = 'enterprise';
+    if (price === 'price_1SP73D0nQRABXxQyM9cMQTER') tier = 'starter';
 
     console.log('Detected tier:', tier, 'for price:', price);
 

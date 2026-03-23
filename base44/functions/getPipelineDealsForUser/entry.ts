@@ -49,17 +49,14 @@ Deno.serve(async (req) => {
         teamProfileIds = [profile.id];
       }
     } else {
-      // Check if current user is a TEAM OWNER (skip if pending_seats_count is 0 and no stripe_seat_item_id — common solo case)
-      const mayHaveTeam = profile.pending_seats_count > 0 || profile.stripe_seat_item_id;
-      if (mayHaveTeam) {
-        const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
-          owner_profile_id: profile.id, status: 'active' 
-        });
-        if (ownedSeats.length > 0) {
-          isTeamOwner = true;
-          const memberIds = ownedSeats.map(s => s.member_profile_id).filter(Boolean);
-          teamProfileIds = [profile.id, ...memberIds];
-        }
+      // Check if current user is a TEAM OWNER
+      const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+        owner_profile_id: profile.id, status: 'active' 
+      });
+      if (ownedSeats.length > 0) {
+        isTeamOwner = true;
+        const memberIds = ownedSeats.map(s => s.member_profile_id).filter(Boolean);
+        teamProfileIds = [profile.id, ...memberIds];
       }
     }
 
@@ -68,7 +65,6 @@ Deno.serve(async (req) => {
 
     let deals = [];
     let rooms = [];
-    let allInvites = []; // Cached for reuse in agreement mapping (agent path)
 
     // Determine the effective role: for team members, use the owner's role
     let effectiveRole = profile.user_role; // 'investor' | 'agent'
@@ -106,13 +102,14 @@ Deno.serve(async (req) => {
       rooms = roomResults.flat();
     } else if (effectiveIsAgent || isAgent) {
       // Fetch deals for ALL team profile IDs (agent teams share a pipeline)
+      const allInvites = [];
       const allDirectDeals = [];
       await Promise.all(teamProfileIds.map(async (pid) => {
         const [invites, directDeals] = await Promise.all([
           base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: pid }),
           base44.asServiceRole.entities.Deal.filter({ agent_id: pid }),
         ]);
-        allInvites.push(...invites); // shared outer scope — reused for agreement mapping
+        allInvites.push(...invites);
         allDirectDeals.push(...directDeals);
       }));
 
@@ -133,12 +130,27 @@ Deno.serve(async (req) => {
       rooms = roomRes;
     }
 
-    // Deduplicate deals by ID only (multiple deals per address is normal — one per agent)
+    // Deduplicate deals by ID
     const map = new Map();
     deals.filter(d => d?.id && d.status !== 'archived').forEach(d => {
       const prev = map.get(d.id);
       if (!prev || new Date(d.updated_date || 0) > new Date(prev.updated_date || 0)) map.set(d.id, d);
     });
+
+    // Deduplicate by investor_id + normalized property_address
+    const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const addrMap = new Map();
+    for (const [id, deal] of map) {
+      const key = `${deal.investor_id || ''}|${normAddr(deal.property_address)}`;
+      if (!key || key === '|') continue;
+      const prev = addrMap.get(key);
+      if (!prev || new Date(deal.updated_date || 0) > new Date(prev.updated_date || 0)) {
+        if (prev) map.delete(prev.id);
+        addrMap.set(key, deal);
+      } else {
+        map.delete(id);
+      }
+    }
 
     // Load agreements + counters + counterparty profiles in parallel
     const dealIds = [...map.keys()];
@@ -172,11 +184,14 @@ Deno.serve(async (req) => {
     
     // Build a set of agent-specific agreement IDs from DealInvites
     const agentSpecificAgreementIds = new Set();
-    // Reuse invites already loaded in the agent path (avoid redundant API call)
-    const _cachedAgentInvites = typeof allInvites !== 'undefined' ? allInvites : [];
     if (effectiveIsAgent) {
+      // We already loaded allInvites above — collect legal_agreement_ids for this agent's invites
+      // Re-query to get the invite data (it's in scope for agent path)
+      const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({ 
+        agent_profile_id: { $in: teamProfileIds } 
+      }).catch(() => []);
       const inviteAgreementByDeal = new Map();
-      for (const inv of _cachedAgentInvites) {
+      for (const inv of agentInvites) {
         if (inv.legal_agreement_id && inv.deal_id) {
           inviteAgreementByDeal.set(inv.deal_id, inv.legal_agreement_id);
         }
@@ -283,8 +298,6 @@ Deno.serve(async (req) => {
           exhibit_a_terms: exhibitTerms,
         } : null;
       }
-
-      base.source_deal_id = deal.source_deal_id || null;
 
       if (isInvestorSide || isSigned) {
         return { ...base, property_address: deal.property_address, seller_info: deal.seller_info, property_details: deal.property_details, special_notes: deal.special_notes };

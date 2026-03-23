@@ -196,8 +196,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    const _start = Date.now();
-    const checkTimeout = () => { if (Date.now() - _start > 55000) throw new Error('Agreement generation timed out. Please try again.'); };
 
     const body = await req.json();
     const { draft_id, deal_id, room_id, signer_mode: requestedMode, investor_profile_id, investor_user_id: explicitInvestorUserId } = body;
@@ -332,12 +330,10 @@ Deno.serve(async (req) => {
     if (missing.length) return Response.json({ error: `Missing fields: ${missing.join(', ')}`, missing_placeholders: missing }, { status: 400 });
 
     text = normalizeWinAnsi(addSignatureBlock(text));
-    checkTimeout();
     const [humanPdf, dsPdf] = await Promise.all([generatePdf(text, false), generatePdf(text, true)]);
 
     // Upload DocuSign PDF immediately (needed for envelope)
     // Human PDF upload is deferred until after signing URL is returned
-    checkTimeout();
     const dsUpload = await base44.integrations.Core.UploadFile({ file: new File([new Blob([dsPdf], { type: 'application/pdf' })], `agreement_${deal.id}_ds.pdf`) });
     const ts = Date.now();
     const investorClientId = `inv-${deal.id}-${ts}`;
@@ -419,7 +415,6 @@ Deno.serve(async (req) => {
       status: 'sent'
     };
 
-    checkTimeout();
     const envResp = await fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes`, {
       method: 'POST', headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(envDef)

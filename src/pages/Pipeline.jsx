@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Users } from "lucide-react";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
@@ -153,7 +152,7 @@ function PipelineContent() {
   }, [location.search]);
 
   // Build pipeline deals from server data (room data is already inline from getPipelineDealsForUser v3)
-  const allDeals = useMemo(() => {
+  const deals = useMemo(() => {
     return (dealsData || []).map(deal => {
        const hasRoom = !!deal.room_id;
        const isSigned = deal.room_is_fully_signed || deal.is_fully_signed;
@@ -161,7 +160,7 @@ function PipelineContent() {
 
        let counterparty = 'Not Assigned';
        if (isSigned) counterparty = deal.room_counterparty_name || (isAgent ? 'Investor' : 'Agent');
-       else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : (deal.room_counterparty_name || 'Pending Agent Signature');
+       else if (hasAgent) counterparty = isAgent ? 'Pending Signatures' : 'Pending Agent Signature';
        if (isInvestor && deal.locked_agent_id && deal.room_counterparty_name && deal.room_counterparty_id === deal.locked_agent_id) {
          counterparty = deal.room_counterparty_name;
        }
@@ -194,12 +193,11 @@ function PipelineContent() {
          agreement: deal.agreement || null,
          agreement_exhibit_a_terms: deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null,
          investor_signed_at: deal.agreement?.investor_signed_at || null,
-         pending_counter_offer: deal.pending_counter_offer || null,
-         source_deal_id: deal.source_deal_id || null,
-         room_counterparty_name: deal.room_counterparty_name || null,
+         pending_counter_offer: deal.pending_counter_offer || null
        };
     }).filter(d => {
       if (!isAgent) return true;
+      // Team members: the server already filtered deals for the whole team, don't filter by locked_agent_id here
       if (isTeamMember) return true;
       if (d.locked_agent_id && d.locked_agent_id !== profile.id) return false;
       if (d.agent_request_status === 'rejected' || d.agent_request_status === 'voided') return false;
@@ -207,42 +205,8 @@ function PipelineContent() {
     });
   }, [dealsData, profile?.id, isAgent]);
 
-  // For investors: group deals by property address so multiple agent-deals show as one card
-  const deals = useMemo(() => {
-    if (!isInvestor || isAgent) return allDeals;
-
-    const grouped = new Map();
-    for (const deal of allDeals) {
-      // If deal is fully signed (locked), show it standalone
-      if (deal.is_fully_signed || deal.locked_agent_id) {
-        grouped.set(deal.id, { ...deal, _siblingDeals: [deal], _agentCount: 1 });
-        continue;
-      }
-      const key = (deal.property_address || '').toLowerCase().trim();
-      if (!key) { grouped.set(deal.id, { ...deal, _siblingDeals: [deal], _agentCount: 1 }); continue; }
-      if (grouped.has(key)) {
-        const existing = grouped.get(key);
-        existing._siblingDeals.push(deal);
-        existing._agentCount = existing._siblingDeals.length;
-      } else {
-        grouped.set(key, { ...deal, _siblingDeals: [deal], _agentCount: 1 });
-      }
-    }
-    return [...grouped.values()];
-  }, [allDeals, isInvestor, isAgent]);
-
   const [navigating, setNavigating] = useState(false);
   const handleDealClick = async (deal) => {
-    // For grouped investor deals with multiple agents, navigate to first room with pending_agents view
-    if (isInvestor && deal._agentCount > 1 && !deal.is_fully_signed) {
-      const firstSibling = deal._siblingDeals?.[0];
-      const rid = firstSibling?.room_id;
-      if (rid) {
-        navigate(`${createPageUrl("Room")}?roomId=${rid}&view=pending_agents&address=${encodeURIComponent(deal.property_address || '')}`);
-        return;
-      }
-    }
-
     if (deal.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
       return;
@@ -446,11 +410,6 @@ function PipelineContent() {
                                              return badge ? <span className={`text-[10px] border px-2 py-0.5 rounded-full w-fit ${badge.className}`}>{badge.label}</span> : null;
                                            })()}
                                            {deal.customer_name && !deal.is_orphan && <div className="text-xs text-[#2D8A6E] flex items-center gap-1"><CheckCircle className="w-3 h-3" />{deal.customer_name}</div>}
-                                          {isInvestor && deal._agentCount > 1 && !deal.is_fully_signed && (
-                                            <div className="text-xs text-[#E3C567] flex items-center gap-1 font-semibold">
-                                              <Users className="w-3 h-3" />{deal._agentCount} pending agents
-                                            </div>
-                                          )}
                                          </div>
                                        </div>
                                        {(() => {
@@ -484,7 +443,7 @@ function PipelineContent() {
                                        )}
                                      </div>
                                      <div className="flex gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" disabled={navigating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">{navigating ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Loading...</> : (isInvestor && deal._agentCount > 1 && !deal.is_fully_signed ? 'View Agents' : 'Open Deal Room')}</Button>
+                                      <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" disabled={navigating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-1.5 h-auto shadow-sm transition-all duration-200 hover:-translate-y-0.5">{navigating ? <><Loader2 className="w-3 h-3 animate-spin mr-1" />Loading...</> : 'Open Deal Room'}</Button>
                                       {isInvestor && !isViewerOnly && normalizeStage(deal.pipeline_stage) === 'new_deals' && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 rounded-[12px] text-xs py-1.5 h-auto transition-all duration-200 hover:-translate-y-0.5" style={{ background: 'linear-gradient(180deg, #17171B, #111114)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.80)' }}>Edit</Button>}
                                      </div>
                                     </div>
