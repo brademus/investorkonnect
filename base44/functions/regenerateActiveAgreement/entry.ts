@@ -80,12 +80,6 @@ Deno.serve(async (req) => {
     }
     if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
 
-    // Determine signer mode.
-    // For counter-offer regen: investor already approved the counter terms by accepting,
-    // so only the agent needs to sign this new envelope → agent_only.
-    // For normal regen (non-counter): both parties sign.
-    const signerMode = isCounterRegen ? 'agent_only' : 'both';
-
     // CRITICAL: Always resolve the correct investor profile ID from the room/deal, NOT from the caller.
     // When an agent triggers regeneration, caller.id would be the agent — that's wrong for investor_profile_id.
     const investorId = room?.investorId || deal?.investor_id || caller.id;
@@ -98,6 +92,12 @@ Deno.serve(async (req) => {
     }
 
     const isCounterRegen = !!(room && targetAgentId && room.agent_terms?.[targetAgentId]?.counter_offer_id);
+
+    // Determine signer mode.
+    // For counter-offer regen: investor already approved the counter terms by accepting,
+    // so only the agent needs to sign this new envelope → agent_only.
+    // For normal regen (non-counter): both parties sign.
+    const signerMode = isCounterRegen ? 'agent_only' : 'both';
     const payload = {
       deal_id, room_id: isCounterRegen ? null : (room_id || null),
       fill_agent: true,
