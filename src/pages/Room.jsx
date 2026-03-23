@@ -340,43 +340,75 @@ export default function Room() {
         // It's persisted only when user leaves the messages view (see prevActiveView effect).
 
         // --- Phase 2: Fetch invites in background (non-blocking) ---
+         // When the URL has an `address` param, load invites from ALL sibling deals for that address
          if (cancelled) return;
          if (isInvestor && room.deal_id && !roomIsLocked) {
-           base44.entities.DealInvite.filter({ deal_id: room.deal_id }).then(async (rawInvites) => {
-             const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
-             if (activeInvites.length === 0) {
-               // No pending agents — switch to board
-               setActiveView(prev => prev === 'pending_agents' ? 'board' : prev);
-               return;
-             }
-             // Batch-fetch all agent profiles at once instead of one-by-one
-             const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
-             const agentProfiles = agentIds.length > 0
-               ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
-               : [];
-             const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
-             const enriched = activeInvites.map(inv => {
-               const agent = profileMap.get(inv.agent_profile_id);
-               return {
-                 ...inv,
-                 agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
-                 agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
-               };
-             });
-             setPendingInvites(enriched);
-             // If only 1 agent, auto-select them and show board. If multiple, show selection list
-             if (enriched.length === 1 && !selectedInvite) {
-               setSelectedInvite(enriched[0]);
-               setActiveView('board');
-             } else if (enriched.length > 1 && !selectedInvite) {
-               setActiveView('pending_agents');
-               setMountedViews(prev => {
-                 const next = new Set(prev);
-                 next.add('pending_agents');
-                 return next;
+           (async () => {
+             try {
+               const urlAddress = new URLSearchParams(window.location.search).get('address');
+               let rawInvites = [];
+
+               if (urlAddress) {
+                 // Load ALL deals for this investor + address to get all sibling invites
+                 const investorId = room.investorId || profile?.id;
+                 const siblingDeals = investorId
+                   ? await base44.entities.Deal.filter({ investor_id: investorId, property_address: urlAddress }).catch(() => [])
+                   : [];
+                 const siblingDealIds = siblingDeals.map(d => d.id).filter(Boolean);
+                 if (siblingDealIds.length > 0) {
+                   const allInvites = await base44.entities.DealInvite.filter({ deal_id: { $in: siblingDealIds } }).catch(() => []);
+                   rawInvites = allInvites;
+                 } else {
+                   rawInvites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => []);
+                 }
+               } else {
+                 rawInvites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id }).catch(() => []);
+               }
+
+               const activeInvites = (rawInvites || []).filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
+               if (activeInvites.length === 0) {
+                 setActiveView(prev => prev === 'pending_agents' ? 'board' : prev);
+                 return;
+               }
+               const agentIds = activeInvites.map(i => i.agent_profile_id).filter(Boolean);
+               const agentProfiles = agentIds.length > 0
+                 ? await base44.entities.Profile.filter({ id: { $in: agentIds } }).catch(() => [])
+                 : [];
+               const profileMap = new Map(agentProfiles.map(p => [p.id, p]));
+
+               // Also fetch rooms for each invite's deal to get agent_agreement_status
+               const inviteDealIds = [...new Set(activeInvites.map(i => i.deal_id))];
+               const siblingRooms = inviteDealIds.length > 0
+                 ? await base44.entities.Room.filter({ deal_id: { $in: inviteDealIds } }).catch(() => [])
+                 : [];
+               const roomByDealId = new Map(siblingRooms.map(r => [r.deal_id, r]));
+
+               const enriched = activeInvites.map(inv => {
+                 const agent = profileMap.get(inv.agent_profile_id);
+                 const invRoom = roomByDealId.get(inv.deal_id) || room;
+                 return {
+                   ...inv,
+                   agent: agent ? { id: agent.id, full_name: agent.full_name, brokerage: agent.agent?.brokerage, rating: null, completed_deals: agent.agent?.investment_deals_last_12m, headshotUrl: agent.headshotUrl } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                   agreement_status: invRoom.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
+                 };
                });
+               if (cancelled) return;
+               setPendingInvites(enriched);
+               if (enriched.length === 1 && !selectedInvite) {
+                 setSelectedInvite(enriched[0]);
+                 setActiveView('board');
+               } else if (enriched.length > 1 && !selectedInvite) {
+                 setActiveView('pending_agents');
+                 setMountedViews(prev => {
+                   const next = new Set(prev);
+                   next.add('pending_agents');
+                   return next;
+                 });
+               }
+             } catch (err) {
+               console.error('[Room] Invite fetch error:', err);
              }
-           }).catch(() => {});
+           })();
          }
       } catch (e) { console.error('[Room] Load error:', e); if (!cancelled) setRoomLoading(false); }
     };
