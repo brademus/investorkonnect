@@ -37,12 +37,17 @@ Deno.serve(async (req) => {
         teamRole = 'member';
       }
 
-      // Gather all team profile IDs (owner + all active members)
-      const allTeamSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
-        owner_profile_id: profile.team_owner_id, status: 'active' 
-      });
-      const memberIds = allTeamSeats.map(s => s.member_profile_id).filter(Boolean);
-      teamProfileIds = [profile.team_owner_id, ...memberIds];
+      if (teamRole === 'admin') {
+        // Admins see ALL team deals (owner + every member)
+        const allTeamSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
+          owner_profile_id: profile.team_owner_id, status: 'active' 
+        });
+        const memberIds = allTeamSeats.map(s => s.member_profile_id).filter(Boolean);
+        teamProfileIds = [profile.team_owner_id, ...memberIds];
+      } else {
+        // Members see ONLY their own deals
+        teamProfileIds = [profile.id];
+      }
     } else {
       // Check if current user is a TEAM OWNER
       const ownedSeats = await base44.asServiceRole.entities.TeamSeat.filter({ 
