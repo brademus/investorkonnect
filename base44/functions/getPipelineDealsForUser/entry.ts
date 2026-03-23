@@ -103,7 +103,6 @@ Deno.serve(async (req) => {
       rooms = roomResults.flat();
     } else if (effectiveIsAgent || isAgent) {
       // Fetch deals for ALL team profile IDs (agent teams share a pipeline)
-      const allInvites = [];
       const allDirectDeals = [];
       await Promise.all(teamProfileIds.map(async (pid) => {
         const [invites, directDeals] = await Promise.all([
