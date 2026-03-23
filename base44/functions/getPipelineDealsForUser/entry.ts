@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
 
     let deals = [];
     let rooms = [];
+    let allInvites = []; // Cached for reuse in agreement mapping (agent path)
 
     // Determine the effective role: for team members, use the owner's role
     let effectiveRole = profile.user_role; // 'investor' | 'agent'
