@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Lock deal to winning agent
+        // Lock deal to winning agent + void losing agents
         const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id }).catch(() => []);
         const deal = dealArr?.[0];
         if (deal && !deal.locked_agent_id && agreement.agent_profile_id) {
@@ -172,6 +172,33 @@ Deno.serve(async (req) => {
             selected_agent_ids: [agreement.agent_profile_id]
           }).catch(e => console.error('[pollAndFinalize] Deal lock error:', e.message));
           console.log('[pollAndFinalize] Deal locked to agent', agreement.agent_profile_id);
+
+          // Void losing agents' invites so they immediately lose access
+          const allInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: deal.id }).catch(() => []);
+          for (const inv of allInvites) {
+            if (inv.agent_profile_id === agreement.agent_profile_id) {
+              await base44.asServiceRole.entities.DealInvite.update(inv.id, { status: 'LOCKED' }).catch(() => {});
+            } else {
+              await base44.asServiceRole.entities.DealInvite.update(inv.id, { status: 'VOIDED' }).catch(() => {});
+              console.log('[pollAndFinalize] Voided invite', inv.id, 'for losing agent', inv.agent_profile_id);
+            }
+          }
+
+          // Remove losing agents from room
+          await base44.asServiceRole.entities.Room.update(roomId, {
+            request_status: 'locked',
+            locked_agent_id: agreement.agent_profile_id,
+            locked_at: now,
+            agent_ids: [agreement.agent_profile_id]
+          }).catch(() => {});
+
+          // Void losing agents' agreements
+          const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal.id }).catch(() => []);
+          for (const ag of allAgreements) {
+            if (ag.id !== agreement.id && ag.status !== 'fully_signed' && ag.status !== 'voided') {
+              await base44.asServiceRole.entities.LegalAgreement.update(ag.id, { status: 'voided' }).catch(() => {});
+            }
+          }
         }
       }
     }
