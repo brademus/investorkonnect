@@ -107,9 +107,10 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         const passedAgreementTerms = agreement?.exhibit_a_terms && (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId)
           ? agreement.exhibit_a_terms : null;
 
-        // If room.requires_regenerate is true, the agreement hasn't been regenerated yet,
-        // so agent-specific counter terms are more current than the stale agreement exhibit_a_terms.
-        const roomNeedsRegen = room?.requires_regenerate || currentRoom?.requires_regenerate;
+        // Check if THIS SPECIFIC AGENT needs regeneration (agent-specific flag takes priority)
+        // Falls back to room-level flag for backward compatibility
+        const agentNeedsRegen = agentSpecificTerms?.requires_regenerate || false;
+        const roomNeedsRegen = agentNeedsRegen || room?.requires_regenerate || currentRoom?.requires_regenerate;
         if (roomNeedsRegen) {
           // Agent counter terms > room terms > agreement (stale) > deal
           terms = mergeTerms(agentSpecificTerms, roomTerms, agentAgreementTerms, passedAgreementTerms, dealTerms);

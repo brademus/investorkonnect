@@ -71,16 +71,10 @@ Deno.serve(async (req) => {
             updatedAgentTerms[targetAgentId].requires_regenerate = true;
           }
 
-          const mergedProposedTerms = {
-            ...(room.proposed_terms || {}),
-            ...(counter.terms_delta || {}),
-          };
-
+          // Only update agent_terms — do NOT touch room.proposed_terms or agreement_status
+          // Those are shared across all agents. Counter offer terms are agent-specific.
           await base44.asServiceRole.entities.Room.update(counter.room_id, {
-            requires_regenerate: true,
             agent_terms: updatedAgentTerms,
-            proposed_terms: mergedProposedTerms,
-            agreement_status: "draft",
           });
 
           console.log("[respondToCounterOffer] Room updated for agent", targetAgentId);
