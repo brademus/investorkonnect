@@ -362,6 +362,10 @@ export default function Room() {
           patchDeal(dealData.id, dealData);
         }
         setRoomLoading(false);
+        // Update property address ref from server data
+        if (room.property_address || dealData?.property_address) {
+          prevPropertyAddressRef.current = room.property_address || dealData?.property_address;
+        }
 
         // NOTE: We no longer auto-persist last_seen_timestamps on room load.
         // It's persisted only when user leaves the messages view (see prevActiveView effect).
