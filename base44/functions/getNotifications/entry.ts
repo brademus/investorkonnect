@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
       return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
     });
 
-    return Response.json({ notifications: deduped });
+    return Response.json({ notifications: deduped.slice(0, 50) });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
