@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
         const investorSigned = allAg.find(a =>
           a.investor_signed_at &&
           a.docusign_envelope_id &&
-          !['superseded', 'voided'].includes(a.status)
+          !['superseded', 'voided'].includes(a.status) &&
+          (!a.agent_profile_id || a.agent_profile_id === callerProfile.id)
         );
         if (investorSigned) {
           agreement = investorSigned;
