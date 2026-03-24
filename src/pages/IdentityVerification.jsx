@@ -22,6 +22,11 @@ export default function IdentityVerification() {
   const [status, setStatus] = useState('pending'); // pending, creating_session, loading_stripe, modal_open, polling, success, error
   const [statusMessage, setStatusMessage] = useState('');
   const [nameMismatch, setNameMismatch] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [nameUpdated, setNameUpdated] = useState(false);
+  const [savingName, setSavingName] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
