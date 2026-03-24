@@ -170,8 +170,12 @@ export default function IdentityVerification() {
                 <Button
                   onClick={() => {
                     setNameMismatch(false);
-                    startedRef.current = true;
-                    handleStartVerification();
+                    setStatus('pending');
+                    startedRef.current = false;
+                    setTimeout(() => {
+                      startedRef.current = true;
+                      handleStartVerification();
+                    }, 100);
                   }}
                   className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
                 >
