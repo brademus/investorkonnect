@@ -406,18 +406,67 @@ Deno.serve(async (req) => {
         }
 
         try {
-          const firstName = verificationSession?.verified_outputs?.first_name || null;
-          const lastName = verificationSession?.verified_outputs?.last_name || null;
+          // Extract name from verified_outputs or fall back to document report
+          let firstName = (verificationSession?.verified_outputs?.first_name || '').trim().toLowerCase();
+          let lastName = (verificationSession?.verified_outputs?.last_name || '').trim().toLowerCase();
 
-          await base44.asServiceRole.entities.Profile.update(metadataProfileId, {
-            identity_status: 'verified',
-            kyc_status: 'approved',
-            identity_verified_at: new Date().toISOString(),
-            verified_first_name: firstName || undefined,
-            verified_last_name: lastName || undefined,
-            identity_mode: 'live',
-          });
-          console.log('✅ Profile kyc_status set to approved via webhook:', metadataProfileId);
+          // In test mode, verified_outputs may be empty — try retrieving the full report
+          if (!firstName && !lastName) {
+            try {
+              const fullSession = await stripe.identity.verificationSessions.retrieve(verificationSession.id, {
+                expand: ['last_verification_report'],
+              });
+              if (fullSession?.last_verification_report?.document) {
+                firstName = (fullSession.last_verification_report.document.first_name || '').trim().toLowerCase();
+                lastName = (fullSession.last_verification_report.document.last_name || '').trim().toLowerCase();
+                console.log(`[webhook] Fell back to report document: "${firstName} ${lastName}"`);
+              }
+            } catch (reportErr) {
+              console.warn('[webhook] Could not fetch verification report:', reportErr.message);
+            }
+          }
+
+          // Fetch profile to compare names
+          const profile = await base44.asServiceRole.entities.Profile.get(metadataProfileId);
+          let profileFirstName = (profile?.onboarding_first_name || '').trim().toLowerCase();
+          let profileLastName = (profile?.onboarding_last_name || '').trim().toLowerCase();
+          if (!profileFirstName && !profileLastName && profile?.full_name) {
+            const nameParts = profile.full_name.trim().toLowerCase().split(/\s+/);
+            profileFirstName = nameParts[0] || '';
+            profileLastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+          }
+
+          const stripeReturnedName = firstName || lastName;
+          const profileHasName = profileFirstName || profileLastName;
+          let nameMismatch = false;
+
+          if (stripeReturnedName && profileHasName) {
+            const firstMatch = !firstName || !profileFirstName || firstName === profileFirstName;
+            const lastMatch = !lastName || !profileLastName || lastName === profileLastName;
+            nameMismatch = !firstMatch || !lastMatch;
+          }
+
+          if (nameMismatch) {
+            console.warn(`[webhook] Name mismatch: Stripe="${firstName} ${lastName}" Profile="${profileFirstName} ${profileLastName}"`);
+            await base44.asServiceRole.entities.Profile.update(metadataProfileId, {
+              identity_status: 'failed',
+              kyc_status: 'failed',
+              identity_verified_at: null,
+              verified_first_name: firstName || undefined,
+              verified_last_name: lastName || undefined,
+            });
+            console.log('❌ Profile kyc_status set to failed (name mismatch) via webhook:', metadataProfileId);
+          } else {
+            await base44.asServiceRole.entities.Profile.update(metadataProfileId, {
+              identity_status: 'verified',
+              kyc_status: 'approved',
+              identity_verified_at: new Date().toISOString(),
+              verified_first_name: firstName || undefined,
+              verified_last_name: lastName || undefined,
+              identity_mode: (Deno.env.get('STRIPE_MODE') === 'live') ? 'live' : 'test',
+            });
+            console.log('✅ Profile kyc_status set to approved via webhook:', metadataProfileId);
+          }
         } catch (err) {
           console.error('❌ Failed to update profile on identity verified webhook:', err.message);
         }
