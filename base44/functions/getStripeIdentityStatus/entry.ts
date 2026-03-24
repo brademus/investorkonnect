@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
           await base44.entities.Profile.update(profile.id, {
             identity_status: 'failed',
             kyc_status: 'failed',
+            identity_verified_at: null,
             verified_first_name: session?.verified_outputs?.first_name || undefined,
             verified_last_name: session?.verified_outputs?.last_name || undefined,
           });
