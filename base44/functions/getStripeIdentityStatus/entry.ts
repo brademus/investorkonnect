@@ -49,6 +49,9 @@ Deno.serve(async (req) => {
         }
 
         // Name matching — compare against what user entered in onboarding
+        // Stripe often returns "FIRST MIDDLE" in the first_name field, so only compare the first word
+        const stripeFirstOnly = firstName ? firstName.split(/\s+/)[0] : '';
+
         // Try dedicated onboarding fields first, fall back to parsing full_name
         let profileFirstName = (profile.onboarding_first_name || '').trim().toLowerCase();
         let profileLastName = (profile.onboarding_last_name || '').trim().toLowerCase();
@@ -59,15 +62,15 @@ Deno.serve(async (req) => {
           profileLastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
         }
 
-        console.log(`[getStripeIdentityStatus] Comparing names — Stripe: "${firstName} ${lastName}" | Profile: "${profileFirstName} ${profileLastName}"`);
+        console.log(`[getStripeIdentityStatus] Comparing names — Stripe first(only): "${stripeFirstOnly}" last: "${lastName}" | Profile: "${profileFirstName} ${profileLastName}"`);
 
         // Only check if Stripe returned a name AND the profile has a name
-        const stripeReturnedName = firstName || lastName;
+        const stripeReturnedName = stripeFirstOnly || lastName;
         const profileHasName = profileFirstName || profileLastName;
 
         let nameMismatch = false;
         if (stripeReturnedName && profileHasName) {
-          const firstMatch = !firstName || !profileFirstName || firstName === profileFirstName;
+          const firstMatch = !stripeFirstOnly || !profileFirstName || stripeFirstOnly === profileFirstName;
           const lastMatch = !lastName || !profileLastName || lastName === profileLastName;
           nameMismatch = !firstMatch || !lastMatch;
         }

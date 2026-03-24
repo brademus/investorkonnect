@@ -436,12 +436,15 @@ Deno.serve(async (req) => {
             profileLastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
           }
 
-          const stripeReturnedName = firstName || lastName;
+          // Stripe often returns "FIRST MIDDLE" in first_name — only compare the first word
+          const stripeFirstOnly = firstName ? firstName.split(/\s+/)[0] : '';
+
+          const stripeReturnedName = stripeFirstOnly || lastName;
           const profileHasName = profileFirstName || profileLastName;
           let nameMismatch = false;
 
           if (stripeReturnedName && profileHasName) {
-            const firstMatch = !firstName || !profileFirstName || firstName === profileFirstName;
+            const firstMatch = !stripeFirstOnly || !profileFirstName || stripeFirstOnly === profileFirstName;
             const lastMatch = !lastName || !profileLastName || lastName === profileLastName;
             nameMismatch = !firstMatch || !lastMatch;
           }
