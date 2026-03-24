@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { Shield, CheckCircle, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import LoadingAnimation from "@/components/LoadingAnimation";
 
