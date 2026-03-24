@@ -88,8 +88,11 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Normalize 'processing' to 'pending' so frontend polling loop keeps going
+    const normalizedStatus = status === 'processing' ? 'pending' : status;
+
     return Response.json({
-      status,
+      status: normalizedStatus,
       session_id,
       verified_outputs: session?.verified_outputs || null,
       last_error: session?.last_error || null,
