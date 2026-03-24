@@ -20,6 +20,9 @@ export default function IdentityVerification() {
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [status, setStatus] = useState('pending'); // pending, creating_session, loading_stripe, modal_open, polling, success, error
   const [statusMessage, setStatusMessage] = useState('');
+  const [nameMismatch, setNameMismatch] = useState(false); // pending, creating_session, loading_stripe, modal_open, polling, success, error
+  const [statusMessage, setStatusMessage] = useState('');
+  const [nameMismatch, setNameMismatch] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -81,16 +84,25 @@ export default function IdentityVerification() {
       setStatus('polling');
       setStatusMessage('Confirming your verification...');
       let finalStatus = 'processing';
+      let finalStatusData = null;
       for (let attempts = 0; attempts < 10; attempts++) {
         try {
           const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
           finalStatus = statusData?.status;
-          if (finalStatus === 'verified' || finalStatus === 'requires_input' || finalStatus === 'canceled') break;
+          finalStatusData = statusData;
+          if (finalStatus === 'verified' || finalStatus === 'requires_input' || finalStatus === 'canceled' || finalStatus === 'name_mismatch') break;
         } catch {}
         await new Promise(r => setTimeout(r, 1500));
       }
 
+      if (finalStatus === 'name_mismatch') {
+        const mismatchMsg = finalStatusData?.last_error?.message || 'The name on your ID does not match the name you entered. Please update your details and try again.';
+        setNameMismatch(true);
+        throw new Error(mismatchMsg);
+      }
+
       if (finalStatus === 'requires_input' || finalStatus === 'canceled') {
+        setNameMismatch(false);
         throw new Error('Verification was not completed. Please try again.');
       }
 
@@ -146,15 +158,37 @@ export default function IdentityVerification() {
               </div>
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
               <p className="text-[#808080] mb-6">{statusMessage || 'Something went wrong. Please try again.'}</p>
-              <Button
-                onClick={() => {
-                  startedRef.current = true;
-                  handleStartVerification();
-                }}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
-              >
-                Try Again
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  onClick={() => {
+                    setNameMismatch(false);
+                    startedRef.current = true;
+                    handleStartVerification();
+                  }}
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
+                >
+                  Try Again
+                </Button>
+                <Button
+                  onClick={() => {
+                    const role = profile?.user_role;
+                    if (role === 'agent') {
+                      navigate(createPageUrl('AgentOnboarding'), { replace: true });
+                    } else {
+                      navigate(createPageUrl('InvestorOnboarding'), { replace: true });
+                    }
+                  }}
+                  variant="outline"
+                  className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 font-bold px-8 py-3"
+                >
+                  Update Your Details
+                </Button>
+              </div>
+              {nameMismatch && (
+                <p className="text-xs text-[#808080] mt-4">
+                  Tip: Make sure the first and last name you entered matches exactly what appears on your government-issued ID.
+                </p>
+              )}
             </div>
           ) : (
             <div className="text-center">

@@ -30,14 +30,47 @@ Deno.serve(async (req) => {
 
     if (profile?.id) {
       if (status === 'verified') {
-        const firstName = session?.verified_outputs?.first_name || null;
-        const lastName = session?.verified_outputs?.last_name || null;
+        const firstName = (session?.verified_outputs?.first_name || '').trim().toLowerCase();
+        const lastName = (session?.verified_outputs?.last_name || '').trim().toLowerCase();
+
+        // Name matching — compare against what user entered in onboarding
+        const profileFirstName = (profile.onboarding_first_name || '').trim().toLowerCase();
+        const profileLastName = (profile.onboarding_last_name || '').trim().toLowerCase();
+
+        // Only check if Stripe returned a name AND the profile has a name
+        const stripeReturnedName = firstName || lastName;
+        const profileHasName = profileFirstName || profileLastName;
+
+        let nameMismatch = false;
+        if (stripeReturnedName && profileHasName) {
+          const firstMatch = !firstName || !profileFirstName || firstName === profileFirstName;
+          const lastMatch = !lastName || !profileLastName || lastName === profileLastName;
+          nameMismatch = !firstMatch || !lastMatch;
+        }
+
+        if (nameMismatch) {
+          console.warn(`[getStripeIdentityStatus] Name mismatch: Stripe="${firstName} ${lastName}" Profile="${profileFirstName} ${profileLastName}"`);
+          await base44.entities.Profile.update(profile.id, {
+            identity_status: 'failed',
+            kyc_status: 'failed',
+            verified_first_name: session?.verified_outputs?.first_name || undefined,
+            verified_last_name: session?.verified_outputs?.last_name || undefined,
+          });
+          return Response.json({
+            status: 'name_mismatch',
+            session_id,
+            verified_outputs: session?.verified_outputs || null,
+            last_error: { message: 'The name on your ID does not match the name you entered. Please update your details and try again.' },
+          });
+        }
+
+        // Name matches (or no name to compare) — full approval
         await base44.entities.Profile.update(profile.id, {
           identity_status: 'verified',
           identity_verified_at: new Date().toISOString(),
           kyc_status: 'approved',
-          verified_first_name: firstName || undefined,
-          verified_last_name: lastName || undefined,
+          verified_first_name: session?.verified_outputs?.first_name || undefined,
+          verified_last_name: session?.verified_outputs?.last_name || undefined,
           identity_mode: (Deno.env.get('STRIPE_MODE') === 'live') ? 'live' : 'test',
         });
       } else if (status === 'requires_input') {
