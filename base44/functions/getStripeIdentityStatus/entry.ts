@@ -34,8 +34,17 @@ Deno.serve(async (req) => {
         const lastName = (session?.verified_outputs?.last_name || '').trim().toLowerCase();
 
         // Name matching — compare against what user entered in onboarding
-        const profileFirstName = (profile.onboarding_first_name || '').trim().toLowerCase();
-        const profileLastName = (profile.onboarding_last_name || '').trim().toLowerCase();
+        // Try dedicated onboarding fields first, fall back to parsing full_name
+        let profileFirstName = (profile.onboarding_first_name || '').trim().toLowerCase();
+        let profileLastName = (profile.onboarding_last_name || '').trim().toLowerCase();
+
+        if (!profileFirstName && !profileLastName && profile.full_name) {
+          const nameParts = profile.full_name.trim().toLowerCase().split(/\s+/);
+          profileFirstName = nameParts[0] || '';
+          profileLastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+        }
+
+        console.log(`[getStripeIdentityStatus] Comparing names — Stripe: "${firstName} ${lastName}" | Profile: "${profileFirstName} ${profileLastName}"`);
 
         // Only check if Stripe returned a name AND the profile has a name
         const stripeReturnedName = firstName || lastName;
