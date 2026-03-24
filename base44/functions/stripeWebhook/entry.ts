@@ -391,6 +391,59 @@ Deno.serve(async (req) => {
         break;
       }
       
+      // ========================================
+      // IDENTITY VERIFICATION EVENTS
+      // ========================================
+
+      case 'identity.verification_session.verified': {
+        const verificationSession = event.data.object;
+        console.log('✅ Identity verification session verified:', verificationSession.id);
+
+        const metadataProfileId = verificationSession.metadata?.profile_id;
+        if (!metadataProfileId) {
+          console.warn('⚠️ No profile_id in identity session metadata');
+          break;
+        }
+
+        try {
+          const firstName = verificationSession?.verified_outputs?.first_name || null;
+          const lastName = verificationSession?.verified_outputs?.last_name || null;
+
+          await base44.asServiceRole.entities.Profile.update(metadataProfileId, {
+            identity_status: 'verified',
+            kyc_status: 'approved',
+            identity_verified_at: new Date().toISOString(),
+            verified_first_name: firstName || undefined,
+            verified_last_name: lastName || undefined,
+            identity_mode: 'live',
+          });
+          console.log('✅ Profile kyc_status set to approved via webhook:', metadataProfileId);
+        } catch (err) {
+          console.error('❌ Failed to update profile on identity verified webhook:', err.message);
+        }
+        break;
+      }
+
+      case 'identity.verification_session.requires_input': {
+        const verificationSession = event.data.object;
+        console.log('❌ Identity verification session requires input:', verificationSession.id);
+
+        const metadataProfileId = verificationSession.metadata?.profile_id;
+        if (!metadataProfileId) break;
+
+        try {
+          await base44.asServiceRole.entities.Profile.update(metadataProfileId, {
+            identity_status: 'failed',
+            kyc_status: 'failed',
+            identity_verified_at: null,
+          });
+          console.log('✅ Profile kyc_status set to failed via webhook:', metadataProfileId);
+        } catch (err) {
+          console.error('❌ Failed to update profile on identity failed webhook:', err.message);
+        }
+        break;
+      }
+
       default:
         console.log('ℹ️ Unhandled event type:', event.type);
     }
