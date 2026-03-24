@@ -79,32 +79,42 @@ export default function IdentityVerification() {
       }
 
       // 4) Poll for final status
+      // Stripe can take 30-90s to process real documents. Poll up to 40x at 2.5s = ~100s.
       setStatus('polling');
       setStatusMessage('Confirming your verification...');
-      let finalStatus = 'processing';
+      let finalStatus = 'pending';
       let finalStatusData = null;
-      for (let attempts = 0; attempts < 10; attempts++) {
+
+      for (let attempts = 0; attempts < 40; attempts++) {
         try {
           const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
           finalStatus = statusData?.status;
           finalStatusData = statusData;
           if (finalStatus === 'verified' || finalStatus === 'requires_input' || finalStatus === 'canceled' || finalStatus === 'name_mismatch') break;
         } catch {}
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 2500));
       }
 
+      // Handle name mismatch
       if (finalStatus === 'name_mismatch') {
         const mismatchMsg = finalStatusData?.last_error?.message || 'The name on your ID does not match the name you entered. Please update your details and try again.';
         setNameMismatch(true);
         throw new Error(mismatchMsg);
       }
 
+      // Handle explicit failure or cancellation
       if (finalStatus === 'requires_input' || finalStatus === 'canceled') {
         setNameMismatch(false);
         throw new Error('Verification was not completed. Please try again.');
       }
 
-      // Success (verified or still processing — backend will finalize via webhook)
+      // Handle timeout — still pending after max attempts
+      if (finalStatus === 'pending') {
+        setNameMismatch(false);
+        throw new Error('Verification is still being reviewed. Please check back in a few minutes — you will be able to continue once it is confirmed.');
+      }
+
+      // Only reach here if finalStatus === 'verified'
       setStatus('success');
       refresh();
       setTimeout(() => { navigate(createPageUrl('NDA'), { replace: true }); }, 800);
