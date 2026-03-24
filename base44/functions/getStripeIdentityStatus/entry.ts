@@ -21,8 +21,14 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
 
-    const session = await stripe.identity.verificationSessions.retrieve(session_id);
+    const session = await stripe.identity.verificationSessions.retrieve(session_id, {
+      expand: ['verified_outputs', 'last_verification_report'],
+    });
     const status = session.status; // 'requires_input' | 'processing' | 'verified' | 'canceled'
+
+    console.log(`[getStripeIdentityStatus] Session ${session_id} status=${status}`);
+    console.log(`[getStripeIdentityStatus] verified_outputs:`, JSON.stringify(session?.verified_outputs));
+    console.log(`[getStripeIdentityStatus] last_verification_report id_number:`, JSON.stringify(session?.last_verification_report?.document));
 
     // Try to fetch profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -30,8 +36,17 @@ Deno.serve(async (req) => {
 
     if (profile?.id) {
       if (status === 'verified') {
-        const firstName = (session?.verified_outputs?.first_name || '').trim().toLowerCase();
-        const lastName = (session?.verified_outputs?.last_name || '').trim().toLowerCase();
+        // Try verified_outputs first, then fall back to the verification report document fields
+        let firstName = (session?.verified_outputs?.first_name || '').trim().toLowerCase();
+        let lastName = (session?.verified_outputs?.last_name || '').trim().toLowerCase();
+
+        // If verified_outputs has no name (common in test mode), check the verification report
+        if (!firstName && !lastName && session?.last_verification_report?.document) {
+          const doc = session.last_verification_report.document;
+          firstName = (doc.first_name || '').trim().toLowerCase();
+          lastName = (doc.last_name || '').trim().toLowerCase();
+          console.log(`[getStripeIdentityStatus] Fell back to report document: "${firstName} ${lastName}"`);
+        }
 
         // Name matching — compare against what user entered in onboarding
         // Try dedicated onboarding fields first, fall back to parsing full_name
