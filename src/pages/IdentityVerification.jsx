@@ -20,8 +20,6 @@ export default function IdentityVerification() {
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [status, setStatus] = useState('pending'); // pending, creating_session, loading_stripe, modal_open, polling, success, error
   const [statusMessage, setStatusMessage] = useState('');
-  const [nameMismatch, setNameMismatch] = useState(false); // pending, creating_session, loading_stripe, modal_open, polling, success, error
-  const [statusMessage, setStatusMessage] = useState('');
   const [nameMismatch, setNameMismatch] = useState(false);
   const startedRef = useRef(false);
 
