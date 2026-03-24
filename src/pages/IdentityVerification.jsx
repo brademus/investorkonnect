@@ -172,40 +172,114 @@ export default function IdentityVerification() {
               </div>
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
               <p className="text-[#808080] mb-6">{statusMessage || 'Something went wrong. Please try again.'}</p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button
-                  onClick={() => {
-                    setNameMismatch(false);
-                    setStatus('pending');
-                    startedRef.current = false;
-                    setTimeout(() => {
-                      startedRef.current = true;
-                      handleStartVerification();
-                    }, 100);
-                  }}
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
-                >
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() => {
-                    const role = profile?.user_role;
-                    if (role === 'agent') {
-                      navigate(createPageUrl('AgentOnboarding'), { replace: true });
-                    } else {
-                      navigate(createPageUrl('InvestorOnboarding'), { replace: true });
-                    }
-                  }}
-                  variant="outline"
-                  className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 font-bold px-8 py-3"
-                >
-                  Update Your Details
-                </Button>
-              </div>
-              {nameMismatch && (
-                <p className="text-xs text-[#808080] mt-4">
-                  Tip: Make sure the first and last name you entered matches exactly what appears on your government-issued ID.
-                </p>
+
+              {nameMismatch && !nameUpdated ? (
+                <div className="mb-6">
+                  <p className="text-sm text-[#808080] mb-4">
+                    Make sure the name below matches exactly what appears on your government-issued ID.
+                  </p>
+                  {!editingName ? (
+                    <div className="bg-[#141414] rounded-xl p-5 border border-[#1F1F1F] flex items-center justify-between gap-4">
+                      <div className="text-left">
+                        <p className="text-xs text-[#808080] mb-1">Name on file</p>
+                        <p className="text-lg text-[#FAFAFA] font-semibold">
+                          {profile?.onboarding_first_name || profile?.full_name?.split(/\s+/)[0] || ''}{' '}
+                          {profile?.onboarding_last_name || (profile?.full_name?.split(/\s+/).length > 1 ? profile?.full_name?.split(/\s+/).slice(1).join(' ') : '') || ''}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditFirstName(profile?.onboarding_first_name || profile?.full_name?.split(/\s+/)[0] || '');
+                          setEditLastName(profile?.onboarding_last_name || (profile?.full_name?.split(/\s+/).length > 1 ? profile?.full_name?.split(/\s+/).slice(1).join(' ') : '') || '');
+                          setEditingName(true);
+                        }}
+                        className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 shrink-0"
+                      >
+                        <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="bg-[#141414] rounded-xl p-5 border border-[#1F1F1F] space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="text-left">
+                          <label className="text-xs text-[#808080] mb-1 block">First Name</label>
+                          <Input
+                            value={editFirstName}
+                            onChange={(e) => setEditFirstName(e.target.value)}
+                            className="bg-[#0D0D0D] border-[#2A2A2A] text-[#FAFAFA]"
+                            placeholder="First name"
+                          />
+                        </div>
+                        <div className="text-left">
+                          <label className="text-xs text-[#808080] mb-1 block">Last Name</label>
+                          <Input
+                            value={editLastName}
+                            onChange={(e) => setEditLastName(e.target.value)}
+                            className="bg-[#0D0D0D] border-[#2A2A2A] text-[#FAFAFA]"
+                            placeholder="Last name"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingName(false)}
+                          className="text-[#808080] hover:text-[#FAFAFA]"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={!editFirstName.trim() || !editLastName.trim() || savingName}
+                          onClick={async () => {
+                            setSavingName(true);
+                            const newFirst = editFirstName.trim();
+                            const newLast = editLastName.trim();
+                            const newFullName = `${newFirst} ${newLast}`;
+                            await base44.entities.Profile.update(profile.id, {
+                              full_name: newFullName,
+                              onboarding_first_name: newFirst,
+                              onboarding_last_name: newLast,
+                            });
+                            await refresh();
+                            setEditingName(false);
+                            setNameUpdated(true);
+                            setSavingName(false);
+                          }}
+                          className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold"
+                        >
+                          {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  {nameUpdated && (
+                    <p className="text-sm text-green-400 mb-2">Name updated successfully.</p>
+                  )}
+                  <Button
+                    onClick={() => {
+                      setNameMismatch(false);
+                      setNameUpdated(false);
+                      setEditingName(false);
+                      setStatus('pending');
+                      startedRef.current = false;
+                      setTimeout(() => {
+                        startedRef.current = true;
+                        handleStartVerification();
+                      }, 100);
+                    }}
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
+                  >
+                    Try Again
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
