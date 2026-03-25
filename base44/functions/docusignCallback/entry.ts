@@ -13,7 +13,7 @@ const DOCUSIGN_REDIRECT_URI = Deno.env.get('DOCUSIGN_REDIRECT_URI');
  */
 Deno.serve(async (req) => {
   const url = new URL(req.url);
-  const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
+  const publicUrl = (Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com').replace(/\/+$/, '');
 
   // ── GET: Browser redirect from DocuSign OAuth ──
   if (req.method === 'GET') {
