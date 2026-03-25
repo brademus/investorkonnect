@@ -126,10 +126,15 @@ Deno.serve(async (req) => {
     const profile = profileResult?.[0];
 
     // ── PHASE 3: Create signing token + recipient view in parallel ──
-    const publicUrl = (Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin).replace(/\/+$/, '');
+    const rawPublicUrl = Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin || '';
+    const publicUrl = rawPublicUrl.trim().replace(/\/+$/, '');
+    console.log('[docusignCreateSigningSession] publicUrl:', publicUrl);
     const tokenValue = crypto.randomUUID();
 
-    const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
+    // Extra safety — ensure exactly one slash between base and path
+    const returnBase = publicUrl.replace(/\/+$/, '');
+    const returnURL = new URL(`${returnBase}/DocuSignReturn`);
+    console.log('[docusignCreateSigningSession] returnURL:', returnURL.toString());
     returnURL.searchParams.set('token', tokenValue);
     if (agreement.deal_id) returnURL.searchParams.set('dealId', agreement.deal_id);
     if (room_id || agreement.room_id) returnURL.searchParams.set('roomId', room_id || agreement.room_id);

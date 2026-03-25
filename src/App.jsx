@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import './App.css'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -5,7 +6,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -14,6 +15,17 @@ import DocuSignCallback from '@/pages/DocuSignCallback';
 import AgentVideo from '@/pages/AgentVideo';
 import AcceptInvite from '@/pages/AcceptInvite';
 import TeamAccount from '@/pages/TeamAccount';
+
+function DoubleSlashRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const fixed = window.location.pathname.replace(/\/\/+/g, '/');
+    const search = window.location.search;
+    const hash = window.location.hash;
+    navigate(fixed + search + hash, { replace: true });
+  }, []);
+  return null;
+}
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -52,6 +64,8 @@ const AuthenticatedApp = () => {
   return (
     <LayoutWrapper currentPageName={mainPageKey}>
       <Routes>
+        {/* Safety redirect — fix double slashes in URL */}
+        <Route path="//*" element={<DoubleSlashRedirect />} />
         <Route path="/" element={<MainPage />} />
         {Object.entries(Pages).map(([path, Page]) => (
           <Route key={path} path={`/${path}`} element={<Page />} />
