@@ -49,7 +49,10 @@ Deno.serve(async (req) => {
     [Deno.env.get('STRIPE_PRICE_STARTER')]: 'starter',
     [Deno.env.get('STRIPE_PRICE_PRO')]: 'pro',
     [Deno.env.get('STRIPE_PRICE_ENTERPRISE')]: 'enterprise',
+    [Deno.env.get('STRIPE_PRICE_MEMBERSHIP')]: 'starter',
   };
+  // Remove undefined key if env var not set
+  delete PRICE_TO_PLAN[undefined];
   
   // Handle different event types
   try {
