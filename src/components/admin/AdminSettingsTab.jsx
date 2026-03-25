@@ -65,13 +65,9 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
   const disconnectDocusign = async () => {
     if (!confirm("Disconnect DocuSign?")) return;
     try {
-      const res = await base44.functions.invoke("docusignConnect", { action: "disconnect" });
-      if (res.data?.disconnected) {
-        toast.success("Disconnected");
-        onReload();
-      } else {
-        toast.error(res.data?.error || "Failed to disconnect");
-      }
+      await base44.entities.DocuSignConnection.delete(docusignConnection.id);
+      toast.success("Disconnected");
+      onReload();
     } catch (err) {
       toast.error(err.message);
     }

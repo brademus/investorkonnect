@@ -19,16 +19,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { returnTo, force, action } = body;
-
-    // Handle disconnect
-    if (action === 'disconnect') {
-      const existing = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 10);
-      for (const conn of existing) {
-        await base44.asServiceRole.entities.DocuSignConnection.delete(conn.id).catch(() => {});
-      }
-      return Response.json({ disconnected: true });
-    }
+    const { returnTo, force } = body;
 
     // Check if already connected (unless forcing reconnect)
     if (!force) {
