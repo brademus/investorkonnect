@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     const profile = profileResult?.[0];
 
     // ── PHASE 3: Create signing token + recipient view in parallel ──
-    const publicUrl = Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin;
+    const publicUrl = (Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin).replace(/\/+$/, '');
     const tokenValue = crypto.randomUUID();
 
     const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
