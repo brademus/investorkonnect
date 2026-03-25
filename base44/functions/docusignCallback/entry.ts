@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { code } = body;
+    const { code, code_verifier } = body;
 
     if (!code) {
       return Response.json({ error: 'Authorization code required' }, { status: 400 });
@@ -147,16 +147,21 @@ Deno.serve(async (req) => {
     const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
     const redirectUri = DOCUSIGN_REDIRECT_URI || `${publicUrl}/DocuSignCallback`;
 
+    const tokenParams = {
+      grant_type: 'authorization_code',
+      code,
+      client_id: DOCUSIGN_INTEGRATION_KEY,
+      client_secret: DOCUSIGN_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+    };
+    if (code_verifier) {
+      tokenParams.code_verifier = code_verifier;
+    }
+
     const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: DOCUSIGN_INTEGRATION_KEY,
-        client_secret: DOCUSIGN_CLIENT_SECRET,
-        redirect_uri: redirectUri,
-      }),
+      body: new URLSearchParams(tokenParams),
     });
 
     if (!tokenResp.ok) {

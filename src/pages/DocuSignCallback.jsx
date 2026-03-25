@@ -12,6 +12,7 @@ export default function DocuSignCallback() {
     const stateParam = params.get("state");
 
     let returnTo = "/Admin?docusign=connected";
+    let codeVerifier = null;
     if (stateParam) {
       try {
         const parsed = JSON.parse(atob(stateParam));
@@ -20,6 +21,7 @@ export default function DocuSignCallback() {
           url.searchParams.set("docusign", "connected");
           returnTo = url.pathname + url.search;
         }
+        if (parsed.cv) codeVerifier = parsed.cv;
       } catch (_) {}
     }
 
@@ -35,7 +37,7 @@ export default function DocuSignCallback() {
 
     const exchange = async () => {
       try {
-        const res = await base44.functions.invoke("docusignCallback", { code });
+        const res = await base44.functions.invoke("docusignCallback", { code, code_verifier: codeVerifier });
         if (res.data?.success) {
           setStatus("success");
           setTimeout(() => { window.location.href = returnTo; }, 1000);
