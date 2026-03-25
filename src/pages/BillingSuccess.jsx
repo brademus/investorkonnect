@@ -6,11 +6,18 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 export default function BillingSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, loading } = useCurrentProfile();
+  const { profile, loading, refresh } = useCurrentProfile();
   const searchParams = new URLSearchParams(location.search);
+  const hasRefreshed = React.useRef(false);
   const isTeam = searchParams.get("team") === "true";
 
+  // On mount, always invalidate cache so we get fresh subscription data from the webhook
   React.useEffect(() => {
+    if (!hasRefreshed.current) {
+      hasRefreshed.current = true;
+      refresh();
+      return;
+    }
     if (!loading && profile) {
       if (isTeam) {
         navigate(createPageUrl("TeamAccount"), { replace: true });
