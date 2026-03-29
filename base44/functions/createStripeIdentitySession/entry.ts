@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const profile = Array.isArray(profiles) ? profiles[0] : profiles?.data?.[0];
 
     // Bypass: auto-approve whitelisted test accounts
-    const BYPASS_EMAILS = ['bryceheller922+gnuren@gmail.com'];
+    const BYPASS_EMAILS = ['bryceheller922+gnuren@gmail.com', 'bryceheller922+skdukjnsu@gmail.com'];
     if (BYPASS_EMAILS.includes((user.email || '').toLowerCase().trim())) {
       console.log(`[createStripeIdentitySession] Bypass verification for ${user.email}`);
       if (profile?.id) {
