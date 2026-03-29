@@ -54,6 +54,15 @@ export default function IdentityVerification() {
       // 1) Create session
       const resp = await base44.functions.invoke('createStripeIdentitySession', {});
       const sessionData = resp.data;
+
+      // Handle bypass (whitelisted test accounts)
+      if (sessionData?.bypass) {
+        setStatus('success');
+        await refresh();
+        setTimeout(() => { navigate(createPageUrl('NDA'), { replace: true }); }, 800);
+        return;
+      }
+
       const clientSecret = sessionData?.client_secret;
       const publishableKey = sessionData?.publishable_key;
       const sessionId = sessionData?.session_id;

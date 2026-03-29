@@ -21,6 +21,21 @@ Deno.serve(async (req) => {
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = Array.isArray(profiles) ? profiles[0] : profiles?.data?.[0];
 
+    // Bypass: auto-approve whitelisted test accounts
+    const BYPASS_EMAILS = ['bryceheller922+gnuren@gmail.com'];
+    if (BYPASS_EMAILS.includes((user.email || '').toLowerCase().trim())) {
+      console.log(`[createStripeIdentitySession] Bypass verification for ${user.email}`);
+      if (profile?.id) {
+        await base44.entities.Profile.update(profile.id, {
+          identity_status: 'verified',
+          identity_verified_at: new Date().toISOString(),
+          kyc_status: 'approved',
+          identity_mode: 'test',
+        });
+      }
+      return Response.json({ bypass: true });
+    }
+
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || '';
 
     // Create verification session with timeout protection
