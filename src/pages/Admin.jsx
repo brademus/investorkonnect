@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Shield, Users, FileText, PenTool, Settings, ArrowLeft, ClipboardCheck } from "lucide-react";
+import { Loader2, Shield, Users, FileText, PenTool, Settings, ArrowLeft, ClipboardCheck, TrendingUp, Activity, Star } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 import AdminStatsBar from "@/components/admin/AdminStatsBar";
@@ -12,6 +12,9 @@ import AdminDealsTab from "@/components/admin/AdminDealsTab";
 import AdminAgreementsTab from "@/components/admin/AdminAgreementsTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import AdminVettingReviewTab from "@/components/admin/AdminVettingReviewTab";
+import AdminRevenueTab from "@/components/admin/AdminRevenueTab";
+import AdminActivityTab from "@/components/admin/AdminActivityTab";
+import AdminReviewsTab from "@/components/admin/AdminReviewsTab";
 
 function AdminContent() {
   const [loading, setLoading] = useState(true);
@@ -142,6 +145,15 @@ function AdminContent() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="revenue" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
+              <TrendingUp className="w-4 h-4" /> Revenue
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
+              <Activity className="w-4 h-4" /> Activity
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
+              <Star className="w-4 h-4" /> Reviews
+            </TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black text-[#808080] rounded-lg">
               <Settings className="w-4 h-4" /> Settings & Tools
             </TabsTrigger>
@@ -161,6 +173,18 @@ function AdminContent() {
 
           <TabsContent value="vetting">
             <AdminVettingReviewTab profiles={profiles} onReload={loadData} />
+          </TabsContent>
+
+          <TabsContent value="revenue">
+            <AdminRevenueTab profiles={profiles} />
+          </TabsContent>
+
+          <TabsContent value="activity">
+            <AdminActivityTab profiles={profiles} />
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            <AdminReviewsTab profiles={profiles} />
           </TabsContent>
 
           <TabsContent value="settings">

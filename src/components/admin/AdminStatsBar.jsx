@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, FileText, Shield, CheckCircle, PenTool, CreditCard } from "lucide-react";
+import { Users, FileText, Shield, CheckCircle, PenTool, CreditCard, TrendingUp } from "lucide-react";
 
 const StatCard = ({ icon: Icon, label, value, color = "text-[#E3C567]" }) => (
   <div className="rounded-[14px] p-4" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
@@ -22,9 +22,13 @@ export default function AdminStatsBar({ profiles, deals, rooms, agreements }) {
   const ndaSigned = profiles.filter(p => p.nda_accepted).length;
   const activeDeals = deals.filter(d => d.status === "active").length;
   const signedAgreements = agreements.filter(a => a.status === "fully_signed").length;
+  const paidSubscribers = profiles.filter(p => p.subscription_status === 'active').length;
+  const kycVerified = profiles.filter(p => p.kyc_status === 'approved' || p.identity_verified_at).length;
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const dealsThisWeek = deals.filter(d => d.created_date > oneWeekAgo).length;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10 gap-3 mb-6">
       <StatCard icon={Users} label="Total Users" value={profiles.length} />
       <StatCard icon={Shield} label="Investors" value={investors} />
       <StatCard icon={Users} label="Agents" value={agents} />
@@ -32,6 +36,9 @@ export default function AdminStatsBar({ profiles, deals, rooms, agreements }) {
       <StatCard icon={PenTool} label="NDA Signed" value={ndaSigned} color="text-[#34D399]" />
       <StatCard icon={FileText} label="Active Deals" value={activeDeals} color="text-[#60A5FA]" />
       <StatCard icon={CreditCard} label="Agreements" value={signedAgreements} color="text-[#A78BFA]" />
+      <StatCard icon={CreditCard} label="Paid Subs" value={paidSubscribers} color="text-[#34D399]" />
+      <StatCard icon={Shield} label="KYC Verified" value={kycVerified} color="text-[#34D399]" />
+      <StatCard icon={TrendingUp} label="Deals This Week" value={dealsThisWeek} color="text-[#F59E0B]" />
     </div>
   );
 }
