@@ -454,7 +454,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
             <p className="text-[#808080] mb-4">No agreement yet</p>
-            {isInvestor && !isTeamMember && <Button onClick={handleGenerate} disabled={busy} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">{busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Generate Agreement</Button>}
+            {(isInvestor || (dealData && draftId)) && !isTeamMember && <Button onClick={handleGenerate} disabled={busy} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">{busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Generate Agreement</Button>}
           </div>
         )}
 
