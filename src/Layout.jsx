@@ -232,11 +232,14 @@ function LayoutContent({ children }) {
                     </DropdownMenuItem>
                     {profile?.id && (
                       <DropdownMenuItem 
-                        onClick={() => navigate(
-                          role === 'agent' 
-                            ? `${createPageUrl("AgentProfile")}?profileId=${profile.id}` 
-                            : `${createPageUrl("InvestorProfile")}?profileId=${profile.id}`
-                        )} 
+                        onClick={() => {
+                          const profileRole = profile?.user_role || profile?.user_type || role;
+                          navigate(
+                            profileRole === 'agent' 
+                              ? `${createPageUrl("AgentProfile")}?profileId=${profile.id}` 
+                              : `${createPageUrl("InvestorProfile")}?profileId=${profile.id}`
+                          );
+                        }} 
                         className="text-[#FAFAFA] cursor-pointer"
                       >
                         <Eye className="w-4 h-4 mr-2" />
