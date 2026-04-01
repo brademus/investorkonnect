@@ -3,6 +3,8 @@ import { Mail, Phone, Building2, MapPin, Target, Briefcase, Star } from "lucide-
 import { useAgentRating } from "@/components/useAgentRating";
 
 export default function InvestorBusinessCard({ investorProfile, ikDealsCount, showContactInfo = false }) {
+  const { rating, reviewCount } = useAgentRating(investorProfile?.id);
+
   if (!investorProfile) return null;
 
   const inv = investorProfile.investor || {};
@@ -22,7 +24,6 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
   const allTags = [...new Set([...strategies, ...assetTypes])];
 
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  const { rating, reviewCount } = useAgentRating(investorProfile.id);
 
   // Experience label
   const expLabels = {

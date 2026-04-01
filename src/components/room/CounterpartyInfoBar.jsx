@@ -32,9 +32,9 @@ function getSignatureStyle(name) {
 }
 
 export default function CounterpartyInfoBar({ counterparty, showContactInfo = true }) {
-  if (!counterparty) return null;
+  const sigStyle = useMemo(() => getSignatureStyle(counterparty?.name), [counterparty?.name]);
 
-  const sigStyle = useMemo(() => getSignatureStyle(counterparty.name), [counterparty.name]);
+  if (!counterparty) return null;
 
   const items = [
     ...(showContactInfo ? [

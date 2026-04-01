@@ -3,9 +3,10 @@ import { Mail, Phone, Building2, Briefcase, Star, MapPin } from "lucide-react";
 import { useAgentRating } from "@/components/useAgentRating";
 
 export default function DigitalBusinessCard({ agentProfile, ikDealsCount, showContactInfo = false }) {
+  const { rating, reviewCount } = useAgentRating(agentProfile?.id);
+
   if (!agentProfile) return null;
 
-  const { rating, reviewCount } = useAgentRating(agentProfile.id);
   const agent = agentProfile.agent || {};
   const name = agentProfile.full_name || "Agent";
   const email = agentProfile.email;
