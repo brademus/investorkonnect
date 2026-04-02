@@ -139,9 +139,15 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
             <div className="text-xs text-[#808080] mb-3">
               Account: {docusignConnection.account_id} • Env: {docusignConnection.env}
             </div>
-            <Button size="sm" className="bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/15 rounded-lg" onClick={disconnectDocusign}>
-              Disconnect
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" className="bg-[#E3C567] text-black hover:bg-[#EDD89F] rounded-lg" onClick={connectDocusign} disabled={connectingDocusign}>
+                {connectingDocusign ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                Reconnect
+              </Button>
+              <Button size="sm" className="bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/15 rounded-lg" onClick={disconnectDocusign}>
+                Disconnect
+              </Button>
+            </div>
           </div>
         ) : (
           <div>
