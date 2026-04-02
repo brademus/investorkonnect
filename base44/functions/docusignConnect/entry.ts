@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Build OAuth authorization URL with PKCE
+    // Build OAuth authorization URL with PKCE (S256)
     const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
     
     const publicUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://investorkonnect.com';
@@ -69,13 +69,13 @@ Deno.serve(async (req) => {
     const codeVerifier = btoa(String.fromCharCode(...verifierBytes))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    // Generate code_challenge = base64url(sha256(code_verifier))
+    // Generate code_challenge = BASE64URL(SHA256(code_verifier))
     const encoder = new TextEncoder();
     const digest = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
     const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-    // Store returnTo AND code_verifier in state so callback can use them
+    // Store returnTo AND code_verifier in state so callback can use it
     const statePayload = JSON.stringify({ returnTo: returnTo || '/Admin', cv: codeVerifier });
     const state = btoa(statePayload);
 
@@ -87,8 +87,6 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
-    // Always force login screen — prevents auto-connecting to cached/wrong account
-    authUrl.searchParams.set('prompt', 'login');
 
     console.log(`[docusignConnect] Auth URL generated with PKCE, redirect_uri=${redirectUri}`);
     return Response.json({ authUrl: authUrl.toString() });

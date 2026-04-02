@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse returnTo and code_verifier from state
+    // Parse returnTo and PKCE code_verifier from state
     let returnTo = '/Admin';
     let codeVerifier = null;
     if (stateParam) {
@@ -84,33 +84,14 @@ Deno.serve(async (req) => {
       }
 
       const userInfo = await userInfoResp.json();
-      const accounts = userInfo.accounts || [];
-
-      if (!accounts.length) {
+      const account = userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
+      if (!account) {
         return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=error&message=${encodeURIComponent('No DocuSign account found')}";</script></body></html>`, {
           headers: { 'Content-Type': 'text/html' },
         });
       }
 
-      // If multiple accounts — redirect to admin with account picker instead of auto-selecting
-      if (accounts.length > 1) {
-        const accountsParam = encodeURIComponent(JSON.stringify(accounts.map(a => ({
-          account_id: a.account_id,
-          account_name: a.account_name,
-          base_uri: a.base_uri,
-          is_default: a.is_default,
-        }))));
-        const accessTokenParam = encodeURIComponent(tokens.access_token);
-        const refreshTokenParam = encodeURIComponent(tokens.refresh_token || '');
-        const expiresParam = encodeURIComponent(new Date(Date.now() + tokens.expires_in * 1000).toISOString());
-        return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=select_account&accounts=${accountsParam}&access_token=${accessTokenParam}&refresh_token=${refreshTokenParam}&expires_at=${expiresParam}";</script></body></html>`, {
-          headers: { 'Content-Type': 'text/html' },
-        });
-      }
-
-      // Single account — proceed as before
-      const account = accounts[0];
-      console.log(`[docusignCallback] Single account found: ${account.account_id}, base_uri: ${account.base_uri}`);
+      console.log(`[docusignCallback] Account: ${account.account_id}, base_uri: ${account.base_uri}`);
 
       // Use service role to manage connections (GET requests don't have user auth token)
       const base44 = createClientFromRequest(req);
@@ -148,11 +129,13 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── POST: Called from frontend after DocuSign redirect ──
-  // No user auth required — the DocuSign authorization code is the proof.
-  // User may not be authenticated because DocuSign redirect loses session.
+  // ── POST: Called from frontend (alternative flow) ──
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
     const body = await req.json();
     const { code, code_verifier } = body;
@@ -183,8 +166,7 @@ Deno.serve(async (req) => {
 
     if (!tokenResp.ok) {
       const errText = await tokenResp.text();
-      console.error('[docusignCallback] POST Token exchange failed:', tokenResp.status, errText);
-      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code, has_verifier: !!tokenParams.code_verifier });
+      console.error('[docusignCallback] POST Token exchange failed:', errText);
       return Response.json({ error: 'Token exchange failed: ' + errText }, { status: 400 });
     }
 
@@ -198,28 +180,10 @@ Deno.serve(async (req) => {
     }
 
     const userInfo = await userInfoResp.json();
-    const accounts = userInfo.accounts || [];
-    if (!accounts.length) {
+    const account = userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
+    if (!account) {
       return Response.json({ error: 'No DocuSign account found' }, { status: 400 });
     }
-
-    // If multiple accounts, return them all so the caller can pick
-    if (accounts.length > 1) {
-      return Response.json({
-        select_account: true,
-        accounts: accounts.map(a => ({
-          account_id: a.account_id,
-          account_name: a.account_name,
-          base_uri: a.base_uri,
-          is_default: a.is_default,
-        })),
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token || '',
-        expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-      });
-    }
-
-    const account = accounts[0];
 
     const existing = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 10);
     for (const conn of existing) {
@@ -232,7 +196,7 @@ Deno.serve(async (req) => {
       expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
       account_id: account.account_id,
       base_uri: account.base_uri,
-      connected_by: 'admin',
+      connected_by: user.id,
     });
 
     return Response.json({ success: true, account_id: account.account_id });
