@@ -28,12 +28,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse returnTo from state
+    // Parse returnTo and code_verifier from state
     let returnTo = '/Admin';
+    let codeVerifier = null;
     if (stateParam) {
       try {
         const parsed = JSON.parse(atob(stateParam));
         if (parsed.returnTo) returnTo = parsed.returnTo;
+        if (parsed.cv) codeVerifier = parsed.cv;
       } catch (_) {}
     }
 
@@ -41,7 +43,7 @@ Deno.serve(async (req) => {
       const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
       const redirectUri = DOCUSIGN_REDIRECT_URI || `${publicUrl}/DocuSignCallback`;
 
-      // Exchange authorization code for tokens
+      // Exchange authorization code for tokens (with PKCE code_verifier)
       const tokenParams = {
         grant_type: 'authorization_code',
         code,
@@ -49,6 +51,9 @@ Deno.serve(async (req) => {
         client_secret: DOCUSIGN_CLIENT_SECRET,
         redirect_uri: redirectUri,
       };
+      if (codeVerifier) {
+        tokenParams.code_verifier = codeVerifier;
+      }
 
       const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
         method: 'POST',
@@ -150,7 +155,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
 
     const body = await req.json();
-    const { code } = body;
+    const { code, code_verifier } = body;
 
     if (!code) {
       return Response.json({ error: 'Authorization code required' }, { status: 400 });
@@ -166,6 +171,9 @@ Deno.serve(async (req) => {
       client_secret: DOCUSIGN_CLIENT_SECRET,
       redirect_uri: redirectUri,
     };
+    if (code_verifier) {
+      tokenParams.code_verifier = code_verifier;
+    }
 
     const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
       method: 'POST',
@@ -176,7 +184,7 @@ Deno.serve(async (req) => {
     if (!tokenResp.ok) {
       const errText = await tokenResp.text();
       console.error('[docusignCallback] POST Token exchange failed:', tokenResp.status, errText);
-      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code });
+      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code, has_verifier: !!tokenParams.code_verifier });
       return Response.json({ error: 'Token exchange failed: ' + errText }, { status: 400 });
     }
 
