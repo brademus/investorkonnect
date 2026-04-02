@@ -85,9 +85,13 @@ Deno.serve(async (req) => {
 
       const userInfo = await userInfoResp.json();
       const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
-      const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID) || userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
+      console.log('[docusignCallback] Available accounts:', JSON.stringify(userInfo.accounts?.map(a => ({ id: a.account_id, name: a.account_name, is_default: a.is_default }))));
+      const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID);
       if (!account) {
-        return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=error&message=${encodeURIComponent('No DocuSign account found')}";</script></body></html>`, {
+        const availableIds = (userInfo.accounts || []).map(a => `${a.account_name} (${a.account_id})`).join(', ');
+        const msg = `Target account ${TARGET_ACCOUNT_ID} not found. Available: ${availableIds}`;
+        console.error('[docusignCallback]', msg);
+        return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=error&message=${encodeURIComponent(msg)}";</script></body></html>`, {
           headers: { 'Content-Type': 'text/html' },
         });
       }
@@ -182,9 +186,11 @@ Deno.serve(async (req) => {
 
     const userInfo = await userInfoResp.json();
     const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
-    const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID) || userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
+    console.log('[docusignCallback] POST Available accounts:', JSON.stringify(userInfo.accounts?.map(a => ({ id: a.account_id, name: a.account_name, is_default: a.is_default }))));
+    const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID);
     if (!account) {
-      return Response.json({ error: 'No DocuSign account found' }, { status: 400 });
+      const availableIds = (userInfo.accounts || []).map(a => `${a.account_name} (${a.account_id})`).join(', ');
+      return Response.json({ error: `Target account ${TARGET_ACCOUNT_ID} not found. Available: ${availableIds}` }, { status: 400 });
     }
 
     const existing = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 10);
