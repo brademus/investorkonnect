@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       }
 
       const userInfo = await userInfoResp.json();
-      const TARGET_ACCOUNT_ID = '83584732';
+      const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
       const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID) || userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
       if (!account) {
         return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=error&message=${encodeURIComponent('No DocuSign account found')}";</script></body></html>`, {
@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     }
 
     const userInfo = await userInfoResp.json();
-    const TARGET_ACCOUNT_ID = '83584732';
+    const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
     const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID) || userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
     if (!account) {
       return Response.json({ error: 'No DocuSign account found' }, { status: 400 });
