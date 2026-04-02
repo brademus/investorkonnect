@@ -86,29 +86,47 @@ export default function AgentLanding() {
               onClick={handleGetStarted}
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(227,197,103,0.4)] transition-all">
 
-              Get Started as Agent
+              Build Agent Profile
             </Button>
           </div>
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
+          {/* Privacy Note + Company Email — shown under the CTA button */}
+          <div className="flex flex-col items-center gap-1.5 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} color="#E3C567" />
-              <span>Investor deal rooms</span>
+              <CheckCircle size={16} color="#808080" />
+              <span>Personal information used to build profile only</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} color="#E3C567" />
-              <span>Documents + milestones in the deal board</span>
+              <CheckCircle size={16} color="#808080" />
+              <span>Information is not shared</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} color="#E3C567" />
-              <span>Secure lock-in before full access</span>
+              <CheckCircle size={16} color="#808080" />
+              <a href="/Privacy" className="underline hover:text-[#E3C567] transition-colors">Privacy Policy</a>
             </div>
+            <p className="mt-2 text-xs text-[#555555]">Please use your company email address to sign up</p>
           </div>
 
           {/* Video */}
-          <div className="mt-12 max-w-3xl mx-auto rounded-2xl overflow-hidden border border-[#1F1F1F] shadow-2xl">
-            <VideoWithPoster src="https://dl.dropboxusercontent.com/scl/fi/ehalmyxxvfeq3pkx2j251/0224-copy-2.mov?rlkey=foreoij2k9bjhe5u1vimb38er&st=1lywiflf" />
+          <div className="mt-12 max-w-3xl mx-auto">
+            <div className="rounded-2xl overflow-hidden border border-[#1F1F1F] shadow-2xl">
+              <VideoWithPoster src="https://dl.dropboxusercontent.com/scl/fi/ehalmyxxvfeq3pkx2j251/0224-copy-2.mov?rlkey=foreoij2k9bjhe5u1vimb38er&st=1lywiflf" />
+            </div>
+            {/* Feature badges — moved from above button to under video */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080] mt-8">
+              <div className="flex items-center gap-2">
+                <CheckCircle size={20} color="#E3C567" />
+                <span>Investor deal rooms</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle size={20} color="#E3C567" />
+                <span>Documents + milestones in the deal board</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle size={20} color="#E3C567" />
+                <span>Secure lock-in before full access</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

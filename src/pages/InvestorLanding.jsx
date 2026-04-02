@@ -81,30 +81,46 @@ export default function InvestorLanding() {
               onClick={handleGetStarted}
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(227,197,103,0.4)] transition-all"
             >
-              Get Started as Investor
+              Build Investor Profile
             </Button>
           </div>
 
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
+          {/* Privacy Note + Company Email — shown under the CTA button */}
+          <div className="flex flex-col items-center gap-1.5 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>Verified contracts & clean deal rooms</span>
+              <CheckCircle className="w-4 h-4 text-[#808080]" />
+              <span>Personal information used to build profile only</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>DocuSign lock-in with gated info</span>
+              <CheckCircle className="w-4 h-4 text-[#808080]" />
+              <span>Information is not shared</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>Deal board for documents + milestones</span>
+              <CheckCircle className="w-4 h-4 text-[#808080]" />
+              <a href="/Privacy" className="underline hover:text-[#E3C567] transition-colors">Privacy Policy</a>
             </div>
+            <p className="mt-2 text-xs text-[#555555]">Please use your company email address to sign up</p>
           </div>
 
           {/* Video Section */}
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#1F1F1F]">
               <VideoWithPoster src="https://dl.dropboxusercontent.com/scl/fi/5nkej365moh8mpxvzegoa/0224-1.mov?rlkey=gtjon9b8isp2mrwr7rlhjq8h1&st=5ybwr0a4" />
+            </div>
+            {/* Feature badges — moved from above button to under video */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080] mt-8">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+                <span>Verified contracts & clean deal rooms</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+                <span>DocuSign lock-in with gated info</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+                <span>Deal board for documents + milestones</span>
+              </div>
             </div>
           </div>
         </div>

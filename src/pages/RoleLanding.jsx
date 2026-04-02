@@ -16,8 +16,8 @@ export default function RoleLanding() {
           <h1 className="text-4xl md:text-5xl font-light text-[#FAFAFA] mb-4">
             Welcome to <span className="text-[#E3C567]">Investor Konnect</span>
           </h1>
-          <p className="text-lg text-[#808080]">
-            Pick how you want to get started.
+          <p className="text-lg text-[#808080] max-w-2xl mx-auto">
+            A trusted platform matching real estate investors with vetted agents for seamless, confident transactions
           </p>
         </div>
 
@@ -56,7 +56,7 @@ export default function RoleLanding() {
               </div>
 
               <div className="inline-flex items-center gap-2 text-[#E3C567] font-semibold group-hover:gap-3 transition-all">
-                <span>Get Started as Investor</span>
+                <span>Build Investor Profile</span>
                 <span className="text-xl">→</span>
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function RoleLanding() {
               </div>
 
               <div className="inline-flex items-center gap-2 text-[#E3C567] font-semibold group-hover:gap-3 transition-all">
-                <span>Get Started as Agent</span>
+                <span>Build Agent Profile</span>
                 <span className="text-xl">→</span>
               </div>
             </div>
