@@ -84,14 +84,33 @@ Deno.serve(async (req) => {
       }
 
       const userInfo = await userInfoResp.json();
-      const account = userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
-      if (!account) {
+      const accounts = userInfo.accounts || [];
+
+      if (!accounts.length) {
         return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=error&message=${encodeURIComponent('No DocuSign account found')}";</script></body></html>`, {
           headers: { 'Content-Type': 'text/html' },
         });
       }
 
-      console.log(`[docusignCallback] Account: ${account.account_id}, base_uri: ${account.base_uri}`);
+      // If multiple accounts — redirect to admin with account picker instead of auto-selecting
+      if (accounts.length > 1) {
+        const accountsParam = encodeURIComponent(JSON.stringify(accounts.map(a => ({
+          account_id: a.account_id,
+          account_name: a.account_name,
+          base_uri: a.base_uri,
+          is_default: a.is_default,
+        }))));
+        const accessTokenParam = encodeURIComponent(tokens.access_token);
+        const refreshTokenParam = encodeURIComponent(tokens.refresh_token || '');
+        const expiresParam = encodeURIComponent(new Date(Date.now() + tokens.expires_in * 1000).toISOString());
+        return new Response(`<html><body><script>window.location.href="${publicUrl}/Admin?docusign=select_account&accounts=${accountsParam}&access_token=${accessTokenParam}&refresh_token=${refreshTokenParam}&expires_at=${expiresParam}";</script></body></html>`, {
+          headers: { 'Content-Type': 'text/html' },
+        });
+      }
+
+      // Single account — proceed as before
+      const account = accounts[0];
+      console.log(`[docusignCallback] Single account found: ${account.account_id}, base_uri: ${account.base_uri}`);
 
       // Use service role to manage connections (GET requests don't have user auth token)
       const base44 = createClientFromRequest(req);
@@ -180,10 +199,28 @@ Deno.serve(async (req) => {
     }
 
     const userInfo = await userInfoResp.json();
-    const account = userInfo.accounts?.find(a => a.is_default) || userInfo.accounts?.[0];
-    if (!account) {
+    const accounts = userInfo.accounts || [];
+    if (!accounts.length) {
       return Response.json({ error: 'No DocuSign account found' }, { status: 400 });
     }
+
+    // If multiple accounts, return them all so the caller can pick
+    if (accounts.length > 1) {
+      return Response.json({
+        select_account: true,
+        accounts: accounts.map(a => ({
+          account_id: a.account_id,
+          account_name: a.account_name,
+          base_uri: a.base_uri,
+          is_default: a.is_default,
+        })),
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token || '',
+        expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+      });
+    }
+
+    const account = accounts[0];
 
     const existing = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 10);
     for (const conn of existing) {

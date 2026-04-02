@@ -87,6 +87,8 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
+    // Always force login screen — prevents auto-connecting to cached/wrong account
+    authUrl.searchParams.set('prompt', 'login');
 
     console.log(`[docusignConnect] Auth URL generated with PKCE, redirect_uri=${redirectUri}`);
     return Response.json({ authUrl: authUrl.toString() });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,53 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
   const [adminEmail, setAdminEmail] = useState("");
   const [processing, setProcessing] = useState({});
   const [connectingDocusign, setConnectingDocusign] = useState(false);
+  const [pendingAccounts, setPendingAccounts] = useState(null);
+  const [pendingTokens, setPendingTokens] = useState(null);
+  const [selectingAccount, setSelectingAccount] = useState(false);
+
+  // Check URL params on mount — DocuSign may have redirected back with account list
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('docusign') === 'select_account') {
+      try {
+        const accounts = JSON.parse(decodeURIComponent(params.get('accounts') || '[]'));
+        const access_token = decodeURIComponent(params.get('access_token') || '');
+        const refresh_token = decodeURIComponent(params.get('refresh_token') || '');
+        const expires_at = decodeURIComponent(params.get('expires_at') || '');
+        if (accounts.length && access_token) {
+          setPendingAccounts(accounts);
+          setPendingTokens({ access_token, refresh_token, expires_at });
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      } catch (_) {}
+    }
+  }, []);
+
+  const selectDocusignAccount = async (account) => {
+    setSelectingAccount(true);
+    try {
+      const res = await base44.functions.invoke('finalizeDocusignAccount', {
+        account_id: account.account_id,
+        account_name: account.account_name,
+        base_uri: account.base_uri,
+        access_token: pendingTokens.access_token,
+        refresh_token: pendingTokens.refresh_token,
+        expires_at: pendingTokens.expires_at,
+      });
+      if (res.data?.ok) {
+        toast.success(`Connected to ${account.account_name || account.account_id}`);
+        setPendingAccounts(null);
+        setPendingTokens(null);
+        onReload();
+      } else {
+        toast.error(res.data?.error || 'Failed to connect account');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSelectingAccount(false);
+    }
+  };
 
   const grantAdmin = async () => {
     if (!adminEmail) { toast.error("Enter an email"); return; }
@@ -124,6 +171,46 @@ export default function AdminSettingsTab({ docusignConnection, onReload }) {
           </Button>
         </div>
       </div>
+
+      {/* DocuSign Account Picker — shows when multiple accounts are returned */}
+      {pendingAccounts && pendingAccounts.length > 0 && (
+        <div className="rounded-xl p-4 bg-[#E3C567]/5 border border-[#E3C567]/30">
+          <h3 className="text-sm font-semibold text-[#E3C567] mb-1">Choose DocuSign Account</h3>
+          <p className="text-xs text-[#808080] mb-3">
+            Multiple accounts found. Select which account to use for sending agreements.
+          </p>
+          <div className="space-y-2">
+            {pendingAccounts.map(account => (
+              <button
+                key={account.account_id}
+                onClick={() => selectDocusignAccount(account)}
+                disabled={selectingAccount}
+                className="w-full text-left rounded-lg px-4 py-3 border border-[rgba(255,255,255,0.08)] hover:border-[#E3C567]/50 hover:bg-[#E3C567]/5 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-[#FAFAFA]">
+                      {account.account_name || account.account_id}
+                    </p>
+                    <p className="text-xs text-[#808080]">ID: {account.account_id}</p>
+                  </div>
+                  {account.is_default && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#808080]/15 text-[#808080]">
+                      Default
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => { setPendingAccounts(null); setPendingTokens(null); }}
+            className="mt-3 text-xs text-[#808080] hover:text-[#FAFAFA]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* DocuSign */}
       <div className="rounded-xl p-5" style={cardStyle}>
