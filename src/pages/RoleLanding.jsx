@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { createPageUrl } from "@/components/utils";
 import { Logo } from "@/components/Logo";
@@ -7,6 +7,14 @@ import { base44 } from "@/api/base44Client";
 
 export default function RoleLanding() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If accessed via /RoleLanding, redirect to clean root URL
+  useEffect(() => {
+    if (location.pathname === "/RoleLanding") {
+      navigate("/", { replace: true });
+    }
+  }, [location.pathname]);
 
   // If user is already logged in, skip the role selection and route them through PostAuth
   useEffect(() => {
