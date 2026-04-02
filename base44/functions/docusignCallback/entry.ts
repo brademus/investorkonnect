@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       }
 
       const userInfo = await userInfoResp.json();
-      const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
+      const TARGET_ACCOUNT_ID = '53059568-7c24-44a5-a572-60fa2e958827';
       console.log('[docusignCallback] Available accounts:', JSON.stringify(userInfo.accounts?.map(a => ({ id: a.account_id, name: a.account_name, is_default: a.is_default }))));
       const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID);
       if (!account) {
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
     }
 
     const userInfo = await userInfoResp.json();
-    const TARGET_ACCOUNT_ID = '96a92c40-b88f-47a4-b9fa-01bf9208961e';
+    const TARGET_ACCOUNT_ID = '53059568-7c24-44a5-a572-60fa2e958827';
     console.log('[docusignCallback] POST Available accounts:', JSON.stringify(userInfo.accounts?.map(a => ({ id: a.account_id, name: a.account_name, is_default: a.is_default }))));
     const account = userInfo.accounts?.find(a => a.account_id === TARGET_ACCOUNT_ID);
     if (!account) {
