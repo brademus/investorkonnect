@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { createPageUrl } from "@/components/utils";
 import { Logo } from "@/components/Logo";
 import { TrendingUp, Users } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function RoleLanding() {
   const navigate = useNavigate();
@@ -16,18 +16,13 @@ export default function RoleLanding() {
     }
   }, [location.pathname]);
 
-  // If user is already logged in, skip the role selection and route them through PostAuth
+  // If user is already logged in, skip role selection — reuse AuthContext state (no extra API call)
+  const { isAuthenticated, isLoadingAuth } = useAuth();
   useEffect(() => {
-    let mounted = true;
-    base44.auth.isAuthenticated()
-      .then(authed => {
-        if (mounted && authed) {
-          navigate(createPageUrl("PostAuth"), { replace: true });
-        }
-      })
-      .catch(() => {});
-    return () => { mounted = false; };
-  }, []);
+    if (!isLoadingAuth && isAuthenticated) {
+      navigate(createPageUrl("PostAuth"), { replace: true });
+    }
+  }, [isLoadingAuth, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center px-4">

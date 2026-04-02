@@ -61,25 +61,26 @@ function LayoutContent({ children }) {
     }
   }, [error]);
 
-  // If we already have cached profile data (e.g. from sessionStorage), skip the loader entirely
+  // Skip the full-screen loader on landing/public pages and when we have cached data
   const [showAppLoader, setShowAppLoader] = useState(() => {
-    // If hook already resolved from cache, no loader needed
     if (!loading) return false;
-    // If we have a user in the initial state (from sessionStorage cache), skip loader
     if (user) return false;
+    // Don't block render on public/landing pages — they don't need profile data
+    const path = window.location.pathname;
+    const publicPaths = ['/', '/RoleLanding', '/InvestorLanding', '/AgentLanding'];
+    if (publicPaths.includes(path)) return false;
     return true;
   });
   useEffect(() => {
     if (!loading) {
-      const t = setTimeout(() => setShowAppLoader(false), 50);
-      return () => clearTimeout(t);
+      setShowAppLoader(false);
     }
   }, [loading]);
 
-  // Safety timeout: never block the UI for more than 2.5 seconds
+  // Safety timeout: never block the UI for more than 1.2 seconds
   useEffect(() => {
     if (!showAppLoader) return;
-    const t = setTimeout(() => setShowAppLoader(false), 2500);
+    const t = setTimeout(() => setShowAppLoader(false), 1200);
     return () => clearTimeout(t);
   }, []);
 
