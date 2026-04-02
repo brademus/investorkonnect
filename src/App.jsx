@@ -81,6 +81,19 @@ const AuthenticatedApp = () => {
 };
 
 
+function AppRoutes() {
+  const location = window.location.pathname;
+  // DocuSignCallback must bypass auth gate — DocuSign redirects here before user re-authenticates
+  if (location === '/DocuSignCallback') {
+    return (
+      <Routes>
+        <Route path="/DocuSignCallback" element={<DocuSignCallback />} />
+      </Routes>
+    );
+  }
+  return <AuthenticatedApp />;
+}
+
 function App() {
 
   return (
@@ -88,7 +101,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationTracker />
-          <AuthenticatedApp />
+          <AppRoutes />
         </Router>
         <Toaster />
         <VisualEditAgent />

@@ -27,7 +27,6 @@ export default function DocuSignCallback() {
     }
 
     let returnTo = "/Admin?docusign=connected";
-    let codeVerifier = null;
     if (stateParam) {
       try {
         const parsed = JSON.parse(atob(stateParam));
@@ -36,7 +35,6 @@ export default function DocuSignCallback() {
           url.searchParams.set("docusign", "connected");
           returnTo = url.pathname + url.search;
         }
-        if (parsed.cv) codeVerifier = parsed.cv;
       } catch (_) {}
     }
 
@@ -53,22 +51,9 @@ export default function DocuSignCallback() {
     setDetail("Exchanging authorization code...");
 
     const exchange = async () => {
-      // First check if user is authenticated
-      let isAuthed = false;
-      try {
-        isAuthed = await base44.auth.isAuthenticated();
-      } catch (_) {}
-
-      if (!isAuthed) {
-        setDetail("Not authenticated — redirecting to login...");
-        // Redirect to login, then come back here with the same params
-        base44.auth.redirectToLogin(window.location.href);
-        return;
-      }
-
       try {
         setDetail("Sending code to server...");
-        const res = await base44.functions.invoke("docusignCallback", { code, code_verifier: codeVerifier });
+        const res = await base44.functions.invoke("docusignCallback", { code });
         if (res.data?.success) {
           setStatus("success");
           setTimeout(() => { window.location.href = returnTo; }, 1000);

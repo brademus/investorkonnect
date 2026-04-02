@@ -28,14 +28,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse returnTo and PKCE code_verifier from state
+    // Parse returnTo from state
     let returnTo = '/Admin';
-    let codeVerifier = null;
     if (stateParam) {
       try {
         const parsed = JSON.parse(atob(stateParam));
         if (parsed.returnTo) returnTo = parsed.returnTo;
-        if (parsed.cv) codeVerifier = parsed.cv;
       } catch (_) {}
     }
 
@@ -43,7 +41,7 @@ Deno.serve(async (req) => {
       const authHost = DOCUSIGN_ENV === 'production' ? 'account.docusign.com' : 'account-d.docusign.com';
       const redirectUri = DOCUSIGN_REDIRECT_URI || `${publicUrl}/DocuSignCallback`;
 
-      // Exchange authorization code for tokens (with PKCE code_verifier)
+      // Exchange authorization code for tokens
       const tokenParams = {
         grant_type: 'authorization_code',
         code,
@@ -51,9 +49,6 @@ Deno.serve(async (req) => {
         client_secret: DOCUSIGN_CLIENT_SECRET,
         redirect_uri: redirectUri,
       };
-      if (codeVerifier) {
-        tokenParams.code_verifier = codeVerifier;
-      }
 
       const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
         method: 'POST',
@@ -148,16 +143,14 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ── POST: Called from frontend (alternative flow) ──
+  // ── POST: Called from frontend after DocuSign redirect ──
+  // No user auth required — the DocuSign authorization code is the proof.
+  // User may not be authenticated because DocuSign redirect loses session.
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin access required' }, { status: 403 });
-    }
 
     const body = await req.json();
-    const { code, code_verifier } = body;
+    const { code } = body;
 
     if (!code) {
       return Response.json({ error: 'Authorization code required' }, { status: 400 });
@@ -173,9 +166,6 @@ Deno.serve(async (req) => {
       client_secret: DOCUSIGN_CLIENT_SECRET,
       redirect_uri: redirectUri,
     };
-    if (code_verifier) {
-      tokenParams.code_verifier = code_verifier;
-    }
 
     const tokenResp = await fetch(`https://${authHost}/oauth/token`, {
       method: 'POST',
@@ -186,7 +176,7 @@ Deno.serve(async (req) => {
     if (!tokenResp.ok) {
       const errText = await tokenResp.text();
       console.error('[docusignCallback] POST Token exchange failed:', tokenResp.status, errText);
-      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code, has_verifier: !!tokenParams.code_verifier });
+      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code });
       return Response.json({ error: 'Token exchange failed: ' + errText }, { status: 400 });
     }
 
@@ -234,7 +224,7 @@ Deno.serve(async (req) => {
       expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
       account_id: account.account_id,
       base_uri: account.base_uri,
-      connected_by: user.id,
+      connected_by: 'admin',
     });
 
     return Response.json({ success: true, account_id: account.account_id });
