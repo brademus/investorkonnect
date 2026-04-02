@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const profile = Array.isArray(profiles) ? profiles[0] : profiles?.data?.[0];
 
     // Bypass: auto-approve whitelisted test accounts
-    const BYPASS_EMAILS = ['bryceheller922+gnuren@gmail.com', 'bryceheller922+skdukjnsu@gmail.com', 'bryceheller922+sfeessdf@gmail.com', 'bryceheller922+qedcsdw@gmail.com', 'bryceheller922+vgcfrrfchg@gmail.com', 'bryceheller922+sjdvfsdcfsd@gmail.com', 'bryceheller922+isdvsievn@gmail.com', 'bryceheller922+jgcdzf@gmail.com', 'bryceheller922+skdusbu@gmail.com', 'bryceheller922+skfvxdusu@gmail.com', 'bryceheller922+uihiub@gmail.com', 'bryceheller922+cksdjcnsd@gmail.com', 'bryceheller922+vgcfrrasfchg@gmail.com'];
+    const BYPASS_EMAILS = ['bryceheller922+gnuren@gmail.com', 'bryceheller922+skdukjnsu@gmail.com', 'bryceheller922+sfeessdf@gmail.com', 'bryceheller922+qedcsdw@gmail.com', 'bryceheller922+vgcfrrfchg@gmail.com', 'bryceheller922+sjdvfsdcfsd@gmail.com', 'bryceheller922+isdvsievn@gmail.com', 'bryceheller922+jgcdzf@gmail.com', 'bryceheller922+skdusbu@gmail.com', 'bryceheller922+skfvxdusu@gmail.com', 'bryceheller922+uihiub@gmail.com', 'bryceheller922+cksdjcnsd@gmail.com', 'bryceheller922+vgcfrrasfchg@gmail.com', 'bryceheller922+vgcfrrfnchg@gmail.com'];
     if (BYPASS_EMAILS.includes((user.email || '').toLowerCase().trim())) {
       console.log(`[createStripeIdentitySession] Bypass verification for ${user.email}`);
       if (profile?.id) {
