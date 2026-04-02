@@ -185,7 +185,8 @@ Deno.serve(async (req) => {
 
     if (!tokenResp.ok) {
       const errText = await tokenResp.text();
-      console.error('[docusignCallback] POST Token exchange failed:', errText);
+      console.error('[docusignCallback] POST Token exchange failed:', tokenResp.status, errText);
+      console.error('[docusignCallback] Token params (sans secret):', { grant_type: tokenParams.grant_type, redirect_uri: tokenParams.redirect_uri, has_code: !!tokenParams.code, has_verifier: !!tokenParams.code_verifier });
       return Response.json({ error: 'Token exchange failed: ' + errText }, { status: 400 });
     }
 

@@ -41,6 +41,14 @@ export default function DocuSignCallback() {
         if (res.data?.success) {
           setStatus("success");
           setTimeout(() => { window.location.href = returnTo; }, 1000);
+        } else if (res.data?.select_account) {
+          // Multiple accounts — redirect to admin with account picker params
+          const accountsParam = encodeURIComponent(JSON.stringify(res.data.accounts));
+          const atParam = encodeURIComponent(res.data.access_token);
+          const rtParam = encodeURIComponent(res.data.refresh_token || '');
+          const expParam = encodeURIComponent(res.data.expires_at || '');
+          setStatus("success");
+          window.location.href = `/Admin?docusign=select_account&accounts=${accountsParam}&access_token=${atParam}&refresh_token=${rtParam}&expires_at=${expParam}`;
         } else {
           setStatus("error");
           setError(res.data?.error || "Connection failed");
