@@ -17,6 +17,7 @@ export default function AgentVideo() {
   const [videoStarted, setVideoStarted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   // Track the maximum time the user has legitimately reached (no skipping ahead)
   const maxReachedTimeRef = useRef(0);
@@ -54,8 +55,8 @@ export default function AgentVideo() {
     const ct = video.currentTime;
     const dur = video.duration || 0;
 
-    // Allow a small tolerance of 1.5 seconds for natural playback buffering
-    if (ct > maxReachedTimeRef.current + 1.5) {
+    // Allow a generous tolerance of 3 seconds so buffering doesn't trigger a snap-back
+    if (ct > maxReachedTimeRef.current + 3) {
       video.currentTime = maxReachedTimeRef.current;
     } else {
       maxReachedTimeRef.current = Math.max(maxReachedTimeRef.current, ct);
@@ -63,6 +64,7 @@ export default function AgentVideo() {
 
     setCurrentTime(video.currentTime);
     setDuration(dur);
+    setIsBuffering(false);
   };
 
   const handleEnded = async () => {
@@ -84,8 +86,30 @@ export default function AgentVideo() {
   const handleSeeking = () => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.currentTime > maxReachedTimeRef.current + 1.5) {
+    if (video.currentTime > maxReachedTimeRef.current + 3) {
       video.currentTime = maxReachedTimeRef.current;
+    }
+  };
+
+  // Handle buffering / stall recovery
+  const handleWaiting = () => setIsBuffering(true);
+  const handlePlaying = () => setIsBuffering(false);
+  const handleStalled = () => {
+    // If the video stalls, try to nudge it to resume
+    const video = videoRef.current;
+    if (video && !video.paused) {
+      setIsBuffering(true);
+    }
+  };
+  const handleError = () => {
+    // On a network error mid-stream, try to reload from where we left off
+    const video = videoRef.current;
+    if (video && maxReachedTimeRef.current > 0) {
+      const savedTime = maxReachedTimeRef.current;
+      setIsBuffering(true);
+      video.load();
+      video.currentTime = savedTime;
+      video.play().catch(() => {});
     }
   };
 
@@ -121,10 +145,15 @@ export default function AgentVideo() {
           <video
             ref={videoRef}
             src={VIDEO_URL}
+            preload="auto"
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleEnded}
             onSeeking={handleSeeking}
-            onPlay={() => setVideoStarted(true)}
+            onPlay={() => { setVideoStarted(true); setIsBuffering(false); }}
+            onPlaying={handlePlaying}
+            onWaiting={handleWaiting}
+            onStalled={handleStalled}
+            onError={handleError}
             onLoadedMetadata={() => {
               if (videoRef.current) setDuration(videoRef.current.duration);
             }}
@@ -135,6 +164,13 @@ export default function AgentVideo() {
             className="w-full aspect-video bg-black"
             style={{ outline: "none" }}
           />
+
+          {/* Buffering indicator */}
+          {isBuffering && videoStarted && !videoEnded && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+              <div className="w-12 h-12 border-4 border-[#E3C567]/30 border-t-[#E3C567] rounded-full animate-spin" />
+            </div>
+          )}
 
           {/* Overlay when not started */}
           {!videoStarted && !videoEnded && (
