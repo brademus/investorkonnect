@@ -26,9 +26,15 @@ function NDAContent() {
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
   const isAgent = profile?.user_role === 'agent';
+  const refreshedRef = React.useRef(false);
 
   useEffect(() => {
     document.title = "NDA Required - Investor Konnect";
+    // Force fresh profile data on mount to avoid stale KYC cache from previous page
+    if (!refreshedRef.current) {
+      refreshedRef.current = true;
+      refresh();
+    }
   }, []);
 
   useEffect(() => {

@@ -28,7 +28,7 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, onboarded, role: hookRole, isTeamMember, teamOwnerId } = useCurrentProfile();
+  const { profile, loading, onboarded, role: hookRole, isTeamMember, teamOwnerId, refresh: refreshProfile } = useCurrentProfile();
   const [helpOpen, setHelpOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [teamRole, setTeamRole] = useState(null); // 'admin' | 'viewer' | null
@@ -39,6 +39,15 @@ function PipelineContent() {
   const isViewerOnly = false; // Members have full control over their own deals
   const isTeamAdmin = teamRole === 'admin';
   const isTeamMemberRole = teamRole === 'member' || teamRole === 'viewer';
+
+  // Force fresh profile data on mount to avoid stale cache from previous gate pages
+  const refreshedRef = useRef(false);
+  useEffect(() => {
+    if (!refreshedRef.current) {
+      refreshedRef.current = true;
+      refreshProfile();
+    }
+  }, []);
 
   // Gating — wait for auth to fully resolve before redirecting anywhere
   const gateRef = useRef(false);
