@@ -166,6 +166,7 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
             <tr className="text-left" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">User</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">License #</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Onboarded</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">NDA</th>
 
@@ -192,6 +193,9 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                     <Badge className="capitalize text-xs bg-[rgba(255,255,255,0.06)] text-[#FAFAFA] border border-[rgba(255,255,255,0.08)]">
                       {profile.user_role || profile.user_type || "—"}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/70">
+                    {profile.agent?.license_number || profile.license_number || "—"}
                   </td>
                   <td className="px-4 py-3.5">
                     {profile.onboarding_completed_at ? (
