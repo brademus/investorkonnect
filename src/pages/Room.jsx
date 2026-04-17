@@ -20,6 +20,8 @@ import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { notificationEvents } from "@/components/utils/notificationEvents";
+import MobileRoomList from "@/components/mobile/MobileRoomList";
+import MobileRoomShell from "@/components/mobile/MobileRoomShell";
 
 
 
@@ -561,7 +563,71 @@ export default function Room() {
   }, [rooms]);
 
   return (
-    <div className="fixed inset-0 bg-transparent flex overflow-hidden">
+    <>
+    {/* Mobile */}
+    <div className="md:hidden fixed inset-0 bg-black flex flex-col">
+      {!roomId ? (
+        <MobileRoomList
+          rooms={filteredRooms}
+          userRole={profile?.user_role}
+          search={search}
+          onSearchChange={setSearch}
+          onRoomClick={(r) => {
+            const cachedDeal = r.deal_id ? getCachedDeal(r.deal_id) : null;
+            setCurrentRoom({
+              id: r.id, deal_id: r.deal_id, city: r.city, state: r.state,
+              budget: r.budget, estimated_list_price: r.estimated_list_price || null,
+              is_fully_signed: r.is_fully_signed,
+              title: r.title, property_address: r.property_address,
+              counterparty_name: r.counterparty_name, counterparty_headshot: r.counterparty_headshot,
+              request_status: r.request_status, agreement_status: r.agreement_status,
+              investorId: r.investorId, agent_ids: r.agent_ids || [],
+              locked_agent_id: r.agentId || null,
+              proposed_terms: r.proposed_terms, agent_terms: r.agent_terms,
+              files: r.files || [], photos: r.photos || [],
+            });
+            if (cachedDeal) setDeal(cachedDeal); else setDeal(null);
+            setRoomLoading(true);
+            setPendingInvites([]);
+            setSelectedInvite(null);
+            navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+          }}
+        />
+      ) : (
+        <MobileRoomShell
+          roomId={roomId}
+          currentRoom={currentRoom}
+          deal={deal}
+          profile={profile}
+          user={user}
+          isAgent={isAgent}
+          isInvestor={isInvestor}
+          isSigned={isSigned}
+          isChatEnabled={isChatEnabled}
+          roomLoading={roomLoading}
+          pendingInvites={pendingInvites}
+          selectedInvite={selectedInvite}
+          hasWalkthroughAppt={hasWalkthroughAppt}
+          walkthroughModalOpen={walkthroughModalOpen}
+          setWalkthroughModalOpen={setWalkthroughModalOpen}
+          onBack={() => navigate(createPageUrl("Room"))}
+          onInvestorSigned={async () => {
+            if (!currentRoom?.deal_id) return;
+            try {
+              await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
+              queryClient.invalidateQueries({ queryKey: ['rooms'] });
+            } catch (e) { console.error('[Room] Invite creation failed:', e); }
+          }}
+          patchDeal={patchDeal}
+          counterpartName={counterpartName}
+          roomSellerComp={roomSellerComp}
+          unreadMsgCount={unreadMsgCount}
+          onSelectPendingInvite={setSelectedInvite}
+        />
+      )}
+    </div>
+    {/* Desktop */}
+    <div className="hidden md:flex fixed inset-0 bg-transparent overflow-hidden">
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 w-[320px] bg-[#0D0D0D] border-r border-[#1F1F1F] z-40 transform transition-transform shadow-xl ${drawer ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}>
         <RoomSidebar
@@ -821,5 +887,6 @@ export default function Room() {
         </div>
       </div>
     </div>
+    </>
   );
 }

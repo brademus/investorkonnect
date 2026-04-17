@@ -23,6 +23,7 @@ import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
 import NotificationBell from "@/components/NotificationBell";
 import MessagesBell from "@/components/MessagesBell";
 import TeamInviteBanner from "@/components/team/TeamInviteBanner";
+import MobilePipeline from "@/components/mobile/MobilePipeline";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -316,7 +317,32 @@ function PipelineContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="h-screen flex flex-col pt-4 relative">
+
+      {/* Mobile view */}
+      <div className="md:hidden">
+        <MobilePipeline
+          deals={deals}
+          dealsByStage={dealsByStage}
+          pipelineStages={pipelineStages}
+          profile={profile}
+          isAgent={isAgent}
+          isInvestor={isInvestor}
+          isViewerOnly={isViewerOnly}
+          wtStatusMap={wtStatusMap}
+          navigating={navigating}
+          onDealClick={handleDealClick}
+          onStageChange={async (dealId, newStage) => {
+            await base44.entities.Deal.update(dealId, { pipeline_stage: newStage });
+            refetchDeals();
+          }}
+          onNewDeal={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }}
+          onOpenHelp={() => setHelpOpen(true)}
+          setupDone={setupDone}
+        />
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden md:flex md:flex-col h-screen pt-4 relative">
         {/* Background handled by global Layout */}
 
         <div className="flex-1 overflow-auto px-6 md:px-8 pb-8 relative z-[1]">

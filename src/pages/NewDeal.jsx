@@ -683,7 +683,7 @@ export default function NewDeal() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent py-8 px-6">
+    <div className="min-h-screen bg-transparent py-8 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -729,8 +729,8 @@ export default function NewDeal() {
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="col-span-2 md:col-span-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">City *</label>
                 <Input
                   value={city}
@@ -760,17 +760,18 @@ export default function NewDeal() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Contract Price *</label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                   <Input
-                    type="text"
-                    value={purchasePrice}
-                    onChange={(e) => setPurchasePrice(e.target.value)}
-                    placeholder="250000"
-                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                  type="text"
+                  inputMode="decimal"
+                  value={purchasePrice}
+                  onChange={(e) => setPurchasePrice(e.target.value)}
+                  placeholder="250000"
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
                   />
                 </div>
               </div>
@@ -781,11 +782,12 @@ export default function NewDeal() {
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                   <Input
-                    type="text"
-                    value={estimatedListPrice}
-                    onChange={(e) => setEstimatedListPrice(e.target.value)}
-                    placeholder="280000"
-                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                  type="text"
+                  inputMode="decimal"
+                  value={estimatedListPrice}
+                  onChange={(e) => setEstimatedListPrice(e.target.value)}
+                  placeholder="280000"
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
                   />
                 </div>
               </div>
@@ -984,12 +986,13 @@ export default function NewDeal() {
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                 <Input
-                  type="text"
-                  value={earnestMoney}
-                  onChange={(e) => setEarnestMoney(e.target.value)}
-                  placeholder="5000"
-                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
-                />
+                   type="text"
+                   inputMode="decimal"
+                   value={earnestMoney}
+                   onChange={(e) => setEarnestMoney(e.target.value)}
+                   placeholder="5000"
+                   className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                 />
               </div>
             </div>
 
@@ -1206,7 +1209,7 @@ export default function NewDeal() {
                             </button>
                           </div>
                         )}
-                        <div className="grid grid-cols-3 gap-4 max-w-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-lg">
                           <div>
                             <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
                               {walkthroughSlots.length === 1 ? "Proposed Date" : "Date"}
@@ -1282,11 +1285,11 @@ export default function NewDeal() {
         </div>
 
         {/* Continue Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end sticky bottom-0 bg-[#0D0D0D] py-4 -mx-6 px-6 md:static md:bg-transparent md:py-0 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
           <Button
             onClick={handleContinue}
             disabled={submitting}
-            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 font-semibold"
+            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 font-semibold w-full md:w-auto"
           >
             {submitting ? "Saving..." : "Continue to Contract Verification"}
             {!submitting && <ArrowRight className="w-4 h-4 ml-2" />}

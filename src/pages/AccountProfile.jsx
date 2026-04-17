@@ -727,7 +727,7 @@ function AccountProfileContent() {
                 </div>
 
                 {/* Experience & Deals */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="experience_years" className="text-[#FAFAFA]">Years of Experience</Label>
                     <Input
@@ -864,7 +864,7 @@ function AccountProfileContent() {
             </div>
 
             {/* Submit */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-[#111114] py-4 -mx-8 px-8 md:static md:bg-transparent md:py-4 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0 border-t border-[#1F1F1F] md:border-0">
               <Button
                 type="submit"
                 disabled={saving || (formData.role === 'agent' && countyChecking)}

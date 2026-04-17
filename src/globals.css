@@ -559,6 +559,15 @@ html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
   background-color: #0c0c0e;
 }
 
+/* Prevent iOS auto-zoom on focused inputs */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Safe area padding helpers */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
   /* Utility shorthands */
   @layer utilities {
   .ik-text-muted { color: hsl(0 0% 45%); }

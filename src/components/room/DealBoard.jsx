@@ -376,7 +376,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
                  };
                 return (
                   <div key={stage.id}>
-                    <button onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] transition-colors cursor-pointer">
+                    <button onClick={handleStageClick} className="flex items-center gap-3 w-full text-left p-2 rounded-lg hover:bg-[#141414] active:bg-[#141414] transition-colors cursor-pointer">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#E3C567] ring-2 ring-[#E3C567] ring-offset-2 ring-offset-[#111114]' : isPast ? 'bg-[#2D8A6E]' : 'bg-[#1F1F1F]'}`}>
                         <span className="text-sm font-bold text-white">{isPast ? '✓' : stage.order}</span>
                       </div>
