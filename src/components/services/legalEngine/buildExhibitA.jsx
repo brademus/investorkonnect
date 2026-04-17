@@ -1,37 +1,9 @@
-import { loadLegalPackSync } from './loadPack';
-import { EvaluationResult } from './evaluateRules';
-
-export interface ExhibitAInput {
-  compensation_model: 'FLAT_FEE' | 'COMMISSION_PCT' | 'NET_SPREAD';
-  flat_fee_amount?: number;
-  commission_percentage?: number;
-  net_target?: number;
-  transaction_type: string;
-  buyer_commission_type?: string;
-  buyer_commission_amount?: number;
-  seller_commission_type?: string;
-  seller_commission_amount?: number;
-  agreement_length_days: number;
-  termination_notice_days: number;
-}
-
-export interface ExhibitAResult {
-  terms: any;
-  converted: boolean;
-  error?: string;
-}
-
-export function buildExhibitA(
-  input: ExhibitAInput,
-  evaluation: EvaluationResult,
-  isLegacy = false
-): ExhibitAResult {
+export function buildExhibitA(input, evaluation, isLegacy = false) {
   const net_policy = evaluation.net_policy;
   
   let terms = { ...input };
   let converted = false;
   
-  // STRICT NET POLICY ENFORCEMENT
   if (net_policy === 'BANNED' && input.compensation_model === 'NET_SPREAD') {
     if (!isLegacy) {
       const state = evaluation.selected_rule_id.split('_')[0];
@@ -42,7 +14,6 @@ export function buildExhibitA(
       };
     }
     
-    // Legacy conversion
     terms.compensation_model = 'FLAT_FEE';
     terms.flat_fee_amount = input.net_target || input.flat_fee_amount || 0;
     terms.converted_from_net = true;
@@ -50,7 +21,6 @@ export function buildExhibitA(
     delete terms.net_target;
   }
   
-  // Validation
   if (!terms.compensation_model || !terms.transaction_type) {
     return {
       terms,
