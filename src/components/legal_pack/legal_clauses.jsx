@@ -1,4 +1,4 @@
-{
+const clauses = {
   "clauses": {
     "A_AGENCY_STD": {
       "id": "A_AGENCY_STD",
@@ -19,18 +19,14 @@
       "category": "B",
       "title": "Net Listing Prohibition",
       "text": "Net listings are prohibited in this jurisdiction. All compensation shall be structured as either a flat fee or percentage of purchase price.",
-      "dependencies": [
-        { "type": "net_policy", "value": "BANNED" }
-      ]
+      "dependencies": [{ "type": "net_policy", "value": "BANNED" }]
     },
     "B_NET_RESTR": {
       "id": "B_NET_RESTR",
       "category": "B",
       "title": "Net Listing Addendum Required",
       "text": "If compensation is structured as a net listing, the parties acknowledge that a separate Net Listing Addendum complying with state requirements must be executed.",
-      "dependencies": [
-        { "type": "net_policy", "value": "RESTRICTED" }
-      ]
+      "dependencies": [{ "type": "net_policy", "value": "RESTRICTED" }]
     },
     "B_NET_STD": {
       "id": "B_NET_STD",
@@ -79,9 +75,9 @@
       "category": "J",
       "title": "Philadelphia License Requirement",
       "text": "Agent warrants that they hold an active real estate license in Pennsylvania and are authorized to conduct transactions in Philadelphia County. Agent will comply with all Philadelphia-specific real estate regulations and disclosure requirements.",
-      "dependencies": [
-        { "type": "city", "value": "PHILA" }
-      ]
+      "dependencies": [{ "type": "city", "value": "PHILA" }]
     }
   }
-}
+};
+
+export default clauses;
