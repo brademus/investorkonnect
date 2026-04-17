@@ -53,6 +53,31 @@ export default function Privacy() {
               <li><strong>Signature-related information:</strong> information required to generate and route agreements for signing (e.g., signer name/email).</li>
             </ul>
 
+            <h3 className="text-lg font-semibold text-[#FAFAFA] mt-6 mb-3">Identity Verification Data</h3>
+            <p>
+              To verify user identity and comply with applicable regulations, we use Stripe Identity. During verification, Stripe Identity may collect:
+            </p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>A photo of a government-issued identification document (driver's license, passport, or state ID);</li>
+              <li>A live selfie image used to confirm the document belongs to the person submitting it;</li>
+              <li>Information extracted from your ID, such as name, date of birth, document number, and issuing authority;</li>
+              <li>Device and session metadata collected automatically during verification.</li>
+            </ul>
+            <p>
+              Stripe Identity processes this information on our behalf as a data processor, in accordance with Stripe's
+              {" "}<a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-[#E3C567] hover:underline">privacy policy</a>.
+              We receive a pass/fail verification result and limited metadata; we do not retain biometric templates.
+              Stripe retains verification data in accordance with its own retention policies and applicable law.
+              You may request deletion of your verification information by contacting us using the details in Section 12,
+              subject to legal and regulatory retention obligations.
+            </p>
+            <p>
+              If you are a resident of Illinois, California, or another jurisdiction with specific biometric or sensitive data
+              protections (such as BIPA, CCPA, or CPRA), you have additional rights regarding this data, including the right
+              to access, correct, or request deletion. Submission of verification information is voluntary, but without it we
+              cannot grant access to certain Platform features.
+            </p>
+
             <h3 className="text-lg font-semibold text-[#FAFAFA] mt-6 mb-3">B. Information collected automatically</h3>
             <p>When you use our Services, we may collect:</p>
             <ul className="list-disc pl-6 space-y-1">
@@ -90,9 +115,11 @@ export default function Privacy() {
             <ul className="list-disc pl-6 space-y-1">
               <li>Hosting and database providers (e.g., Supabase),</li>
               <li>File storage for documents and uploads,</li>
-              <li>E-signature providers (e.g., DocuSign) to route agreements and collect signatures.</li>
+              <li>E-signature providers (e.g., DocuSign) to route agreements and collect signatures,</li>
+              <li>Payment processors (e.g., Stripe) to process subscription payments and manage billing,</li>
+              <li>Identity verification providers (e.g., Stripe Identity) to verify the identity of Investors and Agents before granting access to certain Platform features.</li>
             </ul>
-            <p>These providers process data on our behalf under contractual obligations appropriate to their role.</p>
+            <p>These providers process data on our behalf under contractual obligations appropriate to their role. Each provider's use of your information is governed by its own terms and privacy policy.</p>
 
             <h3 className="text-lg font-semibold text-[#FAFAFA] mt-6 mb-3">C. For legal, compliance, and safety reasons</h3>
             <p>We may disclose information if we believe it is necessary to:</p>
