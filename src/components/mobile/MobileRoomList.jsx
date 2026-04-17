@@ -54,27 +54,27 @@ export default function MobileRoomList({ rooms, userRole, search, onSearchChange
               <button
                 key={r.id}
                 onClick={() => onRoomClick(r)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[#1F1F1F] hover:bg-[#141414] transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 border-b border-[#1F1F1F] hover:bg-[#141414] transition-colors text-left"
               >
                 {/* Avatar */}
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center flex-shrink-0">
                   {r.counterparty_headshot && isSigned ? (
                     <img src={r.counterparty_headshot} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-6 h-6 text-[#E3C567]" />
+                    <User className="w-5 h-5 text-[#E3C567]" />
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[#FAFAFA] truncate">
+                    <span className="text-sm font-semibold text-[#FAFAFA] truncate leading-tight">
                       {isSigned ? (r.counterparty_name || "Deal") : (isAgent ? `${r.city || "City"}, ${r.state || "ST"}` : (r.property_address || r.title || "Deal"))}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {price && <span className="text-xs text-[#2D8A6E] font-medium">{price}</span>}
-                    <span className="text-xs text-[#808080]">{[r.city, r.state].filter(Boolean).join(", ")}</span>
+                    {price && <span className="text-[11px] text-[#2D8A6E] font-medium">{price}</span>}
+                    <span className="text-[11px] text-[#808080]">{[r.city, r.state].filter(Boolean).join(", ")}</span>
                   </div>
                 </div>
 

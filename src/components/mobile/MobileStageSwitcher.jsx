@@ -27,7 +27,7 @@ export default function MobileStageSwitcher({ stages, activeStageId, dealsByStag
             key={stage.id}
             ref={isActive ? activeRef : null}
             onClick={() => onStageSelect(stage.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap snap-start transition-colors flex-shrink-0 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap snap-start transition-colors flex-shrink-0 ${
               isActive
                 ? "bg-[#E3C567] text-black"
                 : "bg-[#1F1F1F] text-[#808080]"

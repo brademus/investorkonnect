@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import MobileRoomHeader from "./MobileRoomHeader";
+import MobileRoomList from "./MobileRoomList";
 import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import PendingAgentsList from "@/components/PendingAgentsList";
 import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 import { normalizeStage } from "@/components/pipelineStages";
-import { Calendar, ChevronDown, ChevronUp, Shield } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Shield, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function MobileRoomShell({
@@ -15,7 +16,8 @@ export default function MobileRoomShell({
   pendingInvites, selectedInvite,
   hasWalkthroughAppt, walkthroughModalOpen, setWalkthroughModalOpen,
   onBack, onInvestorSigned, patchDeal, counterpartName, roomSellerComp,
-  unreadMsgCount, onSelectPendingInvite
+  unreadMsgCount, onSelectPendingInvite,
+  rooms, userRole, onSwitchRoom
 }) {
   const showPendingAgents = isInvestor && pendingInvites.length > 1 && !isSigned;
   const segments = [];
@@ -25,6 +27,7 @@ export default function MobileRoomShell({
 
   const [activeTab, setActiveTab] = useState("board");
   const [dealInfoOpen, setDealInfoOpen] = useState(false);
+  const [roomsDrawerOpen, setRoomsDrawerOpen] = useState(false);
 
   return (
     <>
@@ -34,15 +37,16 @@ export default function MobileRoomShell({
         isSigned={isSigned}
         isAgent={isAgent}
         onBack={onBack}
+        onOpenRoomsDrawer={() => setRoomsDrawerOpen(true)}
       />
 
       {/* Segmented control */}
-      <div className="flex gap-1 px-3 py-2 bg-[#0D0D0D] border-b border-[#1F1F1F] flex-shrink-0">
+      <div className="flex gap-1 px-2 py-1.5 bg-[#0D0D0D] border-b border-[#1F1F1F] flex-shrink-0">
         {segments.map((seg) => (
           <button
             key={seg.id}
             onClick={() => setActiveTab(seg.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               activeTab === seg.id ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"
             }`}
           >
@@ -60,7 +64,7 @@ export default function MobileRoomShell({
       <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         {/* Deal Board */}
         {activeTab === "board" && (
-          <div className="px-4 py-4 flex-1">
+          <div className="px-3 py-3 flex-1">
             <DealBoard
               deal={deal}
               room={currentRoom}
@@ -75,7 +79,7 @@ export default function MobileRoomShell({
 
         {/* Pending Agents */}
         {activeTab === "agents" && showPendingAgents && (
-          <div className="px-4 py-4 flex-1">
+          <div className="px-3 py-3 flex-1">
             <PendingAgentsList
               invites={pendingInvites}
               selectedInviteId={selectedInvite?.id}
@@ -163,6 +167,35 @@ export default function MobileRoomShell({
           if (patchDeal && deal?.id) patchDeal(deal.id, updates);
         }}
       />
+
+      {/* Rooms drawer */}
+      {roomsDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* backdrop */}
+          <div className="absolute inset-0 bg-black/60" onClick={() => setRoomsDrawerOpen(false)} />
+          {/* panel */}
+          <div className="relative w-[85%] max-w-[340px] h-full bg-[#0D0D0D] border-r border-[#1F1F1F] flex flex-col animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between h-12 px-3 border-b border-[#1F1F1F] flex-shrink-0">
+              <span className="text-sm font-semibold text-[#E3C567]">Switch Deal</span>
+              <button onClick={() => setRoomsDrawerOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#1F1F1F]">
+                <X className="w-5 h-5 text-[#FAFAFA]" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <MobileRoomList
+                rooms={rooms || []}
+                userRole={userRole}
+                search=""
+                onSearchChange={() => {}}
+                onRoomClick={(r) => {
+                  setRoomsDrawerOpen(false);
+                  onSwitchRoom(r);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

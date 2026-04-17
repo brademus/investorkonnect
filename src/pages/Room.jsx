@@ -386,7 +386,7 @@ export default function Room() {
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, profile?.user_role]);
+  }, [roomId, profile?.user_role, rooms?.length]);
 
   // Open agreement tab from URL
   useEffect(() => {
@@ -610,7 +610,7 @@ export default function Room() {
           hasWalkthroughAppt={hasWalkthroughAppt}
           walkthroughModalOpen={walkthroughModalOpen}
           setWalkthroughModalOpen={setWalkthroughModalOpen}
-          onBack={() => navigate(createPageUrl("Room"))}
+          onBack={() => navigate(createPageUrl("Pipeline"))}
           onInvestorSigned={async () => {
             if (!currentRoom?.deal_id) return;
             try {
@@ -623,6 +623,28 @@ export default function Room() {
           roomSellerComp={roomSellerComp}
           unreadMsgCount={unreadMsgCount}
           onSelectPendingInvite={setSelectedInvite}
+          rooms={filteredRooms}
+          userRole={profile?.user_role}
+          onSwitchRoom={(r) => {
+            const cachedDeal = r.deal_id ? getCachedDeal(r.deal_id) : null;
+            setCurrentRoom({
+              id: r.id, deal_id: r.deal_id, city: r.city, state: r.state,
+              budget: r.budget, estimated_list_price: r.estimated_list_price || null,
+              is_fully_signed: r.is_fully_signed,
+              title: r.title, property_address: r.property_address,
+              counterparty_name: r.counterparty_name, counterparty_headshot: r.counterparty_headshot,
+              request_status: r.request_status, agreement_status: r.agreement_status,
+              investorId: r.investorId, agent_ids: r.agent_ids || [],
+              locked_agent_id: r.agentId || null,
+              proposed_terms: r.proposed_terms, agent_terms: r.agent_terms,
+              files: r.files || [], photos: r.photos || [],
+            });
+            if (cachedDeal) setDeal(cachedDeal); else setDeal(null);
+            setRoomLoading(true);
+            setPendingInvites([]);
+            setSelectedInvite(null);
+            navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+          }}
         />
       )}
     </div>

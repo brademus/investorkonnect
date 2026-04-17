@@ -270,11 +270,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Tab Nav */}
-      <div className="rounded-[14px] p-1.5 flex gap-1.5 overflow-x-auto" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-[14px] p-1 md:p-1.5 flex gap-1 md:gap-1.5 overflow-x-auto" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)' }}>
         {tabs.map(tab => {
           const Icon = tab.icon;
           return (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-4 py-2.5 rounded-[10px] font-medium text-sm whitespace-nowrap transition-all duration-180 ${activeTab === tab.id ? 'bg-[#E3C567] text-black' : 'text-[#808080] hover:bg-[rgba(255,255,255,0.04)] hover:text-[rgba(255,255,255,0.80)]'}`} style={activeTab === tab.id ? {} : {}}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2.5 rounded-[10px] font-medium text-xs md:text-sm whitespace-nowrap transition-all duration-180 ${activeTab === tab.id ? 'bg-[#E3C567] text-black' : 'text-[#808080] hover:bg-[rgba(255,255,255,0.04)] hover:text-[rgba(255,255,255,0.80)]'}`} style={activeTab === tab.id ? {} : {}}>
               <Icon className="w-4 h-4" />{tab.label}
             </button>
           );
@@ -294,17 +294,17 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           )}
           {/* Deal Header */}
-          <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
-            <h3 className="text-2xl font-bold text-[#E3C567] mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
+          <div className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+            <h3 className="text-lg md:text-2xl font-bold text-[#E3C567] mb-1 md:mb-2">{maskAddr ? `Deal in ${[deal?.city, deal?.state].filter(Boolean).join(', ')}` : (deal?.property_address || 'Property')}</h3>
             <p className="text-sm text-[#808080] mb-3">{maskAddr ? (deal?.zip || '') : [deal?.city, deal?.state].filter(Boolean).join(', ')}</p>
             {isAgent ? (
               <>
-                <div className="text-3xl font-bold text-[#34D399] mb-1">{(deal?.estimated_list_price || room?.estimated_list_price) ? `$${(deal?.estimated_list_price || room?.estimated_list_price).toLocaleString()}` : 'Not set'}</div>
+                <div className="text-xl md:text-3xl font-bold text-[#34D399] mb-1">{(deal?.estimated_list_price || room?.estimated_list_price) ? `$${(deal?.estimated_list_price || room?.estimated_list_price).toLocaleString()}` : 'Not set'}</div>
                 <p className="text-xs text-[#808080] mb-3">Estimated List Price</p>
               </>
             ) : (
               <>
-                <div className="text-3xl font-bold text-[#34D399] mb-1">${(deal?.purchase_price || room?.budget || 0).toLocaleString()}</div>
+                <div className="text-xl md:text-3xl font-bold text-[#34D399] mb-1">${(deal?.purchase_price || room?.budget || 0).toLocaleString()}</div>
                 <p className="text-xs text-[#808080] mb-1">Contract Price</p>
                 {deal?.estimated_list_price && deal.estimated_list_price !== deal.purchase_price && (
                   <p className="text-sm text-[#808080] mb-3">Estimated List Price: <span className="text-[#E3C567] font-semibold">${deal.estimated_list_price.toLocaleString()}</span></p>
@@ -318,13 +318,13 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           </div>
 
           {/* Property Details (left) + Key Terms (right) side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
             <PropertyDetailsCard deal={localDeal || {}} />
             <KeyTermsPanel deal={localDeal || deal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} isSigned={isSigned} />
           </div>
 
           {/* Agreement actions (below, full width) — always show so fully-signed state is visible */}
-          <div data-agreement-panel className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+          <div data-agreement-panel className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
             <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={localDeal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} room={localRoom} inline />
           </div>
 
@@ -341,9 +341,9 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
           />
 
           {/* Deal Progress with inline Next Step CTA */}
-          <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
-            <h4 className="text-lg font-semibold mb-4" style={{ color: 'rgba(255,255,255,0.90)' }}>Deal Progress</h4>
-            <div className="space-y-3">
+          <div className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+            <h4 className="text-lg font-semibold mb-2 md:mb-4" style={{ color: 'rgba(255,255,255,0.90)' }}>Deal Progress</h4>
+            <div className="space-y-1.5 md:space-y-3">
               {PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(stage => {
                 const norm = normalizeStage(localDeal?.pipeline_stage);
                 const isActive = norm === stage.id;
@@ -442,7 +442,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
       {/* Photos Tab */}
       {activeTab === 'photos' && (
-        <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+        <div className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-lg font-semibold" style={{ color: 'rgba(255,255,255,0.90)' }}>Photos</h4>
             <Button onClick={() => uploadToRoom('photo')} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px]"><Plus className="w-4 h-4 mr-2" />Upload</Button>

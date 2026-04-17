@@ -61,58 +61,56 @@ export default function MobileDealCard({
   return (
     <>
       <div
-        className="rounded-2xl p-4 min-h-[100px]"
+        className="rounded-xl p-3"
         style={{
           background: "linear-gradient(180deg, #151518 0%, #111114 100%)",
           border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.40)"
+          boxShadow: "0 2px 8px rgba(0,0,0,0.30)"
         }}
         onClick={() => onDealClick(deal)}
       >
-        {/* Line 1: Address */}
-        <div className="flex justify-between items-start mb-2 gap-2">
-          <h4 className="font-semibold text-sm text-[#FAFAFA]/90 line-clamp-2">
+        {/* Line 1: Address + days */}
+        <div className="flex justify-between items-start gap-2 mb-1">
+          <h4 className="font-semibold text-[13px] leading-tight text-[#FAFAFA]/90 line-clamp-1 flex-1">
             {isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}
           </h4>
-          <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.42)]">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.42)]">
             {getDaysInPipeline(deal.created_date)}
           </span>
         </div>
 
-        {/* Line 2: Price + comp */}
-        <div className="flex flex-wrap items-center gap-2 mb-2">
+        {/* Line 2: Price · Comp · Badge (all inline) */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2 text-[11px]">
           {isAgent
-            ? deal.estimated_list_price > 0 && <span className="text-xs text-[#2D8A6E] font-semibold">${deal.estimated_list_price.toLocaleString()}</span>
-            : deal.budget > 0 && <span className="text-xs text-[#2D8A6E] font-semibold">${deal.budget.toLocaleString()}</span>
+            ? deal.estimated_list_price > 0 && <span className="text-[#2D8A6E] font-semibold">${deal.estimated_list_price.toLocaleString()}</span>
+            : deal.budget > 0 && <span className="text-[#2D8A6E] font-semibold">${deal.budget.toLocaleString()}</span>
           }
-          {comp && <span className="text-xs text-[#E3C567] font-semibold">Agent Comp: {comp}</span>}
+          {comp && <span className="text-[#E3C567] font-semibold">· {comp}</span>}
+          {badge && <span className={`text-[10px] border px-1.5 py-0 rounded-full leading-[14px] ${badge.className}`}>{badge.label}</span>}
         </div>
 
-        {/* Line 3: Agreement badge */}
-        {badge && <span className={`text-[10px] border px-2 py-0.5 rounded-full inline-block mb-2 ${badge.className}`}>{badge.label}</span>}
-
-        {/* Line 4: Next step */}
+        {/* Line 3: Next step (only if present, no extra box) */}
         {step && (
-          <div className="flex items-center justify-between rounded-lg p-2 mb-3" style={{ background: "rgba(10,10,14,0.60)", border: "1px solid rgba(255,255,255,0.04)" }}>
-            <span className="text-[10px] font-medium text-[rgba(255,255,255,0.42)]">Next Steps</span>
-            <span className={`text-xs font-semibold ${step.color}`}>{step.label}</span>
+          <div className="flex items-center justify-between mb-2 text-[11px]">
+            <span className="text-[rgba(255,255,255,0.42)]">Next:</span>
+            <span className={`font-semibold ${step.color} truncate ml-2`}>{step.label}</span>
           </div>
         )}
 
-        {/* Footer: buttons */}
-        <div className="flex gap-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} onClick={(e) => e.stopPropagation()}>
+        {/* Footer: action buttons (44px tall — touch target floor) */}
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <Button
             onClick={() => onDealClick(deal)}
-            size="sm"
             disabled={navigating}
-            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-[12px] text-xs py-2 h-auto"
+            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-lg text-xs font-semibold h-9 py-0"
           >
-            {navigating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-            Open Deal Room
+            {navigating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+            Open
           </Button>
           <button
             onClick={() => setSheetOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1F1F1F] border border-[rgba(255,255,255,0.06)]"
+            aria-label="More actions"
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1F1F1F] border border-[rgba(255,255,255,0.06)] flex-shrink-0"
           >
             <MoreHorizontal className="w-4 h-4 text-[#808080]" />
           </button>
@@ -120,7 +118,7 @@ export default function MobileDealCard({
 
         {/* Inline review form for completed deals */}
         {isCompleted && isInvestor && (
-          <div className="mt-3">
+          <div className="mt-2">
             <InlineReviewForm
               dealId={deal.deal_id}
               agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
@@ -131,7 +129,7 @@ export default function MobileDealCard({
           </div>
         )}
         {isCompleted && isAgent && deal.investor_id && (
-          <div className="mt-3">
+          <div className="mt-2">
             <InlineAgentReviewForm
               dealId={deal.deal_id}
               investorProfileId={deal.investor_id}
