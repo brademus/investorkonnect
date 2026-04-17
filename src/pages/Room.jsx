@@ -623,6 +623,15 @@ export default function Room() {
           roomSellerComp={roomSellerComp}
           unreadMsgCount={unreadMsgCount}
           onSelectPendingInvite={setSelectedInvite}
+          activeTab={activeView || "board"}
+          setActiveTab={(v) => {
+            setActiveView(v);
+            setMountedViews(prev => {
+              const next = new Set(prev);
+              next.add(v);
+              return next;
+            });
+          }}
           rooms={filteredRooms}
           userRole={profile?.user_role}
           onSwitchRoom={(r) => {

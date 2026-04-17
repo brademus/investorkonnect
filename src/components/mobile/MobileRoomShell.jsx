@@ -17,7 +17,8 @@ export default function MobileRoomShell({
   hasWalkthroughAppt, walkthroughModalOpen, setWalkthroughModalOpen,
   onBack, onInvestorSigned, patchDeal, counterpartName, roomSellerComp,
   unreadMsgCount, onSelectPendingInvite,
-  rooms, userRole, onSwitchRoom
+  rooms, userRole, onSwitchRoom,
+  activeTab, setActiveTab
 }) {
   const showPendingAgents = isInvestor && pendingInvites.length > 1 && !isSigned;
   const segments = [];
@@ -25,7 +26,9 @@ export default function MobileRoomShell({
   if (showPendingAgents) segments.push({ id: "agents", label: `Agents (${pendingInvites.length})` });
   if (isSigned) segments.push({ id: "messages", label: "Messages", badge: unreadMsgCount > 0 ? unreadMsgCount : null });
 
-  const [activeTab, setActiveTab] = useState("board");
+  // Fallback if parent hasn't set activeTab yet, or current tab isn't in the segments list
+  const currentTab = segments.some(s => s.id === activeTab) ? activeTab : "board";
+
   const [dealInfoOpen, setDealInfoOpen] = useState(false);
   const [roomsDrawerOpen, setRoomsDrawerOpen] = useState(false);
 
@@ -47,7 +50,7 @@ export default function MobileRoomShell({
             key={seg.id}
             onClick={() => setActiveTab(seg.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              activeTab === seg.id ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"
+              currentTab === seg.id ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"
             }`}
           >
             {seg.label}
@@ -63,7 +66,7 @@ export default function MobileRoomShell({
       {/* Content */}
       <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
         {/* Deal Board */}
-        {activeTab === "board" && (
+        {currentTab === "board" && (
           <div className="px-3 py-3 flex-1">
             <DealBoard
               deal={deal}
@@ -78,7 +81,7 @@ export default function MobileRoomShell({
         )}
 
         {/* Pending Agents */}
-        {activeTab === "agents" && showPendingAgents && (
+        {currentTab === "agents" && showPendingAgents && (
           <div className="px-3 py-3 flex-1">
             <PendingAgentsList
               invites={pendingInvites}
@@ -92,7 +95,7 @@ export default function MobileRoomShell({
         )}
 
         {/* Messages */}
-        {activeTab === "messages" && isSigned && (
+        {currentTab === "messages" && isSigned && (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Collapsible deal info */}
             <button
