@@ -1,12 +1,46 @@
-import { evaluateRules } from './evaluateRules';
+import { loadLegalPackSync } from './loadPack';
+import { evaluateRules, EvaluationInput } from './evaluateRules';
 import { assembleAddendum } from './assembleAddendum';
 import { assembleMaster } from './assembleMaster';
-import { buildExhibitA } from './buildExhibitA';
+import { buildExhibitA, ExhibitAInput } from './buildExhibitA';
 
-export function renderPackage(input) {
+export interface RenderInput {
+  deal: {
+    property_address: string;
+    city: string;
+    state: string;
+    zip: string;
+    property_type: string;
+  };
+  investor: {
+    name: string;
+    email: string;
+    status: 'LICENSED' | 'UNLICENSED';
+    deal_count_last_365: number;
+  };
+  agent: {
+    name: string;
+    email: string;
+    license_number: string;
+  };
+  transaction_type: string;
+  exhibit_a: ExhibitAInput;
+}
+
+export interface RenderResult {
+  success: boolean;
+  error?: string;
+  full_md?: string;
+  master_md?: string;
+  addendum_md?: string;
+  evaluation?: any;
+  exhibit_a_terms?: any;
+}
+
+export function renderPackage(input: RenderInput): RenderResult {
   try {
     // Step 1: Evaluate rules
-    const evalInput = {
+    const evalInput: EvaluationInput = {
       governing_state: input.deal.state,
       property_zip: input.deal.zip,
       transaction_type: input.transaction_type,

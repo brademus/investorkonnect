@@ -1,6 +1,6 @@
 import { loadLegalPackSync } from './loadPack';
 
-export function resolveOverlay(propertyZip) {
+export function resolveOverlay(propertyZip: string): string | null {
   if (!propertyZip) return null;
   
   const pack = loadLegalPackSync();
@@ -15,7 +15,7 @@ export function resolveOverlay(propertyZip) {
   const zipPrefix = propertyZip.substring(0, 3);
   for (const [zip, overlay] of Object.entries(mapping)) {
     if (zip.startsWith(zipPrefix)) {
-      return overlay;
+      return overlay as string;
     }
   }
   

@@ -1,9 +1,12 @@
-const modules = {
+{
   "modules": {
     "IL_DEEP_DIVE": {
       "id": "IL_DEEP_DIVE",
       "name": "Illinois Wholesaling & Net Listing Restrictions",
-      "trigger": { "type": "state", "value": "IL" },
+      "trigger": {
+        "type": "state",
+        "value": "IL"
+      },
       "injections": [
         {
           "target": "section_5",
@@ -18,7 +21,10 @@ const modules = {
     "PA_DEEP_DIVE": {
       "id": "PA_DEEP_DIVE",
       "name": "Pennsylvania Wholesaling Notice",
-      "trigger": { "type": "state", "value": "PA" },
+      "trigger": {
+        "type": "state",
+        "value": "PA"
+      },
       "injections": [
         {
           "target": "section_5",
@@ -29,7 +35,10 @@ const modules = {
     "NJ_DEEP_DIVE": {
       "id": "NJ_DEEP_DIVE",
       "name": "New Jersey Attorney Review Period",
-      "trigger": { "type": "state", "value": "NJ" },
+      "trigger": {
+        "type": "state",
+        "value": "NJ"
+      },
       "injections": [
         {
           "target": "section_7",
@@ -38,6 +47,4 @@ const modules = {
       ]
     }
   }
-};
-
-export default modules;
+}

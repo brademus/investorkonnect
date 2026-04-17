@@ -1,6 +1,16 @@
 import { loadLegalPackSync } from './loadPack';
+import { EvaluationResult } from './evaluateRules';
 
-export function assembleAddendum(input) {
+export interface AddendumInput {
+  evaluation: EvaluationResult;
+  property_address: string;
+  property_city: string;
+  property_state: string;
+  property_zip: string;
+  exhibit_a_json: string;
+}
+
+export function assembleAddendum(input: AddendumInput): string {
   const pack = loadLegalPackSync();
   let chassis = pack.templates.addendum_chassis;
   
@@ -36,12 +46,12 @@ export function assembleAddendum(input) {
   let deepDiveText = '';
   if (input.evaluation.deep_dive_module_ids.length > 0) {
     const modules = pack.modules?.modules || {};
-    const sectionMap = {};
+    const sectionMap: Record<string, string> = {};
     
     input.evaluation.deep_dive_module_ids.forEach(moduleId => {
-      const mod = modules[moduleId];
-      if (mod?.injections) {
-        mod.injections.forEach((inj) => {
+      const module = modules[moduleId];
+      if (module?.injections) {
+        module.injections.forEach((inj: any) => {
           if (!sectionMap[inj.target]) sectionMap[inj.target] = '';
           sectionMap[inj.target] += `\n${inj.content}\n`;
         });
@@ -65,7 +75,7 @@ export function assembleAddendum(input) {
   return chassis;
 }
 
-function buildClauseSection(clauseIds, pack) {
+function buildClauseSection(clauseIds: string[], pack: any): string {
   const clauses = pack.clauses?.clauses || {};
   return clauseIds
     .map(id => {

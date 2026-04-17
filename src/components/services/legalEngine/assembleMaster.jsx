@@ -1,6 +1,15 @@
 import { loadLegalPackSync } from './loadPack';
 
-export function assembleMaster(input) {
+export interface MasterInput {
+  investor_name: string;
+  investor_email: string;
+  agent_name: string;
+  agent_email: string;
+  agent_license: string;
+  effective_date: string;
+}
+
+export function assembleMaster(input: MasterInput): string {
   const pack = loadLegalPackSync();
   let template = pack.templates.master_agreement;
   
