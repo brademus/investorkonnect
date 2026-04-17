@@ -77,7 +77,7 @@ export default function AgentLanding() {
 
           {/* Subheadline */}
           <p className="text-lg text-[#808080] mb-10 max-w-2xl mx-auto">
-            Get connected to serious investors, keep contracts organized, and use a clean deal board to move deals forward.
+            Agent access is completely free. Complete your profile to start getting free leads. No card info needed.
           </p>
 
           {/* CTA Button */}
