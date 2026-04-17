@@ -1,29 +1,9 @@
 import { loadLegalPackSync } from './loadPack';
 import { resolveOverlay } from './resolveOverlay';
 
-export interface EvaluationInput {
-  governing_state: string;
-  property_zip: string;
-  transaction_type: string;
-  property_type?: string;
-  investor_status: 'LICENSED' | 'UNLICENSED';
-  deal_count_last_365: number;
-}
-
-export interface EvaluationResult {
-  success: boolean;
-  error?: string;
-  validation_errors?: string[];
-  selected_rule_id: string;
-  selected_clause_ids: Record<string, string[]>;
-  deep_dive_module_ids: string[];
-  city_overlay: string | null;
-  net_policy: 'BANNED' | 'RESTRICTED' | 'ALLOWED';
-}
-
-export function evaluateRules(input: EvaluationInput): EvaluationResult {
+export function evaluateRules(input) {
   const pack = loadLegalPackSync();
-  const validation_errors: string[] = [];
+  const validation_errors = [];
   
   // Input validation
   if (!input.governing_state) {
@@ -65,7 +45,7 @@ export function evaluateRules(input: EvaluationInput): EvaluationResult {
   }
   
   // Determine deep dive modules
-  const deep_dive_module_ids: string[] = [];
+  const deep_dive_module_ids = [];
   if (input.governing_state === 'IL') deep_dive_module_ids.push('IL_DEEP_DIVE');
   if (input.governing_state === 'PA') deep_dive_module_ids.push('PA_DEEP_DIVE');
   if (input.governing_state === 'NJ') deep_dive_module_ids.push('NJ_DEEP_DIVE');
@@ -77,7 +57,7 @@ export function evaluateRules(input: EvaluationInput): EvaluationResult {
   }
   
   // Select base clauses
-  const selected_clause_ids: Record<string, string[]> = {
+  const selected_clause_ids = {
     A: ['A_AGENCY_STD', 'A_TRANS_BROKER'],
     B: [net_policy === 'BANNED' ? 'B_NET_BANNED' : net_policy === 'RESTRICTED' ? 'B_NET_RESTR' : 'B_NET_STD'],
     C: ['C_EQ_INT_STD'],
