@@ -197,9 +197,9 @@ export default function InvestorProfile() {
 
   if (!investorProfile) {
     return (
-      <div className="min-h-screen bg-transparent py-8 px-6">
+      <div className="min-h-screen bg-transparent py-4 px-3 md:py-8 md:px-6">
         <div className="max-w-4xl mx-auto">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full">
+          <Button variant="outline" onClick={() => navigate(-1)} className="mb-4 md:mb-6 h-10 md:h-auto bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
@@ -221,9 +221,9 @@ export default function InvestorProfile() {
   const targetState = investorProfile.target_state;
 
   return (
-    <div className="min-h-screen bg-transparent py-8 px-6">
+    <div className="min-h-screen bg-transparent py-4 px-3 md:py-8 md:px-6">
       <div className="max-w-4xl mx-auto">
-        <Button variant="outline" onClick={() => navigate(-1)} className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full">
+        <Button variant="outline" onClick={() => navigate(-1)} className="mb-4 md:mb-6 h-10 md:h-auto bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
 

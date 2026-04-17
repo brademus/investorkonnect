@@ -120,12 +120,12 @@ export default function AgentProfile() {
 
   if (!agentProfile) {
     return (
-      <div className="min-h-screen bg-transparent py-8 px-6">
+      <div className="min-h-screen bg-transparent py-4 px-3 md:py-8 md:px-6">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="outline"
             onClick={() => navigate(-1)}
-            className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
+            className="mb-4 md:mb-6 h-10 md:h-auto bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
@@ -147,13 +147,13 @@ export default function AgentProfile() {
   const responseTime = agent.typical_response_time;
 
   return (
-    <div className="min-h-screen bg-transparent py-8 px-6">
+    <div className="min-h-screen bg-transparent py-4 px-3 md:py-8 md:px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <Button
           variant="outline"
           onClick={() => navigate(-1)}
-          className="mb-6 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
+          className="mb-4 md:mb-6 h-10 md:h-auto bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
@@ -182,13 +182,13 @@ export default function AgentProfile() {
 
         {/* Reviews Section */}
         {reviews.length > 0 && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 md:p-8">
             <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Client Reviews</h3>
             <div className="space-y-4">
               {reviews.map((review) => (
                 <div 
                   key={review.id}
-                  className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-5"
+                  className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-3 md:p-5"
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex items-center gap-1">

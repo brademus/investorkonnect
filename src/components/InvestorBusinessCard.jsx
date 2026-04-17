@@ -39,10 +39,10 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
       {/* Gold accent bar */}
       <div className="h-1.5 bg-gradient-to-r from-[#E3C567] via-[#D4AF37] to-[#E3C567]" />
 
-      <div className="p-8">
-        {/* Top row: Photo + Name + Rating (side-by-side) */}
-        <div className="flex items-start gap-6 mb-8">
-          <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 border-[#E3C567]/40 shadow-lg shadow-[#E3C567]/10">
+      <div className="p-4 md:p-8">
+        {/* Top row: stacks on mobile, side-by-side on desktop */}
+        <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6 mb-4 md:mb-8">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 border-[#E3C567]/40 shadow-lg shadow-[#E3C567]/10 mx-auto md:mx-0">
             {headshot ? (
               <img src={headshot} alt={name} className="w-full h-full object-cover" />
             ) : (
@@ -54,7 +54,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
 
           <div className="flex-1 min-w-0">
             <p className="text-xs uppercase tracking-[0.2em] text-[#E3C567]/60 mb-1">Real Estate Investor</p>
-            <h3 className="text-2xl font-bold text-[#FAFAFA] mb-2">{name}</h3>
+            <h3 className="text-lg md:text-2xl font-bold text-[#FAFAFA] mb-2 break-words">{name}</h3>
             {experienceLabel && (
               <span className="inline-block px-3 py-1 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium mb-2">
                 {experienceLabel}
@@ -86,8 +86,8 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
           </div>
 
           {/* Rating badge - top right */}
-          <div className="flex-shrink-0">
-            <div className="bg-[#0A0A0A] border border-[#E3C567]/30 rounded-xl px-4 py-3 flex flex-col items-center">
+          <div className="flex-shrink-0 self-center md:self-auto">
+            <div className="bg-[#0A0A0A] border border-[#E3C567]/30 rounded-xl px-3 md:px-4 py-2 md:py-3 flex flex-col items-center">
               <div className="flex items-center gap-1 mb-1">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Star
@@ -154,9 +154,9 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
               <Briefcase className="w-4 h-4 text-[#E3C567]" />
               <p className="text-xs uppercase tracking-[0.15em] text-[#808080]">Experience & Background</p>
             </div>
-            <div className="flex gap-4">
+            <div className="grid grid-cols-2 gap-2 md:flex md:gap-4">
               {ob.investment_experience && (
-                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
+                <div className="flex-1 flex items-center gap-3 px-2.5 py-2 md:px-4 md:py-3 rounded-lg bg-[#0A0A0A] border border-[#1A1A1A]">
                   <Briefcase className="w-4 h-4 text-[#E3C567] flex-shrink-0" />
                   <div>
                     <p className="text-lg font-bold text-[#E3C567]">{ob.investment_experience}</p>
@@ -164,7 +164,7 @@ export default function InvestorBusinessCard({ investorProfile, ikDealsCount, sh
                   </div>
                 </div>
               )}
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
+              <div className="flex-1 flex items-center gap-3 px-2.5 py-2 md:px-4 md:py-3 rounded-lg bg-[#0A0A0A] border border-[#E3C567]/20">
                 <img 
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
                   alt="IK"

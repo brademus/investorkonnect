@@ -50,23 +50,57 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
   // Also sync appointment status from DealAppointments (authoritative source)
   useEffect(() => {
     if (!resolvedDealId) return;
-    base44.entities.Deal.filter({ id: resolvedDealId }).then(deals => {
-      const d = deals?.[0];
-      if (d) {
-        if (!meta.walkthrough_date && d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
-        if (!meta.walkthrough_time && d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
-        // Fallback: load slots from deal if message metadata doesn't have them
-        if (!(meta.walkthrough_slots?.length > 0) && d.walkthrough_slots?.length > 0) {
-          setDealSlots(d.walkthrough_slots);
+    let cancelled = false;
+
+    const syncFromDeal = () => {
+      base44.entities.Deal.filter({ id: resolvedDealId }).then(deals => {
+        if (cancelled) return;
+        const d = deals?.[0];
+        if (d) {
+          if (!meta.walkthrough_date && d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
+          if (!meta.walkthrough_time && d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
+          if (!(meta.walkthrough_slots?.length > 0) && d.walkthrough_slots?.length > 0) {
+            setDealSlots(d.walkthrough_slots);
+          }
         }
+      }).catch(() => {});
+    };
+
+    const syncFromAppointments = () => {
+      base44.entities.DealAppointments.filter({ dealId: resolvedDealId }).then(rows => {
+        if (cancelled) return;
+        const apptStatus = rows?.[0]?.walkthrough?.status;
+        if (apptStatus === 'SCHEDULED') setLocalStatus('confirmed');
+        else if (apptStatus === 'CANCELED') setLocalStatus('denied');
+      }).catch(() => {});
+    };
+
+    syncFromDeal();
+    syncFromAppointments();
+
+    const unsubAppts = base44.entities.DealAppointments.subscribe(e => {
+      if (e?.data?.dealId === resolvedDealId) {
+        const apptStatus = e.data?.walkthrough?.status;
+        if (apptStatus === 'SCHEDULED') setLocalStatus('confirmed');
+        else if (apptStatus === 'CANCELED') setLocalStatus('denied');
       }
-    }).catch(() => {});
-    // Also check DealAppointments for authoritative status
-    base44.entities.DealAppointments.filter({ dealId: resolvedDealId }).then(rows => {
-      const apptStatus = rows?.[0]?.walkthrough?.status;
-      if (apptStatus === 'SCHEDULED' && status !== 'confirmed') setLocalStatus('confirmed');
-      else if (apptStatus === 'CANCELED' && status !== 'denied') setLocalStatus('denied');
-    }).catch(() => {});
+    });
+
+    const unsubDeal = base44.entities.Deal.subscribe(e => {
+      if (e?.data?.id === resolvedDealId) {
+        const d = e.data;
+        if (d.walkthrough_confirmed === true) setLocalStatus('confirmed');
+        if (d.walkthrough_date) setResolvedWtDate(d.walkthrough_date);
+        if (d.walkthrough_time) setResolvedWtTime(d.walkthrough_time);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      try { unsubAppts(); } catch (_) {}
+      try { unsubDeal(); } catch (_) {}
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedDealId]);
 
   // Combine: prefer message metadata slots, fallback to deal slots
