@@ -470,15 +470,47 @@ export default function AgentQualification() {
         return;
       }
 
-      await base44.entities.Profile.update(pid, {
+      // Build a clean metadata object — strip out any previous qualification data
+      // and only include serializable primitives.
+      const existingMeta = profile?.metadata || {};
+      const { qualification_answers: _oldAns, qualification_score: _oldScore, ...preservedMeta } = existingMeta;
+      const cleanAnswers = {};
+      if (answers && typeof answers === 'object') {
+        for (const [k, v] of Object.entries(answers)) {
+          if (Array.isArray(v)) {
+            cleanAnswers[k] = v.filter(x => typeof x === 'string');
+          } else if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+            cleanAnswers[k] = v;
+          }
+        }
+      }
+
+      const updatePayload = {
         qualification_status: "completed",
-        qualification_tier: tier,
+        qualification_tier: String(tier || "rejected"),
         metadata: {
-          ...(profile?.metadata || {}),
-          qualification_answers: answers || {},
-          qualification_score: score || 0,
+          ...preservedMeta,
+          qualification_answers: cleanAnswers,
+          qualification_score: Number(score) || 0,
         },
-      });
+      };
+
+      // Attempt 1 — full payload
+      try {
+        await base44.entities.Profile.update(pid, updatePayload);
+      } catch (firstErr) {
+        console.warn('[AgentQualification] First update attempt failed, retrying without nested metadata:', firstErr);
+        // Attempt 2 — skip metadata if it's the problem. Just set the tier + status.
+        try {
+          await base44.entities.Profile.update(pid, {
+            qualification_status: "completed",
+            qualification_tier: String(tier || "rejected"),
+          });
+        } catch (secondErr) {
+          console.error('[AgentQualification] Both update attempts failed:', secondErr);
+          throw secondErr;
+        }
+      }
 
       // If conditional (50-69), notify admins via backend
       if (tier === "conditional") {
@@ -498,7 +530,12 @@ export default function AgentQualification() {
       setStep(3);
     } catch (e) {
       console.error('[AgentQualification] Save failed:', e);
-      toast.error("Failed to save results. Please try again.");
+      const errMsg = e?.response?.data?.error || e?.message || '';
+      if (errMsg) {
+        toast.error(`Failed to save: ${errMsg}`);
+      } else {
+        toast.error("Failed to save results. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
