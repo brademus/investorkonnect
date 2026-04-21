@@ -381,17 +381,17 @@ export default function AgentOnboarding() {
 
       {step === 4 && (
         <div>
-          <h3 className="text-xl md:text-[32px] font-bold text-[#E3C567] mb-1 md:mb-3">Your Expertise</h3>
-          <p className="text-[13px] md:text-[18px] text-[#808080] mb-3 md:mb-10">What you specialize in</p>
-          <div className="space-y-3 md:space-y-7">
+          <h3 className="text-2xl md:text-[32px] font-bold text-[#E3C567] mb-2 md:mb-3">Your Expertise</h3>
+          <p className="text-[15px] md:text-[18px] text-[#808080] mb-5 md:mb-10">What you specialize in</p>
+          <div className="space-y-5 md:space-y-7">
             <div>
               <Label className="text-[#FAFAFA] text-[14px] md:text-[19px] font-bold">Type of Deals</Label>
-              <p className="text-xs md:text-sm text-[#808080] mt-0.5 mb-1.5 md:mb-3">Select all that apply</p>
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-x-2 gap-y-1 md:gap-3 max-h-[160px] md:max-h-none overflow-y-auto md:overflow-visible">
+              <p className="text-sm text-[#808080] mt-1 mb-2 md:mb-3">Select all that apply</p>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-x-3 gap-y-2 md:gap-3">
                 {DEAL_TYPE_OPTIONS.map((deal) => (
-                  <div key={deal.value} className="flex items-center gap-2 py-0.5 md:py-1.5">
+                  <div key={deal.value} className="flex items-center gap-3 py-1 md:py-1.5">
                     <Checkbox id={`strategy-${deal.value}`} checked={formData.investment_strategies.includes(deal.value)} onCheckedChange={() => toggleArrayItem('investment_strategies', deal.value)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
-                    <Label htmlFor={`strategy-${deal.value}`} className="text-[12px] md:text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex items-center gap-1 md:gap-1.5 flex-1 py-1 md:py-2">
+                    <Label htmlFor={`strategy-${deal.value}`} className="text-[15px] md:text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex items-center gap-1.5 flex-1 py-1.5 md:py-2">
                       {deal.label}
                       {deal.tooltip && (
                         <span className="relative group">
@@ -406,12 +406,12 @@ export default function AgentOnboarding() {
             </div>
             <div>
               <Label className="text-[#FAFAFA] text-[14px] md:text-[19px] font-bold">Property Types</Label>
-              <p className="text-xs md:text-sm text-[#808080] mt-0.5 mb-1.5 md:mb-3">Select all that apply</p>
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-x-2 gap-y-1 md:gap-3 max-h-[160px] md:max-h-none overflow-y-auto md:overflow-visible">
+              <p className="text-sm text-[#808080] mt-1 mb-2 md:mb-3">Select all that apply</p>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-x-3 gap-y-2 md:gap-3">
                 {PROPERTY_TYPE_OPTIONS.map((specialty) => (
-                  <div key={specialty} className="flex items-center gap-2 py-0.5 md:py-1.5">
+                  <div key={specialty} className="flex items-center gap-3 py-1 md:py-1.5">
                     <Checkbox id={`specialty-${specialty}`} checked={formData.specialties.includes(specialty)} onCheckedChange={() => toggleArrayItem('specialties', specialty)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
-                    <Label htmlFor={`specialty-${specialty}`} className="text-[12px] md:text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex-1 py-1 md:py-2">{specialty}</Label>
+                    <Label htmlFor={`specialty-${specialty}`} className="text-[15px] md:text-[16px] font-normal cursor-pointer text-[#FAFAFA] flex-1 py-1.5 md:py-2">{specialty}</Label>
                   </div>
                 ))}
               </div>
