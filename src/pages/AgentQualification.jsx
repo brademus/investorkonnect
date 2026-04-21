@@ -97,7 +97,7 @@ function Step1({ onContinue }) {
             checked={check1}
             onChange={e => setCheck1(e.target.checked)}
             className="mt-2 md:mt-1 accent-[#E3C567] flex-shrink-0 cursor-pointer"
-            style={{ transform: 'scale(1.3)', transformOrigin: 'top left' }}
+            style={{ transform: 'scale(1.1)', transformOrigin: 'top left' }}
           />
           <span className="text-sm text-[#FAFAFA] leading-snug">I confirm that I understand the above investor transaction structures and that I and my broker are willing and able to participate in these types of transactions.</span>
         </label>
@@ -107,7 +107,7 @@ function Step1({ onContinue }) {
             checked={check2}
             onChange={e => setCheck2(e.target.checked)}
             className="mt-2 md:mt-1 accent-[#E3C567] flex-shrink-0 cursor-pointer"
-            style={{ transform: 'scale(1.3)', transformOrigin: 'top left' }}
+            style={{ transform: 'scale(1.1)', transformOrigin: 'top left' }}
           />
           <span className="text-sm text-[#FAFAFA] leading-snug">I understand that violation of platform rules or interfering with investor transactions may result in immediate removal.</span>
         </label>
@@ -320,7 +320,7 @@ function Step2({ onSubmit, submitting }) {
                             checked={answers[q.id] === opt.value}
                             onChange={() => setRadio(q.id, opt.value)}
                             className="accent-[#E3C567] flex-shrink-0 cursor-pointer"
-                            style={{ transform: 'scale(1.3)', transformOrigin: 'center' }}
+                            style={{ transform: 'scale(1.1)', transformOrigin: 'center' }}
                           />
                           <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug">{opt.label}</span>
                         </label>
@@ -336,7 +336,7 @@ function Step2({ onSubmit, submitting }) {
                             checked={(answers[q.id] || []).includes(opt.value)}
                             onChange={() => toggleCheck(q.id, opt.value)}
                             className="accent-[#E3C567] flex-shrink-0 cursor-pointer"
-                            style={{ transform: 'scale(1.3)', transformOrigin: 'center' }}
+                            style={{ transform: 'scale(1.1)', transformOrigin: 'center' }}
                           />
                           <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug">{opt.label}</span>
                         </label>
