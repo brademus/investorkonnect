@@ -91,25 +91,25 @@ function Step1({ onContinue }) {
       </div>
 
       <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 md:p-6 mb-8 space-y-2 md:space-y-4">
-        <label className="flex items-start gap-4 md:gap-3 cursor-pointer min-h-[44px] py-2 md:py-0">
+        <label className="flex items-start gap-6 md:gap-3 cursor-pointer min-h-[48px] py-2 md:py-0 pl-2 md:pl-0">
           <input
             type="checkbox"
             checked={check1}
             onChange={e => setCheck1(e.target.checked)}
-            className="mt-1 accent-[#E3C567] w-5 h-5 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
-            style={{ minWidth: '20px', minHeight: '20px' }}
+            className="mt-2 md:mt-1 accent-[#E3C567] flex-shrink-0 cursor-pointer"
+            style={{ transform: 'scale(1.8)', transformOrigin: 'top left' }}
           />
-          <span className="text-sm text-[#FAFAFA] leading-snug">I confirm that I understand the above investor transaction structures and that I and my broker are willing and able to participate in these types of transactions.</span>
+          <span className="text-sm text-[#FAFAFA] leading-snug md:ml-0 ml-2">I confirm that I understand the above investor transaction structures and that I and my broker are willing and able to participate in these types of transactions.</span>
         </label>
-        <label className="flex items-start gap-4 md:gap-3 cursor-pointer min-h-[44px] py-2 md:py-0">
+        <label className="flex items-start gap-6 md:gap-3 cursor-pointer min-h-[48px] py-2 md:py-0 pl-2 md:pl-0">
           <input
             type="checkbox"
             checked={check2}
             onChange={e => setCheck2(e.target.checked)}
-            className="mt-1 accent-[#E3C567] w-5 h-5 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
-            style={{ minWidth: '20px', minHeight: '20px' }}
+            className="mt-2 md:mt-1 accent-[#E3C567] flex-shrink-0 cursor-pointer"
+            style={{ transform: 'scale(1.8)', transformOrigin: 'top left' }}
           />
-          <span className="text-sm text-[#FAFAFA] leading-snug">I understand that violation of platform rules or interfering with investor transactions may result in immediate removal.</span>
+          <span className="text-sm text-[#FAFAFA] leading-snug md:ml-0 ml-2">I understand that violation of platform rules or interfering with investor transactions may result in immediate removal.</span>
         </label>
       </div>
 
@@ -310,35 +310,35 @@ function Step2({ onSubmit, submitting }) {
                 <div key={q.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 md:p-5">
                   <p className="text-[15px] md:text-sm font-bold md:font-medium text-[#FAFAFA] mb-3 leading-snug">{q.label}</p>
                   {q.type === "radio" && (
-                    <div className="space-y-1 md:space-y-2">
+                    <div className="space-y-2 md:space-y-2">
                       {q.options.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-4 md:gap-3 cursor-pointer min-h-[44px] py-2 md:py-0.5 px-1 md:px-0 -mx-1 md:mx-0 rounded-lg active:bg-[#1F1F1F] md:active:bg-transparent">
+                        <label key={opt.value} className="flex items-center gap-6 md:gap-3 cursor-pointer min-h-[48px] py-2 md:py-0.5 pl-3 md:pl-0 pr-2 md:pr-0 -mx-1 md:mx-0 rounded-lg active:bg-[#1F1F1F] md:active:bg-transparent">
                           <input
                             type="radio"
                             name={q.id}
                             value={opt.value}
                             checked={answers[q.id] === opt.value}
                             onChange={() => setRadio(q.id, opt.value)}
-                            className="accent-[#E3C567] w-5 h-5 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
-                            style={{ minWidth: '20px', minHeight: '20px' }}
+                            className="accent-[#E3C567] flex-shrink-0 cursor-pointer"
+                            style={{ transform: 'scale(1.8)', transformOrigin: 'center' }}
                           />
-                          <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug">{opt.label}</span>
+                          <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug ml-2 md:ml-0">{opt.label}</span>
                         </label>
                       ))}
                     </div>
                   )}
                   {q.type === "checkbox" && (
-                    <div className="space-y-1 md:space-y-2">
+                    <div className="space-y-2 md:space-y-2">
                       {q.options.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-4 md:gap-3 cursor-pointer min-h-[44px] py-2 md:py-0.5 px-1 md:px-0 -mx-1 md:mx-0 rounded-lg active:bg-[#1F1F1F] md:active:bg-transparent">
+                        <label key={opt.value} className="flex items-center gap-6 md:gap-3 cursor-pointer min-h-[48px] py-2 md:py-0.5 pl-3 md:pl-0 pr-2 md:pr-0 -mx-1 md:mx-0 rounded-lg active:bg-[#1F1F1F] md:active:bg-transparent">
                           <input
                             type="checkbox"
                             checked={(answers[q.id] || []).includes(opt.value)}
                             onChange={() => toggleCheck(q.id, opt.value)}
-                            className="accent-[#E3C567] w-5 h-5 md:w-4 md:h-4 flex-shrink-0 cursor-pointer"
-                            style={{ minWidth: '20px', minHeight: '20px' }}
+                            className="accent-[#E3C567] flex-shrink-0 cursor-pointer"
+                            style={{ transform: 'scale(1.8)', transformOrigin: 'center' }}
                           />
-                          <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug">{opt.label}</span>
+                          <span className="text-[15px] md:text-sm text-[#FAFAFA] leading-snug ml-2 md:ml-0">{opt.label}</span>
                         </label>
                       ))}
                     </div>
