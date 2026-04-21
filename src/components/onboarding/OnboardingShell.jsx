@@ -6,8 +6,8 @@ import LoadingAnimation from "@/components/LoadingAnimation";
  */
 export default function OnboardingShell({ step, totalSteps, saving, onBack, onNext, nextDisabled, nextLabel, children }) {
   return (
-    <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
-      <header className="h-14 md:h-20 flex items-center justify-center border-b border-[#1F1F1F]">
+    <div className="h-screen md:min-h-screen bg-black overflow-hidden md:overflow-visible flex flex-col md:block" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
+      <header className="h-12 md:h-20 flex items-center justify-center border-b border-[#1F1F1F] flex-shrink-0">
         <div className="flex items-center gap-2">
           <img
             src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
@@ -18,7 +18,7 @@ export default function OnboardingShell({ step, totalSteps, saving, onBack, onNe
         </div>
       </header>
 
-      <div className="py-3 md:py-6 flex flex-col items-center">
+      <div className="py-2 md:py-6 flex flex-col items-center flex-shrink-0">
         <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
           {Array.from({ length: totalSteps }).map((_, idx) => (
             <div
@@ -36,8 +36,9 @@ export default function OnboardingShell({ step, totalSteps, saving, onBack, onNe
         <p className="text-xs md:text-[14px] text-[#808080]">Step {step} of {totalSteps}</p>
       </div>
 
-      <div className="max-w-[700px] mx-auto px-3 md:px-4 pb-28 md:pb-12">
-        <div className="bg-[#0D0D0D] rounded-2xl md:rounded-3xl p-4 md:p-12 border border-[#1F1F1F]" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
+      <div className="max-w-[700px] mx-auto px-3 md:px-4 pb-28 md:pb-12 flex-1 md:flex-none min-h-0 md:min-h-0 flex flex-col md:block w-full">
+        <div className="bg-[#0D0D0D] rounded-2xl md:rounded-3xl p-3 md:p-12 border border-[#1F1F1F] flex-1 md:flex-none min-h-0 flex flex-col md:block overflow-hidden md:overflow-visible" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto md:overflow-visible flex flex-col md:block">
           {children}
 
           {/* Desktop: inline footer */}
@@ -59,6 +60,7 @@ export default function OnboardingShell({ step, totalSteps, saving, onBack, onNe
               )}
             </button>
           </div>
+        </div>
         </div>
       </div>
 
