@@ -241,9 +241,9 @@ export default function InvestorOnboarding() {
     <OnboardingShell step={step} totalSteps={TOTAL_STEPS} saving={saving || verifyingCode} onBack={() => setStep(step === 3 && phoneVerified ? 1 : step - 1)} onNext={handleNext} nextDisabled={nextDisabled} nextLabel={nextLabel}>
       {step === 1 && (
         <div>
-          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
-          <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
-          <div className="space-y-7">
+          <h3 className="text-2xl md:text-[32px] font-bold text-[#E3C567] mb-2 md:mb-3">Let's get started</h3>
+          <p className="text-[14px] md:text-[18px] text-[#808080] mb-6 md:mb-10">Tell us a bit about yourself</p>
+          <div className="space-y-5 md:space-y-7">
             {/* Headshot */}
             <div className="flex flex-col items-center mb-2">
               <div className="relative group">
@@ -261,14 +261,14 @@ export default function InvestorOnboarding() {
                 {uploadingPhoto ? 'Uploading...' : formData.headshotUrl ? 'Change Photo' : 'Upload a Headshot'}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div>
-                <Label htmlFor="first_name" className="text-[#FAFAFA] text-[19px] font-medium">First Name *</Label>
-                <Input id="first_name" value={formData.first_name} onChange={(e) => updateField('first_name', e.target.value)} placeholder="First name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+                <Label htmlFor="first_name" className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium">First Name *</Label>
+                <Input id="first_name" value={formData.first_name} onChange={(e) => updateField('first_name', e.target.value)} placeholder="First name" className="h-12 md:h-16 text-[16px] md:text-[19px] mt-2 md:mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
               </div>
               <div>
-                <Label htmlFor="last_name" className="text-[#FAFAFA] text-[19px] font-medium">Last Name *</Label>
-                <Input id="last_name" value={formData.last_name} onChange={(e) => updateField('last_name', e.target.value)} placeholder="Last name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+                <Label htmlFor="last_name" className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium">Last Name *</Label>
+                <Input id="last_name" value={formData.last_name} onChange={(e) => updateField('last_name', e.target.value)} placeholder="Last name" className="h-12 md:h-16 text-[16px] md:text-[19px] mt-2 md:mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
               </div>
             </div>
             <PhoneInput value={formData.phone} onChange={(v) => updateField('phone', v)} />
@@ -279,8 +279,8 @@ export default function InvestorOnboarding() {
               </div>
             )}
             <div>
-              <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
-              <Input id="company" value={formData.company} onChange={(e) => updateField('company', e.target.value)} placeholder="Your company name" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+              <Label htmlFor="company" className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium">Company (optional)</Label>
+              <Input id="company" value={formData.company} onChange={(e) => updateField('company', e.target.value)} placeholder="Your company name" className="h-12 md:h-16 text-[16px] md:text-[19px] mt-2 md:mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
             </div>
             <p className="text-xs text-[#808080] -mt-3 px-1">
               If you plan to add team members later, sign up with your <span className="text-[#E3C567]">company email</span> — team members must share the same email domain.
@@ -295,12 +295,12 @@ export default function InvestorOnboarding() {
 
       {step === 3 && (
         <div>
-          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
-          <p className="text-[18px] text-[#808080] mb-10">What are your primary states?</p>
-          <div className="space-y-7">
+          <h3 className="text-2xl md:text-[32px] font-bold text-[#E3C567] mb-2 md:mb-3">Your investment focus</h3>
+          <p className="text-[14px] md:text-[18px] text-[#808080] mb-6 md:mb-10">What are your primary states?</p>
+          <div className="space-y-5 md:space-y-7">
             <div>
-              <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Primary States *</Label>
-              <label className="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all mb-4"
+              <Label className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium mb-4 block">Primary States *</Label>
+              <label className="flex items-center gap-3 p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all mb-4 min-h-[44px] md:min-h-0"
                 style={{ borderColor: formData.nationwide ? '#E3C567' : '#1F1F1F', backgroundColor: formData.nationwide ? 'rgba(227,197,103,0.1)' : '#141414' }}>
                 <input type="checkbox" checked={formData.nationwide} onChange={(e) => toggleNationwide(e.target.checked)} className="sr-only" />
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.nationwide ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
@@ -309,7 +309,7 @@ export default function InvestorOnboarding() {
                 <span className="text-[#FAFAFA] text-[17px] font-semibold">Nationwide</span>
               </label>
               {!formData.nationwide && (
-                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 max-h-[280px] overflow-y-auto p-1">
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-y-2 gap-x-1 max-h-[320px] md:max-h-[280px] overflow-y-auto p-1">
                   {US_STATES.map(state => (
                     <button key={state} type="button" onClick={() => toggleState(state)}
                       className={`p-2.5 rounded-lg border-2 text-sm font-semibold transition-all ${(formData.primary_states || []).includes(state) ? 'border-[#E3C567] bg-[#E3C567]/15 text-[#E3C567]' : 'border-[#1F1F1F] bg-[#141414] text-[#808080] hover:border-[#E3C567]/40 hover:text-[#FAFAFA]'}`}>
@@ -323,9 +323,9 @@ export default function InvestorOnboarding() {
               )}
             </div>
             <div>
-              <Label className="text-[#FAFAFA] text-[19px] font-medium mb-4 block">Type of Deals *</Label>
+              <Label className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium mb-4 block">Type of Deals *</Label>
               <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                <label className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all min-h-[44px] md:min-h-0"
                   style={{ borderColor: allDealTypesSelected ? '#E3C567' : '#1F1F1F', backgroundColor: allDealTypesSelected ? 'rgba(227,197,103,0.1)' : '#141414' }}>
                   <input type="checkbox" checked={allDealTypesSelected} onChange={(e) => updateField('deal_types', e.target.checked ? [...DEAL_TYPES] : [])} className="sr-only" />
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${allDealTypesSelected ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
@@ -333,11 +333,11 @@ export default function InvestorOnboarding() {
                   </div>
                   <span className="text-[#FAFAFA] text-[17px] font-semibold">All</span>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {DEAL_TYPES.map(type => {
                     const selected = (formData.deal_types || []).includes(type);
                     return (
-                      <label key={type} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all"
+                      <label key={type} className="flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all min-h-[44px] md:min-h-0"
                         style={{ borderColor: selected ? '#E3C567' : '#1F1F1F', backgroundColor: selected ? 'rgba(227,197,103,0.1)' : '#141414' }}>
                         <input type="checkbox" checked={selected} onChange={() => toggleDealType(type)} className="sr-only" />
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
@@ -351,8 +351,8 @@ export default function InvestorOnboarding() {
               </div>
             </div>
             <div>
-              <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">How many deals have you done?</Label>
-              <input id="investment_experience" type="text" inputMode="numeric" placeholder="e.g. 5" value={formData.investment_experience} onChange={(e) => updateField('investment_experience', e.target.value)} className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
+              <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium">How many deals have you done?</Label>
+              <input id="investment_experience" type="text" inputMode="numeric" placeholder="e.g. 5" value={formData.investment_experience} onChange={(e) => updateField('investment_experience', e.target.value)} className="h-12 md:h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[16px] md:text-[19px] mt-2 md:mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
             </div>
           </div>
         </div>
@@ -360,18 +360,18 @@ export default function InvestorOnboarding() {
 
       {step === 4 && (
         <div>
-          <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Tell us about yourself</h3>
-          <p className="text-[18px] text-[#808080] mb-10">Let agents know a little bit about you</p>
-          <div className="space-y-7">
+          <h3 className="text-2xl md:text-[32px] font-bold text-[#E3C567] mb-2 md:mb-3">Tell us about yourself</h3>
+          <p className="text-[14px] md:text-[18px] text-[#808080] mb-6 md:mb-10">Let agents know a little bit about you</p>
+          <div className="space-y-5 md:space-y-7">
             <div>
-              <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Your Bio</Label>
+              <Label htmlFor="goals" className="text-[#FAFAFA] text-[15px] md:text-[19px] font-medium">Your Bio</Label>
               <Textarea id="goals" value={formData.goals} onChange={(e) => updateField('goals', e.target.value)} placeholder="e.g., Looking for buy-and-hold rentals in growing markets, interested in multifamily properties..." rows={6} className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" />
             </div>
             <div className="border-t border-[#1F1F1F] pt-7 mt-7">
               <h4 className="text-[22px] font-bold text-[#E3C567] mb-2">Your Next Steps Message</h4>
               <p className="text-[14px] text-[#808080] mb-6">This message will be sent to agents after you sign an agreement.</p>
               <div className="space-y-4">
-                <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
+                <label className="flex items-start gap-3 p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all min-h-[44px] md:min-h-0"
                   style={{ borderColor: formData.next_steps_template_type === 'default' ? '#E3C567' : '#1F1F1F', backgroundColor: formData.next_steps_template_type === 'default' ? 'rgba(227,197,103,0.1)' : '#141414' }}>
                   <input type="radio" name="template_type" checked={formData.next_steps_template_type === 'default'} onChange={() => updateField('next_steps_template_type', 'default')} className="sr-only" />
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5 ${formData.next_steps_template_type === 'default' ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
@@ -387,7 +387,7 @@ export default function InvestorOnboarding() {
                     <button type="button" onClick={() => setShowTemplatePreview(true)} className="text-sm text-[#E3C567] hover:text-[#EDD89F] font-medium underline transition-colors">Preview Template →</button>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all"
+                <label className="flex items-start gap-3 p-3 md:p-4 rounded-xl border-2 cursor-pointer transition-all min-h-[44px] md:min-h-0"
                   style={{ borderColor: formData.next_steps_template_type === 'custom' ? '#E3C567' : '#1F1F1F', backgroundColor: formData.next_steps_template_type === 'custom' ? 'rgba(227,197,103,0.1)' : '#141414' }}>
                   <input type="radio" name="template_type" checked={formData.next_steps_template_type === 'custom'} onChange={() => updateField('next_steps_template_type', 'custom')} className="sr-only" />
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5 ${formData.next_steps_template_type === 'custom' ? 'bg-[#E3C567] border-[#E3C567]' : 'border-[#444] bg-transparent'}`}>
