@@ -131,24 +131,32 @@ function NDAContent() {
   }
 
   return (
-    <div className="min-h-screen bg-black py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="h-screen md:min-h-screen md:h-auto bg-black py-3 md:py-8 overflow-hidden md:overflow-visible flex flex-col md:block">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 flex-1 md:flex-none min-h-0 flex flex-col md:block w-full">
         
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-[#E3C567] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="text-center mb-2 md:mb-8 flex-shrink-0">
+          <div className="hidden md:flex w-14 h-14 bg-[#E3C567] rounded-2xl items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-8 h-8 text-black" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">
+          <div className="md:hidden inline-flex items-center gap-2 mb-1">
+            <div className="w-7 h-7 bg-[#E3C567] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-4 h-4 text-black" />
+            </div>
+            <h1 className="text-base font-bold text-[#E3C567] leading-tight text-left">
+              {isAgent ? "Agent Platform Agreement" : "Investor Platform Agreement"}
+            </h1>
+          </div>
+          <h1 className="hidden md:block text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">
             {isAgent ? "Agent Platform Participation Agreement" : "Investor Platform Participation Agreement"}
           </h1>
-          <p className="text-[#808080]">
+          <p className="hidden md:block text-[#808080]">
             {isAgent
               ? "Required before accessing the agent dashboard. By signing, you confirm you have read and agree to the following."
               : "Required to access agent profiles and deal rooms"}
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="hidden md:grid grid-cols-3 gap-3 mb-6">
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
             <Lock className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
             <p className="text-xs font-medium text-[#FAFAFA]">Deal Protection</p>
@@ -163,7 +171,7 @@ function NDAContent() {
           </div>
         </div>
 
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl md:rounded-2xl p-3 md:p-5 shadow-sm flex-1 md:flex-none min-h-0 flex flex-col md:block">
           
           {/* Error Display */}
           {error && (
@@ -178,15 +186,15 @@ function NDAContent() {
             </div>
           )}
 
-          <div className="bg-[#141414] rounded-xl p-5 max-h-64 overflow-y-auto border border-[#1F1F1F] mb-5">
+          <div className="bg-[#141414] rounded-xl p-3 md:p-5 flex-1 md:flex-none min-h-0 md:max-h-64 overflow-y-auto border border-[#1F1F1F] mb-3 md:mb-5">
             {isAgent ? (
               <>
-                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Agent Platform Participation Agreement v1.0</h3>
+                <h3 className="text-sm md:text-base font-bold text-[#E3C567] mb-2 md:mb-3">Investor Agent Platform Participation Agreement v1.0</h3>
                 <AgentParticipationAgreement />
               </>
             ) : (
               <>
-                <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Platform Participation Agreement</h3>
+                <h3 className="text-sm md:text-base font-bold text-[#E3C567] mb-2 md:mb-3">Investor Platform Participation Agreement</h3>
                 <div className="prose prose-sm text-[#FAFAFA] space-y-4">
                   <p>
                     This Investor Platform Participation Agreement ("Agreement") is entered into by and between Investor Konnect, LLC ("Platform") and Registered Investor User ("Investor"). Effective upon digital execution.
@@ -310,7 +318,7 @@ function NDAContent() {
             )}
           </div>
 
-          <div className="flex items-start gap-3 mb-5 p-3 bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl">
+          <div className="flex items-start gap-3 mb-3 md:mb-5 p-2.5 md:p-3 bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl flex-shrink-0">
             <Checkbox
               id="nda-agree"
               checked={agreed}
@@ -318,17 +326,24 @@ function NDAContent() {
               className="mt-0.5"
               disabled={accepting}
             />
-            <Label htmlFor="nda-agree" className="text-sm text-[#FAFAFA] cursor-pointer leading-relaxed">
-              {isAgent
-                ? "I have read and agree to the Agent Platform Participation Agreement. I confirm broker approval for participation and understand this is a legally binding contract."
-                : "I have read and agree to the terms of this Investor Platform Participation Agreement. I understand this is a legally binding contract."}
+            <Label htmlFor="nda-agree" className="text-[12px] md:text-sm text-[#FAFAFA] cursor-pointer leading-snug md:leading-relaxed">
+              <span className="md:hidden">
+                {isAgent
+                  ? "I have read and agree to the Agent Platform Participation Agreement. I confirm broker approval and understand this is legally binding."
+                  : "I have read and agree to the terms of this agreement. I understand this is legally binding."}
+              </span>
+              <span className="hidden md:inline">
+                {isAgent
+                  ? "I have read and agree to the Agent Platform Participation Agreement. I confirm broker approval for participation and understand this is a legally binding contract."
+                  : "I have read and agree to the terms of this Investor Platform Participation Agreement. I understand this is a legally binding contract."}
+              </span>
             </Label>
           </div>
 
           <Button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="w-full h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-medium rounded-xl disabled:opacity-50"
+            className="w-full h-11 md:h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-medium rounded-xl disabled:opacity-50 flex-shrink-0"
           >
             {accepting ? (
               <>
@@ -343,8 +358,8 @@ function NDAContent() {
             )}
           </Button>
 
-          <p className="text-center text-xs text-[#808080] mt-4">
-            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-[#E3C567] hover:underline">legal@investorkonnect.com</a>
+          <p className="text-center text-[10px] md:text-xs text-[#808080] mt-2 md:mt-4 flex-shrink-0">
+            Questions? <a href="mailto:legal@investorkonnect.com" className="text-[#E3C567] hover:underline">legal@investorkonnect.com</a>
           </p>
         </div>
       </div>
