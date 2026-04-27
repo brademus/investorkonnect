@@ -18,13 +18,16 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email } = body;
+    const { email, role } = body;
 
     if (!email || !email.includes('@')) {
       return Response.json({ error: 'Valid email address is required' }, { status: 400 });
     }
 
-    console.log(`[grantAdmin] Granting admin to: ${email} (requested by: ${user.email})`);
+    const targetRole = role === 'member' ? 'member' : 'admin';
+    const action = targetRole === 'admin' ? 'Granting admin to' : 'Removing admin from';
+
+    console.log(`[grantAdmin] ${action}: ${email} (requested by: ${user.email})`);
 
     const allUsers = await base44.asServiceRole.entities.User.list();
     const targetUser = allUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
@@ -37,25 +40,26 @@ Deno.serve(async (req) => {
     }
 
     await base44.asServiceRole.entities.User.update(targetUser.id, {
-      role: 'admin'
+      role: targetRole
     });
 
     const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: targetUser.id });
 
     if (profiles.length > 0) {
       await base44.asServiceRole.entities.Profile.update(profiles[0].id, {
-        role: 'admin'
+        role: targetRole
       });
     } else {
       console.warn(`[grantAdmin] No profile found for ${email} — User role updated but profile not found`);
     }
 
-    console.log(`[grantAdmin] Successfully granted admin to: ${email}`);
+    const successMsg = targetRole === 'admin'
+      ? `${email} has been granted admin access. They will need to log out and back in for the change to take effect.`
+      : `Admin access has been removed from ${email}. They will need to log out and back in for the change to take effect.`;
 
-    return Response.json({
-      ok: true,
-      message: `${email} has been granted admin access. They will need to log out and back in for the change to take effect.`
-    });
+    console.log(`[grantAdmin] ${successMsg}`);
+
+    return Response.json({ ok: true, message: successMsg });
 
   } catch (error) {
     console.error('[grantAdmin] Error:', error);
