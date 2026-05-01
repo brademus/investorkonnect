@@ -1,0 +1,651 @@
+{
+  "name": "Profile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 auth user ID - UNIQUE CONSTRAINT"
+    },
+    "email": {
+      "type": "string",
+      "description": "User email from auth - UNIQUE CONSTRAINT"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "member",
+        "admin"
+      ],
+      "default": "member",
+      "description": "Platform admin role"
+    },
+    "user_role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent",
+        "member"
+      ],
+      "default": "member",
+      "description": "User type - investor or agent"
+    },
+    "onboarding_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "onboarding_version": {
+      "type": "string",
+      "default": null
+    },
+    "onboarding_step": {
+      "type": "string"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "onboarding_first_name": {
+      "type": "string"
+    },
+    "onboarding_last_name": {
+      "type": "string"
+    },
+    "verified_first_name": {
+      "type": "string"
+    },
+    "verified_last_name": {
+      "type": "string"
+    },
+    "identity_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "verified",
+        "failed"
+      ],
+      "default": "not_started"
+    },
+    "identity_provider": {
+      "type": "string",
+      "enum": [
+        "stripe_identity"
+      ],
+      "default": "stripe_identity"
+    },
+    "identity_session_id": {
+      "type": "string"
+    },
+    "identity_verified_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "identity_mode": {
+      "type": "string",
+      "enum": [
+        "test",
+        "live"
+      ]
+    },
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "DEPRECATED - use user_role instead"
+    },
+    "company": {
+      "type": "string"
+    },
+    "company_address": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "markets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_state": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "accreditation": {
+      "type": "string"
+    },
+    "goals": {
+      "type": "string"
+    },
+    "onboarding": {
+      "type": "object",
+      "properties": {}
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {}
+    },
+    "profileNarrative": {
+      "type": "string"
+    },
+    "embedding": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "matchedAgentId": {
+      "type": "string"
+    },
+    "matchScore": {
+      "type": "number"
+    },
+    "matchExplanation": {
+      "type": "string"
+    },
+    "investor": {
+      "type": "object",
+      "properties": {
+        "company_name": {
+          "type": "string"
+        },
+        "website": {
+          "type": "string"
+        },
+        "bio": {
+          "type": "string"
+        },
+        "buy_box": {
+          "type": "object",
+          "properties": {}
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "boost_credits": {
+          "type": "number",
+          "default": 0
+        },
+        "deal_submission": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "brokerage": {
+          "type": "string"
+        },
+        "license_number": {
+          "type": "string"
+        },
+        "license_state": {
+          "type": "string"
+        },
+        "license_type": {
+          "type": "string"
+        },
+        "licensed_states": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "state_licenses": {
+          "type": "object",
+          "description": "Map of state -> license number"
+        },
+        "state_experience_years": {
+          "type": "object"
+        },
+        "main_county": {
+          "type": "string",
+          "description": "Primary county of operation"
+        },
+        "lat": {
+          "type": "number",
+          "description": "Geocoded latitude of main county"
+        },
+        "lng": {
+          "type": "number",
+          "description": "Geocoded longitude of main county"
+        },
+        "verification_status": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "pending",
+            "verified"
+          ],
+          "default": "pending"
+        },
+        "markets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "specialties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "experience_years": {
+          "type": "number"
+        },
+        "investor_experience_years": {
+          "type": "number"
+        },
+        "investor_clients_count": {
+          "type": "number"
+        },
+        "investor_friendly": {
+          "type": "boolean",
+          "default": false
+        },
+        "is_full_time_agent": {
+          "type": "boolean"
+        },
+        "active_client_count": {
+          "type": "number"
+        },
+        "investment_deals_last_12m": {
+          "type": "number"
+        },
+        "client_focus": {
+          "type": "string",
+          "enum": [
+            "buyers",
+            "sellers",
+            "both"
+          ]
+        },
+        "investor_client_percent_bucket": {
+          "type": "string",
+          "enum": [
+            "0-25",
+            "26-50",
+            "51-75",
+            "76-100"
+          ]
+        },
+        "personally_invests": {
+          "type": "boolean"
+        },
+        "personal_investing_notes": {
+          "type": "string"
+        },
+        "investment_strategies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "typical_deal_price_range": {
+          "type": "string"
+        },
+        "investor_types_served": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metrics_used": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "what_sets_you_apart": {
+          "type": "string"
+        },
+        "primary_neighborhoods_notes": {
+          "type": "string"
+        },
+        "sources_off_market": {
+          "type": "boolean"
+        },
+        "off_market_methods_notes": {
+          "type": "string"
+        },
+        "deal_sourcing_methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "marketing_methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pro_network_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "can_refer_professionals": {
+          "type": "boolean"
+        },
+        "refer_professionals_notes": {
+          "type": "string"
+        },
+        "can_provide_investor_references": {
+          "type": "boolean"
+        },
+        "case_study_best_deal": {
+          "type": "string"
+        },
+        "update_frequency": {
+          "type": "string"
+        },
+        "typical_response_time": {
+          "type": "string"
+        },
+        "works_in_team": {
+          "type": "boolean"
+        },
+        "team_role_notes": {
+          "type": "string"
+        },
+        "preferred_communication_channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "languages_spoken": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "investor_certifications": {
+          "type": "string"
+        },
+        "keeps_up_with_trends_notes": {
+          "type": "string"
+        },
+        "commission_structure": {
+          "type": "string"
+        },
+        "has_discipline_history": {
+          "type": "boolean"
+        },
+        "risk_approach_score": {
+          "type": "number"
+        },
+        "why_good_fit_notes": {
+          "type": "string"
+        },
+        "investment_philosophy_notes": {
+          "type": "string"
+        },
+        "strengths_and_challenges_notes": {
+          "type": "string"
+        },
+        "bio": {
+          "type": "string"
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "license_number": {
+      "type": "string",
+      "description": "Legacy field - use agent.license_number"
+    },
+    "license_state": {
+      "type": "string",
+      "description": "Legacy field - use agent.license_state"
+    },
+    "subscription_tier": {
+      "type": "string",
+      "enum": [
+        "none",
+        "starter",
+        "pro",
+        "enterprise"
+      ],
+      "default": "none"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active",
+        "cancelled",
+        "expired",
+        "trialing"
+      ],
+      "default": "none"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "stripe_subscription_id": {
+      "type": "string"
+    },
+    "pending_seats_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of purchased seats pending lazy creation by teamManage list"
+    },
+    "stripe_seat_item_id": {
+      "type": "string",
+      "description": "Stripe subscription item ID for the team seat line item"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "vetted": {
+      "type": "boolean",
+      "default": false
+    },
+    "reputationScore": {
+      "type": "number",
+      "default": 0
+    },
+    "bio": {
+      "type": "string"
+    },
+    "headshotUrl": {
+      "type": "string"
+    },
+    "businessCardUrl": {
+      "type": "string"
+    },
+    "broker": {
+      "type": "string"
+    },
+    "proofLinks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nda_accepted": {
+      "type": "boolean",
+      "default": false
+    },
+    "nda_accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "nda_version": {
+      "type": "string",
+      "default": "v1.0"
+    },
+    "nda_ip": {
+      "type": "string"
+    },
+    "kyc_status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "pending",
+        "approved",
+        "needs_review",
+        "failed"
+      ],
+      "default": "unverified"
+    },
+    "kyc_provider": {
+      "type": "string"
+    },
+    "kyc_inquiry_id": {
+      "type": "string"
+    },
+    "kyc_last_checked": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_steps_template": {
+      "type": "string",
+      "description": "Legacy: custom next-steps message template"
+    },
+    "next_steps_template_type": {
+      "type": "string",
+      "enum": [
+        "default",
+        "custom"
+      ],
+      "default": "default"
+    },
+    "custom_next_steps_template": {
+      "type": "string",
+      "description": "Custom next-steps message template"
+    },
+    "qualification_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed"
+      ],
+      "description": "Whether agent has completed qualification questionnaire"
+    },
+    "qualification_tier": {
+      "type": "string",
+      "enum": [
+        "elite",
+        "approved",
+        "conditional",
+        "rejected"
+      ],
+      "description": "Agent qualification outcome tier"
+    },
+    "notification_preferences": {
+      "type": "object",
+      "description": "User notification preferences",
+      "properties": {
+        "app": {
+          "type": "boolean",
+          "default": true
+        },
+        "email": {
+          "type": "boolean",
+          "default": true
+        },
+        "text": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "last_seen_timestamps": {
+      "type": "object",
+      "description": "Map of roomId to ISO timestamp of when user last viewed that room"
+    },
+    "team_owner_id": {
+      "type": "string",
+      "description": "If this user is a team member, the Profile ID of the account owner they belong to"
+    }
+  },
+  "required": [
+    "user_id",
+    "email"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "user_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "email"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "team_owner_id"
+      ]
+    }
+  ],
+  "beforeWrite": "function(data) { if (data.email) { data.email = data.email.toLowerCase().trim(); } return data; }",
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "data.user_role": "agent"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

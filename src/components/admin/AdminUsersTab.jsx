@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, Shield, RotateCcw, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, CheckCircle, XCircle, Shield, RotateCcw, Loader2, ChevronDown, ChevronUp, ExternalLink, ShieldCheck, Phone, MapPin, Calendar } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/components/utils";
 import UserActivityPanel from "./UserActivityPanel";
 
 export default function AdminUsersTab({ profiles, users, onReload }) {
@@ -166,11 +168,13 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
             <tr className="text-left" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">User</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Contact / Location</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">License #</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Onboarded</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">ID Verified</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">NDA</th>
-
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Subscription</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Joined</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
@@ -179,20 +183,68 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
               <React.Fragment key={profile.id}>
                 <tr className="transition-colors hover:bg-[rgba(255,255,255,0.02)]" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: idx % 2 === 1 ? 'rgba(255,255,255,0.015)' : 'transparent' }}>
                   <td className="px-4 py-3.5">
-                    <button onClick={() => setSelectedProfile(profile)} className="text-left">
-                      <div className="font-medium text-[#FAFAFA] hover:text-[#E3C567] transition-colors">
-                        {profile.full_name || "No name"}
-                      </div>
-                      <div className="text-xs text-[#808080]">{profile.email}</div>
-                    </button>
-                    {profile.role === "admin" && (
-                      <Badge className="bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30 ml-2 text-[10px]">Admin</Badge>
-                    )}
+                    <div className="flex items-start gap-2">
+                      <button onClick={() => setSelectedProfile(profile)} className="text-left flex-1 min-w-0">
+                        <div className="font-medium text-[#FAFAFA] hover:text-[#E3C567] transition-colors flex items-center gap-2 flex-wrap">
+                          <span>{profile.full_name || "No name"}</span>
+                          {profile.role === "admin" && (
+                            <Badge className="bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30 text-[10px]">Admin</Badge>
+                          )}
+                          {profile.qualification_tier === "elite" && (
+                            <Badge className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px]">Elite</Badge>
+                          )}
+                          {profile.qualification_tier === "conditional" && (
+                            <Badge className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px]">Conditional</Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-[#808080] truncate">{profile.email}</div>
+                      </button>
+                      {(() => {
+                        const profileRole = profile.user_role || profile.user_type;
+                        if (profileRole !== "agent" && profileRole !== "investor") return null;
+                        const target = profileRole === "agent"
+                          ? `${createPageUrl("AgentProfile")}?profileId=${profile.id}`
+                          : `${createPageUrl("InvestorProfile")}?profileId=${profile.id}`;
+                        return (
+                          <Link
+                            to={target}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="View public profile"
+                            className="shrink-0 text-[#808080] hover:text-[#E3C567] transition-colors p-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                        );
+                      })()}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5">
                     <Badge className="capitalize text-xs bg-[rgba(255,255,255,0.06)] text-[#FAFAFA] border border-[rgba(255,255,255,0.08)]">
                       {profile.user_role || profile.user_type || "—"}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/70">
+                    <div className="space-y-0.5">
+                      {profile.phone && (
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-[#808080]" />
+                          <span>{profile.phone}</span>
+                        </div>
+                      )}
+                      {(() => {
+                        const states = profile.agent?.licensed_states || profile.markets || [];
+                        const display = Array.isArray(states) && states.length > 0 ? states.slice(0, 3).join(", ") + (states.length > 3 ? ` +${states.length - 3}` : "") : null;
+                        if (!display && !profile.agent?.main_county) return null;
+                        return (
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#808080]" />
+                            <span>{[profile.agent?.main_county, display].filter(Boolean).join(" · ")}</span>
+                          </div>
+                        );
+                      })()}
+                      {!profile.phone && !(profile.agent?.licensed_states?.length || profile.markets?.length) && !profile.agent?.main_county && <span>—</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/70">
                     {profile.agent?.license_number || profile.license_number || "—"}
@@ -205,17 +257,29 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                     )}
                   </td>
                   <td className="px-4 py-3.5">
+                    {(profile.kyc_status === "approved" || profile.identity_status === "verified" || profile.identity_verified_at) ? (
+                      <ShieldCheck className="w-4 h-4 text-[#34D399]" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-[#808080]/40" />
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5">
                     {profile.nda_accepted ? (
                       <CheckCircle className="w-4 h-4 text-[#34D399]" />
                     ) : (
                       <XCircle className="w-4 h-4 text-[#808080]/40" />
                     )}
                   </td>
-
                   <td className="px-4 py-3.5">
                     <Badge className="capitalize text-[10px] bg-[rgba(255,255,255,0.04)] text-[#808080] border border-[rgba(255,255,255,0.06)] rounded-full">
                       {profile.subscription_tier || "none"}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3.5 text-xs text-[#808080]">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {profile.created_date ? new Date(profile.created_date).toLocaleDateString() : "—"}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 text-right">
                     <Button
@@ -230,7 +294,7 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                 </tr>
                 {expandedProfile === profile.id && (
                   <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    <td colSpan={7} className="px-4 py-4">
+                    <td colSpan={10} className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" className="bg-transparent border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#E3C567] hover:bg-transparent rounded-lg" onClick={() => toggleNda(profile)} disabled={updating[`${profile.id}_nda`]}>
                           {updating[`${profile.id}_nda`] ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
