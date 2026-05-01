@@ -5,16 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, Shield, RotateCcw, Loader2, ChevronDown, ChevronUp, ExternalLink, ShieldCheck, Phone, MapPin, Calendar } from "lucide-react";
+import { Search, CheckCircle, XCircle, Shield, RotateCcw, Loader2, ChevronDown, ChevronUp, ExternalLink, ShieldCheck, Phone, MapPin, Calendar, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import UserActivityPanel from "./UserActivityPanel";
+import UserDetailsPanel from "./UserDetailsPanel";
 
 export default function AdminUsersTab({ profiles, users, onReload }) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const [detailsProfile, setDetailsProfile] = useState(null);
   const [expandedProfile, setExpandedProfile] = useState(null);
   const [updating, setUpdating] = useState({});
 
@@ -168,7 +170,8 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
             <tr className="text-left" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">User</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Contact / Location</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Phone</th>
+              <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Location</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">License #</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">Onboarded</th>
               <th className="px-4 py-3 font-medium text-[#808080] text-xs uppercase tracking-wider">ID Verified</th>
@@ -224,27 +227,29 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                       {profile.user_role || profile.user_type || "—"}
                     </Badge>
                   </td>
+                  <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/80 whitespace-nowrap">
+                    {profile.phone ? (
+                      <a href={`tel:${profile.phone}`} className="flex items-center gap-1 hover:text-[#E3C567]" onClick={(e) => e.stopPropagation()}>
+                        <Phone className="w-3 h-3 text-[#808080]" />
+                        <span>{profile.phone}</span>
+                      </a>
+                    ) : (
+                      <span className="text-[#808080]/50">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/70">
-                    <div className="space-y-0.5">
-                      {profile.phone && (
+                    {(() => {
+                      const states = profile.agent?.licensed_states || profile.markets || [];
+                      const display = Array.isArray(states) && states.length > 0 ? states.slice(0, 3).join(", ") + (states.length > 3 ? ` +${states.length - 3}` : "") : null;
+                      const text = [profile.agent?.main_county, display, profile.location].filter(Boolean).join(" · ");
+                      if (!text) return <span className="text-[#808080]/50">—</span>;
+                      return (
                         <div className="flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-[#808080]" />
-                          <span>{profile.phone}</span>
+                          <MapPin className="w-3 h-3 text-[#808080] shrink-0" />
+                          <span className="truncate max-w-[180px]">{text}</span>
                         </div>
-                      )}
-                      {(() => {
-                        const states = profile.agent?.licensed_states || profile.markets || [];
-                        const display = Array.isArray(states) && states.length > 0 ? states.slice(0, 3).join(", ") + (states.length > 3 ? ` +${states.length - 3}` : "") : null;
-                        if (!display && !profile.agent?.main_county) return null;
-                        return (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-[#808080]" />
-                            <span>{[profile.agent?.main_county, display].filter(Boolean).join(" · ")}</span>
-                          </div>
-                        );
-                      })()}
-                      {!profile.phone && !(profile.agent?.licensed_states?.length || profile.markets?.length) && !profile.agent?.main_county && <span>—</span>}
-                    </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3.5 text-xs text-[#FAFAFA]/70">
                     {profile.agent?.license_number || profile.license_number || "—"}
@@ -281,20 +286,32 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
                       {profile.created_date ? new Date(profile.created_date).toLocaleDateString() : "—"}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-[#808080] hover:text-[#FAFAFA] hover:bg-transparent"
-                      onClick={() => setExpandedProfile(expandedProfile === profile.id ? null : profile.id)}
-                    >
-                      {expandedProfile === profile.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </Button>
+                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2.5 text-xs text-[#E3C567] hover:text-[#E3C567] hover:bg-[#E3C567]/10 rounded-lg"
+                        onClick={() => setDetailsProfile(profile)}
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        View More
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-[#808080] hover:text-[#FAFAFA] hover:bg-transparent"
+                        onClick={() => setExpandedProfile(expandedProfile === profile.id ? null : profile.id)}
+                        title="Admin actions"
+                      >
+                        {expandedProfile === profile.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </td>
                 </tr>
                 {expandedProfile === profile.id && (
                   <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
-                    <td colSpan={10} className="px-4 py-4">
+                    <td colSpan={11} className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         <Button size="sm" className="bg-transparent border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#E3C567] hover:bg-transparent rounded-lg" onClick={() => toggleNda(profile)} disabled={updating[`${profile.id}_nda`]}>
                           {updating[`${profile.id}_nda`] ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
@@ -337,6 +354,9 @@ export default function AdminUsersTab({ profiles, users, onReload }) {
 
       {selectedProfile && (
         <UserActivityPanel profile={selectedProfile} onClose={() => setSelectedProfile(null)} />
+      )}
+      {detailsProfile && (
+        <UserDetailsPanel profile={detailsProfile} onClose={() => setDetailsProfile(null)} />
       )}
     </div>
   );
