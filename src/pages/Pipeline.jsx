@@ -95,10 +95,15 @@ function PipelineContent() {
   // Load deals + room data in a single call (server returns both)
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
-    staleTime: 30_000,
+    staleTime: 60_000,
     gcTime: 10 * 60_000,
-    retry: 3,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    retry: (failureCount, error) => {
+      // Don't retry rate limit errors — they only make it worse
+      const status = error?.response?.status || error?.status;
+      if (status === 429) return false;
+      return failureCount < 2;
+    },
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 10000),
     placeholderData: (prev) => prev,
     queryFn: async () => {
       const res = await base44.functions.invoke('getPipelineDealsForUser');
@@ -109,19 +114,19 @@ function PipelineContent() {
       return deals.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
     },
     enabled: !!profile?.id && ready,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 
   // Track previous deal stages for detecting transitions to completed/canceled
   const prevStagesRef = useRef(new Map());
 
-  // Real-time refresh — debounced to avoid 429 rate limits during burst events
+  // Real-time refresh — debounced heavily to avoid 429 rate limits during burst events
   const refetchTimerRef = useRef(null);
   const debouncedRefetch = () => {
     if (refetchTimerRef.current) clearTimeout(refetchTimerRef.current);
     refetchTimerRef.current = setTimeout(() => {
       refetchDeals();
-    }, 3000);
+    }, 8000);
   };
 
   useEffect(() => {
