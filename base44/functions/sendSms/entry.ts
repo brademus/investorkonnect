@@ -19,10 +19,9 @@ Deno.serve(async (req) => {
     const { to, message, internal_token } = await req.json();
 
     // If there's no user, require the internal token to prevent abuse via direct
-    // unauthenticated HTTP calls.
+    // unauthenticated HTTP calls. Used by notify* backend functions.
     if (!user) {
-      const expected = Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms';
-      if (internal_token !== expected) {
+      if (internal_token !== 'ik-internal-sms-v1') {
         return Response.json({ error: 'Unauthorized' }, { status: 401 });
       }
     }

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const smsToken = Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms';
+    const smsToken = 'ik-internal-sms-v1';
 
     // Investor SMS
     if (investor?.notification_preferences?.text && investor.phone) {

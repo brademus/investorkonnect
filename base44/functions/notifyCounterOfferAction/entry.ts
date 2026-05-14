@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: sender.phone,
         message: emailBody,
-        internal_token: Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms',
+        internal_token: 'ik-internal-sms-v1',
       }).catch((e) => { console.warn('[notifyCounterOfferAction] SMS failed:', e?.message); });
     }
 

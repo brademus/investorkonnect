@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.functions.invoke('sendSms', {
               to: p.phone,
               message: smsBody,
-              internal_token: Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms',
+              internal_token: 'ik-internal-sms-v1',
             }).catch((e) => { console.warn('[sendMessage] SMS failed:', e?.message); });
 
             await base44.asServiceRole.entities.NotificationLog.create({
