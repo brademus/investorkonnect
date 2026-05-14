@@ -89,7 +89,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 120_000);
+    const interval = setInterval(fetchNotifications, 180_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -105,7 +105,7 @@ export default function NotificationBell() {
   useEffect(() => {
     const debounced = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(fetchNotifications, 5000);
+      debounceRef.current = setTimeout(fetchNotifications, 12000);
     };
     const unsubs = [
       base44.entities.Deal.subscribe(debounced),

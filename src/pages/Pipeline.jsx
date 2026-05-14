@@ -301,8 +301,16 @@ function PipelineContent() {
   const getDaysInPipeline = (d) => { if (!d) return 'N/A'; return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`; };
 
   // Only show full-page loader on the very first load (no cached data yet).
+  // Safety timeout: bail out of loading state after 8 seconds even if backend hasn't responded
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  useEffect(() => {
+    if (!loadingDeals) { setLoadTimedOut(false); return; }
+    const t = setTimeout(() => setLoadTimedOut(true), 8000);
+    return () => clearTimeout(t);
+  }, [loadingDeals]);
+
   const hasNoData = dealsData.length === 0;
-  const isFirstLoad = hasNoData && loadingDeals;
+  const isFirstLoad = hasNoData && loadingDeals && !loadTimedOut;
   if (loading || !profile || !ready || (isFirstLoad && !dealsError)) {
     return <div className="min-h-screen bg-transparent flex flex-col"><Header profile={profile} /><div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" /></div></div>;
   }

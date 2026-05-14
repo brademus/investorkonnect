@@ -57,18 +57,9 @@ export default function MessagesBell() {
   // Fetch on mount + poll + re-fetch on tab/page focus (user returning from Room page)
   useEffect(() => {
     fetchMessages();
-    // Second fetch on mount with delay catches just-persisted last_seen from Room unmount
-    const mountDelay = setTimeout(fetchMessages, 2000);
-    const interval = setInterval(fetchMessages, 120_000);
-    const onVisibilityOrFocus = () => { setTimeout(fetchMessages, 500); };
-    window.addEventListener('focus', onVisibilityOrFocus);
-    const onVisChange = () => { if (document.visibilityState === 'visible') onVisibilityOrFocus(); };
-    document.addEventListener('visibilitychange', onVisChange);
+    const interval = setInterval(fetchMessages, 180_000);
     return () => {
-      clearTimeout(mountDelay);
       clearInterval(interval);
-      window.removeEventListener('focus', onVisibilityOrFocus);
-      document.removeEventListener('visibilitychange', onVisChange);
     };
   }, []);
 
@@ -83,12 +74,12 @@ export default function MessagesBell() {
     return () => { if (typeof unsub === 'function') unsub(); };
   }, [fetchMessages]);
 
-  // Real-time: new messages trigger refresh
+  // Real-time: new messages trigger refresh (heavily debounced to avoid 429 storms)
   useEffect(() => {
     const debounceRef = { current: null };
     const unsub = base44.entities.Message.subscribe(() => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(fetchMessages, 3000);
+      debounceRef.current = setTimeout(fetchMessages, 10000);
     });
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
