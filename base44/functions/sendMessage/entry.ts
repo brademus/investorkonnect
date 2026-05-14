@@ -46,15 +46,16 @@ Deno.serve(async (req) => {
 
         const address = room.property_address?.split(',')[0] || room.title || 'your deal';
         const senderName = profile.full_name || 'Your counterpart';
+        const senderFirstName = senderName.split(' ')[0] || senderName;
         const firstName = p.full_name?.split(' ')[0] || 'there';
 
-        const notifBody = `${firstName}, you have a new message from ${senderName} about ${address}.`;
+        const emailBody = `${firstName}, you have a new message from ${senderName} about ${address}:\n\n"${text}"`;
 
         if (p.notification_preferences?.email !== false) {
           await base44.asServiceRole.integrations.Core.SendEmail({
             to: p.email,
             subject: `New message — ${address}`,
-            body: notifBody,
+            body: emailBody,
           }).catch(() => {});
         }
 
@@ -69,10 +70,15 @@ Deno.serve(async (req) => {
           } catch (_) {}
 
           if (!recentlySent) {
+            // SMS format: "Henry: did you do the walkthrough" — truncate long messages
+            const smsPreview = text.length > 140 ? text.substring(0, 137) + '...' : text;
+            const smsBody = `${senderFirstName}: ${smsPreview}`;
+
             await base44.asServiceRole.functions.invoke('sendSms', {
               to: p.phone,
-              message: notifBody,
-            }).catch(() => {});
+              message: smsBody,
+              internal_token: Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms',
+            }).catch((e) => { console.warn('[sendMessage] SMS failed:', e?.message); });
 
             await base44.asServiceRole.entities.NotificationLog.create({
               profile_id: pid,
