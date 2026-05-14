@@ -288,14 +288,18 @@ export default function Room() {
       try {
         // Fire room fetch immediately
         const roomPromise = base44.entities.Room.filter({ id: roomId }).then(arr => arr?.[0]);
-        
-        // If we know deal_id from cache, fire deal fetch in parallel; otherwise wait for room
+
+        // If we already have a cached deal from useDealCache bulk fetch, SKIP the per-deal API call.
+        // This avoids the 429 storm from N rooms each firing getDealDetailsForUser.
         const cachedDealId = enrichedRoom?.deal_id;
+        const cachedDealData = cachedDealId ? getCachedDeal(cachedDealId) : null;
         let dealPromise;
-        if (cachedDealId) {
+        if (cachedDealData) {
+          dealPromise = Promise.resolve(cachedDealData);
+        } else if (cachedDealId) {
           dealPromise = base44.functions.invoke('getDealDetailsForUser', { dealId: cachedDealId }).then(r => r?.data).catch(() => null);
         } else {
-          dealPromise = roomPromise.then(r => 
+          dealPromise = roomPromise.then(r =>
             r?.deal_id ? base44.functions.invoke('getDealDetailsForUser', { dealId: r.deal_id }).then(res => res?.data).catch(() => null) : null
           );
         }
@@ -499,7 +503,7 @@ export default function Room() {
   useEffect(() => {
     if (!deal?.id) return;
     let lastFetchAt = 0;
-    const MIN_REFETCH_INTERVAL = 5000; // Don't refetch more than once per 5s
+    const MIN_REFETCH_INTERVAL = 15000; // Don't refetch more than once per 15s to avoid 429 storms
     const unsub = base44.entities.Deal.subscribe(e => {
       if (e?.data?.id !== deal.id) return;
       const now = Date.now();
