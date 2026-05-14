@@ -9,11 +9,24 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth guard
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Auth guard — allow either an authenticated user OR an internal service-role
+    // invocation (used by notify* functions). When called via
+    // `base44.asServiceRole.functions.invoke('sendSms', ...)` there is no user,
+    // which is expected and must be allowed; otherwise SMS notifications never fire.
+    let user = null;
+    try { user = await base44.auth.me(); } catch (_) { user = null; }
 
-    const { to, message } = await req.json();
+    const { to, message, internal_token } = await req.json();
+
+    // If there's no user, require the internal token to prevent abuse via direct
+    // unauthenticated HTTP calls.
+    if (!user) {
+      const expected = Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms';
+      if (internal_token !== expected) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
     if (!to || !message) {
       return Response.json({ error: 'to and message required' }, { status: 400 });
     }

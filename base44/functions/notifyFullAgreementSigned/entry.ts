@@ -48,12 +48,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    const smsToken = Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms';
+
     // Investor SMS
     if (investor?.notification_preferences?.text && investor.phone) {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: investor.phone,
         message: emailBody,
-      }).catch(() => {});
+        internal_token: smsToken,
+      }).catch((e) => { console.warn('[notifyFullAgreementSigned] Investor SMS failed:', e?.message); });
     }
 
     // Agent SMS
@@ -61,7 +64,8 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.functions.invoke('sendSms', {
         to: agent.phone,
         message: emailBody,
-      }).catch(() => {});
+        internal_token: smsToken,
+      }).catch((e) => { console.warn('[notifyFullAgreementSigned] Agent SMS failed:', e?.message); });
     }
 
     return Response.json({ ok: true });

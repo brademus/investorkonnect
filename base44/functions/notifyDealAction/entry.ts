@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.functions.invoke('sendSms', {
             to: recipient.phone,
             message: config.body(),
+            internal_token: Deno.env.get('SMS_INTERNAL_TOKEN') || 'ik-internal-sms',
           });
         } catch (e) {
           console.warn(`[notifyDealAction] SMS failed for ${recipient.phone}:`, e.message);
