@@ -1,0 +1,72 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "actor_id": {
+      "type": "string",
+      "description": "Profile ID of actor"
+    },
+    "actor_name": {
+      "type": "string"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Entity affected (Profile, Review, Deal, etc.)"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed (approve, reject, create, update, delete, flag, etc.)"
+    },
+    "details": {
+      "type": "string",
+      "description": "Additional context"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Masked IP"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "actor_id",
+    "action"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.actor_id": "{{user.id}}"
+        },
+        {
+          "data.actor_id": "system"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

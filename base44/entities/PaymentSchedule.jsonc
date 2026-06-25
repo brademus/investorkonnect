@@ -1,0 +1,58 @@
+{
+  "name": "PaymentSchedule",
+  "type": "object",
+  "description": "Payment plan for a deal between investor and agent",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "owner_profile_id": {
+      "type": "string",
+      "description": "Profile (investor or agent) who created this schedule"
+    },
+    "title": {
+      "type": "string",
+      "description": "Schedule name/title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of this payment plan"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Currency code"
+    },
+    "total_amount_cents": {
+      "type": "integer",
+      "description": "Optional total of all milestones in cents"
+    },
+    "template_key": {
+      "type": "string",
+      "description": "Template identifier (e.g. standard_flip, hold_with_profit_share)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft",
+      "description": "Current status of the schedule"
+    }
+  },
+  "required": [
+    "deal_id",
+    "title",
+    "currency"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id"
+      ]
+    }
+  ]
+}

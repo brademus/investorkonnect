@@ -1,0 +1,198 @@
+{
+  "name": "Room",
+  "type": "object",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "investorId": {
+      "type": "string",
+      "description": "Profile ID of investor"
+    },
+    "agent_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of agent Profile IDs in this room"
+    },
+    "agent_terms": {
+      "type": "object",
+      "description": "Agent-specific terms: { agentId: { proposed_terms object } }",
+      "properties": {}
+    },
+    "proposed_terms": {
+      "type": "object",
+      "description": "Current active proposed terms for this room (updated by counter offers)",
+      "properties": {}
+    },
+    "current_legal_agreement_id": {
+      "type": "string",
+      "description": "Pointer to active base LegalAgreement for this room"
+    },
+    "request_status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "accepted",
+        "signed",
+        "locked"
+      ],
+      "default": "requested",
+      "description": "Overall room status"
+    },
+    "agreement_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "investor_signed",
+        "fully_signed"
+      ],
+      "default": "draft",
+      "description": "Base agreement progression"
+    },
+    "agent_agreement_status": {
+      "type": "object",
+      "description": "Per-agent signing status: { agentId: 'sent'|'signed' }",
+      "properties": {}
+    },
+    "requires_regenerate": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when counter offer was accepted and agreement needs regeneration"
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When room was created"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When first agent accepted"
+    },
+    "title": {
+      "type": "string",
+      "description": "Deal title"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Full property address"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "budget": {
+      "type": "number",
+      "description": "Purchase price"
+    },
+    "closing_date": {
+      "type": "string"
+    },
+    "contract_url": {
+      "type": "string"
+    },
+    "contract_document": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "uploaded_at": {
+          "type": "string"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "uploaded_by": {
+            "type": "string"
+          },
+          "uploaded_at": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "uploaded_by": {
+            "type": "string"
+          },
+          "uploaded_at": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "locked_agent_id": {
+      "type": "string",
+      "description": "Agent ID who was the first to fully sign"
+    },
+    "locked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "onboarding_message_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the auto-generated next-steps message has been sent"
+    }
+  },
+  "required": [
+    "deal_id",
+    "investorId",
+    "agent_ids"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "investorId"
+      ]
+    }
+  ]
+}

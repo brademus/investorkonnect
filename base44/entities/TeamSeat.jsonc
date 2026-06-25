@@ -1,0 +1,138 @@
+{
+  "name": "TeamSeat",
+  "type": "object",
+  "description": "Team seat linking a member to an account owner for shared workspace access",
+  "properties": {
+    "owner_profile_id": {
+      "type": "string",
+      "description": "Profile ID of the account owner who invited this member"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the account owner (for domain validation)"
+    },
+    "member_email": {
+      "type": "string",
+      "description": "Email of the invited team member"
+    },
+    "member_profile_id": {
+      "type": "string",
+      "description": "Profile ID of the member (set after they join)"
+    },
+    "member_name": {
+      "type": "string",
+      "description": "Display name of the member"
+    },
+    "team_role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "viewer"
+      ],
+      "default": "admin",
+      "description": "admin = full access, viewer = read-only"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "invited",
+        "active",
+        "removed",
+        "pending_payment"
+      ],
+      "default": "open",
+      "description": "Current status of the seat"
+    },
+    "invited_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "joined_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stripe_subscription_item_id": {
+      "type": "string",
+      "description": "Stripe subscription item ID for the $10/mo seat charge"
+    }
+  },
+  "required": [
+    "owner_profile_id",
+    "owner_email",
+    "team_role"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "owner_profile_id"
+      ]
+    },
+    {
+      "fields": [
+        "member_email"
+      ]
+    },
+    {
+      "fields": [
+        "member_profile_id"
+      ]
+    }
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.owner_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.owner_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "data.member_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "data.member_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

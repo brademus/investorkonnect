@@ -1,0 +1,66 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "deal_created",
+        "agent_locked_in",
+        "agent_accepted",
+        "agent_rejected",
+        "message_sent",
+        "file_uploaded",
+        "photo_uploaded",
+        "deal_stage_changed"
+      ],
+      "description": "Type of activity"
+    },
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Reference to Room entity"
+    },
+    "actor_id": {
+      "type": "string",
+      "description": "Profile ID of person who triggered this activity"
+    },
+    "actor_name": {
+      "type": "string",
+      "description": "Name of person who triggered this activity"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable activity message"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional data about the activity"
+    }
+  },
+  "required": [
+    "type",
+    "actor_id",
+    "message"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id"
+      ]
+    },
+    {
+      "fields": [
+        "room_id"
+      ]
+    },
+    {
+      "fields": [
+        "created_date"
+      ]
+    }
+  ]
+}

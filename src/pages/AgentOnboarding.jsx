@@ -18,7 +18,7 @@ import PhoneVerifyStep from "@/components/onboarding/PhoneVerifyStep";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const DEAL_TYPE_OPTIONS = [
   { label: 'Wholesale', value: 'Wholesale' },
@@ -46,6 +46,7 @@ export default function AgentOnboarding() {
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '',
     state_licenses: {}, brokerage: '', main_county: '',
+    service_counties: [],
     markets: [], experience_years: '', deals_closed: '',
     investment_strategies: [], specialties: [],
     bio: '', headshotUrl: ''
@@ -98,6 +99,7 @@ export default function AgentOnboarding() {
       state_licenses: existingStateLicenses,
       brokerage: agent.brokerage || profile.broker || '',
       main_county: agent.main_county || '',
+      service_counties: agent.service_counties || [],
       markets: existingMarkets,
       experience_years: agent.experience_years || '',
       deals_closed: agent.investment_deals_last_12m || '',
@@ -193,6 +195,7 @@ export default function AgentOnboarding() {
         license_state: firstState,
         licensed_states: licensedStates,
         main_county: formData.main_county.trim(),
+        service_counties: formData.service_counties || [],
         markets: licensedStates,
         experience_years: parseInt(formData.experience_years) || 0,
         investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
@@ -416,6 +419,74 @@ export default function AgentOnboarding() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {step === 6 && (
+        <div>
+          <h3 className="text-xl md:text-[32px] font-bold text-[#E3C567] mb-1 md:mb-3">Additional Service Areas</h3>
+          <p className="text-[13px] md:text-[18px] text-[#808080] mb-3 md:mb-6">
+            Add all counties you actively work in — this helps you get matched with more deals beyond your primary county.
+          </p>
+          <p className="text-xs text-[#808080] mb-4 md:mb-6 italic">Optional — you can skip this and add more later from your profile settings.</p>
+          <div className="space-y-4">
+            {/* Input row */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., Harris, Dallas, Bexar"
+                className="flex-1 h-11 md:h-14 text-[14px] md:text-[17px] bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const val = e.target.value.trim().replace(/,$/, '');
+                    if (val && !formData.service_counties.includes(val)) {
+                      updateField('service_counties', [...formData.service_counties, val]);
+                      e.target.value = '';
+                    }
+                  }
+                }}
+                id="county-input"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById('county-input');
+                  const val = input.value.trim().replace(/,$/, '');
+                  if (val && !formData.service_counties.includes(val)) {
+                    updateField('service_counties', [...formData.service_counties, val]);
+                    input.value = '';
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-[#E3C567] text-black font-semibold text-sm hover:bg-[#EDD89F] transition-colors"
+              >
+                Add
+              </button>
+            </div>
+            <p className="text-xs text-[#808080]">Type a county name and press Enter or click Add. Enter the county name only (e.g., "Harris" not "Harris County").</p>
+            {/* Tags */}
+            {formData.service_counties.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {formData.service_counties.map((county) => (
+                  <span
+                    key={county}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#E3C567]/10 text-[#E3C567] border border-[#E3C567]/30"
+                  >
+                    {county}
+                    <button
+                      type="button"
+                      onClick={() => updateField('service_counties', formData.service_counties.filter(c => c !== county))}
+                      className="ml-0.5 text-[#E3C567]/60 hover:text-[#E3C567] transition-colors text-base leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {formData.service_counties.length === 0 && (
+              <p className="text-sm text-[#555555] mt-2">No additional counties added yet.</p>
+            )}
           </div>
         </div>
       )}

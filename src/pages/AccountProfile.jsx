@@ -125,6 +125,7 @@ function AccountProfileContent() {
         phone: profile.phone || "",
         brokerage: agent.brokerage || profile.broker || "",
         main_county: agent.main_county || "",
+        service_counties: agent.service_counties || [],
         next_steps_template: profile.next_steps_template || "",
         next_steps_template_type: profile.next_steps_template_type || "default",
         custom_next_steps_template: profile.custom_next_steps_template || "",
@@ -226,6 +227,7 @@ function AccountProfileContent() {
           licensed_states: licensedStates,
           markets: licensedStates,
           main_county: formData.main_county.trim(),
+          service_counties: formData.service_counties || [],
           experience_years: parseInt(formData.experience_years) || 0,
           investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
           investment_strategies: formData.investment_strategies,
@@ -722,6 +724,58 @@ function AccountProfileContent() {
                     )}
                     {!formData.main_county.trim() && (
                       <p className="text-xs text-[#808080]">Your primary county of operation — used for agent matching</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Service Counties */}
+                <div>
+                  <label className="text-sm font-semibold text-[#FAFAFA] block mb-1">Additional Service Areas</label>
+                  <p className="text-xs text-[#808080] mb-2">Counties you actively work in beyond your primary county. Helps you get matched with more deals.</p>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      id="service-county-input-profile"
+                      placeholder="e.g., Harris, Dallas"
+                      className="flex-1 h-10 px-3 rounded-lg bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:outline-none text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ',') {
+                          e.preventDefault();
+                          const val = e.target.value.trim().replace(/,$/, '');
+                          if (val && !(formData.service_counties || []).includes(val)) {
+                            setFormData(prev => ({ ...prev, service_counties: [...(prev.service_counties || []), val] }));
+                            e.target.value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('service-county-input-profile');
+                        const val = input.value.trim().replace(/,$/, '');
+                        if (val && !(formData.service_counties || []).includes(val)) {
+                          setFormData(prev => ({ ...prev, service_counties: [...(prev.service_counties || []), val] }));
+                          input.value = '';
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-[#E3C567] text-black font-semibold text-xs hover:bg-[#EDD89F] transition-colors"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(formData.service_counties || []).map((county) => (
+                      <span key={county} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E3C567]/10 text-[#E3C567] border border-[#E3C567]/30">
+                        {county}
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, service_counties: prev.service_counties.filter(c => c !== county) }))}
+                          className="text-[#E3C567]/60 hover:text-[#E3C567] ml-0.5"
+                        >×</button>
+                      </span>
+                    ))}
+                    {(formData.service_counties || []).length === 0 && (
+                      <span className="text-xs text-[#555555]">No additional counties added</span>
                     )}
                   </div>
                 </div>

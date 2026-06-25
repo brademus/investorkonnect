@@ -1,0 +1,90 @@
+{
+  "name": "PaymentMilestone",
+  "type": "object",
+  "description": "Single payment milestone within a schedule",
+  "properties": {
+    "schedule_id": {
+      "type": "string",
+      "description": "Reference to PaymentSchedule entity"
+    },
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity (denormalized for fast queries)"
+    },
+    "label": {
+      "type": "string",
+      "description": "Milestone name (e.g. Earnest money, Closing)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of this milestone"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this payment is due"
+    },
+    "amount_cents": {
+      "type": "integer",
+      "description": "Expected payment amount in cents"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "overdue",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Current payment status"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0,
+      "description": "Manual ordering for milestones with same due date"
+    },
+    "payer_profile_id": {
+      "type": "string",
+      "description": "Profile who pays this milestone (usually investor)"
+    },
+    "payee_profile_id": {
+      "type": "string",
+      "description": "Profile who receives this milestone (usually agent)"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when milestone was marked as paid"
+    },
+    "test_mode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is a test/sandbox milestone"
+    },
+    "external_payment_ref": {
+      "type": "string",
+      "description": "External payment reference (e.g. Stripe payment intent ID)"
+    }
+  },
+  "required": [
+    "schedule_id",
+    "deal_id",
+    "label",
+    "due_date",
+    "amount_cents",
+    "test_mode"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "schedule_id"
+      ]
+    },
+    {
+      "fields": [
+        "deal_id"
+      ]
+    }
+  ]
+}

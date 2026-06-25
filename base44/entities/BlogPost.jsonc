@@ -1,0 +1,49 @@
+{
+  "name": "BlogPost",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly slug"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Post summary for cards"
+    },
+    "body": {
+      "type": "string",
+      "description": "Full post content (markdown)"
+    },
+    "author": {
+      "type": "string",
+      "default": "AgentVault Team"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "featured_image": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "seo_title": {
+      "type": "string"
+    },
+    "seo_description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "slug",
+    "body"
+  ]
+}

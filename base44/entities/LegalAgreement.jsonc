@@ -1,0 +1,294 @@
+{
+  "name": "LegalAgreement",
+  "type": "object",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Reference to Room entity (null for legacy deal-scoped agreements)"
+    },
+    "investor_user_id": {
+      "type": "string",
+      "description": "Investor's User ID (authoritative for auth)"
+    },
+    "agent_user_id": {
+      "type": "string",
+      "description": "Agent's User ID (authoritative for auth)"
+    },
+    "investor_profile_id": {
+      "type": "string",
+      "description": "Investor's Profile ID (for display)"
+    },
+    "agent_profile_id": {
+      "type": "string",
+      "description": "Agent's Profile ID (for display)"
+    },
+    "signer_mode": {
+      "type": "string",
+      "enum": [
+        "investor_only",
+        "agent_only",
+        "both"
+      ],
+      "description": "Signing mode: investor_only (base), agent_only (invite), or both (negotiated)"
+    },
+    "source_base_agreement_id": {
+      "type": "string",
+      "description": "Base agreement ID for room agreements derived from investor signature"
+    },
+    "governing_state": {
+      "type": "string",
+      "description": "Property state (governing law)"
+    },
+    "property_zip": {
+      "type": "string",
+      "description": "Property ZIP code"
+    },
+    "city_overlay": {
+      "type": "string",
+      "description": "City overlay enum (e.g. PHILA) or null"
+    },
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "ASSIGNMENT",
+        "DOUBLE_CLOSE"
+      ],
+      "description": "Type of transaction"
+    },
+    "property_type": {
+      "type": "string",
+      "description": "Property type"
+    },
+    "investor_status": {
+      "type": "string",
+      "enum": [
+        "LICENSED",
+        "UNLICENSED"
+      ],
+      "description": "Investor licensing status"
+    },
+    "deal_count_last_365": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of deals investor completed in last 365 days (snapshot)"
+    },
+    "agreement_version": {
+      "type": "string",
+      "default": "2.0.0",
+      "description": "Legal pack version used"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "investor_signed",
+        "agent_signed",
+        "attorney_review_pending",
+        "fully_signed",
+        "superseded",
+        "voided"
+      ],
+      "default": "draft",
+      "description": "Agreement status"
+    },
+    "nj_review_end_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "NJ attorney review end timestamp (null if not NJ)"
+    },
+    "selected_rule_id": {
+      "type": "string",
+      "description": "Deterministic rule ID from pack"
+    },
+    "selected_clause_ids": {
+      "type": "object",
+      "description": "Map of category -> array of clause IDs"
+    },
+    "deep_dive_module_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Deep dive modules that were triggered"
+    },
+    "exhibit_a_terms": {
+      "type": "object",
+      "description": "Exhibit A terms JSON matching terms_schema.json"
+    },
+    "rendered_markdown_full": {
+      "type": "string",
+      "description": "Full rendered markdown (master + addendum)"
+    },
+    "template_url": {
+      "type": "string",
+      "description": "URL to the template PDF used"
+    },
+    "final_pdf_url": {
+      "type": "string",
+      "description": "URL to the final filled PDF (ready for signing)"
+    },
+    "pdf_file_url": {
+      "type": "string",
+      "description": "Legacy: URL to generated PDF"
+    },
+    "pdf_sha256": {
+      "type": "string",
+      "description": "SHA-256 hash of final PDF bytes"
+    },
+    "docusign_pdf_url": {
+      "type": "string",
+      "description": "URL to DocuSign-specific PDF with invisible anchors"
+    },
+    "docusign_pdf_sha256": {
+      "type": "string",
+      "description": "SHA-256 hash of DocuSign PDF bytes"
+    },
+    "signing_pdf_url": {
+      "type": "string",
+      "description": "Legacy: URL to signing PDF"
+    },
+    "render_context_json": {
+      "type": "object",
+      "description": "Full context used for rendering placeholders"
+    },
+    "render_input_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of inputs for regeneration guard"
+    },
+    "agreement_inputs_sha256": {
+      "type": "string",
+      "description": "Legacy: SHA-256 hash of input fingerprint for regeneration guard"
+    },
+    "missing_placeholders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of unfilled placeholders (if generation incomplete)"
+    },
+    "docusign_envelope_id": {
+      "type": "string",
+      "description": "DocuSign envelope ID"
+    },
+    "docusign_status": {
+      "type": "string",
+      "description": "DocuSign envelope status (sent, delivered, completed, voided, etc.)"
+    },
+    "docusign_envelope_pdf_hash": {
+      "type": "string",
+      "description": "Legacy: PDF hash when envelope was created"
+    },
+    "docusign_last_sent_sha256": {
+      "type": "string",
+      "description": "SHA-256 hash of DocuSign PDF when envelope was last created/sent"
+    },
+    "investor_recipient_id": {
+      "type": "string",
+      "description": "DocuSign recipient ID for investor"
+    },
+    "agent_recipient_id": {
+      "type": "string",
+      "description": "DocuSign recipient ID for agent"
+    },
+    "investor_client_user_id": {
+      "type": "string",
+      "description": "Unique client user ID for investor embedded signing"
+    },
+    "agent_client_user_id": {
+      "type": "string",
+      "description": "Unique client user ID for agent embedded signing"
+    },
+    "investor_signing_url": {
+      "type": "string",
+      "description": "Legacy: embedded signing URL for investor"
+    },
+    "agent_signing_url": {
+      "type": "string",
+      "description": "Legacy: embedded signing URL for agent"
+    },
+    "signed_pdf_url": {
+      "type": "string",
+      "description": "URL to final signed PDF from DocuSign"
+    },
+    "signed_pdf_sha256": {
+      "type": "string",
+      "description": "SHA-256 hash of signed PDF"
+    },
+    "investor_signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agent_signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "investor_ip": {
+      "type": "string",
+      "description": "Investor's IP address at signing"
+    },
+    "agent_ip": {
+      "type": "string",
+      "description": "Agent's IP address at signing"
+    },
+    "supersedes_agreement_id": {
+      "type": "string",
+      "description": "ID of the agreement this one supersedes"
+    },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "deal_id",
+    "investor_user_id",
+    "agent_user_id",
+    "governing_state",
+    "property_zip",
+    "transaction_type"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id"
+      ]
+    },
+    {
+      "fields": [
+        "room_id"
+      ]
+    },
+    {
+      "fields": [
+        "investor_user_id"
+      ]
+    },
+    {
+      "fields": [
+        "agent_user_id"
+      ]
+    }
+  ]
+}

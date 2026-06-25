@@ -1,0 +1,142 @@
+{
+  "name": "DealAppointments",
+  "type": "object",
+  "properties": {
+    "dealId": {
+      "type": "string",
+      "description": "Reference to Deal entity id"
+    },
+    "walkthrough": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_SET",
+            "PROPOSED",
+            "SCHEDULED",
+            "COMPLETED",
+            "CANCELED"
+          ],
+          "default": "NOT_SET"
+        },
+        "datetime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO datetime or null"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "locationType": {
+          "type": "string",
+          "enum": [
+            "ON_SITE",
+            "VIRTUAL"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "updatedByUserId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "inspection": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_SET",
+            "PROPOSED",
+            "SCHEDULED",
+            "COMPLETED",
+            "CANCELED"
+          ],
+          "default": "NOT_SET"
+        },
+        "datetime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "locationType": {
+          "type": "string",
+          "enum": [
+            "ON_SITE",
+            "VIRTUAL"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "updatedByUserId": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "rescheduleRequests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "dealId": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "WALKTHROUGH",
+              "INSPECTION"
+            ]
+          },
+          "requestedByUserId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "dealId",
+          "eventType",
+          "requestedByUserId",
+          "message",
+          "createdAt"
+        ]
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "dealId"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "dealId"
+      ],
+      "unique": true
+    }
+  ]
+}

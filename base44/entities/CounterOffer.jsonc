@@ -1,0 +1,161 @@
+{
+  "name": "CounterOffer",
+  "type": "object",
+  "description": "Counter-offer proposals between investor and agent",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Reference to Room entity (null for legacy deal-scoped counters)"
+    },
+    "from_role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "Who sent this counter offer"
+    },
+    "to_role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "Who receives this counter offer"
+    },
+    "from_profile_id": {
+      "type": "string",
+      "description": "Profile ID of the person who sent this counter offer"
+    },
+    "to_profile_id": {
+      "type": "string",
+      "description": "Profile ID of the intended recipient (for agent-specific counters)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "declined",
+        "superseded"
+      ],
+      "default": "pending",
+      "description": "Current status of this counter offer"
+    },
+    "terms_delta": {
+      "type": "object",
+      "description": "Proposed new terms",
+      "properties": {}
+    },
+    "original_terms_snapshot": {
+      "type": "object",
+      "description": "Snapshot of Deal.proposed_terms at time of counter creation"
+    },
+    "responded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the recipient responded"
+    },
+    "responded_by_role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "Who responded to this counter"
+    },
+    "superseded_by_counter_offer_id": {
+      "type": "string",
+      "description": "ID of the counter offer that superseded this one"
+    }
+  },
+  "required": [
+    "deal_id",
+    "from_role",
+    "to_role",
+    "terms_delta"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "room_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "created_date"
+      ]
+    },
+    {
+      "fields": [
+        "room_id",
+        "from_role",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "room_id",
+        "from_profile_id",
+        "status"
+      ]
+    }
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.from_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.from_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "data.to_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.to_profile_id": "{{user.profile.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

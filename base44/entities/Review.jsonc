@@ -1,0 +1,92 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Deal ID for deal-specific reviews"
+    },
+    "reviewee_profile_id": {
+      "type": "string",
+      "description": "Agent being reviewed"
+    },
+    "reviewer_profile_id": {
+      "type": "string",
+      "description": "Investor who wrote review"
+    },
+    "reviewer_name": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Star rating 1-5"
+    },
+    "body": {
+      "type": "string",
+      "description": "Review text"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Platform-verified review"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "External source if imported"
+    },
+    "flagged": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flagged for moderation"
+    },
+    "flag_reason": {
+      "type": "string"
+    },
+    "moderation_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "approved"
+    },
+    "market": {
+      "type": "string",
+      "description": "Market where transaction occurred"
+    },
+    "deal_type": {
+      "type": "string",
+      "description": "Type of transaction"
+    }
+  },
+  "required": [
+    "reviewee_profile_id",
+    "reviewer_profile_id",
+    "rating",
+    "body"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "data.moderation_status": "approved"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

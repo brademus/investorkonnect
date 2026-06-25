@@ -1,0 +1,43 @@
+{
+  "name": "NotificationLog",
+  "type": "object",
+  "description": "Tracks SMS/email notification sends for rate limiting",
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "description": "Recipient profile ID"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Room context"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "sms",
+        "email"
+      ],
+      "description": "Notification channel"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When notification was sent"
+    }
+  },
+  "required": [
+    "profile_id",
+    "room_id",
+    "channel",
+    "sent_at"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "profile_id",
+        "room_id",
+        "channel"
+      ]
+    }
+  ]
+}

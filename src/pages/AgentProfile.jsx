@@ -140,6 +140,8 @@ export default function AgentProfile() {
 
   const agent = agentProfile.agent || {};
   const markets = agent.markets || agentProfile.markets || [];
+  const serviceCounties = agent.service_counties || agentProfile.agent?.service_counties || [];
+  const mainCounty = agent.main_county || agentProfile.agent?.main_county || '';
   const specialties = agent.specialties || [];
   const experienceYears = agent.experience_years || agent.investor_experience_years;
   const dealsLast12m = agent.investment_deals_last_12m;
@@ -163,6 +165,25 @@ export default function AgentProfile() {
         <div className="mb-6">
           <DigitalBusinessCard agentProfile={agentProfile} ikDealsCount={dealsCompleted} showContactInfo={hasSignedAgreement || currentProfile?.role === 'admin' || currentProfile?.id === profileId} />
         </div>
+
+        {/* Service Areas */}
+        {(serviceCounties.length > 0 || mainCounty) && (
+          <div className="mb-6 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 md:p-6">
+            <p className="text-xs text-[#808080] mb-2 font-medium uppercase tracking-wide">Service Areas</p>
+            <div className="flex flex-wrap gap-1.5">
+              {mainCounty && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E3C567]/15 text-[#E3C567] border border-[#E3C567]/30">
+                  📍 {mainCounty} (Primary)
+                </span>
+              )}
+              {serviceCounties.map((county) => (
+                <span key={county} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-[#FAFAFA] border border-white/10">
+                  {county}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
 
 

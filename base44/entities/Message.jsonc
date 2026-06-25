@@ -1,0 +1,80 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "room_id": {
+      "type": "string",
+      "description": "Reference to Room entity"
+    },
+    "sender_profile_id": {
+      "type": "string",
+      "description": "Profile ID of message sender"
+    },
+    "body": {
+      "type": "string",
+      "description": "Message text content"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for file/photo/walkthrough messages",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "file_url": {
+          "type": "string"
+        },
+        "file_name": {
+          "type": "string"
+        },
+        "file_size": {
+          "type": "number"
+        },
+        "file_type": {
+          "type": "string"
+        },
+        "walkthrough_datetime": {
+          "type": "string",
+          "description": "ISO datetime of proposed walkthrough"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "confirmed",
+            "denied"
+          ],
+          "description": "Walkthrough request status"
+        },
+        "responded_by": {
+          "type": "string",
+          "description": "Profile ID of responder"
+        },
+        "responded_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the response was given"
+        }
+      }
+    },
+    "read_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of profile IDs who have read this message"
+    }
+  },
+  "required": [
+    "room_id",
+    "sender_profile_id",
+    "body"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "room_id"
+      ]
+    }
+  ]
+}

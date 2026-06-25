@@ -1,0 +1,81 @@
+{
+  "name": "DealInvite",
+  "type": "object",
+  "description": "Tracks each agent invitation for a deal - enables multi-agent selection with first-to-sign lock-in",
+  "properties": {
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "investor_id": {
+      "type": "string",
+      "description": "Investor's Profile ID"
+    },
+    "agent_profile_id": {
+      "type": "string",
+      "description": "Agent's Profile ID"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Room for this agent pairing (agent sees it; investor uses deal_id instead)"
+    },
+    "legal_agreement_id": {
+      "type": "string",
+      "description": "Agreement scoped to this agent pairing"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "INVITED",
+        "PENDING_AGENT_SIGNATURE",
+        "COUNTER_SENT",
+        "COUNTER_PENDING",
+        "LOCKED",
+        "EXPIRED",
+        "VOIDED"
+      ],
+      "default": "PENDING_AGENT_SIGNATURE",
+      "description": "Current status of this invitation"
+    },
+    "last_counter_terms": {
+      "type": "object",
+      "description": "Most recent counter offer terms if applicable"
+    },
+    "created_at_iso": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When invite was created"
+    }
+  },
+  "required": [
+    "deal_id",
+    "investor_id",
+    "agent_profile_id",
+    "room_id",
+    "legal_agreement_id"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "deal_id"
+      ]
+    },
+    {
+      "fields": [
+        "deal_id",
+        "agent_profile_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "agent_profile_id"
+      ]
+    },
+    {
+      "fields": [
+        "room_id"
+      ]
+    }
+  ]
+}

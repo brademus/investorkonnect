@@ -1,0 +1,63 @@
+{
+  "name": "ProfileVector",
+  "type": "object",
+  "description": "Stores OpenAI embeddings for AI-powered matching between investors and agents",
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "description": "Reference to Profile entity - UNIQUE"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "User role for filtering"
+    },
+    "region": {
+      "type": "string",
+      "description": "Primary state/region for pre-filtering matches"
+    },
+    "text_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of source text to detect changes"
+    },
+    "model": {
+      "type": "string",
+      "description": "OpenAI embedding model used (e.g. text-embedding-3-small)"
+    },
+    "embedding": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Vector embedding from OpenAI"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last embedding update timestamp"
+    }
+  },
+  "required": [
+    "profile_id",
+    "role",
+    "model",
+    "embedding"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "profile_id"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "role",
+        "region"
+      ]
+    }
+  ]
+}

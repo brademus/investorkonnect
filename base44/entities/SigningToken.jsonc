@@ -1,0 +1,62 @@
+{
+  "name": "SigningToken",
+  "type": "object",
+  "description": "Stores temporary tokens for DocuSign signing sessions to track return flow",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Unique token value"
+    },
+    "deal_id": {
+      "type": "string",
+      "description": "Reference to Deal entity"
+    },
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to LegalAgreement entity"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "investor",
+        "agent"
+      ],
+      "description": "Who is signing"
+    },
+    "return_to": {
+      "type": "string",
+      "description": "URL to redirect to after signing"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expiration timestamp"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether token has been consumed"
+    }
+  },
+  "required": [
+    "token",
+    "deal_id",
+    "agreement_id",
+    "role",
+    "return_to",
+    "expires_at"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "token"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "expires_at"
+      ]
+    }
+  ]
+}

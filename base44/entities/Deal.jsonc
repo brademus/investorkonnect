@@ -1,0 +1,379 @@
+{
+  "name": "Deal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "investor_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "DEPRECATED - use rooms for multi-agent support"
+    },
+    "locked_room_id": {
+      "type": "string"
+    },
+    "locked_agent_id": {
+      "type": "string"
+    },
+    "connected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "closed",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "pipeline_stage": {
+      "type": "string",
+      "enum": [
+        "new_listings",
+        "active_listings",
+        "ready_to_close",
+        "canceled",
+        "new_deals",
+        "connected_deals",
+        "in_closing",
+        "completed"
+      ],
+      "default": "new_deals"
+    },
+    "deal_type": {
+      "type": "string",
+      "enum": [
+        "wholesale",
+        "novation",
+        "whole_tail",
+        "fix_and_flip",
+        "buy_and_hold",
+        "sub_2"
+      ]
+    },
+    "property_address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "purchase_price": {
+      "type": "number"
+    },
+    "estimated_list_price": {
+      "type": "number",
+      "description": "Investor's estimated list price - visible to agents instead of contract price"
+    },
+    "list_price_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether investor has confirmed/updated the estimated list price after CMA upload"
+    },
+    "deal_lat": {
+      "type": "number"
+    },
+    "deal_lng": {
+      "type": "number"
+    },
+    "contract_url": {
+      "type": "string"
+    },
+    "contract_document": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "uploaded_at": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        }
+      }
+    },
+    "key_dates": {
+      "type": "object",
+      "properties": {
+        "closing_date": {
+          "type": "string"
+        },
+        "inspection_period_end": {
+          "type": "string"
+        },
+        "earnest_money_due": {
+          "type": "string"
+        },
+        "contract_date": {
+          "type": "string"
+        }
+      }
+    },
+    "property_type": {
+      "type": "string"
+    },
+    "property_details": {
+      "type": "object",
+      "properties": {
+        "beds": {
+          "type": "number"
+        },
+        "baths": {
+          "type": "number"
+        },
+        "sqft": {
+          "type": "number"
+        },
+        "year_built": {
+          "type": "number"
+        },
+        "number_of_stories": {
+          "type": "string"
+        },
+        "has_basement": {
+          "type": "string"
+        }
+      }
+    },
+    "seller_info": {
+      "type": "object",
+      "properties": {
+        "seller_name": {
+          "type": "string"
+        },
+        "earnest_money": {
+          "type": "number"
+        },
+        "number_of_signers": {
+          "type": "string"
+        },
+        "second_signer_name": {
+          "type": "string"
+        }
+      }
+    },
+    "proposed_terms": {
+      "type": "object",
+      "properties": {
+        "seller_commission_type": {
+          "type": "string"
+        },
+        "seller_commission_percentage": {
+          "type": "number"
+        },
+        "seller_flat_fee": {
+          "type": "number"
+        },
+        "buyer_commission_type": {
+          "type": "string"
+        },
+        "buyer_commission_percentage": {
+          "type": "number"
+        },
+        "buyer_flat_fee": {
+          "type": "number"
+        },
+        "agreement_length": {
+          "type": "number"
+        }
+      }
+    },
+    "walkthrough_scheduled": {
+      "type": "boolean"
+    },
+    "walkthrough_date": {
+      "type": "string"
+    },
+    "walkthrough_time": {
+      "type": "string"
+    },
+    "walkthrough_confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "walkthrough_confirmed_date": {
+      "type": "string"
+    },
+    "walkthrough_confirmed_time": {
+      "type": "string"
+    },
+    "walkthrough_slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "timeStart": {
+            "type": "string"
+          },
+          "timeEnd": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "current_legal_agreement_id": {
+      "type": "string",
+      "description": "DEPRECATED"
+    },
+    "requires_regenerate": {
+      "type": "boolean",
+      "default": false,
+      "description": "DEPRECATED"
+    },
+    "requires_regenerate_reason": {
+      "type": "string",
+      "description": "DEPRECATED"
+    },
+    "documents": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "purchase_contract": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "listing_agreement": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "operating_agreement": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "buyer_contract": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "cma": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "ioa_required": {
+      "type": "boolean",
+      "default": true
+    },
+    "ioa_investor_signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ioa_agent_signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ioa_investor_signed_by": {
+      "type": "string"
+    },
+    "ioa_agent_signed_by": {
+      "type": "string"
+    },
+    "ioa_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "awaiting_investor",
+        "awaiting_agent",
+        "fully_signed"
+      ],
+      "default": "not_started"
+    },
+    "budget": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "special_notes": {
+      "type": "string"
+    },
+    "selected_agent_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pending_agreement_generation": {
+      "type": "boolean"
+    },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "investor_id",
+        "property_address"
+      ],
+      "unique": true
+    },
+    {
+      "fields": [
+        "agent_id"
+      ]
+    },
+    {
+      "fields": [
+        "investor_id",
+        "status"
+      ]
+    },
+    {
+      "fields": [
+        "status",
+        "pipeline_stage"
+      ]
+    }
+  ]
+}

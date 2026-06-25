@@ -1,0 +1,169 @@
+{
+  "name": "DealDraft",
+  "type": "object",
+  "description": "Temporary storage for deal data before investor signs agreement",
+  "properties": {
+    "investor_profile_id": {
+      "type": "string",
+      "description": "Investor's Profile ID"
+    },
+    "property_address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "purchase_price": {
+      "type": "number"
+    },
+    "estimated_list_price": {
+      "type": "number",
+      "description": "Investor's estimated list price - visible to agents instead of contract price"
+    },
+    "closing_date": {
+      "type": "string"
+    },
+    "contract_date": {
+      "type": "string"
+    },
+    "property_type": {
+      "type": "string"
+    },
+    "deal_type": {
+      "type": "string",
+      "enum": [
+        "wholesale",
+        "novation",
+        "whole_tail",
+        "fix_and_flip",
+        "buy_and_hold",
+        "sub_2"
+      ],
+      "description": "Type of real estate deal"
+    },
+    "beds": {
+      "type": "number"
+    },
+    "baths": {
+      "type": "number"
+    },
+    "sqft": {
+      "type": "number"
+    },
+    "year_built": {
+      "type": "number"
+    },
+    "number_of_stories": {
+      "type": "string"
+    },
+    "has_basement": {
+      "type": "string"
+    },
+    "seller_name": {
+      "type": "string"
+    },
+    "earnest_money": {
+      "type": "number"
+    },
+    "number_of_signers": {
+      "type": "string"
+    },
+    "second_signer_name": {
+      "type": "string"
+    },
+    "seller_commission_type": {
+      "type": "string"
+    },
+    "seller_commission_percentage": {
+      "type": "number"
+    },
+    "seller_flat_fee": {
+      "type": "number"
+    },
+    "buyer_commission_type": {
+      "type": "string"
+    },
+    "buyer_commission_percentage": {
+      "type": "number"
+    },
+    "buyer_flat_fee": {
+      "type": "number"
+    },
+    "agreement_length": {
+      "type": "number"
+    },
+    "contract_url": {
+      "type": "string"
+    },
+    "special_notes": {
+      "type": "string"
+    },
+    "selected_agent_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Profile IDs of selected agents"
+    },
+    "legal_agreement_id": {
+      "type": "string",
+      "description": "Associated base LegalAgreement ID"
+    },
+    "walkthrough_scheduled": {
+      "type": "boolean",
+      "description": "Whether a walkthrough has been scheduled"
+    },
+    "walkthrough_date": {
+      "type": "string",
+      "description": "Walkthrough date as entered by user (legacy - first slot)"
+    },
+    "walkthrough_time": {
+      "type": "string",
+      "description": "Walkthrough time as entered by user (legacy - first slot)"
+    },
+    "walkthrough_slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "timeStart": {
+            "type": "string"
+          },
+          "timeEnd": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Up to 3 proposed walkthrough date/time windows"
+    }
+  },
+  "required": [
+    "investor_profile_id",
+    "property_address",
+    "selected_agent_ids"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "investor_profile_id"
+      ]
+    },
+    {
+      "fields": [
+        "legal_agreement_id"
+      ]
+    }
+  ]
+}

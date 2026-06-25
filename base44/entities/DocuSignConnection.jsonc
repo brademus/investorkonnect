@@ -1,0 +1,58 @@
+{
+  "name": "DocuSignConnection",
+  "type": "object",
+  "properties": {
+    "access_token": {
+      "type": "string",
+      "description": "DocuSign OAuth access token"
+    },
+    "refresh_token": {
+      "type": "string",
+      "description": "DocuSign OAuth refresh token"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the access token expires"
+    },
+    "account_id": {
+      "type": "string",
+      "description": "DocuSign account ID"
+    },
+    "base_uri": {
+      "type": "string",
+      "description": "DocuSign API base URI"
+    },
+    "connected_by": {
+      "type": "string",
+      "description": "User ID who authorized the connection"
+    }
+  },
+  "required": [
+    "access_token",
+    "account_id",
+    "base_uri"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

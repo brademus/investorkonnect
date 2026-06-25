@@ -206,11 +206,31 @@ export function rankAgentsForDeal(agents, dealLocation, ratingsMap, ikDealsMap) 
       dScore = distanceScore(miles);
     }
 
+    // Service county match bonus — if the deal's county is in the agent's
+    // service_counties list, boost their score significantly. This handles
+    // agents licensed statewide (e.g. all of Texas) who may be farther away
+    // but explicitly cover that county.
+    let countyBonus = 0;
+    const dealCounty = dealLocation?.county || '';
+    const serviceCounties = agent.agent?.service_counties || [];
+    const mainCounty = agent.agent?.main_county || '';
+    if (dealCounty) {
+      const dealCountyClean = dealCounty.trim().toLowerCase().replace(/\s+county$/i, '');
+      const mainCountyClean = mainCounty.trim().toLowerCase().replace(/\s+county$/i, '');
+      if (mainCountyClean && dealCountyClean === mainCountyClean) {
+        countyBonus = 20; // Main county exact match
+      } else if (serviceCounties.some(sc =>
+        sc.trim().toLowerCase().replace(/\s+county$/i, '') === dealCountyClean
+      )) {
+        countyBonus = 15; // Service area county match
+      }
+    }
+
     const r = ratingsMap?.get(agent.id) || { rating: null, reviewCount: 0 };
     const rScore = ratingScore(r.rating, r.reviewCount);
     const ikCount = ikDealsMap?.get(agent.id) || 0;
     const aScore = activityScore(ikCount);
-    const totalScore = dScore + rScore + aScore;
+    const totalScore = dScore + rScore + aScore + countyBonus;
 
     const badges = [];
     if (miles != null && miles <= 25) badges.push("local");
@@ -224,6 +244,8 @@ export function rankAgentsForDeal(agents, dealLocation, ratingsMap, ikDealsMap) 
         distanceMiles: miles != null ? Math.round(miles) : null,
         ratingScore: rScore,
         activityScore: aScore,
+        countyBonus,
+        servedCounty: countyBonus > 0 ? (countyBonus === 20 ? 'primary' : 'service') : null,
         badges,
       },
     };

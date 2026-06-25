@@ -1,0 +1,75 @@
+{
+  "name": "NDA",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Profile ID"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "docusign_envelope_id": {
+      "type": "string",
+      "description": "DocuSign envelope ID"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "signed",
+        "declined"
+      ],
+      "default": "pending"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "Masked IP for audit"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "Signed document URL"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
