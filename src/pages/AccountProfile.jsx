@@ -736,6 +736,7 @@ function AccountProfileContent() {
                   value={formData.service_counties || []}
                   onChange={(v) => setFormData(prev => ({ ...prev, service_counties: v }))}
                   states={formData.licensed_states}
+                  compact
                 />
 
                 {/* Experience & Deals */}

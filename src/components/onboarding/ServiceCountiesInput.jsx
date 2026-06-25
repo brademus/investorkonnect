@@ -12,7 +12,7 @@ import { getCountyCentroid } from "@/components/utils/agentScoring";
  * value: array of { name, state } objects
  * states: array of licensed state codes (e.g. ["TX", "FL"])
  */
-export default function ServiceCountiesInput({ value = [], onChange, states = [] }) {
+export default function ServiceCountiesInput({ value = [], onChange, states = [], compact = false }) {
   const [text, setText] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +49,57 @@ export default function ServiceCountiesInput({ value = [], onChange, states = []
   const removeCounty = (name) => {
     onChange(value.filter((c) => c.name !== name));
   };
+
+  if (compact) {
+    return (
+      <div>
+        <label className="text-sm font-semibold text-[#FAFAFA] block mb-1">Additional Service Areas</label>
+        <p className="text-xs text-[#808080] mb-2">Counties you actively work in beyond your primary county. Helps you get matched with more deals.</p>
+        <div className="flex gap-2 mb-1.5">
+          <Input
+            value={text}
+            onChange={(e) => { setText(e.target.value); setError(""); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addCounty(); }
+            }}
+            placeholder="e.g., Harris, Dallas"
+            className="flex-1 h-10 text-sm bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567]"
+          />
+          <button
+            type="button"
+            onClick={addCounty}
+            disabled={checking}
+            className="px-3 rounded-lg bg-[#E3C567] text-black font-semibold text-xs hover:bg-[#EDD89F] transition-colors disabled:opacity-60 flex items-center gap-1.5"
+          >
+            {checking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Add"}
+          </button>
+        </div>
+        <div className="min-h-[16px] mb-1.5">
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          {!error && !checking && (
+            <p className="text-xs text-[#808080]">County name only (e.g., "Harris" not "Harris County").</p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((c) => (
+            <span key={c.name} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#E3C567]/10 text-[#E3C567] border border-[#E3C567]/30">
+              {c.name}, {c.state}
+              <button
+                type="button"
+                onClick={() => removeCounty(c.name)}
+                className="text-[#E3C567]/60 hover:text-[#E3C567] ml-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+          {value.length === 0 && (
+            <span className="text-xs text-[#555555]">No additional counties added</span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
