@@ -22,7 +22,7 @@ export default function TeamNDAStep({ agreed, onAgreedChange, isAgent }) {
         ) : (
           <div className="prose prose-sm space-y-3">
             <p>This Investor Platform Participation Agreement governs your use of Investor Konnect. By accepting, you agree to non-circumvention, confidentiality, platform use requirements, ethical conduct standards, and all other terms outlined in the full agreement.</p>
-            <p>Full agreement available at <a href="mailto:legal@investorkonnect.com" className="text-[#E3C567]">legal@investorkonnect.com</a>.</p>
+            <p>Full agreement available at <a href="mailto:support@investorkonnect.com" className="text-[#E3C567]">support@investorkonnect.com</a>.</p>
           </div>
         )}
       </div>

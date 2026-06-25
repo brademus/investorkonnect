@@ -359,7 +359,7 @@ function NDAContent() {
           </Button>
 
           <p className="text-center text-[10px] md:text-xs text-[#808080] mt-2 md:mt-4 flex-shrink-0">
-            Questions? <a href="mailto:legal@investorkonnect.com" className="text-[#E3C567] hover:underline">legal@investorkonnect.com</a>
+            Questions? <a href="mailto:support@investorkonnect.com" className="text-[#E3C567] hover:underline">support@investorkonnect.com</a>
           </p>
         </div>
       </div>
