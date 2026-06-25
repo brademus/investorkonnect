@@ -212,6 +212,7 @@ export function rankAgentsForDeal(agents, dealLocation, ratingsMap, ikDealsMap) 
     // but explicitly cover that county.
     let countyBonus = 0;
     const dealCounty = dealLocation?.county || '';
+    const dealStateNorm = normalizeState(dealState);
     const serviceCounties = agent.agent?.service_counties || [];
     const mainCounty = agent.agent?.main_county || '';
     if (dealCounty) {
@@ -219,9 +220,14 @@ export function rankAgentsForDeal(agents, dealLocation, ratingsMap, ikDealsMap) 
       const mainCountyClean = mainCounty.trim().toLowerCase().replace(/\s+county$/i, '');
       if (mainCountyClean && dealCountyClean === mainCountyClean) {
         countyBonus = 20; // Main county exact match
-      } else if (serviceCounties.some(sc =>
-        sc.trim().toLowerCase().replace(/\s+county$/i, '') === dealCountyClean
-      )) {
+      } else if (serviceCounties.some(sc => {
+        // Support both {name, state} objects and legacy plain strings
+        const scName = (typeof sc === 'string' ? sc : sc?.name || '').trim().toLowerCase().replace(/\s+county$/i, '');
+        const scState = typeof sc === 'string' ? null : normalizeState(sc?.state);
+        // State must match the deal when known (object shape); strings fall back to name-only
+        const stateOk = !scState || !dealStateNorm || scState === dealStateNorm;
+        return scName === dealCountyClean && stateOk;
+      })) {
         countyBonus = 15; // Service area county match
       }
     }

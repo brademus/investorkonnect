@@ -176,11 +176,14 @@ export default function AgentProfile() {
                   📍 {mainCounty} (Primary)
                 </span>
               )}
-              {serviceCounties.map((county) => (
-                <span key={county} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-[#FAFAFA] border border-white/10">
-                  {county}
-                </span>
-              ))}
+              {serviceCounties.map((county) => {
+                const label = typeof county === 'string' ? county : `${county.name}, ${county.state}`;
+                return (
+                  <span key={label} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-[#FAFAFA] border border-white/10">
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
