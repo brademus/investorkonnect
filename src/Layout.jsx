@@ -286,22 +286,31 @@ function LayoutContent({ children }) {
       {showNav && !isNoNavPage && !(location.pathname.toLowerCase().includes('/room') && new URLSearchParams(location.search).get('roomId')) && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t border-[#1F1F1F] bg-[#0D0D0D]/90 backdrop-blur md:hidden pb-safe">
           <div className="mx-auto max-w-3xl px-6 py-2 grid grid-cols-4 gap-2 text-xs">
-            <button onClick={() => navigate(createPageUrl("Pipeline"))} className={`flex flex-col items-center gap-1 ${location.pathname === createPageUrl("Pipeline") ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
-              <FileText className="w-5 h-5" />
-              <span>Pipeline</span>
-            </button>
-            <button onClick={() => navigate(createPageUrl("Room"))} className={`flex flex-col items-center gap-1 ${location.pathname === createPageUrl("Room") ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
-              <MessageSquare className="w-5 h-5" />
-              <span>Rooms</span>
-            </button>
-            <button onClick={() => navigate(createPageUrl("HowItWorks"))} className={`flex flex-col items-center gap-1 ${location.pathname === createPageUrl("HowItWorks") ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
-              <FileText className="w-5 h-5" />
-              <span>Learn</span>
-            </button>
-            <button onClick={() => navigate(createPageUrl("AccountProfile"))} className={`flex flex-col items-center gap-1 ${location.pathname === createPageUrl("AccountProfile") ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
-              <Settings className="w-5 h-5" />
-              <span>Account</span>
-            </button>
+            {[
+              { page: "Pipeline", label: "Pipeline", Icon: FileText },
+              { page: "Room", label: "Rooms", Icon: MessageSquare },
+              { page: "HowItWorks", label: "Learn", Icon: FileText },
+              { page: "AccountProfile", label: "Account", Icon: Settings },
+            ].map(({ page, label, Icon }) => {
+              const href = createPageUrl(page);
+              const isActive = location.pathname === href;
+              return (
+                <button
+                  key={page}
+                  onClick={() => {
+                    if (isActive) {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                      navigate(href);
+                    }
+                  }}
+                  className={`flex flex-col items-center gap-1 ${isActive ? 'text-[#E3C567]' : 'text-[#808080]'}`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

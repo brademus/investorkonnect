@@ -351,6 +351,7 @@ function PipelineContent() {
           onNewDeal={() => { try { sessionStorage.removeItem('newDealDraft'); } catch (_) {} navigate(createPageUrl("NewDeal")); }}
           onOpenHelp={() => setHelpOpen(true)}
           setupDone={setupDone}
+          refetchDeals={refetchDeals}
         />
       </div>
 

@@ -6,7 +6,8 @@ import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -39,6 +40,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
+  const location = useLocation();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -63,19 +65,29 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <LayoutWrapper currentPageName={mainPageKey}>
-      <Routes>
-        {/* Safety redirect — fix double slashes in URL */}
-        <Route path="//*" element={<DoubleSlashRedirect />} />
-        <Route path="/" element={<MainPage />} />
-        {Object.entries(Pages).map(([path, Page]) => (
-          <Route key={path} path={`/${path}`} element={<Page />} />
-        ))}
-        <Route path="/DocuSignCallback" element={<LayoutWrapper currentPageName="DocuSignCallback"><DocuSignCallback /></LayoutWrapper>} />
-        <Route path="/AgentVideo" element={<LayoutWrapper currentPageName="AgentVideo"><AgentVideo /></LayoutWrapper>} />
-        <Route path="/AcceptInvite" element={<LayoutWrapper currentPageName="AcceptInvite"><AcceptInvite /></LayoutWrapper>} />
-        <Route path="/TeamAccount" element={<LayoutWrapper currentPageName="TeamAccount"><TeamAccount /></LayoutWrapper>} />
-        <Route path="*" element={<PageNotFound />} />
-      </Routes>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+        >
+          <Routes location={location}>
+            {/* Safety redirect — fix double slashes in URL */}
+            <Route path="//*" element={<DoubleSlashRedirect />} />
+            <Route path="/" element={<MainPage />} />
+            {Object.entries(Pages).map(([path, Page]) => (
+              <Route key={path} path={`/${path}`} element={<Page />} />
+            ))}
+            <Route path="/DocuSignCallback" element={<LayoutWrapper currentPageName="DocuSignCallback"><DocuSignCallback /></LayoutWrapper>} />
+            <Route path="/AgentVideo" element={<LayoutWrapper currentPageName="AgentVideo"><AgentVideo /></LayoutWrapper>} />
+            <Route path="/AcceptInvite" element={<LayoutWrapper currentPageName="AcceptInvite"><AcceptInvite /></LayoutWrapper>} />
+            <Route path="/TeamAccount" element={<LayoutWrapper currentPageName="TeamAccount"><TeamAccount /></LayoutWrapper>} />
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </motion.div>
+      </AnimatePresence>
     </LayoutWrapper>
   );
 };

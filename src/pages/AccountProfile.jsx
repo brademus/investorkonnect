@@ -7,7 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell, AlertCircle } from "lucide-react";
+import { User, CheckCircle, ArrowLeft, Camera, Loader2, CreditCard, X, Bell, AlertCircle, Trash2, ShieldAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getCountyCentroid } from "@/components/utils/agentScoring";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,6 +85,21 @@ function AccountProfileContent() {
     investor_experience: "",
   });
   const [notifPrefs, setNotifPrefs] = useState({ app: true, email: true, text: false });
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await base44.functions.invoke('deleteMyAccount', {});
+      toast.success("Your account has been deleted.");
+      setTimeout(() => { base44.auth.logout(); }, 800);
+    } catch (error) {
+      toast.error(error.message || "Failed to delete account. Please contact support.");
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  };
 
   // County validation — same as onboarding, uses first licensed state
   useEffect(() => {
@@ -875,6 +900,51 @@ function AccountProfileContent() {
                 ))}
               </div>
             </div>
+
+            {/* Danger Zone */}
+            <div className="pt-4 border-t border-[#1F1F1F]">
+              <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <ShieldAlert className="w-5 h-5 text-red-400" />
+                  <h3 className="text-lg font-semibold text-red-400">Danger Zone</h3>
+                </div>
+                <p className="text-sm text-[#808080] mb-4">
+                  Permanently delete your account and all associated deals, rooms, and data. This action cannot be undone.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={saving || deleting}
+                  className="bg-red-600 hover:bg-red-500 text-white"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
+              </div>
+            </div>
+
+            <AlertDialog open={deleteOpen} onOpenChange={(o) => { if (!deleting) setDeleteOpen(o); }}>
+              <AlertDialogContent className="bg-[#111114] border border-[#1F1F1F]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-red-400">Delete your account?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[#808080]">
+                    This will permanently delete your account along with all your deals, rooms, agreements, and messages. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting} className="bg-[#0D0D0D] border border-[#1F1F1F] text-[#808080] hover:bg-[#141414] hover:text-[#FAFAFA]">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+                    disabled={deleting}
+                    className="bg-red-600 hover:bg-red-500 text-white"
+                  >
+                    {deleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting...</> : "Yes, delete my account"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Submit */}
             <div className="flex gap-3 pt-4 sticky bottom-0 bg-[#111114] py-4 -mx-8 px-8 md:static md:bg-transparent md:py-4 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0 border-t border-[#1F1F1F] md:border-0">

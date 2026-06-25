@@ -102,7 +102,7 @@ export default function MobileDealCard({
           <Button
             onClick={() => onDealClick(deal)}
             disabled={navigating}
-            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-lg text-xs font-semibold h-9 py-0"
+            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-lg text-xs font-semibold min-h-[44px] py-0"
           >
             {navigating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
             Open
@@ -110,7 +110,7 @@ export default function MobileDealCard({
           <button
             onClick={() => setSheetOpen(true)}
             aria-label="More actions"
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1F1F1F] border border-[rgba(255,255,255,0.06)] flex-shrink-0"
+            className="w-11 min-h-[44px] flex items-center justify-center rounded-lg bg-[#1F1F1F] border border-[rgba(255,255,255,0.06)] flex-shrink-0"
           >
             <MoreHorizontal className="w-4 h-4 text-[#808080]" />
           </button>
@@ -148,7 +148,7 @@ export default function MobileDealCard({
             <button
               key={s.id}
               onClick={() => handleMove(s.id)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[#FAFAFA] hover:bg-[#1F1F1F] transition-colors"
+              className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[#FAFAFA] hover:bg-[#1F1F1F] transition-colors"
             >
               <ArrowRight className="w-4 h-4 text-[#E3C567]" />
               Move to {s.label}
@@ -157,7 +157,7 @@ export default function MobileDealCard({
           {isInvestor && !isViewerOnly && currentStage === "new_deals" && (
             <button
               onClick={() => { setSheetOpen(false); onEditDeal(deal); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[#FAFAFA] hover:bg-[#1F1F1F] transition-colors"
+              className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-[#FAFAFA] hover:bg-[#1F1F1F] transition-colors"
             >
               <Pencil className="w-4 h-4 text-[#60A5FA]" />
               Edit Deal
@@ -165,7 +165,7 @@ export default function MobileDealCard({
           )}
           <button
             onClick={() => setSheetOpen(false)}
-            className="w-full px-4 py-3 rounded-xl text-sm text-[#808080] hover:bg-[#1F1F1F] transition-colors text-center"
+            className="w-full min-h-[44px] px-4 py-3 rounded-xl text-sm text-[#808080] hover:bg-[#1F1F1F] transition-colors text-center"
           >
             Cancel
           </button>
