@@ -4,16 +4,24 @@ import { MoreHorizontal, ArrowRight, Pencil, Loader2 } from "lucide-react";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getSellerCompLabel } from "@/components/utils/dealCompDisplay";
 import { getDealNextStepLabel } from "@/components/utils/dealNextStepLabel";
-import { normalizeStage, stageOrder } from "@/components/pipelineStages";
+import { normalizeStage, stageOrder, getStageLabel } from "@/components/pipelineStages";
 import MobileBottomSheet from "./MobileBottomSheet";
 import InlineReviewForm from "@/components/room/InlineReviewForm";
 import InlineAgentReviewForm from "@/components/room/InlineAgentReviewForm";
-import { toast } from "sonner";
 
 function getDaysInPipeline(d) {
   if (!d) return "N/A";
   return `${Math.floor((new Date() - new Date(d)) / 86400000)}d`;
 }
+
+const STAGE_SHORT = {
+  new_deals: "New Deals",
+  connected_deals: "Connected",
+  active_listings: "Active Listing",
+  in_closing: "In Closing",
+  completed: "Completed",
+  canceled: "Canceled",
+};
 
 export default function MobileDealCard({
   deal, profile, isAgent, isInvestor, isViewerOnly, wtStatusMap, navigating,
@@ -40,7 +48,7 @@ export default function MobileDealCard({
     isSigned: deal.is_fully_signed
   });
 
-  // Compute valid stages to move to
+  // Compute valid stages to move to (logic unchanged)
   const getValidMoveStages = () => {
     return (pipelineStages || []).filter(s => {
       if (s.id === currentStage) return false;
@@ -51,17 +59,22 @@ export default function MobileDealCard({
     });
   };
 
+  const validStages = getValidMoveStages();
+  // Single obvious next stage = the immediate next one in the funnel, if valid
+  const nextStage = validStages.find(s => stageOrder(s.id) === stageOrder(currentStage) + 1) || null;
+
   const handleMove = async (stageId) => {
     setSheetOpen(false);
     await onStageChange(deal.id, stageId);
   };
 
   const isCompleted = currentStage === "completed" || deal.pipeline_stage === "canceled";
+  const stageLabel = STAGE_SHORT[currentStage] || getStageLabel(currentStage);
 
   return (
     <>
       <div
-        className="rounded-xl p-3"
+        className="rounded-xl p-4 active:scale-[0.99] transition-transform"
         style={{
           background: "linear-gradient(180deg, #151518 0%, #111114 100%)",
           border: "1px solid rgba(255,255,255,0.06)",
@@ -69,44 +82,68 @@ export default function MobileDealCard({
         }}
         onClick={() => onDealClick(deal)}
       >
-        {/* Line 1: Address + days */}
-        <div className="flex justify-between items-start gap-2 mb-1">
-          <h4 className="font-semibold text-[13px] leading-tight text-[#FAFAFA]/90 line-clamp-1 flex-1">
-            {isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}
-          </h4>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.42)]">
+        {/* Line 0: Stage chip + days */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E3C567]/90 bg-[#E3C567]/10 border border-[#E3C567]/20 rounded-full px-2 py-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+            {stageLabel}
+          </span>
+          <span className="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.42)]">
             {getDaysInPipeline(deal.created_date)}
           </span>
         </div>
 
-        {/* Line 2: Price · Comp · Badge (all inline) */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2 text-[11px]">
+        {/* Line 1: Address */}
+        <h4 className="font-semibold text-[15px] leading-snug text-[#FAFAFA]/90 line-clamp-1 mb-2">
+          {isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}
+        </h4>
+
+        {/* Line 2: Price · Comp · Badge */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mb-3 text-[12px]">
           {isAgent
             ? deal.estimated_list_price > 0 && <span className="text-[#2D8A6E] font-semibold">${deal.estimated_list_price.toLocaleString()}</span>
             : deal.budget > 0 && <span className="text-[#2D8A6E] font-semibold">${deal.budget.toLocaleString()}</span>
           }
           {comp && <span className="text-[#E3C567] font-semibold">· {comp}</span>}
-          {badge && <span className={`text-[10px] border px-1.5 py-0 rounded-full leading-[14px] ${badge.className}`}>{badge.label}</span>}
+          {badge && <span className={`text-[10px] border px-1.5 py-0.5 rounded-full leading-[14px] ${badge.className}`}>{badge.label}</span>}
         </div>
 
-        {/* Line 3: Next step (only if present, no extra box) */}
+        {/* Line 3: Next step */}
         {step && (
-          <div className="flex items-center justify-between mb-2 text-[11px]">
+          <div className="flex items-center justify-between mb-3 text-[12px]">
             <span className="text-[rgba(255,255,255,0.42)]">Next:</span>
             <span className={`font-semibold ${step.color} truncate ml-2`}>{step.label}</span>
           </div>
         )}
 
-        {/* Footer: action buttons (44px tall — touch target floor) */}
+        {/* Footer: Open + Move/Advance + overflow */}
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
           <Button
             onClick={() => onDealClick(deal)}
             disabled={navigating}
-            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-lg text-xs font-semibold min-h-[44px] py-0"
+            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-lg text-sm font-semibold min-h-[44px] py-0"
           >
             {navigating ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
             Open
           </Button>
+
+          {/* Discoverable advance affordance (not buried in the meatball menu) */}
+          {nextStage ? (
+            <button
+              onClick={() => handleMove(nextStage.id)}
+              className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg bg-[#1F1F1F] border border-[#E3C567]/30 text-[#E3C567] text-[12px] font-semibold flex-shrink-0"
+            >
+              Move <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : validStages.length > 0 ? (
+            <button
+              onClick={() => setSheetOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg bg-[#1F1F1F] border border-[#E3C567]/30 text-[#E3C567] text-[12px] font-semibold flex-shrink-0"
+            >
+              Move <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : null}
+
           <button
             onClick={() => setSheetOpen(true)}
             aria-label="More actions"
@@ -118,7 +155,7 @@ export default function MobileDealCard({
 
         {/* Inline review form for completed deals */}
         {isCompleted && isInvestor && (
-          <div className="mt-2">
+          <div className="mt-3">
             <InlineReviewForm
               dealId={deal.deal_id}
               agentProfileId={deal.locked_agent_id || deal.room_agent_ids?.[0]}
@@ -129,7 +166,7 @@ export default function MobileDealCard({
           </div>
         )}
         {isCompleted && isAgent && deal.investor_id && (
-          <div className="mt-2">
+          <div className="mt-3">
             <InlineAgentReviewForm
               dealId={deal.deal_id}
               investorProfileId={deal.investor_id}
@@ -144,7 +181,7 @@ export default function MobileDealCard({
       {/* Bottom sheet for overflow actions */}
       <MobileBottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Deal Actions">
         <div className="space-y-1">
-          {getValidMoveStages().map((s) => (
+          {validStages.map((s) => (
             <button
               key={s.id}
               onClick={() => handleMove(s.id)}

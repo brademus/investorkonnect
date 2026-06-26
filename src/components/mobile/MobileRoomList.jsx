@@ -54,7 +54,7 @@ export default function MobileRoomList({ rooms, userRole, search, onSearchChange
               <button
                 key={r.id}
                 onClick={() => onRoomClick(r)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 border-b border-[#1F1F1F] hover:bg-[#141414] transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-[#1F1F1F] hover:bg-[#141414] transition-colors text-left min-h-[64px]"
               >
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center flex-shrink-0">
@@ -72,9 +72,9 @@ export default function MobileRoomList({ rooms, userRole, search, onSearchChange
                       {isSigned ? (r.counterparty_name || "Deal") : (isAgent ? `${r.city || "City"}, ${r.state || "ST"}` : (r.property_address || r.title || "Deal"))}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {price && <span className="text-[11px] text-[#2D8A6E] font-medium">{price}</span>}
-                    <span className="text-[11px] text-[#808080]">{[r.city, r.state].filter(Boolean).join(", ")}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    {price && <span className="text-[12px] text-[#2D8A6E] font-medium">{price}</span>}
+                    <span className="text-[12px] text-[#808080]">{[r.city, r.state].filter(Boolean).join(", ")}</span>
                   </div>
                 </div>
 

@@ -44,12 +44,12 @@ export default function MobileRoomShell({
       />
 
       {/* Segmented control */}
-      <div className="flex gap-1 px-2 py-1.5 bg-[#0D0D0D] border-b border-[#1F1F1F] flex-shrink-0">
+      <div className="flex gap-2 px-3 py-2 bg-[#0D0D0D] border-b border-[#1F1F1F] flex-shrink-0">
         {segments.map((seg) => (
           <button
             key={seg.id}
             onClick={() => setActiveTab(seg.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 min-h-[40px] rounded-lg text-[13px] font-semibold transition-colors ${
               currentTab === seg.id ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"
             }`}
           >

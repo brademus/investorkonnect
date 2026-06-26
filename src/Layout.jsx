@@ -7,7 +7,7 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LoadingAnimation from "@/components/LoadingAnimation";
-import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye } from "lucide-react";
+import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye, Columns3, HelpCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -285,12 +285,12 @@ function LayoutContent({ children }) {
       {/* Mobile bottom nav — hidden when inside an active room */}
       {showNav && !isNoNavPage && !(location.pathname.toLowerCase().includes('/room') && new URLSearchParams(location.search).get('roomId')) && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t border-[#1F1F1F] bg-[#0D0D0D]/90 backdrop-blur md:hidden pb-safe">
-          <div className="mx-auto max-w-3xl px-6 py-2 grid grid-cols-4 gap-2 text-xs">
+          <div className="mx-auto max-w-3xl px-4 py-1.5 grid grid-cols-4 gap-2 text-xs">
             {[
-              { page: "Pipeline", label: "Pipeline", Icon: FileText },
+              { page: "Pipeline", label: "Pipeline", Icon: Columns3 },
               { page: "Room", label: "Rooms", Icon: MessageSquare },
-              { page: "HowItWorks", label: "Learn", Icon: FileText },
-              { page: "AccountProfile", label: "Account", Icon: Settings },
+              { page: "HowItWorks", label: "Learn", Icon: HelpCircle },
+              { page: "AccountProfile", label: "Account", Icon: User },
             ].map(({ page, label, Icon }) => {
               const href = createPageUrl(page);
               const isActive = location.pathname === href;
@@ -304,10 +304,16 @@ function LayoutContent({ children }) {
                       navigate(href);
                     }
                   }}
-                  className={`flex flex-col items-center gap-1 ${isActive ? 'text-[#E3C567]' : 'text-[#808080]'}`}
+                  className={`relative flex flex-col items-center gap-1 min-h-[52px] justify-center rounded-xl transition-colors ${isActive ? 'text-[#E3C567]' : 'text-[#808080]'}`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{label}</span>
+                  {/* active top indicator bar */}
+                  {isActive && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-[#E3C567]" />
+                  )}
+                  <div className={`flex items-center justify-center w-9 h-7 rounded-full transition-colors ${isActive ? 'bg-[#E3C567]/15' : ''}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px]">{label}</span>
                 </button>
               );
             })}
