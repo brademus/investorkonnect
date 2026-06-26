@@ -25,9 +25,10 @@ const STAGE_SHORT = {
 
 export default function MobileDealCard({
   deal, profile, isAgent, isInvestor, isViewerOnly, wtStatusMap, navigating,
-  onDealClick, onStageChange, onEditDeal, pipelineStages
+  onDealClick, onStageChange, onEditDeal, pipelineStages, showStageChip = false
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [confirmStage, setConfirmStage] = useState(null);
   const currentStage = normalizeStage(deal.pipeline_stage);
 
   const exhibitTerms = deal.agreement_exhibit_a_terms || deal.agreement?.exhibit_a_terms || null;
@@ -65,7 +66,18 @@ export default function MobileDealCard({
 
   const handleMove = async (stageId) => {
     setSheetOpen(false);
+    setConfirmStage(null);
     await onStageChange(deal.id, stageId);
+  };
+
+  // "Move →" — single confirm step when there's one obvious next stage,
+  // otherwise open the full destination list.
+  const onMoveClick = () => {
+    if (nextStage && validStages.length === 1) {
+      setConfirmStage(nextStage);
+    } else {
+      setSheetOpen(true);
+    }
   };
 
   const isCompleted = currentStage === "completed" || deal.pipeline_stage === "canceled";
@@ -82,12 +94,14 @@ export default function MobileDealCard({
         }}
         onClick={() => onDealClick(deal)}
       >
-        {/* Line 0: Stage chip + days */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E3C567]/90 bg-[#E3C567]/10 border border-[#E3C567]/20 rounded-full px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-            {stageLabel}
-          </span>
+        {/* Line 0: Optional stage chip + days */}
+        <div className={`flex items-center gap-2 mb-2 ${showStageChip ? "justify-between" : "justify-end"}`}>
+          {showStageChip && (
+            <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E3C567]/90 bg-[#E3C567]/10 border border-[#E3C567]/20 rounded-full px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+              {stageLabel}
+            </span>
+          )}
           <span className="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.42)]">
             {getDaysInPipeline(deal.created_date)}
           </span>
@@ -127,22 +141,15 @@ export default function MobileDealCard({
             Open
           </Button>
 
-          {/* Discoverable advance affordance (not buried in the meatball menu) */}
-          {nextStage ? (
+          {/* Discoverable advance affordance — single button, opens confirm or list */}
+          {validStages.length > 0 && (
             <button
-              onClick={() => handleMove(nextStage.id)}
+              onClick={onMoveClick}
               className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg bg-[#1F1F1F] border border-[#E3C567]/30 text-[#E3C567] text-[12px] font-semibold flex-shrink-0"
             >
               Move <ArrowRight className="w-3.5 h-3.5" />
             </button>
-          ) : validStages.length > 0 ? (
-            <button
-              onClick={() => setSheetOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg bg-[#1F1F1F] border border-[#E3C567]/30 text-[#E3C567] text-[12px] font-semibold flex-shrink-0"
-            >
-              Move <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          ) : null}
+          )}
 
           <button
             onClick={() => setSheetOpen(true)}
@@ -206,6 +213,29 @@ export default function MobileDealCard({
           >
             Cancel
           </button>
+        </div>
+      </MobileBottomSheet>
+
+      {/* Confirm single-stage move (prevents accidental advance on a mis-tap) */}
+      <MobileBottomSheet open={!!confirmStage} onClose={() => setConfirmStage(null)} title="Move deal?">
+        <div className="space-y-3">
+          <p className="text-sm text-[#FAFAFA] px-1">
+            Move this deal to <span className="font-semibold text-[#E3C567]">{confirmStage?.label}</span>?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirmStage(null)}
+              className="flex-1 min-h-[44px] px-4 py-3 rounded-xl text-sm text-[#808080] bg-[#1F1F1F] hover:bg-[#262626] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => confirmStage && handleMove(confirmStage.id)}
+              className="flex-1 min-h-[44px] px-4 py-3 rounded-xl text-sm font-semibold text-black bg-[#E3C567] hover:bg-[#EDD89F] transition-colors"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </MobileBottomSheet>
     </>

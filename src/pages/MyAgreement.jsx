@@ -89,14 +89,12 @@ export default function MyAgreement() {
             walkthroughTime: dbDeal.walkthrough_time || null
           };
           agentIds = dealData.selectedAgentIds;
-          console.log('[MyAgreement] Loaded deal data:', { buyerCommissionPercentage: dealData.buyerCommissionPercentage, agreementLength: dealData.agreementLength });
 
           // Load existing room for this deal
           const rooms = await base44.entities.Room.filter({ deal_id: dealId });
           if (rooms?.length) {
             existingRoom = rooms[0];
             setRoom(existingRoom);
-            console.log('[MyAgreement] Found existing room:', existingRoom.id);
           }
 
           // Void all old non-voided agreements for this deal
@@ -104,7 +102,6 @@ export default function MyAgreement() {
           for (const ag of oldAgreements) {
             if (ag.status !== 'voided' && ag.status !== 'superseded') {
               await base44.entities.LegalAgreement.update(ag.id, { status: 'voided' });
-              console.log('[MyAgreement] Voided old agreement:', ag.id);
             }
           }
 
@@ -168,7 +165,6 @@ export default function MyAgreement() {
           const wtDate = dealData.walkthroughDate || (dealData.walkthroughSlots?.[0]?.date) || null;
           const wtTime = dealData.walkthroughTime || (dealData.walkthroughSlots?.[0]?.timeStart) || null;
           const wtSlots = (wtScheduled && Array.isArray(dealData.walkthroughSlots) && dealData.walkthroughSlots.length > 0) ? dealData.walkthroughSlots : [];
-          console.log('[MyAgreement] Walkthrough from sessionStorage:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughDate: wtDate, walkthroughTime: wtTime, slots: wtSlots.length });
 
           const cleanedListPrice = String(dealData.estimatedListPrice || "").replace(/[$,\s]/g, "").trim();
           const draftPayload = {
@@ -210,7 +206,6 @@ export default function MyAgreement() {
             walkthrough_slots: wtSlots
           };
           const draftCreated = await base44.entities.DealDraft.create(draftPayload);
-          console.log('[MyAgreement] DealDraft created:', draftCreated.id, 'wt:', draftCreated.walkthrough_scheduled);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
@@ -342,7 +337,6 @@ export default function MyAgreement() {
 
     if (dealId) {
       // EDITING: Deal and room already exist. Update the agreement reference.
-      console.log('[MyAgreement] Investor re-signed edited deal - updating agreement links');
       toast.success('Agreement signed! Sending updated agreement to agents...');
 
       // Wait briefly for the automation to link things, then navigate

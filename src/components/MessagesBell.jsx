@@ -127,7 +127,7 @@ export default function MessagesBell() {
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 mt-2 w-[320px] rounded-2xl z-50 overflow-hidden"
+          className="absolute right-0 mt-2 w-[min(320px,calc(100vw-1.5rem))] rounded-2xl z-50 overflow-hidden"
           style={{
             background: '#111114',
             border: '1px solid rgba(255,255,255,0.07)',

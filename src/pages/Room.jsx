@@ -22,6 +22,7 @@ import { useRoomMessages } from "@/components/room/useRoomMessages";
 import { notificationEvents } from "@/components/utils/notificationEvents";
 import MobileRoomList from "@/components/mobile/MobileRoomList";
 import MobileRoomShell from "@/components/mobile/MobileRoomShell";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 
@@ -30,6 +31,7 @@ export default function Room() {
   const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
+  const isMobile = useIsMobile();
   const { profile, user, loading, onboarded, hasNDA, isPaidSubscriber, kycVerified } = useCurrentProfile();
   const { data: rooms = [] } = useRooms();
   const { getDeal: getCachedDeal, patchDeal } = useDealCache(rooms, profile);
@@ -568,8 +570,9 @@ export default function Room() {
 
   return (
     <>
-    {/* Mobile */}
-    <div className="md:hidden fixed inset-0 bg-black flex flex-col">
+    {/* Mobile — render ONLY on mobile so MobileRoomShell/SimpleMessageBoard don't double-mount with desktop */}
+    {isMobile && (
+    <div className="fixed inset-0 bg-black flex flex-col">
       {!roomId ? (
         <MobileRoomList
           rooms={filteredRooms}
@@ -661,8 +664,10 @@ export default function Room() {
         />
       )}
     </div>
-    {/* Desktop */}
-    <div className="hidden md:flex fixed inset-0 bg-transparent overflow-hidden">
+    )}
+    {/* Desktop — render ONLY on desktop so DealBoard/SimpleMessageBoard mount exactly once */}
+    {!isMobile && (
+    <div className="flex fixed inset-0 bg-transparent overflow-hidden">
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 w-[320px] bg-[#0D0D0D] border-r border-[#1F1F1F] z-40 transform transition-transform shadow-xl ${drawer ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 flex flex-col`}>
         <RoomSidebar
@@ -922,6 +927,7 @@ export default function Room() {
         </div>
       </div>
     </div>
+    )}
     </>
   );
 }

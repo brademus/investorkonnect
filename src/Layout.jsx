@@ -7,6 +7,7 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import HelpPanel from "@/components/HelpPanel";
 import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut, Eye, Columns3, HelpCircle } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,6 +40,7 @@ function LayoutContent({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, user, role, hasRoom, onboarded, profile, error } = useCurrentProfile();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Debounced navigation logging — prevents burst requests when navigating
   React.useEffect(() => {
@@ -289,16 +291,18 @@ function LayoutContent({ children }) {
             {[
               { page: "Pipeline", label: "Pipeline", Icon: Columns3 },
               { page: "Room", label: "Rooms", Icon: MessageSquare },
-              { page: "HowItWorks", label: "Learn", Icon: HelpCircle },
+              { action: "help", label: "Learn", Icon: HelpCircle },
               { page: "AccountProfile", label: "Account", Icon: User },
-            ].map(({ page, label, Icon }) => {
-              const href = createPageUrl(page);
-              const isActive = location.pathname === href;
+            ].map(({ page, label, Icon, action }) => {
+              const href = page ? createPageUrl(page) : null;
+              const isActive = action === "help" ? helpOpen : location.pathname === href;
               return (
                 <button
-                  key={page}
+                  key={page || action}
                   onClick={() => {
-                    if (isActive) {
+                    if (action === "help") {
+                      setHelpOpen(true);
+                    } else if (isActive) {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else {
                       navigate(href);
@@ -330,6 +334,9 @@ function LayoutContent({ children }) {
           <MessageSquare className="w-6 h-6 text-black" />
         </Link>
       )}
+
+      {/* Help & Tutorials overlay — opened by the mobile "Learn" tab */}
+      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} userRole={role} />
       </div>{/* end content wrapper */}
     </div>
   );

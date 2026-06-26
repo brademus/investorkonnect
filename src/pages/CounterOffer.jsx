@@ -129,9 +129,9 @@ export default function CounterOfferPage() {
 
     setBusy(true);
     try {
-      // CRITICAL: Normalize commission type to match what agreement generation expects
-      // Counter offers now target SELLER's agent commission
-      const normalizedType = commissionType === 'percentage' ? 'percentage' : 'flat';
+      // CRITICAL: Emit the canonical 'flat_fee' value that the SelectItem, pre-fill path,
+      // and MyAgreement's `=== 'flat_fee'` check all use — so every consumer agrees.
+      const normalizedType = commissionType === 'percentage' ? 'percentage' : 'flat_fee';
       const counterTerms = {
         buyer_commission_type: normalizedType,
         buyer_commission_percentage: normalizedType === 'percentage' ? parseFloat(commissionAmount) : null,

@@ -93,6 +93,16 @@ export default function MobilePipeline({
         onDealClick={onDealClick}
       />
 
+      {/* Active-stage section label — separates the stage list from the amber tray above */}
+      {stageDeals.length > 0 && (
+        <div className="flex items-center gap-2 mb-2 px-0.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-[rgba(255,255,255,0.5)]">
+            {activeStageObj?.label || "Deals"}
+          </span>
+          <span className="text-[11px] text-[rgba(255,255,255,0.3)]">· {stageDeals.length}</span>
+        </div>
+      )}
+
       {/* Deal list */}
       <div className="flex-1 space-y-3">
         {stageDeals.length === 0 ? (
