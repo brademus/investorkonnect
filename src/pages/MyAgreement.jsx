@@ -345,7 +345,6 @@ export default function MyAgreement() {
       }, 2000);
     } else {
       // NEW DEAL: automation will create deal and invites
-      console.log('[MyAgreement] Investor signed - automation will create deal and invites');
       toast.success('Agreement signed! Your deal is being created and sent to agents...');
 
       setTimeout(() => {

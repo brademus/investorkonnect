@@ -24,32 +24,36 @@ function downloadFile(url, name) {
 function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage, onView, onDownload }) {
   const hasFile = !!url;
   return (
-    <div className={`flex items-center gap-3 p-4 rounded-xl border transition-colors ${hasFile ? 'bg-[#141414] border-[#1F1F1F]' : 'bg-[#0A0A0A] border-[#1A1A1A] opacity-60'}`}>
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${hasFile ? 'bg-[#E3C567]/15' : 'bg-[#1F1F1F]'}`}>
-        {hasFile ? <FileText className="w-5 h-5 text-[#E3C567]" /> : <Lock className="w-5 h-5 text-[#808080]" />}
+    <div className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors md:flex-row md:items-center ${hasFile ? 'bg-[#141414] border-[#1F1F1F]' : 'bg-[#0A0A0A] border-[#1A1A1A] opacity-60'}`}>
+      {/* Top line: icon + label/filename — always gets full width on mobile */}
+      <div className="flex items-center gap-3 min-w-0 md:flex-1">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${hasFile ? 'bg-[#E3C567]/15' : 'bg-[#1F1F1F]'}`}>
+          {hasFile ? <FileText className="w-5 h-5 text-[#E3C567]" /> : <Lock className="w-5 h-5 text-[#808080]" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium ${hasFile ? 'text-[#FAFAFA]' : 'text-[#808080]'}`}>{label}</p>
+          {hasFile && filename && <p className="text-xs text-[#808080] truncate">{filename}</p>}
+          {hasFile && verified && (
+            <span className="inline-flex items-center gap-1 text-xs text-[#34D399] mt-0.5"><CheckCircle2 className="w-3 h-3" />Verified</span>
+          )}
+          {!hasFile && blockedMessage && (
+            <p className="text-xs text-[#F59E0B] mt-0.5">{blockedMessage}</p>
+          )}
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${hasFile ? 'text-[#FAFAFA]' : 'text-[#808080]'}`}>{label}</p>
-        {hasFile && filename && <p className="text-xs text-[#808080] truncate">{filename}</p>}
-        {hasFile && verified && (
-          <span className="inline-flex items-center gap-1 text-xs text-[#34D399] mt-0.5"><CheckCircle2 className="w-3 h-3" />Verified</span>
-        )}
-        {!hasFile && blockedMessage && (
-          <p className="text-xs text-[#F59E0B] mt-0.5">{blockedMessage}</p>
-        )}
-      </div>
+      {/* Action buttons: second row on mobile, inline on desktop */}
       {hasFile ? (
-        <div className="flex items-center gap-2">
-          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
-            <Eye className="w-3 h-3" />View
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); onView(); }} className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 min-h-[44px] text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+            <Eye className="w-3.5 h-3.5" />View
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
-            <Download className="w-3 h-3" />Download
+          <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 min-h-[44px] text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+            <Download className="w-3.5 h-3.5" />Download
           </button>
         </div>
       ) : onUpload ? (
-        <Button onClick={onUpload} variant="outline" size="sm" className="rounded-full border-[#1F1F1F] text-[#808080] hover:border-[#E3C567] hover:text-[#E3C567]">
-          <Upload className="w-3 h-3 mr-1.5" />Upload
+        <Button onClick={onUpload} variant="outline" className="w-full md:w-auto flex-shrink-0 min-h-[44px] rounded-full border-[#1F1F1F] text-[#808080] hover:border-[#E3C567] hover:text-[#E3C567]">
+          <Upload className="w-3.5 h-3.5 mr-1.5" />Upload
         </Button>
       ) : null}
     </div>
@@ -224,9 +228,9 @@ export default function FilesTab({ deal, room, roomId, profile }) {
   messageFiles.filter(f => !(f.type || '').startsWith('image/')).forEach(f => addShared(f.name, f.url, 'Message'));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Required Documents Panel */}
-      <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
+      <div className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
         <h4 className="text-lg font-semibold text-[#FAFAFA] mb-5">Required Documents</h4>
         <div className="space-y-3">
           <DocRow
@@ -278,7 +282,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       </div>
 
       {/* Shared Files Panel */}
-      <div className="rounded-[16px] p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
+      <div className="rounded-[16px] p-4 md:p-6" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 30px rgba(0,0,0,0.60)' }}>
         <div className="flex items-center justify-between mb-5">
           <h4 className="text-lg font-semibold text-[#FAFAFA]">Shared Files</h4>
           <Button onClick={uploadGenericFile} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs">
@@ -290,20 +294,22 @@ export default function FilesTab({ deal, room, roomId, profile }) {
         ) : (
           <div className="space-y-2">
             {sharedFiles.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                <FileText className="w-5 h-5 text-[#E3C567] flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                     <p className="text-sm text-[#FAFAFA] truncate">{f.name}</p>
-                     <p className="text-xs text-[#808080]">{f.source}</p>
-                   </div>
-                   <div className="flex items-center gap-2">
-                     <button onClick={(e) => { e.stopPropagation(); setViewerFile({ url: f.url, name: f.name }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
-                       <Eye className="w-3 h-3" />View
-                     </button>
-                     <button onClick={(e) => { e.stopPropagation(); downloadFile(f.url, f.name); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
-                       <Download className="w-3 h-3" />Download
-                     </button>
-                   </div>
+              <div key={i} className="flex flex-col gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] md:flex-row md:items-center">
+                <div className="flex items-center gap-3 min-w-0 md:flex-1">
+                  <FileText className="w-5 h-5 text-[#E3C567] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#FAFAFA] truncate">{f.name}</p>
+                    <p className="text-xs text-[#808080]">{f.source}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button onClick={(e) => { e.stopPropagation(); setViewerFile({ url: f.url, name: f.name }); }} className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 min-h-[44px] text-xs font-medium border border-[#1F1F1F] text-[#FAFAFA] rounded-full hover:border-[#E3C567] hover:text-[#E3C567] transition-colors">
+                    <Eye className="w-3.5 h-3.5" />View
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); downloadFile(f.url, f.name); }} className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-3 min-h-[44px] text-xs font-medium bg-[#E3C567] text-black rounded-full hover:bg-[#EDD89F] transition-colors">
+                    <Download className="w-3.5 h-3.5" />Download
+                  </button>
+                </div>
               </div>
             ))}
           </div>

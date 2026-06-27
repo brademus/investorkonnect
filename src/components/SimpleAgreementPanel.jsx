@@ -619,7 +619,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-4 md:p-6">
         {agreementBody}
       </CardContent>
     </Card>

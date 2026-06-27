@@ -193,7 +193,7 @@ export default function WalkthroughPanel({ deal, room, profile, roomId, onOpenRe
   else if (status === "PROPOSED" && !proposedBySelf && proposedByProfileId) statusLabel = "New Dates Proposed — Please Confirm";
 
   return (
-    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 md:p-6">
       <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Walk-through</h4>
 
       {!apptLoaded && hasWalkthrough ? (

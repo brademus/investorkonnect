@@ -698,7 +698,7 @@ export default function NewDeal() {
         </div>
 
         {/* Section 1: Property + Deal Info */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 mb-6">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 md:p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
               <Home className="w-6 h-6 text-[#E3C567]" />
@@ -959,7 +959,7 @@ export default function NewDeal() {
         </div>
 
         {/* Section 2: Seller Info */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 mb-6">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 md:p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center">
               <FileText className="w-6 h-6 text-[#60A5FA]" />
@@ -972,7 +972,7 @@ export default function NewDeal() {
 
           <div className="space-y-5">
             <div>
-              <label className="block text.sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name *</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name *</label>
               <Input
                 value={sellerName}
                 onChange={(e) => setSellerName(e.target.value)}
@@ -1024,7 +1024,7 @@ export default function NewDeal() {
         </div>
 
         {/* Section 3: Proposed Terms */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 mb-8">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 md:p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-[#34D399]/20 rounded-full flex items-center justify-center">
               <Handshake className="w-6 h-6 text-[#34D399]" />
@@ -1285,7 +1285,7 @@ export default function NewDeal() {
         </div>
 
         {/* Continue Button */}
-        <div className="flex justify-end sticky bottom-0 bg-[#0D0D0D] py-4 -mx-6 px-6 md:static md:bg-transparent md:py-0 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
+        <div className="flex justify-end sticky bottom-0 bg-[#0D0D0D] py-4 -mx-4 px-4 md:static md:bg-transparent md:py-0 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0">
           <Button
             onClick={handleContinue}
             disabled={submitting}

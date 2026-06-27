@@ -226,7 +226,7 @@ export default function ContractVerify() {
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 md:p-8">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-red-500" />
               <h2 className="text-lg font-semibold text-[#FAFAFA]">No Deal Data</h2>
@@ -252,7 +252,7 @@ export default function ContractVerify() {
           <p className="text-sm text-[#808080]">Upload your contract to verify details match your deal</p>
         </div>
 
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 md:p-8">
 
           {!verificationResult ? (
              <div className="space-y-6">
@@ -298,7 +298,7 @@ export default function ContractVerify() {
             <div className="space-y-6">
               {/* Verification Results */}
               {verificationResult.mismatches.length === 0 ? (
-                <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-6">
+                <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-4 md:p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <CheckCircle2 className="w-6 h-6 text-[#34D399]" />
                     <h3 className="font-semibold text-[#34D399] text-lg">Contract Verified</h3>
@@ -316,7 +316,7 @@ export default function ContractVerify() {
                 <div>
                   {/* Show matches */}
                   {verificationResult.matches.length > 0 && (
-                    <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-6 mb-4">
+                    <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-4 md:p-6 mb-4">
                       <h3 className="font-semibold text-[#34D399] text-sm mb-3">Verified Fields</h3>
                       <div className="space-y-2">
                         {verificationResult.matches.map((field, i) => (
@@ -330,7 +330,7 @@ export default function ContractVerify() {
                   )}
 
                   {/* Show mismatches */}
-                  <div className="bg-[#141414] border border-[#F87171]/30 rounded-lg p-6 mb-6">
+                  <div className="bg-[#141414] border border-[#F87171]/30 rounded-lg p-4 md:p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
                       <AlertCircle className="w-6 h-6 text-[#F87171]" />
                       <h3 className="font-semibold text-[#F87171] text-lg">Mismatches Found</h3>

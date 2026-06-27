@@ -337,7 +337,7 @@ function AccountProfileContent() {
         </div>
 
         {/* Profile Form */}
-        <div className="ik-card p-8" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
+        <div className="ik-card p-5 md:p-8" style={{ background: 'linear-gradient(180deg, #17171B 0%, #111114 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, boxShadow: '0 8px 30px rgba(0,0,0,0.6)' }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Profile Picture & Business Card - side by side */}
             <div>
@@ -947,7 +947,7 @@ function AccountProfileContent() {
             </AlertDialog>
 
             {/* Submit */}
-            <div className="flex gap-3 pt-4 sticky bottom-0 bg-[#111114] py-4 -mx-8 px-8 md:static md:bg-transparent md:py-4 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0 border-t border-[#1F1F1F] md:border-0">
+            <div className="flex gap-3 pt-4 sticky bottom-0 bg-[#111114] py-4 -mx-5 px-5 md:static md:bg-transparent md:py-4 md:mx-0 md:px-0 pb-[env(safe-area-inset-bottom)] md:pb-0 border-t border-[#1F1F1F] md:border-0">
               <Button
                 type="submit"
                 disabled={saving || (formData.role === 'agent' && countyChecking)}

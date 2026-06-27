@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Plus, Loader2, Inbox } from "lucide-react";
+import { Plus, Loader2, Inbox, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import usePullToRefresh from "./usePullToRefresh";
 import MobileStageSwitcher from "./MobileStageSwitcher";
@@ -28,6 +28,9 @@ export default function MobilePipeline({
   const [activeStage, setActiveStage] = useState(pipelineStages[0]?.id || "new_deals");
   const stageDeals = dealsByStage.get(activeStage) || [];
   const activeStageObj = pipelineStages.find(s => s.id === activeStage);
+
+  // First-run state: account has zero deals total (not just zero in the active stage)
+  const isFirstRun = (deals || []).length === 0 && isInvestor && !isViewerOnly;
 
   const containerRef = useRef(null);
   const { pullDistance, refreshing } = usePullToRefresh(containerRef, refetchDeals);
@@ -73,6 +76,32 @@ export default function MobilePipeline({
       {/* Setup checklist */}
       {!setupDone && <div className="mb-4"><SetupChecklist profile={profile} /></div>}
 
+      {/* First-run hero — a brand-new investor's "first win" moment */}
+      {isFirstRun && (
+        <div
+          className="mb-4 rounded-2xl p-5 text-center"
+          style={{
+            background: "linear-gradient(180deg, rgba(227,197,103,0.10) 0%, rgba(227,197,103,0.03) 100%)",
+            border: "1px solid rgba(227,197,103,0.25)",
+          }}
+        >
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center bg-[#E3C567]/15">
+            <Sparkles className="w-6 h-6 text-[#E3C567]" />
+          </div>
+          <h2 className="text-base font-bold text-[#E3C567] mb-1.5">Welcome to Investor Konnect</h2>
+          <p className="text-sm text-[rgba(255,255,255,0.6)] mb-4 max-w-[280px] mx-auto leading-relaxed">
+            Post a deal → match with vetted agents → close, all in one place.
+          </p>
+          <Button
+            onClick={onNewDeal}
+            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold min-h-[44px] px-6"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Create your first deal
+          </Button>
+        </div>
+      )}
+
       {/* Sticky stepper — always visible while scrolling the list */}
       <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#0c0c0e]/95 backdrop-blur-sm mb-4">
         <MobileStageSwitcher
@@ -111,7 +140,7 @@ export default function MobilePipeline({
             <p className="text-base font-semibold text-[rgba(255,255,255,0.55)] mb-1">
               No deals in {activeStageObj?.label || "this stage"}
             </p>
-            {activeStage === "new_deals" && isInvestor && !isViewerOnly ? (
+            {activeStage === "new_deals" && isInvestor && !isViewerOnly && !isFirstRun ? (
               <>
                 <p className="text-sm text-[rgba(255,255,255,0.35)] mb-5 max-w-[260px]">
                   Start your first deal to get matched with vetted, investor-friendly agents.

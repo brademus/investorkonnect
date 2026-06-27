@@ -173,8 +173,8 @@ export default function Pricing() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#E3C567]/10 to-transparent" />
         <div className="relative max-w-6xl mx-auto px-4 py-16">
           <div className="text-center">
-            <h1 className="text-5xl font-bold text-white mb-6">Choose Your Plan</h1>
-            <p className="text-xl text-[#808080] max-w-2xl mx-auto mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">Choose Your Plan</h1>
+            <p className="text-base md:text-xl text-[#808080] max-w-2xl mx-auto mb-8">
               Unlock the full potential of Investor Konnect with a subscription that fits your needs
             </p>
             <div className="inline-flex items-center px-4 py-2 bg-[#0D0D0D] border border-[#1F1F1F] rounded-full">
@@ -203,7 +203,7 @@ export default function Pricing() {
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
 
           {/* SOLO PLAN */}
-          <Card className="relative bg-[#0D0D0D] border-[#1F1F1F] p-8 flex flex-col">
+          <Card className="relative bg-[#0D0D0D] border-[#1F1F1F] p-5 md:p-8 flex flex-col">
             <div className="mb-6 text-center">
               <div className="w-12 h-12 bg-[#E3C567]/15 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <User className="w-6 h-6 text-[#E3C567]" />
@@ -211,7 +211,7 @@ export default function Pricing() {
               <h3 className="text-2xl font-bold text-white mb-2">Solo</h3>
               <p className="text-[#808080] mb-4">For individual investors</p>
               <div className="flex items-baseline justify-center">
-                <span className="text-5xl font-bold text-white">$49</span>
+                <span className="text-4xl md:text-5xl font-bold text-white">$49</span>
                 <span className="text-[#808080] ml-1">/month</span>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function Pricing() {
           </Card>
 
           {/* TEAM PLAN */}
-          <Card className="relative bg-[#0D0D0D] border-[#1F1F1F] p-8 ring-2 ring-[#E3C567] flex flex-col">
+          <Card className="relative bg-[#0D0D0D] border-[#1F1F1F] p-5 md:p-8 ring-2 ring-[#E3C567] flex flex-col">
             {/* Popular badge */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="px-4 py-1 bg-[#E3C567] text-black text-xs font-bold rounded-full uppercase tracking-wider">
@@ -268,7 +268,7 @@ export default function Pricing() {
               <h3 className="text-2xl font-bold text-white mb-2">Team</h3>
               <p className="text-[#808080] mb-4">Share your pipeline with your team</p>
               <div className="flex items-baseline justify-center">
-                <span className="text-5xl font-bold text-white">$49</span>
+                <span className="text-4xl md:text-5xl font-bold text-white">$49</span>
                 <span className="text-[#808080] ml-1">/mo</span>
                 <span className="text-[#808080] ml-2">+</span>
                 <span className="text-2xl font-bold text-[#E3C567] ml-2">$10</span>

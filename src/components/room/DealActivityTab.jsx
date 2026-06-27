@@ -138,7 +138,7 @@ export default function DealActivityTab({ dealId, roomId }) {
   if (loading) return <div className="text-center py-12 text-[#808080] text-sm">Loading activity...</div>;
 
   return (
-    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 md:p-6">
       <h4 className="text-lg font-semibold text-[#FAFAFA] mb-6">Activity</h4>
       {timeline.length === 0 ? (
         <p className="text-sm text-[#808080] text-center py-8">No activity yet</p>

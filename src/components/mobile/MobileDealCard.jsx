@@ -83,6 +83,11 @@ export default function MobileDealCard({
   const isCompleted = currentStage === "completed" || deal.pipeline_stage === "canceled";
   const stageLabel = STAGE_SHORT[currentStage] || getStageLabel(currentStage);
 
+  // Funnel progress hint (5 forward stages: new → connected → active → closing → completed)
+  const FUNNEL = ["new_deals", "connected_deals", "active_listings", "in_closing", "completed"];
+  const funnelIndex = FUNNEL.indexOf(currentStage);
+  const showProgress = funnelIndex >= 0 && deal.pipeline_stage !== "canceled";
+
   return (
     <>
       <div
@@ -122,10 +127,30 @@ export default function MobileDealCard({
           {badge && <span className={`text-[10px] border px-1.5 py-0.5 rounded-full leading-[14px] ${badge.className}`}>{badge.label}</span>}
         </div>
 
+        {/* Progress hint: 5-segment mini bar tying card to funnel position */}
+        {showProgress && (
+          <div className="flex items-center gap-2 mb-2.5">
+            <div className="flex gap-1 flex-1">
+              {FUNNEL.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 flex-1 rounded-full ${i <= funnelIndex ? "bg-[#E3C567]" : "bg-[rgba(255,255,255,0.10)]"}`}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] font-semibold text-[rgba(255,255,255,0.4)] whitespace-nowrap">
+              Step {funnelIndex + 1} of 5
+            </span>
+          </div>
+        )}
+
         {/* Line 3: Next step */}
         {step && (
           <div className="flex items-center justify-between mb-3 text-[12px]">
-            <span className="text-[rgba(255,255,255,0.42)]">Next:</span>
+            <span className="flex items-center gap-1.5 text-[rgba(255,255,255,0.42)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] flex-shrink-0" />
+              Next:
+            </span>
             <span className={`font-semibold ${step.color} truncate ml-2`}>{step.label}</span>
           </div>
         )}
