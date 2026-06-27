@@ -129,7 +129,6 @@ export default function InvestorProfile() {
       const revs = await base44.entities.Review.filter({ reviewee_profile_id: profileId });
       setReviews(revs || []);
     } catch (e) {
-      console.log('[InvestorProfile] Could not load reviews:', e);
     }
   };
 
@@ -144,8 +143,7 @@ export default function InvestorProfile() {
            const deals = await base44.entities.Deal.filter({ investor_id: profileId });
            setIkDealsCount(deals?.length || 0);
          } catch (e) {
-           console.log('[InvestorProfile] Could not load deals:', e);
-           setIkDealsCount(0);
+                setIkDealsCount(0);
          }
          await fetchReviews();
 
@@ -159,8 +157,7 @@ export default function InvestorProfile() {
              );
              setHasSignedAgreement(hasLocked);
            } catch (e) {
-             console.log('[InvestorProfile] Could not check agreement:', e);
-           }
+                  }
          }
          } catch (err) {
          console.error("[InvestorProfile] Load failed:", err);

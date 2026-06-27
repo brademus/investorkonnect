@@ -38,12 +38,10 @@ export default function SelectAgent() {
   useEffect(() => {
     const loadAgents = async () => {
       if (!dealData?.state) {
-        console.log('[SelectAgent] No deal state or city found, staying in loading');
-        setLoading(false);
+          setLoading(false);
         return;
       }
 
-      console.log('[SelectAgent] Loading agents for city:', dealData.city, 'state:', dealData.state);
       setLoading(true);
       try {
         // Fetch all agents and all deals in parallel
@@ -52,8 +50,7 @@ export default function SelectAgent() {
           base44.entities.Deal.filter({})
         ]);
 
-        console.log('[SelectAgent] Total agents found:', allAgents.length);
-
+  
         // Build IK deals count map
         const ikMap = new Map();
         allAgents.forEach(a => ikMap.set(a.id, 0));
@@ -89,8 +86,7 @@ export default function SelectAgent() {
 
         // Rank agents
         const ranked = rankAgentsForDeal(allAgents, dealLocation, ratingsMap, ikMap);
-        console.log('[SelectAgent] Ranked agents for', dealData.city, dealData.state, ':', ranked.length);
-        setAgents(ranked);
+          setAgents(ranked);
 
         if (ranked.length === 0) {
           toast.info("No agents available in this market yet");
@@ -137,7 +133,6 @@ export default function SelectAgent() {
       sessionStorage.setItem("newDealDraft", JSON.stringify(updatedDealData));
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
       
-      console.log('[SelectAgent] Saved agent selection to sessionStorage:', selectedAgentIds);
       
       // Navigate to MyAgreement page to generate and sign (deal will be created on signature)
       navigate(createPageUrl("MyAgreement"));

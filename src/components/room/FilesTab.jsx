@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { validateSafeDocument } from "@/components/utils/fileValidation";
 import { reportError } from "@/components/utils/reportError";
 import FileViewerModal from "@/components/room/FileViewerModal";
+import { openExternal } from "@/lib/native";
 
 function downloadFile(url, name) {
   fetch(url).then(res => res.blob()).then(blob => {
@@ -18,7 +19,7 @@ function downloadFile(url, name) {
     a.click();
     URL.revokeObjectURL(blobUrl);
     a.remove();
-  }).catch(() => window.open(url, '_blank'));
+  }).catch(() => openExternal(url));
 }
 
 function DocRow({ label, url, filename, verified, available, onUpload, blockedMessage, onView, onDownload }) {

@@ -179,7 +179,6 @@ function AccountProfileContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log('[AccountProfile] 🚀 Saving profile changes...');
 
     // Validation
     if (!formData.full_name || !formData.full_name.trim()) {
@@ -278,21 +277,18 @@ function AccountProfileContent() {
             if (coords) {
               agentUpdate.lat = coords.lat;
               agentUpdate.lng = coords.lng;
-              console.log('[AccountProfile] Geocoded county:', formData.main_county, firstState, coords);
-            }
+                      }
           }
         }
 
         updateData.agent = agentUpdate;
       }
 
-      console.log('[AccountProfile] 📤 Updating profile:', updateData);
-
+  
       // Directly update the Profile entity (role cannot change)
       await base44.entities.Profile.update(profile.id, updateData);
 
-      console.log('[AccountProfile] ✅ Profile updated successfully!');
-      toast.success("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
 
       // Go back to Pipeline
       setTimeout(() => {

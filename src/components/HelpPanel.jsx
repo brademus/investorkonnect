@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Play, BookOpen, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { openExternal } from '@/lib/native';
 
 export default function HelpPanel({ open, onOpenChange, userRole }) {
   const [internalOpen, setInternalOpen] = useState(false);
@@ -146,7 +147,7 @@ export default function HelpPanel({ open, onOpenChange, userRole }) {
                   <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">Need Help Now?</h4>
                   <div className="space-y-2">
                     <Button
-                      onClick={() => window.open('mailto:support@investorkonnect.com', '_blank')}
+                      onClick={() => openExternal('mailto:support@investorkonnect.com')}
                       className="w-full bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] justify-start"
                     >
                       <BookOpen className="w-4 h-4 mr-2" />

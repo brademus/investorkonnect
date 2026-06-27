@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import WalkthroughMessageCard from "@/components/room/WalkthroughMessageCard";
 import { useRoomMessages } from "@/components/room/useRoomMessages";
+import { openExternal } from "@/lib/native";
 
 function isFromMe(m, user, profile) {
   if (m?._isMe) return true;
@@ -120,7 +121,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
             <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
               <div className={"px-4 py-2 rounded-2xl max-w-[85%] md:max-w-[70%] min-w-0 break-words " + (isMe ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
                 {isPhoto && m?.metadata?.file_url ? (
-                  <div><img src={m.metadata.file_url} alt="" className="rounded-lg max-w-full max-h-64 mb-2 cursor-pointer" onClick={() => window.open(m.metadata.file_url, '_blank')} /><p className="text-[15px] whitespace-pre-wrap break-words">{m.body}</p></div>
+                  <div><img src={m.metadata.file_url} alt="" className="rounded-lg max-w-full max-h-64 mb-2 cursor-pointer" onClick={() => openExternal(m.metadata.file_url)} /><p className="text-[15px] whitespace-pre-wrap break-words">{m.body}</p></div>
                 ) : isFile && m?.metadata?.file_url ? (
                   <a href={m.metadata.file_url} download className={"flex items-center gap-2 text-[15px] hover:underline break-words " + (isMe ? "text-black" : "text-[#E3C567]")}>📎 {m.metadata.file_name || 'Download'}</a>
                 ) : (

@@ -14,17 +14,14 @@ export default function Logout() {
   }, []);
 
   const handleLogout = async () => {
-    console.log('[Logout] Signing out...');
     
     try {
       await base44.auth.logout();
-      console.log('[Logout] Sign out complete');
-    } catch (error) {
+      } catch (error) {
       console.error('[Logout] Sign out error:', error);
     }
     
     // Always redirect to home after logout
-    console.log('[Logout] Redirecting to home...');
     window.location.replace(`${PUBLIC_APP_URL}/`);
   };
 

@@ -229,8 +229,7 @@ export default function NewDeal() {
             setZip(deal.zip || "");
             setCounty(deal.county || "");
             
-            console.log('[NewDeal] Loaded county from deal:', deal.county);
-            setPurchasePrice(deal.purchase_price?.toString() || "");
+                setPurchasePrice(deal.purchase_price?.toString() || "");
             setEstimatedListPrice(deal.estimated_list_price?.toString() || "");
             setClosingDate(deal.key_dates?.closing_date || "");
             setContractDate(deal.key_dates?.contract_date || "");
@@ -286,8 +285,7 @@ export default function NewDeal() {
                   const roomHasValues = Object.values(roomTerms).some(v => v !== null && v !== undefined && v !== '');
                   if (roomHasValues) {
                     terms = roomTerms;
-                    console.log('[NewDeal] Loaded terms from Room:', terms);
-                  }
+                              }
                 }
                 
                 // Last resort: check the LegalAgreement's exhibit_a_terms (authoritative source)
@@ -306,8 +304,7 @@ export default function NewDeal() {
                       buyer_flat_fee: ex.buyer_flat_fee ?? null,
                       agreement_length: ex.agreement_length_days || ex.agreement_length || null,
                     };
-                    console.log('[NewDeal] Loaded terms from LegalAgreement exhibit_a_terms:', terms);
-                  }
+                              }
                 }
                 
                 // Migrate terms to Deal entity for future use
@@ -315,15 +312,13 @@ export default function NewDeal() {
                   const finalHasValues = Object.values(terms).some(v => v !== null && v !== undefined && v !== '');
                   if (finalHasValues) {
                     await base44.entities.Deal.update(dealId, { proposed_terms: terms });
-                    console.log('[NewDeal] Migrated terms to Deal entity');
-                  }
+                              }
                 }
               } catch (e) {
                 console.error("Failed to load terms from Room/Agreement:", e);
               }
             } else {
-              console.log('[NewDeal] Loaded terms from Deal entity:', terms);
-            }
+                  }
             
             // Populate form fields if terms exist
             if (terms) {
@@ -481,8 +476,7 @@ export default function NewDeal() {
     try {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
-        console.log('[NewDeal] Saving county to deal:', county);
-        
+          
         await base44.entities.Deal.update(dealId, {
           property_address: propertyAddress,
           city: city,
@@ -632,8 +626,7 @@ export default function NewDeal() {
 
     // Save to sessionStorage - include dealId if editing
     // This is the single source of truth — all downstream pages read from 'newDealDraft'
-    console.log('[NewDeal] Saving walkthrough to sessionStorage:', { walkthroughScheduled, walkthroughSlots });
-    
+
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress, city, state, zip, county, purchasePrice, estimatedListPrice, closingDate, contractDate, specialNotes,

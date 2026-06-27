@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { reportError } from "@/components/utils/reportError";
+import { isNativeIOS } from "@/lib/native";
+import { isCheckoutAvailable } from "@/lib/iap";
 
 export default function Pricing() {
   const { user, profile, loading, refresh } = useCurrentProfile();
@@ -68,8 +70,19 @@ export default function Pricing() {
     });
   }, [seatCount]);
 
+  // On native iOS, Stripe web checkout is not allowed (Guideline 3.1.1).
+  // IAP is scaffolded but disabled — so the paywall is unavailable on iOS for now.
+  const checkoutAvailable = isCheckoutAvailable();
+
   const handleSoloSubscribe = async () => {
     if (!user) { navigate(createPageUrl("Login")); return; }
+    if (isNativeIOS()) {
+      // IAP disabled → don't fall through to Stripe on iOS.
+      toast("Subscriptions aren't available in the app yet", {
+        description: "Please manage your subscription on the web for now.",
+      });
+      return;
+    }
     setCheckoutLoading(true);
     try {
       let response, lastError;
@@ -95,6 +108,12 @@ export default function Pricing() {
   };
 
   const handleTeamSubscribe = async () => {
+    if (isNativeIOS()) {
+      toast("Subscriptions aren't available in the app yet", {
+        description: "Please manage your team subscription on the web for now.",
+      });
+      return;
+    }
     const trimmed = teamEmails.map(e => e.trim().toLowerCase());
     for (let i = 0; i < trimmed.length; i++) {
       if (!trimmed[i] || !trimmed[i].includes('@')) {
@@ -181,6 +200,13 @@ export default function Pricing() {
               <CreditCard className="w-4 h-4 text-[#E3C567] mr-2" />
               <span className="text-sm text-[#808080]">Cancel anytime</span>
             </div>
+            {!checkoutAvailable && (
+              <div className="mt-6 max-w-md mx-auto rounded-xl bg-[#F59E0B]/8 border border-[#F59E0B]/25 px-4 py-3">
+                <p className="text-sm text-[#FAFAFA]">
+                  In-app subscriptions are coming soon. To subscribe now, please visit Investor Konnect on the web.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

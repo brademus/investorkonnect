@@ -43,8 +43,7 @@ export default function DocuSignReturn() {
       const signingRole = searchParams.get('role') || 'investor';
       const token = searchParams.get('token');
 
-      console.log('[DocuSignReturn]', { event, dealId, roomId, signingRole, allParams: Object.fromEntries([...searchParams]) });
-
+  
       // Handle cancel/decline quickly
       if (event === 'decline' || event === 'cancel') {
         setMessage("Signature cancelled");
@@ -94,8 +93,7 @@ export default function DocuSignReturn() {
       // Call pollAndFinalizeSignature with a timeout so we don't wait forever
       if (agreementId) {
         try {
-          console.log('[DocuSignReturn] Calling pollAndFinalizeSignature:', agreementId, signingRole);
-          setMessage("Confirming signature...");
+              setMessage("Confirming signature...");
 
           const pollPromise = base44.functions.invoke('pollAndFinalizeSignature', {
             agreement_id: agreementId,
@@ -108,8 +106,7 @@ export default function DocuSignReturn() {
             new Promise((_, reject) => setTimeout(() => reject(new Error('poll_timeout')), 8000))
           ]);
 
-          console.log('[DocuSignReturn] pollAndFinalize result:', result.data);
-
+    
           // Investor flow for NEW deals (no roomId yet): redirect to room or pipeline
           if (signingRole === 'investor' && !roomId) {
             const roomIdResult = result.data?.room_id;

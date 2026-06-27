@@ -41,8 +41,7 @@ export default function MyAgreement() {
 
         // If editing existing deal, load from database
         if (isEditingExistingDeal) {
-          console.log('[MyAgreement] Loading existing deal from database:', dealId);
-          const deals = await base44.entities.Deal.filter({ id: dealId });
+                const deals = await base44.entities.Deal.filter({ id: dealId });
           if (!deals?.length) {
             toast.error('Deal not found');
             navigate(createPageUrl('Pipeline'), { replace: true });

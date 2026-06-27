@@ -26,8 +26,7 @@ export default function AgentProfile() {
     try {
       const res = await base44.functions.invoke('getAgentReviews', { profileId });
       const agentReviews = res?.data?.reviews || [];
-      console.log('[AgentProfile] Fetched reviews for', profileId, ':', agentReviews.length);
-      setReviews(agentReviews);
+        setReviews(agentReviews);
     } catch (err) {
       console.error('[AgentProfile] Reviews fetch FAILED:', err?.message || err);
     }
@@ -59,8 +58,7 @@ export default function AgentProfile() {
           });
           setDealsCompleted(completedDeals?.length || 0);
         } catch (err) {
-          console.log('Could not compute deals completed:', err);
-          setDealsCompleted(null);
+              setDealsCompleted(null);
         }
 
         // Check if current user has a fully signed agreement with this agent
@@ -73,8 +71,7 @@ export default function AgentProfile() {
             });
             setHasSignedAgreement(invites.length > 0);
           } catch (err) {
-            console.log('Could not check agreement status:', err);
-          }
+                }
         }
 
       } catch (error) {

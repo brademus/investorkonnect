@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, FileText, Loader2 } from "lucide-react";
+import { openExternal } from "@/lib/native";
 
 /**
  * Modal for viewing/downloading files inline without navigating away.
@@ -82,7 +83,7 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
       URL.revokeObjectURL(url);
       a.remove();
     } catch {
-      window.open(fileUrl, '_blank');
+      openExternal(fileUrl);
     }
   };
 
@@ -102,7 +103,7 @@ export default function FileViewerModal({ open, onOpenChange, fileUrl, fileName 
               <Download className="w-3.5 h-3.5 mr-1.5" />Download
             </Button>
             <Button
-              onClick={() => window.open(fileUrl, '_blank')}
+              onClick={() => openExternal(fileUrl)}
               size="sm"
               variant="outline"
               className="rounded-full border-[#1F1F1F] text-[#808080] hover:text-[#FAFAFA] hover:border-[#E3C567] text-xs h-8"

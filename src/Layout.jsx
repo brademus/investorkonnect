@@ -170,7 +170,7 @@ function LayoutContent({ children }) {
       `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
       {showNav && !isNoNavPage && (
-        <header className="hidden md:block fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
+        <header className="hidden md:block fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm ik-safe-top">
             <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
               {/* Left: Empty spacer for balance */}
               <div className="flex-1"></div>

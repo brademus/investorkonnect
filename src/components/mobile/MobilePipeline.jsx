@@ -36,7 +36,7 @@ export default function MobilePipeline({
   const { pullDistance, refreshing } = usePullToRefresh(containerRef, refetchDeals);
 
   return (
-    <div ref={containerRef} className="flex flex-col min-h-screen px-4 pt-3 pb-28" style={{ touchAction: 'pan-y' }}>
+    <div ref={containerRef} className="flex flex-col min-h-screen px-4 pt-3 pb-28" style={{ touchAction: 'pan-y', paddingTop: 'calc(0.75rem + var(--safe-top, 0px))' }}>
       {/* Pull-to-refresh indicator */}
       {(pullDistance > 0 || refreshing) && (
         <div
@@ -103,7 +103,7 @@ export default function MobilePipeline({
       )}
 
       {/* Sticky stepper — always visible while scrolling the list */}
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-2 bg-[#0c0c0e]/95 backdrop-blur-sm mb-4">
+      <div className="sticky z-10 -mx-4 px-4 py-2 bg-[#0c0c0e]/95 backdrop-blur-sm mb-4" style={{ top: 'var(--safe-top, 0px)' }}>
         <MobileStageSwitcher
           stages={pipelineStages}
           activeStageId={activeStage}
